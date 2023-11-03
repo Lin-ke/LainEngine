@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="core">
+      <UniqueIdentifier>{4E40957C-3A77-960D-E363-7C10CF79120F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core\log">
+      <UniqueIdentifier>{3F57D44A-2B24-2F56-543D-1DFE406964E4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="base.h" />
+    <ClInclude Include="core\log\log.h">
+      <Filter>core\log</Filter>
+    </ClInclude>
+    <ClInclude Include="core\test.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="server\display\input.h" />
+    <ClInclude Include="core\input\input.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="core\log\log.cpp">
+      <Filter>core\log</Filter>
+    </ClCompile>
+    <ClCompile Include="core\test.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="server\display\input.cpp" />
+    <ClCompile Include="core\input\input.cpp" />
+  </ItemGroup>
+</Project>

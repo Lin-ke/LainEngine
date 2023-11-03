@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="..">
+      <UniqueIdentifier>{61705900-4DFC-870B-B6AA-880BA255880B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\engine">
+      <UniqueIdentifier>{E617D869-5282-8CE0-9BC0-3D86076A6A35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\engine\source">
+      <UniqueIdentifier>{469B6A4A-3294-899C-5BC6-6E21471E69A8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\engine\source\editor">
+      <UniqueIdentifier>{DCC1E5B9-48F9-2D51-5103-9274BDB9544A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\engine\source\runtime">
+      <UniqueIdentifier>{99265507-854B-A487-AE96-89179A1AA3A5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\engine\thirdparty">
+      <UniqueIdentifier>{20A9132E-0C38-9DF7-B556-B1F2A1C4AD9D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\engine\thirdparty\glfw">
+      <UniqueIdentifier>{DF30F777-4BF3-2A02-94A3-B98E00A503E0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\engine\thirdparty\imgui">
+      <UniqueIdentifier>{8A0E0277-761E-AE47-DFD7-1266CB069DE0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\engine\thirdparty\spdlog">
+      <UniqueIdentifier>{58F5CB6E-C402-FA54-4DE9-F53FB9F5C50B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="premakefile">
+      <UniqueIdentifier>{2A5594C9-960A-0DBF-1FFF-06968BB303C3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\engine\source\editor\premake5.lua">
+      <Filter>..\engine\source\editor</Filter>
+    </None>
+    <None Include="..\..\engine\source\runtime\premake5.lua">
+      <Filter>..\engine\source\runtime</Filter>
+    </None>
+    <None Include="..\..\engine\thirdparty\glfw\premake5.lua">
+      <Filter>..\engine\thirdparty\glfw</Filter>
+    </None>
+    <None Include="..\..\engine\thirdparty\imgui\premake5.lua">
+      <Filter>..\engine\thirdparty\imgui</Filter>
+    </None>
+    <None Include="..\..\engine\thirdparty\spdlog\premake5.lua">
+      <Filter>..\engine\thirdparty\spdlog</Filter>
+    </None>
+    <None Include="..\..\premake5.lua">
+      <Filter>..</Filter>
+    </None>
+    <None Include="premake5.lua" />
+    <None Include="premakefile\Glad-premake5.lua">
+      <Filter>premakefile</Filter>
+    </None>
+    <None Include="premakefile\glfw-premake5.lua">
+      <Filter>premakefile</Filter>
+    </None>
+    <None Include="premakefile\imgui-premake5.lua">
+      <Filter>premakefile</Filter>
+    </None>
+    <None Include="premakefile\spdlog-premake5.lua">
+      <Filter>premakefile</Filter>
+    </None>
+  </ItemGroup>
+</Project>

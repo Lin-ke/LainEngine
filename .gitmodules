@@ -1,0 +1,9 @@
+[submodule "engine/thirdparty/spdlog"]
+	path = engine/thirdparty/spdlog
+	url = https://github.com/gabime/spdlog
+[submodule "engine/thirdparty/glfw"]
+	path = engine/thirdparty/glfw
+	url = https://github.com/glfw/glfw
+[submodule "engine/thirdparty/imgui"]
+	path = engine/thirdparty/imgui
+	url = https://github.com/ocornut/imgui.git
