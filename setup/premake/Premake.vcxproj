@@ -44,16 +44,14 @@
     <IntDir>..\..\bin-int\Release-windows-x86_64\Premake\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <PostBuildEvent>
+    <PreBuildEvent>
       <Command>"$(ProjectDir)bin/premake5" vs2022 --file="$(SolutionDir)premake5.lua"</Command>
-      <Message>Regenerating project files with Premake5!</Message>
-    </PostBuildEvent>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <PostBuildEvent>
+    <PreBuildEvent>
       <Command>"$(ProjectDir)bin/premake5" vs2022 --file="$(SolutionDir)premake5.lua"</Command>
-      <Message>Regenerating project files with Premake5!</Message>
-    </PostBuildEvent>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="..\..\engine\premake5.lua" />

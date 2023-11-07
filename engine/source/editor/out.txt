@@ -1,0 +1,1 @@
+{"bint": -858993460, "int": -858993460, "int_vector": [], "test_base_array": [{"$context": {"char": 103, "int": 12, "int_vector": [{"$context": 1, "$typeName": "*"}]}, "$typeName": "Test1"}, {"$context": {"char": -52, "int": -858993460, "int_vector": []}, "$typeName": "Test1"}]}

@@ -118,6 +118,7 @@
     <ClInclude Include="core\meta\reflection\reflection.h" />
     <ClInclude Include="core\meta\reflection\reflection_register.h" />
     <ClInclude Include="core\meta\serializer\serializer.h" />
+    <ClInclude Include="engine.h" />
     <ClInclude Include="server\display\input.h" />
   </ItemGroup>
   <ItemGroup>
@@ -135,6 +136,7 @@
     <ClCompile Include="core\meta\reflection\reflection.cpp" />
     <ClCompile Include="core\meta\reflection\reflection_register.cpp" />
     <ClCompile Include="core\meta\serializer\serializer.cpp" />
+    <ClCompile Include="engine.cpp" />
     <ClCompile Include="server\display\input.cpp">
       <ObjectFileName>$(IntDir)\input1.obj</ObjectFileName>
     </ClCompile>
@@ -148,6 +150,9 @@
     </ProjectReference>
     <ProjectReference Include="..\..\thirdparty\json11\json11.vcxproj">
       <Project>{E1918107-CD33-ACDD-B6EE-BF31A22F332E}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\PreCompile.vcxproj">
+      <Project>{75B3BCBE-616B-FE0B-CA72-D767B64999FC}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

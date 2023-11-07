@@ -88,6 +88,7 @@
     <ClInclude Include="core\meta\serializer\serializer.h">
       <Filter>core\meta\serializer</Filter>
     </ClInclude>
+    <ClInclude Include="engine.h" />
     <ClInclude Include="server\display\input.h">
       <Filter>server\display</Filter>
     </ClInclude>
@@ -135,6 +136,7 @@
     <ClCompile Include="core\meta\serializer\serializer.cpp">
       <Filter>core\meta\serializer</Filter>
     </ClCompile>
+    <ClCompile Include="engine.cpp" />
     <ClCompile Include="server\display\input.cpp">
       <Filter>server\display</Filter>
     </ClCompile>

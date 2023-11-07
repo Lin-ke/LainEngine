@@ -35,8 +35,8 @@ namespace Lain {
 		s_ClientLogger->flush_on(spdlog::level::trace);
 
 		// output
-		L_CORE_INFO("Lain Engine Initialized");
-		L_INFO("Lain Client Initialized");
+		s_CoreLogger->info("Lain Engine Initialized");
+		s_ClientLogger->info("Lain Client Initialized");
 
 	}
 

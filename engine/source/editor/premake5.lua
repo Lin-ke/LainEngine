@@ -20,6 +20,8 @@ project "Editor"
       (prjprefix .. "/runtime"),
 		vdrprefix,
 		"%{IncludeDir.glm}",
+		"%{IncludeDir.json11}",
+
 	}
 
 	links

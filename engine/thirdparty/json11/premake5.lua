@@ -10,6 +10,7 @@ project "json11"
     files
     {
         "json11.cpp",
+        "json11.hpp",
     }
 
     includedirs

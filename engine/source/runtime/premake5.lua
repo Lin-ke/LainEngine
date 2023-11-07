@@ -26,7 +26,8 @@ project "LainRuntime"
 		{
          "spdlog",
          "glfw",
-         "json11"
+         "json11",
+         "PreCompile"
 		}
       
       filter "system:windows"

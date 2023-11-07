@@ -1,5 +1,4 @@
 #pragma once
-#include <base.h>
 #pragma warning(push, 0)
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
@@ -20,4 +19,3 @@ namespace Lain {
         static std::shared_ptr<spdlog::logger>& GetClientLogger();
     };
 }
-

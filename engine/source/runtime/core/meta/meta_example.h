@@ -25,11 +25,14 @@ namespace Lain
     };
 
     REFLECTION_TYPE(Test2)
-    CLASS(Test2 : public BaseTest, , Fields)
+    CLASS(Test2 : public BaseTest, Fields)
     {
         REFLECTION_BODY(Test2);
 
     public:
+        int m_int;
+        int bint;
+
         std::vector<Reflection::ReflectionPtr<BaseTest>> m_test_base_array;
     };
 } // namespace Lain

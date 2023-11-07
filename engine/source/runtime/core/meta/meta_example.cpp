@@ -2,7 +2,7 @@
 #include "runtime/core/meta/meta_example.h"
 #include "_generated/serializer/all_serializer.h"
 #include "runtime/core/meta/serializer/serializer.h"
-#include "runtime/base.h"
+#include "runtime/core/log/log.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -29,7 +29,7 @@ namespace Lain
         auto test1_json_in = Serializer::write(test1_in);
 
         std::string test1_context = test1_json_in.dump();
-
+        L_CORE_INFO(test1_context);
         // read Test1_context (json) to Test1_out (object)
         std::string err;
 
@@ -50,10 +50,14 @@ namespace Lain
         Serializer::read(test2_json, test2_out);
         //L_CORE_INFO(test2_context.c_str());
 
+
         // reflection
+        // get meta from TypeMetaDef, returns : reflection
         auto                       meta = TypeMetaDef(Test2, &test2_out);
         Reflection::FieldAccessor* fields;
+
         int                        fields_count = meta.m_meta.getFieldsList(fields);
+        std::cout << "fields_count:" << fields_count << std::endl;
         for (int i = 0; i < fields_count; ++i)
         {
             auto filed_accesser = fields[i];

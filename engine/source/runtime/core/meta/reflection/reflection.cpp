@@ -65,6 +65,7 @@ namespace Lain
             m_array_map.clear();
         }
 
+        // 构造TypeMeta
         TypeMeta::TypeMeta(std::string type_name) : m_type_name(type_name)
         {
             m_is_valid = false;
@@ -137,7 +138,7 @@ namespace Lain
         }
 
         std::string TypeMeta::getTypeName() { return m_type_name; }
-
+        // 修改原先的指针
         int TypeMeta::getFieldsList(FieldAccessor*& out_list)
         {
             int count = m_fields.size();

@@ -22,7 +22,8 @@ project "PreCompile"
         objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
       include "precompile.lua"
       kind "Utility"
- 
+        files 
+        {("**.h"), ("**.cpp")}
       links {
           "Parser",
           "ZERO_CHECK"
