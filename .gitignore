@@ -47,6 +47,7 @@ Lain.sln
 *.userosscache
 *.sln.docstates
 
+_generated/
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
