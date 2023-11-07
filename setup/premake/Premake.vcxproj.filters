@@ -13,6 +13,12 @@
     <Filter Include="..\engine\source\editor">
       <UniqueIdentifier>{DCC1E5B9-48F9-2D51-5103-9274BDB9544A}</UniqueIdentifier>
     </Filter>
+    <Filter Include="..\engine\source\meta_parser">
+      <UniqueIdentifier>{483A09C0-34F5-F86B-DDAC-71B6C94643FC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..\engine\source\meta_parser\parser">
+      <UniqueIdentifier>{E489F6C6-5043-6171-D9A2-7B4B455B17E1}</UniqueIdentifier>
+    </Filter>
     <Filter Include="..\engine\source\runtime">
       <UniqueIdentifier>{99265507-854B-A487-AE96-89179A1AA3A5}</UniqueIdentifier>
     </Filter>
@@ -25,6 +31,9 @@
     <Filter Include="..\engine\thirdparty\imgui">
       <UniqueIdentifier>{8A0E0277-761E-AE47-DFD7-1266CB069DE0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="..\engine\thirdparty\json11">
+      <UniqueIdentifier>{ABD9095A-17E7-3740-A0CD-332B0CDA03F7}</UniqueIdentifier>
+    </Filter>
     <Filter Include="..\engine\thirdparty\spdlog">
       <UniqueIdentifier>{58F5CB6E-C402-FA54-4DE9-F53FB9F5C50B}</UniqueIdentifier>
     </Filter>
@@ -33,8 +42,17 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\engine\premake5.lua">
+      <Filter>..\engine</Filter>
+    </None>
     <None Include="..\..\engine\source\editor\premake5.lua">
       <Filter>..\engine\source\editor</Filter>
+    </None>
+    <None Include="..\..\engine\source\meta_parser\parser\premake5.lua">
+      <Filter>..\engine\source\meta_parser\parser</Filter>
+    </None>
+    <None Include="..\..\engine\source\premake5.lua">
+      <Filter>..\engine\source</Filter>
     </None>
     <None Include="..\..\engine\source\runtime\premake5.lua">
       <Filter>..\engine\source\runtime</Filter>
@@ -44,6 +62,9 @@
     </None>
     <None Include="..\..\engine\thirdparty\imgui\premake5.lua">
       <Filter>..\engine\thirdparty\imgui</Filter>
+    </None>
+    <None Include="..\..\engine\thirdparty\json11\premake5.lua">
+      <Filter>..\engine\thirdparty\json11</Filter>
     </None>
     <None Include="..\..\engine\thirdparty\spdlog\premake5.lua">
       <Filter>..\engine\thirdparty\spdlog</Filter>
@@ -59,6 +80,9 @@
       <Filter>premakefile</Filter>
     </None>
     <None Include="premakefile\imgui-premake5.lua">
+      <Filter>premakefile</Filter>
+    </None>
+    <None Include="premakefile\json11-premake5.lua">
       <Filter>premakefile</Filter>
     </None>
     <None Include="premakefile\spdlog-premake5.lua">

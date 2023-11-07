@@ -4,29 +4,139 @@
     <Filter Include="core">
       <UniqueIdentifier>{4E40957C-3A77-960D-E363-7C10CF79120F}</UniqueIdentifier>
     </Filter>
+    <Filter Include="core\input">
+      <UniqueIdentifier>{ED821051-D93A-529E-4242-2BFA2E19ED8E}</UniqueIdentifier>
+    </Filter>
     <Filter Include="core\log">
       <UniqueIdentifier>{3F57D44A-2B24-2F56-543D-1DFE406964E4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core\math">
+      <UniqueIdentifier>{07925FA5-73FC-131C-BC3A-C5C128E4F170}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core\meta">
+      <UniqueIdentifier>{04A35FA5-700D-141C-B94B-C5C125F5F170}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core\meta\reflection">
+      <UniqueIdentifier>{5E13BAB0-4AA2-437A-F3C0-5775DF2E5420}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core\meta\serializer">
+      <UniqueIdentifier>{AD6134D8-99F0-BDA1-420F-D29C2E7DCE47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="server">
+      <UniqueIdentifier>{9C76841B-8818-AFF1-71D3-C2455D143642}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="server\display">
+      <UniqueIdentifier>{21129326-0DE0-862C-F673-F752E2E06291}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="base.h" />
+    <ClInclude Include="core\input\input.h">
+      <Filter>core\input</Filter>
+    </ClInclude>
     <ClInclude Include="core\log\log.h">
       <Filter>core\log</Filter>
     </ClInclude>
-    <ClInclude Include="core\test.h">
-      <Filter>core</Filter>
+    <ClInclude Include="core\math\axis_aligned.h">
+      <Filter>core\math</Filter>
     </ClInclude>
-    <ClInclude Include="server\display\input.h" />
-    <ClInclude Include="core\input\input.h" />
+    <ClInclude Include="core\math\math.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\math\math_headers.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\math\math_marcos.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\math\matrix3.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\math\matrix4.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\math\quaternion.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\math\random.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\math\transform.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\math\vector2.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\math\vector3.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\math\vector4.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\meta\json.h">
+      <Filter>core\meta</Filter>
+    </ClInclude>
+    <ClInclude Include="core\meta\meta_example.h">
+      <Filter>core\meta</Filter>
+    </ClInclude>
+    <ClInclude Include="core\meta\reflection\reflection.h">
+      <Filter>core\meta\reflection</Filter>
+    </ClInclude>
+    <ClInclude Include="core\meta\reflection\reflection_register.h">
+      <Filter>core\meta\reflection</Filter>
+    </ClInclude>
+    <ClInclude Include="core\meta\serializer\serializer.h">
+      <Filter>core\meta\serializer</Filter>
+    </ClInclude>
+    <ClInclude Include="server\display\input.h">
+      <Filter>server\display</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="core\input\input.cpp">
+      <Filter>core\input</Filter>
+    </ClCompile>
     <ClCompile Include="core\log\log.cpp">
       <Filter>core\log</Filter>
     </ClCompile>
-    <ClCompile Include="core\test.cpp">
-      <Filter>core</Filter>
+    <ClCompile Include="core\math\axis_aligned.cpp">
+      <Filter>core\math</Filter>
     </ClCompile>
-    <ClCompile Include="server\display\input.cpp" />
-    <ClCompile Include="core\input\input.cpp" />
+    <ClCompile Include="core\math\math.cpp">
+      <Filter>core\math</Filter>
+    </ClCompile>
+    <ClCompile Include="core\math\matrix3.cpp">
+      <Filter>core\math</Filter>
+    </ClCompile>
+    <ClCompile Include="core\math\matrix4.cpp">
+      <Filter>core\math</Filter>
+    </ClCompile>
+    <ClCompile Include="core\math\quaternion.cpp">
+      <Filter>core\math</Filter>
+    </ClCompile>
+    <ClCompile Include="core\math\vector2.cpp">
+      <Filter>core\math</Filter>
+    </ClCompile>
+    <ClCompile Include="core\math\vector3.cpp">
+      <Filter>core\math</Filter>
+    </ClCompile>
+    <ClCompile Include="core\math\vector4.cpp">
+      <Filter>core\math</Filter>
+    </ClCompile>
+    <ClCompile Include="core\meta\meta_example.cpp">
+      <Filter>core\meta</Filter>
+    </ClCompile>
+    <ClCompile Include="core\meta\reflection\reflection.cpp">
+      <Filter>core\meta\reflection</Filter>
+    </ClCompile>
+    <ClCompile Include="core\meta\reflection\reflection_register.cpp">
+      <Filter>core\meta\reflection</Filter>
+    </ClCompile>
+    <ClCompile Include="core\meta\serializer\serializer.cpp">
+      <Filter>core\meta\serializer</Filter>
+    </ClCompile>
+    <ClCompile Include="server\display\input.cpp">
+      <Filter>server\display</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

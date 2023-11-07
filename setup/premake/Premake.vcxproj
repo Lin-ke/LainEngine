@@ -56,16 +56,21 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="..\..\engine\premake5.lua" />
     <None Include="..\..\engine\source\editor\premake5.lua" />
+    <None Include="..\..\engine\source\meta_parser\parser\premake5.lua" />
+    <None Include="..\..\engine\source\premake5.lua" />
     <None Include="..\..\engine\source\runtime\premake5.lua" />
     <None Include="..\..\engine\thirdparty\glfw\premake5.lua" />
     <None Include="..\..\engine\thirdparty\imgui\premake5.lua" />
+    <None Include="..\..\engine\thirdparty\json11\premake5.lua" />
     <None Include="..\..\engine\thirdparty\spdlog\premake5.lua" />
     <None Include="..\..\premake5.lua" />
     <None Include="premake5.lua" />
     <None Include="premakefile\Glad-premake5.lua" />
     <None Include="premakefile\glfw-premake5.lua" />
     <None Include="premakefile\imgui-premake5.lua" />
+    <None Include="premakefile\json11-premake5.lua" />
     <None Include="premakefile\spdlog-premake5.lua" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

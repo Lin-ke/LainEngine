@@ -48,6 +48,11 @@ int parse(std::string project_input_file_name,
 {
     std::cout << std::endl;
     std::cout << "Parsing meta data for target \"" << module_name << "\"" << std::endl;
+    std::cout << "Project file: " << project_input_file_name << std::endl;
+    std::cout << "Source include file: " << source_include_file_name << std::endl;
+    std::cout << "Include path: " << include_path << std::endl;
+    std::cout << "Sys include path: " << sys_include << std::endl;
+    std::cout << "Show errors: " << show_errors << std::endl;
     std::fstream input_file;
 
     bool is_show_errors = "0" != show_errors;

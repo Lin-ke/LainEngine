@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "cmath": "cpp",
+        "compare": "cpp",
+        "format": "cpp",
+        "functional": "cpp",
+        "random": "cpp",
+        "tuple": "cpp",
+        "utility": "cpp",
+        "variant": "cpp",
+        "xstring": "cpp",
+        "xtr1common": "cpp",
+        "xutility": "cpp"
+    }
+}

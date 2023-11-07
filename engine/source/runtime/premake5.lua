@@ -19,13 +19,14 @@ project "LainRuntime"
    
           "%{IncludeDir.spdlog}",
           "%{IncludeDir.glfw}",
+          "%{IncludeDir.json11}"
       }
       -- the links aligns with the project names in premakes.lua
       links
 		{
          "spdlog",
          "glfw",
-
+         "json11"
 		}
       
       filter "system:windows"
@@ -55,4 +56,3 @@ project "LainRuntime"
       filter "configurations:Release"
          defines { "L_RELEASE" }
          optimize "On"
-   

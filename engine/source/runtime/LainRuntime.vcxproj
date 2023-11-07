@@ -57,7 +57,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>L_PLATFORM_WINDOWS;L_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..;.;..\..\thirdparty\spdlog\include;..\..\thirdparty\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;.;..\..\thirdparty\spdlog\include;..\..\thirdparty\glfw\include;..\..\thirdparty\json11;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
@@ -78,7 +78,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>L_PLATFORM_WINDOWS;L_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..;.;..\..\thirdparty\spdlog\include;..\..\thirdparty\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;.;..\..\thirdparty\spdlog\include;..\..\thirdparty\glfw\include;..\..\thirdparty\json11;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -100,15 +100,44 @@
   <ItemGroup>
     <ClInclude Include="base.h" />
     <ClInclude Include="core\input\input.h" />
-    <ClInclude Include="server\display\input.h" />
     <ClInclude Include="core\log\log.h" />
-    <ClInclude Include="core\test.h" />
+    <ClInclude Include="core\math\axis_aligned.h" />
+    <ClInclude Include="core\math\math.h" />
+    <ClInclude Include="core\math\math_headers.h" />
+    <ClInclude Include="core\math\math_marcos.h" />
+    <ClInclude Include="core\math\matrix3.h" />
+    <ClInclude Include="core\math\matrix4.h" />
+    <ClInclude Include="core\math\quaternion.h" />
+    <ClInclude Include="core\math\random.h" />
+    <ClInclude Include="core\math\transform.h" />
+    <ClInclude Include="core\math\vector2.h" />
+    <ClInclude Include="core\math\vector3.h" />
+    <ClInclude Include="core\math\vector4.h" />
+    <ClInclude Include="core\meta\json.h" />
+    <ClInclude Include="core\meta\meta_example.h" />
+    <ClInclude Include="core\meta\reflection\reflection.h" />
+    <ClInclude Include="core\meta\reflection\reflection_register.h" />
+    <ClInclude Include="core\meta\serializer\serializer.h" />
+    <ClInclude Include="server\display\input.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\input\input.cpp" />
-    <ClCompile Include="server\display\input.cpp" />
     <ClCompile Include="core\log\log.cpp" />
-    <ClCompile Include="core\test.cpp" />
+    <ClCompile Include="core\math\axis_aligned.cpp" />
+    <ClCompile Include="core\math\math.cpp" />
+    <ClCompile Include="core\math\matrix3.cpp" />
+    <ClCompile Include="core\math\matrix4.cpp" />
+    <ClCompile Include="core\math\quaternion.cpp" />
+    <ClCompile Include="core\math\vector2.cpp" />
+    <ClCompile Include="core\math\vector3.cpp" />
+    <ClCompile Include="core\math\vector4.cpp" />
+    <ClCompile Include="core\meta\meta_example.cpp" />
+    <ClCompile Include="core\meta\reflection\reflection.cpp" />
+    <ClCompile Include="core\meta\reflection\reflection_register.cpp" />
+    <ClCompile Include="core\meta\serializer\serializer.cpp" />
+    <ClCompile Include="server\display\input.cpp">
+      <ObjectFileName>$(IntDir)\input1.obj</ObjectFileName>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\thirdparty\spdlog\spdlog.vcxproj">
@@ -116,6 +145,9 @@
     </ProjectReference>
     <ProjectReference Include="..\..\thirdparty\glfw\glfw.vcxproj">
       <Project>{9563977C-819A-980D-2A87-7E10169D140F}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\thirdparty\json11\json11.vcxproj">
+      <Project>{E1918107-CD33-ACDD-B6EE-BF31A22F332E}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

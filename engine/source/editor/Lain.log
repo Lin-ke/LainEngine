@@ -1,2 +1,4 @@
-[16:38:18] [info] LAIN: Lain Engine Initialized
-[16:38:18] [info] APP: Lain Client Initialized
+[12:53:13] [info] LAIN: Lain Engine Initialized
+[12:53:13] [info] APP: Lain Client Initialized
+[12:53:13] [error] LAIN: Hello! Var=5
+[12:53:13] [info] APP: Hello! Var=5

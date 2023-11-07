@@ -1,12 +1,12 @@
+
 #include "runtime/core/meta/meta_example.h"
 #include "_generated/serializer/all_serializer.h"
-
-#include "runtime/core/base/macro.h"
-
+#include "runtime/core/meta/serializer/serializer.h"
+#include "runtime/base.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-namespace Piccolo
+namespace Lain
 {
     void metaExample()
     {
@@ -35,7 +35,7 @@ namespace Piccolo
 
         auto&& Test1_json = Json::parse(test1_context, err);
         Serializer::read(Test1_json, test1_out);
-        LOG_INFO(test1_context);
+        //L_CORE_INFO(test1_context);
 
         auto        Test2_json_in = Serializer::write(test2_in);
         std::string test2_context = Test2_json_in.dump();
@@ -48,7 +48,7 @@ namespace Piccolo
         Test2  test2_out;
         auto&& test2_json = Json::parse(test2_context, err);
         Serializer::read(test2_json, test2_out);
-        LOG_INFO(test2_context.c_str());
+        //L_CORE_INFO(test2_context.c_str());
 
         // reflection
         auto                       meta = TypeMetaDef(Test2, &test2_out);
@@ -77,4 +77,4 @@ namespace Piccolo
             }
         }
     }
-} // namespace Piccolo
+} // namespace Lain
