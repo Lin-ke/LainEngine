@@ -4,16 +4,22 @@ bin/
 bin-int/
 x64/
 
+**/bin/
+**/bin-int/
+
 *.txt
 *.log
 
 Lain.sln
 # Prerequisites
 *.d
-*.sln
-*.vcxproj.*
 
-*.vcxproj
+**.sln
+**.vcxproj
+**.vcxproj.filters
+**.vcxproj.user
+**.csproj
+
 *.filters
 *log*.txt
 # Compiled Object files
