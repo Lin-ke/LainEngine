@@ -2,7 +2,7 @@
 #include "base.h"
 #include "runtime/core/meta/reflection/reflection.h"
 
-namespace Lain
+namespace lain
 {
     REFLECTION_TYPE(BaseTest)
     CLASS(BaseTest, Fields)
@@ -35,4 +35,4 @@ namespace Lain
 
         std::vector<Reflection::ReflectionPtr<BaseTest>> m_test_base_array;
     };
-} // namespace Lain
+} // namespace lain

@@ -7,7 +7,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace Lain
+namespace lain
 {
 
 #if defined(__REFLECTION_PARSER__)
@@ -53,11 +53,11 @@ namespace Lain
     *static_cast<type*>(dst_ptr) = *static_cast<type*>(src_ptr.getPtr());
 
 #define TypeMetaDef(class_name, ptr) \
-    Lain::Reflection::ReflectionInstance(Lain::Reflection::TypeMeta::newMetaFromName(#class_name), \
+    lain::Reflection::ReflectionInstance(lain::Reflection::TypeMeta::newMetaFromName(#class_name), \
                                             (class_name*)ptr)
 
 #define TypeMetaDefPtr(class_name, ptr) \
-    new Lain::Reflection::ReflectionInstance(Lain::Reflection::TypeMeta::newMetaFromName(#class_name), \
+    new lain::Reflection::ReflectionInstance(lain::Reflection::TypeMeta::newMetaFromName(#class_name), \
                                                 (class_name*)ptr)
 
     template<typename T, typename U, typename = void>
@@ -372,4 +372,4 @@ namespace Lain
 
     } // namespace Reflection
 
-} // namespace Lain
+} // namespace lain

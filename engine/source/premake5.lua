@@ -30,5 +30,5 @@ project "PreCompile"
 
        -- may call some python to generate .json
        postbuildcommands {
-          (parser_obj .. " ".. precompile_params_path .. " " .. parser_input .." " ..  (p .. "/engine/source ")..  sysinclude .." " .. "Lain " ..  "0"),
+          (parser_obj .. " ".. precompile_params_path .. " " .. parser_input .." " ..  (p .. "/engine/source ")..  sysinclude .." " .. "lain " ..  "0"),
        }

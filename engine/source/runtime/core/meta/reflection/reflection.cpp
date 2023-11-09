@@ -2,7 +2,7 @@
 #include <cstring>
 #include <map>
 
-namespace Lain
+namespace lain
 {
     namespace Reflection
     {
@@ -65,7 +65,7 @@ namespace Lain
             m_array_map.clear();
         }
 
-        // ¹¹ÔìTypeMeta
+        // ï¿½ï¿½ï¿½ï¿½TypeMeta
         TypeMeta::TypeMeta(std::string type_name) : m_type_name(type_name)
         {
             m_is_valid = false;
@@ -138,7 +138,7 @@ namespace Lain
         }
 
         std::string TypeMeta::getTypeName() { return m_type_name; }
-        // ÐÞ¸ÄÔ­ÏÈµÄÖ¸Õë
+        // ï¿½Þ¸ï¿½Ô­ï¿½Èµï¿½Ö¸ï¿½ï¿½
         int TypeMeta::getFieldsList(FieldAccessor*& out_list)
         {
             int count = m_fields.size();
@@ -232,7 +232,7 @@ namespace Lain
         }
 
         bool FieldAccessor::isValid() {
-            return (m_functions == nullptr);
+            return (m_functions != nullptr);
         }
 
         void* FieldAccessor::get(void* instance)
@@ -394,4 +394,4 @@ namespace Lain
             return *this;
         }
     } // namespace Reflection
-} // namespace Lain
+} // namespace lain

@@ -6,7 +6,7 @@
 #include <cassert>
 #include <cmath>
 
-namespace Lain
+namespace lain
 {
     REFLECTION_TYPE(Vector2)
     CLASS(Vector2, Fields)
@@ -338,4 +338,4 @@ namespace Lain
         static const Vector2 UNIT_SCALE;
     };
 
-} // namespace Lain
+} // namespace lain

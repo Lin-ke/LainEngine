@@ -12,5 +12,5 @@
 #include "runtime/core/math/vector3.h"
 #include "runtime/core/math/vector4.h"
 
-namespace Lain
-{} // namespace Lain
+namespace lain
+{} // namespace lain

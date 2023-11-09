@@ -4,7 +4,7 @@
 #include "runtime/core/meta/reflection/reflection.h"
 #include <limits>
 
-namespace Lain
+namespace lain
 {
     REFLECTION_TYPE(AxisAlignedBox)
     CLASS(AxisAlignedBox, Fields)
@@ -31,4 +31,4 @@ namespace Lain
         Vector3 m_max_corner {
             -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
     };
-} // namespace Lain
+} // namespace lain

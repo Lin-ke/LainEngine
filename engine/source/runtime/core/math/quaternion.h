@@ -5,7 +5,7 @@
 
 #include <cassert>
 
-namespace Lain
+namespace lain
 {
     class Matrix3x3;
     class Vector3;
@@ -216,4 +216,4 @@ namespace Lain
 
         static const float k_epsilon;
     };
-} // namespace Lain
+} // namespace lain

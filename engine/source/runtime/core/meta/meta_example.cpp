@@ -6,7 +6,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-namespace Lain
+namespace lain
 {
     void metaExample()
     {
@@ -83,4 +83,4 @@ namespace Lain
             }
         }
     }
-} // namespace Lain
+} // namespace lain

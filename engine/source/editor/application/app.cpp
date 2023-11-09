@@ -1,26 +1,25 @@
 #ifdef L_PLATFORM_WINDOWS
-#include <core/log/log.h>
+#include <base.h>
 #include <core/meta/meta_example.cpp>
-#include <engine.h>
+#include <core/engine/engine.h>
 #include <core/math/vector2.h>
-int YminusA(int a, Lain::Vector2& obj);
+int YminusA(int a, lain::Vector2& obj);
 int main(int argc, char** argv) {
-	Lain::Log::Init();
+	lain::Log::Init();
 	L_CORE_ERROR("Hello! Var={0}", 5);
 	L_INFO("Hello! Var={0}", 5);
-	Lain::Engine* engine = new Lain::Engine();
+	lain::Engine* engine = new lain::Engine();
 	engine->startEngine("");
 	engine->initialize();
-	Lain::metaExample();
 
 	// meta: vector2 test
 
-	auto v2 = Lain::Vector2(1, 2);
-	auto js = Lain::Serializer::write(v2);
+	auto v2 = lain::Vector2(1, 2);
+	auto js = lain::Serializer::write(v2);
 	auto string = js.dump();
 	L_CORE_INFO(string);
 	// bind_methods
-	auto meta = Lain::Reflection::TypeMeta::newMetaFromName("Vector2");
+	auto meta = lain::Reflection::TypeMeta::newMetaFromName("Vector2");
 	
 	
 	auto method = meta.getMethodByName("set_x");
@@ -35,18 +34,18 @@ int main(int argc, char** argv) {
 	YminusA(3, v2);
 
 }
-int YminusA(int a, Lain::Vector2& obj) {
-	auto meta = Lain::Reflection::TypeMeta::newMetaFromName("Vector2");
+int YminusA(int a, lain::Vector2& obj) {
+	auto meta = lain::Reflection::TypeMeta::newMetaFromName("Vector2");
 	if (!meta.isValid()) {
 		L_ERROR("meta is not valid");
 	}
 	auto field_accessor = meta.getFieldByName("x");
-	int b = 16;
+	float b = 16;
 	if (field_accessor.isValid()) {
 		L_INFO("valid");
 		// set
-		field_accessor.set((void*)&obj, (float *)b);
-		Lain::Log::GetClientLogger()->info((obj.getX(), obj.getY()));
+		field_accessor.set((void*)&obj, (float *)&b);
+		L_JSON(obj);
 	}
 	else {
 		L_ERROR("Field is not valid");
@@ -57,7 +56,3 @@ int YminusA(int a, Lain::Vector2& obj) {
 }
 
 #endif
-// engineruntime注入到editor当中
-// editor->initialize(engine);
-
-// 构造了空的method对象会造成内存泄露吗？不会

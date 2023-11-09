@@ -1,5 +1,5 @@
 #pragma once
-namespace Lain
+namespace lain
 {
     namespace Reflection
     {
@@ -10,4 +10,4 @@ namespace Lain
             static void metaUnregister();
         };
     } // namespace Reflection
-} // namespace Lain
+} // namespace lain

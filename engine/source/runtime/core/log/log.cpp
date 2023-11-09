@@ -3,7 +3,7 @@
 #include <spdlog/sinks/basic_file_sink.h>
 #include <memory>
 #include <vector>
-namespace Lain {
+namespace lain {
 	std::shared_ptr<spdlog::logger> Log::s_CoreLogger;
 	std::shared_ptr<spdlog::logger> Log::s_ClientLogger;
 

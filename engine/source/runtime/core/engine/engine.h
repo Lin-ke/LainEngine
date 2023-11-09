@@ -1,5 +1,7 @@
 #pragma once
-#pragma once
+#ifndef _ENGINE_H_
+
+#define _ENGINE_H_// !_ENGINE_H_
 
 #include <atomic>
 #include <chrono>
@@ -7,7 +9,7 @@
 #include <string>
 #include <unordered_set>
 
-namespace Lain
+namespace lain
 {
     extern bool                            g_is_editor_mode;
     extern std::unordered_set<std::string> g_editor_tick_component_types;
@@ -53,3 +55,4 @@ namespace Lain
     };
 
 } // namespace Piccolo
+#endif

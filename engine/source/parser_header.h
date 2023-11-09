@@ -1,7 +1,10 @@
 #ifndef __PARSER_HEADER_H__
 #define __PARSER_HEADER_H__
 #include  "D:/LainEngine/engine/source/runtime/base.h"
-#include  "D:/LainEngine/engine/source/runtime/engine.h"
+#include  "D:/LainEngine/engine/source/runtime/core/typedefs.h"
+#include  "D:/LainEngine/engine/source/runtime/core/engine/engine.h"
+#include  "D:/LainEngine/engine/source/runtime/core/error/error.h"
+#include  "D:/LainEngine/engine/source/runtime/core/error/error_macros.h"
 #include  "D:/LainEngine/engine/source/runtime/core/input/input.h"
 #include  "D:/LainEngine/engine/source/runtime/core/log/log.h"
 #include  "D:/LainEngine/engine/source/runtime/core/math/axis_aligned.h"
@@ -23,5 +26,6 @@
 #include  "D:/LainEngine/engine/source/runtime/core/meta/serializer/serializer.h"
 #include  "D:/LainEngine/engine/source/runtime/core/object/object.h"
 #include  "D:/LainEngine/engine/source/runtime/core/object/refcount.h"
+#include  "D:/LainEngine/engine/source/runtime/core/template/cowdata.h"
 #include  "D:/LainEngine/engine/source/runtime/server/display/input.h"
 #endif

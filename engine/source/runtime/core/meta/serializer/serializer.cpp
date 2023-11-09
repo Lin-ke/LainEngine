@@ -1,6 +1,6 @@
 #include "serializer.h"
 #include <assert.h>
-namespace Lain
+namespace lain
 {
 
     template<>
@@ -149,4 +149,4 @@ namespace Lain
     }*/
 
     ////////////////////////////////////
-} // namespace Lain
+} // namespace lain

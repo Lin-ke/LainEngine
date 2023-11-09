@@ -3,7 +3,7 @@
 #include "runtime/core/math/matrix4.h"
 #include "runtime/core/math/vector3.h"
 
-namespace Lain
+namespace lain
 {
     const Quaternion Quaternion::ZERO(0, 0, 0, 0);
     const Quaternion Quaternion::IDENTITY(1, 0, 0, 0);
@@ -403,4 +403,4 @@ namespace Lain
         result.normalise();
         return result;
     }
-} // namespace Lain
+} // namespace lain

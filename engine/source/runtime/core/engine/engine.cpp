@@ -1,10 +1,10 @@
-#include "runtime/engine.h"
+#include "core/engine/engine.h"
 
 #include "runtime/base.h"
 #include "runtime/core/meta/reflection/reflection_register.h"
 
 
-namespace Lain
+namespace lain
 {
     bool                            g_is_editor_mode{ false };
     std::unordered_set<std::string> g_editor_tick_component_types{};

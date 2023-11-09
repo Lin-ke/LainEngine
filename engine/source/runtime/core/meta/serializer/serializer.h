@@ -4,7 +4,7 @@
 
 #include <cassert>
 
-namespace Lain
+namespace lain
 {
     template<typename...>
     inline constexpr bool always_false = false;
@@ -166,4 +166,4 @@ namespace Lain
 
     //
     ////////////////////////////////////
-} // namespace Lain
+} // namespace lain

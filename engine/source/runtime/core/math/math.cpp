@@ -1,7 +1,7 @@
 #include "runtime/core/math/math.h"
 #include "runtime/core/math/matrix4.h"
 
-namespace Lain
+namespace lain
 {
     Math::AngleUnit Math::k_AngleUnit;
 
@@ -233,4 +233,4 @@ namespace Lain
         return proj_matrix;
     }
 
-} // namespace Lain
+} // namespace lain

@@ -99,6 +99,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="base.h" />
+    <ClInclude Include="core\engine\engine.h" />
+    <ClInclude Include="core\error\error.h" />
+    <ClInclude Include="core\error\error_macros.h" />
     <ClInclude Include="core\input\input.h" />
     <ClInclude Include="core\log\log.h" />
     <ClInclude Include="core\math\axis_aligned.h" />
@@ -120,10 +123,12 @@
     <ClInclude Include="core\meta\serializer\serializer.h" />
     <ClInclude Include="core\object\object.h" />
     <ClInclude Include="core\object\refcount.h" />
-    <ClInclude Include="engine.h" />
+    <ClInclude Include="core\template\cowdata.h" />
+    <ClInclude Include="core\typedefs.h" />
     <ClInclude Include="server\display\input.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="core\engine\engine.cpp" />
     <ClCompile Include="core\input\input.cpp" />
     <ClCompile Include="core\log\log.cpp" />
     <ClCompile Include="core\math\axis_aligned.cpp" />
@@ -140,7 +145,6 @@
     <ClCompile Include="core\meta\serializer\serializer.cpp" />
     <ClCompile Include="core\object\object.cpp" />
     <ClCompile Include="core\object\refcount.cpp" />
-    <ClCompile Include="engine.cpp" />
     <ClCompile Include="server\display\input.cpp">
       <ObjectFileName>$(IntDir)\input1.obj</ObjectFileName>
     </ClCompile>

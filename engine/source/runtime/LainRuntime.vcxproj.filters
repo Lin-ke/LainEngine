@@ -4,6 +4,12 @@
     <Filter Include="core">
       <UniqueIdentifier>{4E40957C-3A77-960D-E363-7C10CF79120F}</UniqueIdentifier>
     </Filter>
+    <Filter Include="core\engine">
+      <UniqueIdentifier>{331BC769-9FD0-3F5F-28C5-393694793663}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core\error">
+      <UniqueIdentifier>{275ACA50-1312-0C9E-7C19-E5F968F0A68E}</UniqueIdentifier>
+    </Filter>
     <Filter Include="core\input">
       <UniqueIdentifier>{ED821051-D93A-529E-4242-2BFA2E19ED8E}</UniqueIdentifier>
     </Filter>
@@ -25,6 +31,9 @@
     <Filter Include="core\object">
       <UniqueIdentifier>{341E4380-A0D3-BB75-29C8-B54C957CB279}</UniqueIdentifier>
     </Filter>
+    <Filter Include="core\template">
+      <UniqueIdentifier>{398F8629-A54F-0260-6E8A-4BDDDA09473C}</UniqueIdentifier>
+    </Filter>
     <Filter Include="server">
       <UniqueIdentifier>{9C76841B-8818-AFF1-71D3-C2455D143642}</UniqueIdentifier>
     </Filter>
@@ -34,6 +43,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="base.h" />
+    <ClInclude Include="core\engine\engine.h">
+      <Filter>core\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="core\error\error.h">
+      <Filter>core\error</Filter>
+    </ClInclude>
+    <ClInclude Include="core\error\error_macros.h">
+      <Filter>core\error</Filter>
+    </ClInclude>
     <ClInclude Include="core\input\input.h">
       <Filter>core\input</Filter>
     </ClInclude>
@@ -97,12 +115,20 @@
     <ClInclude Include="core\object\refcount.h">
       <Filter>core\object</Filter>
     </ClInclude>
-    <ClInclude Include="engine.h" />
+    <ClInclude Include="core\template\cowdata.h">
+      <Filter>core\template</Filter>
+    </ClInclude>
+    <ClInclude Include="core\typedefs.h">
+      <Filter>core</Filter>
+    </ClInclude>
     <ClInclude Include="server\display\input.h">
       <Filter>server\display</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="core\engine\engine.cpp">
+      <Filter>core\engine</Filter>
+    </ClCompile>
     <ClCompile Include="core\input\input.cpp">
       <Filter>core\input</Filter>
     </ClCompile>
@@ -151,7 +177,6 @@
     <ClCompile Include="core\object\refcount.cpp">
       <Filter>core\object</Filter>
     </ClCompile>
-    <ClCompile Include="engine.cpp" />
     <ClCompile Include="server\display\input.cpp">
       <Filter>server\display</Filter>
     </ClCompile>

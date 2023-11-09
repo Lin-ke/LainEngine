@@ -5,7 +5,7 @@
 #pragma warning(pop)
 #include <memory>
 
-namespace Lain {
+namespace lain {
 
     class Log {
     private:
