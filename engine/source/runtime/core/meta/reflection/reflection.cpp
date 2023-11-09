@@ -283,6 +283,10 @@ namespace Lain
             m_method_name = k_unknown;
             m_functions   = nullptr;
         }
+        bool MethodAccessor::isValid() {
+            return m_functions != nullptr;
+        }
+
 
         MethodAccessor::MethodAccessor(MethodFunctionTuple* functions) : m_functions(functions)
         {

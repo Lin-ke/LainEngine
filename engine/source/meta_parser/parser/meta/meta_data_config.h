@@ -12,5 +12,5 @@ namespace NativeProperty
 
     const auto WhiteListFields = "WhiteListFields";
     const auto WhiteListMethods = "WhiteListMethods";
-
+    // 不支持运算符重载的method
 } // namespace NativeProperty

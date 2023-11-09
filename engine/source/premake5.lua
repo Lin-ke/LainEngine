@@ -26,7 +26,6 @@ project "PreCompile"
         {("**.h"), ("**.cpp")}
       links {
           "Parser",
-          "ZERO_CHECK"
        }
 
        -- may call some python to generate .json

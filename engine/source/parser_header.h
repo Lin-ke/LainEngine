@@ -21,5 +21,7 @@
 #include  "D:/Lain/engine/source/runtime/core/meta/reflection/reflection.h"
 #include  "D:/Lain/engine/source/runtime/core/meta/reflection/reflection_register.h"
 #include  "D:/Lain/engine/source/runtime/core/meta/serializer/serializer.h"
+#include  "D:/Lain/engine/source/runtime/core/object/object.h"
+#include  "D:/Lain/engine/source/runtime/core/object/refcount.h"
 #include  "D:/Lain/engine/source/runtime/server/display/input.h"
 #endif

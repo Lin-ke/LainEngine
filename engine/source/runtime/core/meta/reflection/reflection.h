@@ -197,7 +197,8 @@ namespace Lain
             const char* getMethodName() const;
 
             MethodAccessor& operator=(const MethodAccessor& dest);
-
+            
+            bool isValid();
         private:
             MethodAccessor(MethodFunctionTuple* functions);
 

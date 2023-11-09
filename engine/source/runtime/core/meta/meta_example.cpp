@@ -61,8 +61,7 @@ namespace Lain
         for (int i = 0; i < fields_count; ++i)
         {
             auto filed_accesser = fields[i];
-            std::cout << filed_accesser.getFieldTypeName() << " " << filed_accesser.getFieldName() << " "
-                      << (char*)filed_accesser.get(meta.m_instance) << std::endl;
+            std::cout << filed_accesser.getFieldTypeName() << " " << filed_accesser.getFieldName() << " "  << std::endl;
             if (filed_accesser.isArrayType())
             {
                 Reflection::ArrayAccessor array_accesser;
@@ -78,6 +77,9 @@ namespace Lain
                         ;
                     }
                 }
+            } 
+            else {
+
             }
         }
     }

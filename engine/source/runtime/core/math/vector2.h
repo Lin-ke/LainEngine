@@ -240,9 +240,6 @@ namespace Lain
         float getX() const { return x; }
         float getY() const { return y; }
 
-        void setX(float value) { x = value; }
-        void setY(float value) { y = value; }
-
         /** Returns a vector at a point half way between this and the passed
         in vector.
         */

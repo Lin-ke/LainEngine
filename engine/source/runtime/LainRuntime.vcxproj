@@ -118,6 +118,8 @@
     <ClInclude Include="core\meta\reflection\reflection.h" />
     <ClInclude Include="core\meta\reflection\reflection_register.h" />
     <ClInclude Include="core\meta\serializer\serializer.h" />
+    <ClInclude Include="core\object\object.h" />
+    <ClInclude Include="core\object\refcount.h" />
     <ClInclude Include="engine.h" />
     <ClInclude Include="server\display\input.h" />
   </ItemGroup>
@@ -136,6 +138,8 @@
     <ClCompile Include="core\meta\reflection\reflection.cpp" />
     <ClCompile Include="core\meta\reflection\reflection_register.cpp" />
     <ClCompile Include="core\meta\serializer\serializer.cpp" />
+    <ClCompile Include="core\object\object.cpp" />
+    <ClCompile Include="core\object\refcount.cpp" />
     <ClCompile Include="engine.cpp" />
     <ClCompile Include="server\display\input.cpp">
       <ObjectFileName>$(IntDir)\input1.obj</ObjectFileName>

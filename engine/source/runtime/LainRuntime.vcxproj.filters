@@ -22,6 +22,9 @@
     <Filter Include="core\meta\serializer">
       <UniqueIdentifier>{AD6134D8-99F0-BDA1-420F-D29C2E7DCE47}</UniqueIdentifier>
     </Filter>
+    <Filter Include="core\object">
+      <UniqueIdentifier>{341E4380-A0D3-BB75-29C8-B54C957CB279}</UniqueIdentifier>
+    </Filter>
     <Filter Include="server">
       <UniqueIdentifier>{9C76841B-8818-AFF1-71D3-C2455D143642}</UniqueIdentifier>
     </Filter>
@@ -88,6 +91,12 @@
     <ClInclude Include="core\meta\serializer\serializer.h">
       <Filter>core\meta\serializer</Filter>
     </ClInclude>
+    <ClInclude Include="core\object\object.h">
+      <Filter>core\object</Filter>
+    </ClInclude>
+    <ClInclude Include="core\object\refcount.h">
+      <Filter>core\object</Filter>
+    </ClInclude>
     <ClInclude Include="engine.h" />
     <ClInclude Include="server\display\input.h">
       <Filter>server\display</Filter>
@@ -135,6 +144,12 @@
     </ClCompile>
     <ClCompile Include="core\meta\serializer\serializer.cpp">
       <Filter>core\meta\serializer</Filter>
+    </ClCompile>
+    <ClCompile Include="core\object\object.cpp">
+      <Filter>core\object</Filter>
+    </ClCompile>
+    <ClCompile Include="core\object\refcount.cpp">
+      <Filter>core\object</Filter>
     </ClCompile>
     <ClCompile Include="engine.cpp" />
     <ClCompile Include="server\display\input.cpp">
