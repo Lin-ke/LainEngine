@@ -1,8 +1,0 @@
-[13:07:42] [info] LAIN: Lain Engine Initialized
-[13:07:42] [info] APP: Lain Client Initialized
-[13:07:42] [error] LAIN: Hello! Var=5
-[13:07:42] [info] APP: Hello! Var=5
-[13:07:42] [info] LAIN: engine start
-[13:07:42] [info] LAIN: {"char": 103, "int": 12, "int_vector": [{"$context": 1, "$typeName": "*"}]}
-[13:07:42] [info] LAIN: {"x": 1, "y": 2}
-[13:07:42] [error] APP: method is not valid
