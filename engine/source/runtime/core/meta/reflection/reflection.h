@@ -174,6 +174,8 @@ namespace Lain
             const char* getFieldName() const;
             const char* getFieldTypeName();
             bool        isArrayType();
+            bool        isValid();
+
 
             FieldAccessor& operator=(const FieldAccessor& dest);
 

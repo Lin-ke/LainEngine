@@ -231,6 +231,10 @@ namespace Lain
             m_field_name      = (std::get<3>(*m_functions))();
         }
 
+        bool FieldAccessor::isValid() {
+            return (m_functions == nullptr);
+        }
+
         void* FieldAccessor::get(void* instance)
         {
             // todo: should check validation
@@ -256,6 +260,8 @@ namespace Lain
             field_type = f_type;
             return f_type.m_is_valid;
         }
+
+        
 
         const char* FieldAccessor::getFieldName() const { return m_field_name; }
         const char* FieldAccessor::getFieldTypeName() { return m_field_type_name; }

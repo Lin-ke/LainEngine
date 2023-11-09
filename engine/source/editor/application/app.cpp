@@ -3,6 +3,7 @@
 #include <core/meta/meta_example.cpp>
 #include <engine.h>
 #include <core/math/vector2.h>
+int YminusA(int a, Lain::Vector2& obj);
 int main(int argc, char** argv) {
 	Lain::Log::Init();
 	L_CORE_ERROR("Hello! Var={0}", 5);
@@ -20,9 +21,7 @@ int main(int argc, char** argv) {
 	L_CORE_INFO(string);
 	// bind_methods
 	auto meta = Lain::Reflection::TypeMeta::newMetaFromName("Vector2");
-	if (!meta.isValid()) {
-		L_ERROR("meta is not valid");
-	}
+	
 	
 	auto method = meta.getMethodByName("set_x");
 	if (!method.isValid()) {
@@ -32,11 +31,29 @@ int main(int argc, char** argv) {
 	else {
 		L_INFO("method is valid");
 	}
-	Lain::Reflection::MethodAccessor* acc;
-	size_t size = meta.getMethodsList(acc);
-	for (int i = 0; i < size; ++i) {
-		L_INFO("method name:", acc[i].getMethodName());
+	// try set method
+	YminusA(3, v2);
+
+}
+int YminusA(int a, Lain::Vector2& obj) {
+	auto meta = Lain::Reflection::TypeMeta::newMetaFromName("Vector2");
+	if (!meta.isValid()) {
+		L_ERROR("meta is not valid");
 	}
+	auto field_accessor = meta.getFieldByName("x");
+	int b = 16;
+	if (field_accessor.isValid()) {
+		L_INFO("valid");
+		// set
+		field_accessor.set((void*)&obj, (float *)b);
+		Lain::Log::GetClientLogger()->info((obj.getX(), obj.getY()));
+	}
+	else {
+		L_ERROR("Field is not valid");
+	}
+	return 0;
+
+
 }
 
 #endif
