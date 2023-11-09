@@ -17,5 +17,5 @@ public:
 	}
 
 
-	L_INLINE size32_t * _size()
+	L_INLINE size32_t* size();
 };
