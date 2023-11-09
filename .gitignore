@@ -21,6 +21,8 @@ Lain.sln
 *.lo
 *.o
 *.obj
+*.lib
+*.dll
 
 # Precompiled Headers
 *.gch
@@ -445,4 +447,5 @@ FodyWeavers.xsd
 
 !engine/thirdparty/LLVM/bin/
 !engine/thirdparty/LLVM/lib/
+
 
