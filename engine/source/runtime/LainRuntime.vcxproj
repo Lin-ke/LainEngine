@@ -124,6 +124,7 @@
     <ClInclude Include="core\object\object.h" />
     <ClInclude Include="core\object\refcount.h" />
     <ClInclude Include="core\template\cowdata.h" />
+    <ClInclude Include="core\template\saferefcount.h" />
     <ClInclude Include="core\typedefs.h" />
     <ClInclude Include="server\display\input.h" />
   </ItemGroup>

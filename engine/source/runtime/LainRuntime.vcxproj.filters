@@ -118,6 +118,9 @@
     <ClInclude Include="core\template\cowdata.h">
       <Filter>core\template</Filter>
     </ClInclude>
+    <ClInclude Include="core\template\saferefcount.h">
+      <Filter>core\template</Filter>
+    </ClInclude>
     <ClInclude Include="core\typedefs.h">
       <Filter>core</Filter>
     </ClInclude>

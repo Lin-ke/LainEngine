@@ -6,7 +6,7 @@
 #include <atomic>
 // This class is used to store a thread safe reference count, using c++11 atomic.
 template <typename T>
-class SafeRefCount {
+class SafeNumeric {
 	private:
 	std::atomic<T> value;
 	// atomic operations:
@@ -111,6 +111,7 @@ public :
 	L_INLINE explicit SafeNumeric<T>(T p_value = static_cast<T>(0)) {
 		set(p_value);
 	}
+	typedef SafeNumeric<uint32_t> s_u32;
 };
 
 #endif // __SAFE_REFCOUNT__
