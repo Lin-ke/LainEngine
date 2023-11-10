@@ -183,5 +183,6 @@
     <ClCompile Include="server\display\input.cpp">
       <Filter>server\display</Filter>
     </ClCompile>
+    <ClCompile Include="core\template\cowdata.cpp" />
   </ItemGroup>
 </Project>

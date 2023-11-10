@@ -50,4 +50,5 @@ L_INLINE void L_CORE_PRINT(const Types&... args)
 # define L_JSON(x) L_PRINT("json of " + std::string(#x) + " " + (lain::Serializer::write(x).dump()));
 # define L_CORE_JSON(x) L_CORE_PRINT("json of " + std::string(#x) + " " + (lain::Serializer::write(x).dump()));
 
+
 #endif // __BASE__

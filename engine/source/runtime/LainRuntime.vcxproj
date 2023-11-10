@@ -146,6 +146,7 @@
     <ClCompile Include="core\meta\serializer\serializer.cpp" />
     <ClCompile Include="core\object\object.cpp" />
     <ClCompile Include="core\object\refcount.cpp" />
+    <ClCompile Include="core\template\cowdata.cpp" />
     <ClCompile Include="server\display\input.cpp">
       <ObjectFileName>$(IntDir)\input1.obj</ObjectFileName>
     </ClCompile>

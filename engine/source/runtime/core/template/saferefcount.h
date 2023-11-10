@@ -111,7 +111,8 @@ public :
 	L_INLINE explicit SafeNumeric<T>(T p_value = static_cast<T>(0)) {
 		set(p_value);
 	}
-	typedef SafeNumeric<uint32_t> s_u32;
+	
 };
+typedef SafeNumeric<uint32_t> s_u32;
 
 #endif // __SAFE_REFCOUNT__
