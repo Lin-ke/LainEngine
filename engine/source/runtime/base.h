@@ -14,9 +14,9 @@
 #else
 #define L_DEBUGBREAK()
 #endif
-
+#include "core/typedefs.h"
 #include <core/log/log.h>
-
+#include <sstream>
 #define L_CORE_TRACE(...)	lain::Log::GetCoreLogger()->trace(__VA_ARGS__)
 #define L_CORE_INFO(...)	lain::Log::GetCoreLogger()->info(__VA_ARGS__)
 #define L_CORE_WARN(...)	lain::Log::GetCoreLogger()->warn(__VA_ARGS__)
@@ -38,8 +38,19 @@
 template <typename ... Types>
 void  L_PRINT(const Types&... args)
 {
-	std::initializer_list <int> { ([&args] {L_INFO(args); }(), 0)...};
+	std::ostringstream  ss;
+	std::initializer_list <int> { ([&args, &ss] {ss << (args) << " "; }(), 0)...};
+	L_INFO(ss.str());
 }
+
+template <typename ... Types>
+void  L_PERROR(const Types&... args)
+{
+	std::ostringstream  ss;
+	std::initializer_list <int> { ([&args, &ss] {ss << (args) << " "; }(), 0)...};
+	L_ERROR(ss.str());
+}
+
 
 template <typename ... Types>
 L_INLINE void L_CORE_PRINT(const Types&... args)
@@ -51,4 +62,14 @@ L_INLINE void L_CORE_PRINT(const Types&... args)
 # define L_CORE_JSON(x) L_CORE_PRINT("json of " + std::string(#x) + " " + (lain::Serializer::write(x).dump()));
 
 
+
+
+void _global_lock();
+void _global_unlock();
+
+
 #endif // __BASE__
+
+// 成员变量 首字母标识
+// 函数：大驼峰， 私有函数前面加_
+//

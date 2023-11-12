@@ -1,12 +1,11 @@
 #pragma once
 #include <core/typedefs.h>
 #include <base.h>
-#include <core/template/saferefcount.h>
+#include <core/templates/safe_refcount.h>
 #include <vector>
-// 成员变量 首字母标识
-// 函数：大驼峰， 私有函数前面加_
-//
-namespace lain {
+
+
+namespace lain{
 
 	template <typename T>
 	class CowData {
@@ -39,8 +38,9 @@ namespace lain {
 		L_INLINE size_t _GetAllocSize(size_t element)const {
 			return
 		}
-		void CowData<T>::_Ref(const CowData<T> p_from);
-		void CowData<T>::_Unref(const CowData<T> p_from);
+		void _Ref(const CowData<T> p_from);
+		void _Unref(const CowData<T> p_data);
+		void _CopyOnWrite();
 	public:
 		// cow reloaded "="
 		void operator =(const CowData<T>& p_from) { _Ref(p_from); }
@@ -48,7 +48,7 @@ namespace lain {
 		L_INLINE CowData() {}
 		L_INLINE ~CowData() { _Unref(m_ptr); }
 		L_INLINE CowData(CowData<T>& p_from) { _Ref(p_from); };
-		L_INLINE Size() {
+		L_INLINE u32 Size() {
 			u32* size = (u32*)_GetSize();
 			if (size) {
 				return *size;
@@ -56,10 +56,10 @@ namespace lain {
 			return 0;
 		}
 		L_INLINE void Resize(int size);
-		L_INLINE void Clear() { resize(0) };
+		L_INLINE void Clear() { Resize(0) };
 		L_INLINE bool IsEmpty() { return (m_ptr == nullptr); }
 
 
 	};
-
 }
+

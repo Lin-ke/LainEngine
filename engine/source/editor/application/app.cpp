@@ -3,7 +3,9 @@
 #include <core/meta/meta_example.cpp>
 #include <core/engine/engine.h>
 #include <core/math/vector2.h>
+#include <core/error/error_macros.h>
 int YminusA(int a, lain::Vector2& obj);
+void TryERR_FAIL_INDEX();
 int main(int argc, char** argv) {
 	lain::Log::Init();
 	L_CORE_ERROR("Hello! Var={0}", 5);
@@ -20,7 +22,7 @@ int main(int argc, char** argv) {
 	L_CORE_INFO(string);
 	// bind_methods
 	auto meta = lain::Reflection::TypeMeta::newMetaFromName("Vector2");
-	
+	L_PRINT("123", "456", "2134");
 	
 	auto method = meta.getMethodByName("set_x");
 	if (!method.isValid()) {
@@ -32,7 +34,11 @@ int main(int argc, char** argv) {
 	}
 	// try set method
 	YminusA(3, v2);
+	TryERR_FAIL_INDEX();
 
+}
+void TryERR_FAIL_INDEX() {
+	ERR_FAIL_INDEX(-1, 3);
 }
 int YminusA(int a, lain::Vector2& obj) {
 	auto meta = lain::Reflection::TypeMeta::newMetaFromName("Vector2");

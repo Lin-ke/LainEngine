@@ -39,5 +39,13 @@ namespace lain {
 		s_ClientLogger->info("Lain Client Initialized");
 
 	}
+	 /*void Log::Logf(const char* p_format, ...) {
+		va_list argp;
+		va_start(argp, p_format);
+		std::ostringstream stringStream;
+		stringStream << "Hello";
+		std::string copyOfStr = stringStream.str();
 
+		va_end(argp);
+	}*/
 }

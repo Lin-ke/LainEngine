@@ -17,5 +17,14 @@ namespace lain {
 
         static std::shared_ptr<spdlog::logger>& GetCoreLogger();
         static std::shared_ptr<spdlog::logger>& GetClientLogger();
+        /*void Logf(const char* p_format, ...);*/
+        enum ErrorType {
+            ERR_ERROR,
+            ERR_WARNING,
+            ERR_SCRIPT,
+            ERR_SHADER
+        };
+        
     };
+    
 }
