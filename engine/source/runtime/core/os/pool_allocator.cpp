@@ -1,12 +1,10 @@
-************************************************************/
 
 #include "pool_allocator.h"
+#include "base.h"
 
 #include "core/error/error_macros.h"
 #include "core/os/memory.h"
 #include "core/os/os.h"
-#include "core/string/print_string.h"
-
 #define COMPACT_CHUNK(m_entry, m_to_pos)                      \
 	do {                                                      \
 		void *_dst = &((unsigned char *)pool)[m_to_pos];      \

@@ -127,6 +127,7 @@
     <ClInclude Include="core\os\memory.h" />
     <ClInclude Include="core\os\mutex.h" />
     <ClInclude Include="core\os\os.h" />
+    <ClInclude Include="core\os\pool_allocator.h" />
     <ClInclude Include="core\string\char_utils.h" />
     <ClInclude Include="core\string\lstring.h" />
     <ClInclude Include="core\templates\cowdata.h" />
@@ -161,8 +162,9 @@
     <ClCompile Include="core\object\refcount.cpp" />
     <ClCompile Include="core\os\memory.cpp" />
     <ClCompile Include="core\os\mutex.cpp" />
+    <ClCompile Include="core\os\pool_allocator.cpp" />
     <ClCompile Include="core\string\lstring.cpp" />
-    <ClCompile Include="core\templates\cowdata.cpp" />
+    <ClCompile Include="core\templates\sort_array.h" />
     <ClCompile Include="resource\component\camera_conf.h" />
     <ClCompile Include="render\input.cpp">
       <ObjectFileName>$(IntDir)\input1.obj</ObjectFileName>

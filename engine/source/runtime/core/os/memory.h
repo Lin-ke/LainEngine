@@ -10,7 +10,7 @@
 #include <type_traits>
 
 #ifndef PAD_ALIGN
-#define PAD_ALIGN 16 //must always be greater than this at much
+#define PAD_ALIGN 16 //must always be greater than this at much, 128 bits
 #endif
 
 class Memory {
@@ -49,7 +49,7 @@ void operator delete(void* p_mem, const char* p_description);
 void operator delete(void* p_mem, void* (*p_allocfunc)(size_t p_size));
 void operator delete(void* p_mem, void* p_pointer, size_t check, const char* p_description);
 #endif
-
+// wrap the malloc function and pad
 #define memalloc(m_size) Memory::alloc_static(m_size)
 #define memrealloc(m_mem, m_size) Memory::realloc_static(m_mem, m_size)
 #define memfree(m_mem) Memory::free_static(m_mem)

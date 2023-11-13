@@ -26,8 +26,9 @@ void operator delete(void* p_mem, void* p_pointer, size_t check, const char* p_d
 SafeNumeric<uint64_t> Memory::mem_usage;
 SafeNumeric<uint64_t> Memory::max_usage;
 #endif
+SafeNumeric<uint64_t> Memory::alloc_count;
 
-// memory management
+// alloc for the first time.
 void* Memory::alloc_static(size_t p_bytes, bool p_pad_align) {
 #ifdef L_DEBUG // always prepad
 	bool prepad = true;
@@ -36,7 +37,7 @@ void* Memory::alloc_static(size_t p_bytes, bool p_pad_align) {
 #endif
 
 	void* mem = malloc(p_bytes + (prepad ? PAD_ALIGN : 0));
-
+	//L_PRINT("malloc pointer", (int*) mem);
 	ERR_FAIL_COND_V(!mem, nullptr);
 
 	alloc_count.increment();
@@ -51,6 +52,7 @@ void* Memory::alloc_static(size_t p_bytes, bool p_pad_align) {
 		uint64_t new_mem_usage = mem_usage.add(p_bytes);
 		max_usage.exchange_if_greater(new_mem_usage);
 #endif
+		//L_PRINT("malloc pointer", (int*)(s8 + PAD_ALIGN));
 		return s8 + PAD_ALIGN;
 	}
 	else {
@@ -88,7 +90,7 @@ void* Memory::realloc_static(void* p_memory, size_t p_bytes, bool p_pad_align) {
 		}
 		else {
 			*s = p_bytes;
-
+			//realloc copies everything
 			mem = (uint8_t*)realloc(mem, p_bytes + PAD_ALIGN);
 			ERR_FAIL_NULL_V(mem, nullptr);
 
