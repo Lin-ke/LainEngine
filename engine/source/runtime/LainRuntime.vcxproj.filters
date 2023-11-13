@@ -151,10 +151,14 @@
     <ClInclude Include="core\typedefs.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="server\display\input.h">
+    <ClInclude Include="render\input.h">
       <Filter>server\display</Filter>
     </ClInclude>
-    <ClInclude Include="server\render\camera.h" />
+    <ClInclude Include="resource\component\camera.h" />
+    <ClInclude Include="resource\common\world.h" />
+    <ClInclude Include="core\varint\array.h" />
+    <ClInclude Include="resource\manager\resource_manager.h" />
+    <ClInclude Include="function\script.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\engine\engine.cpp">
@@ -223,8 +227,10 @@
     <ClCompile Include="core\templates\cowdata.cpp">
       <Filter>core\templates</Filter>
     </ClCompile>
-    <ClCompile Include="server\display\input.cpp">
+    <ClCompile Include="render\input.cpp">
       <Filter>server\display</Filter>
     </ClCompile>
+    <ClCompile Include="resource\component\camera_conf.h" />
+    <ClCompile Include="resource\component\mesh.h" />
   </ItemGroup>
 </Project>

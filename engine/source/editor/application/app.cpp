@@ -4,6 +4,7 @@
 #include <core/engine/engine.h>
 #include <core/math/vector2.h>
 #include <core/error/error_macros.h>
+#include <core/os/memory.h>
 int YminusA(int a, lain::Vector2& obj);
 void TryERR_FAIL_INDEX();
 int main(int argc, char** argv) {
@@ -13,28 +14,8 @@ int main(int argc, char** argv) {
 	lain::Engine* engine = new lain::Engine();
 	engine->startEngine("");
 	engine->initialize();
-
-	// meta: vector2 test
-
-	auto v2 = lain::Vector2(1, 2);
-	auto js = lain::Serializer::write(v2);
-	auto string = js.dump();
-	L_CORE_INFO(string);
-	// bind_methods
-	auto meta = lain::Reflection::TypeMeta::newMetaFromName("Vector2");
-	L_PRINT("123", "456", "2134");
+	//lain::CowData<std::string>();
 	
-	auto method = meta.getMethodByName("set_x");
-	if (!method.isValid()) {
-		L_ERROR("method is not valid");
-	}
-		
-	else {
-		L_INFO("method is valid");
-	}
-	// try set method
-	YminusA(3, v2);
-	TryERR_FAIL_INDEX();
 
 }
 void TryERR_FAIL_INDEX() {
