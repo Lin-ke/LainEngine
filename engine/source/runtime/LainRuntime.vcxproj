@@ -134,6 +134,7 @@
     <ClInclude Include="core\templates\vector.h" />
     <ClInclude Include="core\typedefs.h" />
     <ClInclude Include="server\display\input.h" />
+    <ClInclude Include="server\render\camera.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\engine\engine.cpp" />

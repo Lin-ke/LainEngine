@@ -31,8 +31,14 @@
     <Filter Include="core\object">
       <UniqueIdentifier>{341E4380-A0D3-BB75-29C8-B54C957CB279}</UniqueIdentifier>
     </Filter>
-    <Filter Include="core\template">
-      <UniqueIdentifier>{398F8629-A54F-0260-6E8A-4BDDDA09473C}</UniqueIdentifier>
+    <Filter Include="core\os">
+      <UniqueIdentifier>{3FDCB8D3-ABBB-376F-B4D3-C24520329ED0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core\string">
+      <UniqueIdentifier>{34EFE18A-A0A4-5A80-2999-5457954D5184}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core\templates">
+      <UniqueIdentifier>{CC76585A-B844-4C60-A1D8-BC868D4528C5}</UniqueIdentifier>
     </Filter>
     <Filter Include="server">
       <UniqueIdentifier>{9C76841B-8818-AFF1-71D3-C2455D143642}</UniqueIdentifier>
@@ -115,11 +121,32 @@
     <ClInclude Include="core\object\refcount.h">
       <Filter>core\object</Filter>
     </ClInclude>
+    <ClInclude Include="core\os\condition_variable.h">
+      <Filter>core\os</Filter>
+    </ClInclude>
+    <ClInclude Include="core\os\memory.h">
+      <Filter>core\os</Filter>
+    </ClInclude>
+    <ClInclude Include="core\os\mutex.h">
+      <Filter>core\os</Filter>
+    </ClInclude>
+    <ClInclude Include="core\os\os.h">
+      <Filter>core\os</Filter>
+    </ClInclude>
+    <ClInclude Include="core\string\char_utils.h">
+      <Filter>core\string</Filter>
+    </ClInclude>
+    <ClInclude Include="core\string\lstring.h">
+      <Filter>core\string</Filter>
+    </ClInclude>
     <ClInclude Include="core\templates\cowdata.h">
-      <Filter>core\template</Filter>
+      <Filter>core\templates</Filter>
     </ClInclude>
     <ClInclude Include="core\templates\safe_refcount.h">
-      <Filter>core\template</Filter>
+      <Filter>core\templates</Filter>
+    </ClInclude>
+    <ClInclude Include="core\templates\vector.h">
+      <Filter>core\templates</Filter>
     </ClInclude>
     <ClInclude Include="core\typedefs.h">
       <Filter>core</Filter>
@@ -127,17 +154,14 @@
     <ClInclude Include="server\display\input.h">
       <Filter>server\display</Filter>
     </ClInclude>
-    <ClInclude Include="core\os\memory.h" />
-    <ClInclude Include="core\os\mutex.h" />
-    <ClInclude Include="core\os\condition_variable.h" />
-    <ClInclude Include="core\string\lstring.h" />
-    <ClInclude Include="core\string\char_utils.h" />
-    <ClInclude Include="core\templates\vector.h" />
-    <ClInclude Include="core\os\os.h" />
+    <ClInclude Include="server\render\camera.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\engine\engine.cpp">
       <Filter>core\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="core\error\error_macros.cpp">
+      <Filter>core\error</Filter>
     </ClCompile>
     <ClCompile Include="core\input\input.cpp">
       <Filter>core\input</Filter>
@@ -187,13 +211,20 @@
     <ClCompile Include="core\object\refcount.cpp">
       <Filter>core\object</Filter>
     </ClCompile>
+    <ClCompile Include="core\os\memory.cpp">
+      <Filter>core\os</Filter>
+    </ClCompile>
+    <ClCompile Include="core\os\mutex.cpp">
+      <Filter>core\os</Filter>
+    </ClCompile>
+    <ClCompile Include="core\string\lstring.cpp">
+      <Filter>core\string</Filter>
+    </ClCompile>
+    <ClCompile Include="core\templates\cowdata.cpp">
+      <Filter>core\templates</Filter>
+    </ClCompile>
     <ClCompile Include="server\display\input.cpp">
       <Filter>server\display</Filter>
     </ClCompile>
-    <ClCompile Include="core\templates\cowdata.cpp" />
-    <ClCompile Include="core\os\memory.cpp" />
-    <ClCompile Include="core\error\error_macros.cpp" />
-    <ClCompile Include="core\os\mutex.cpp" />
-    <ClCompile Include="core\string\lstring.cpp" />
   </ItemGroup>
 </Project>

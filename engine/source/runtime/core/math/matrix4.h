@@ -119,7 +119,11 @@ namespace lain
         }
 
         Matrix4x4() { operator=(IDENTITY); }
-
+        
+        Matrix4x4(float init) {
+            operator=(IDENTITY);
+            operator*(init)
+        }
         Matrix4x4(const float (&float_array)[16])
         {
             m_mat[0][0] = float_array[0];
