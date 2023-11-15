@@ -40,11 +40,26 @@
     <Filter Include="core\templates">
       <UniqueIdentifier>{CC76585A-B844-4C60-A1D8-BC868D4528C5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="server">
-      <UniqueIdentifier>{9C76841B-8818-AFF1-71D3-C2455D143642}</UniqueIdentifier>
+    <Filter Include="core\varint">
+      <UniqueIdentifier>{91978990-FD4C-0286-8641-FC5CF2F5F889}</UniqueIdentifier>
     </Filter>
-    <Filter Include="server\display">
-      <UniqueIdentifier>{21129326-0DE0-862C-F673-F752E2E06291}</UniqueIdentifier>
+    <Filter Include="function">
+      <UniqueIdentifier>{4B3824D4-3705-7FDF-601E-6D874C4AB46D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render">
+      <UniqueIdentifier>{E5CF2C19-D171-57EF-BA2C-6B43A66DDE3F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resource">
+      <UniqueIdentifier>{0D091A24-F9D5-742F-22EF-62D70E1BAABD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resource\common">
+      <UniqueIdentifier>{C5D9A3A3-3165-1168-3A76-945CA6806D68}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resource\component">
+      <UniqueIdentifier>{CF752EA3-BB59-EFF8-24BA-E94B10BDD97A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resource\manager">
+      <UniqueIdentifier>{579A48F9-4393-674B-6CC5-4CD0581D4757}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -133,6 +148,9 @@
     <ClInclude Include="core\os\os.h">
       <Filter>core\os</Filter>
     </ClInclude>
+    <ClInclude Include="core\os\pool_allocator.h">
+      <Filter>core\os</Filter>
+    </ClInclude>
     <ClInclude Include="core\string\char_utils.h">
       <Filter>core\string</Filter>
     </ClInclude>
@@ -145,21 +163,39 @@
     <ClInclude Include="core\templates\safe_refcount.h">
       <Filter>core\templates</Filter>
     </ClInclude>
+    <ClInclude Include="core\templates\sort_array.h">
+      <Filter>core\templates</Filter>
+    </ClInclude>
     <ClInclude Include="core\templates\vector.h">
       <Filter>core\templates</Filter>
     </ClInclude>
     <ClInclude Include="core\typedefs.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="render\input.h">
-      <Filter>server\display</Filter>
+    <ClInclude Include="core\varint\array.h">
+      <Filter>core\varint</Filter>
     </ClInclude>
-    <ClInclude Include="resource\component\camera.h" />
-    <ClInclude Include="resource\common\world.h" />
-    <ClInclude Include="core\varint\array.h" />
-    <ClInclude Include="resource\manager\resource_manager.h" />
-    <ClInclude Include="function\script.h" />
-    <ClInclude Include="core\os\pool_allocator.h" />
+    <ClInclude Include="function\script.h">
+      <Filter>function</Filter>
+    </ClInclude>
+    <ClInclude Include="render\input.h">
+      <Filter>render</Filter>
+    </ClInclude>
+    <ClInclude Include="resource\common\world.h">
+      <Filter>resource\common</Filter>
+    </ClInclude>
+    <ClInclude Include="resource\component\camera.h">
+      <Filter>resource\component</Filter>
+    </ClInclude>
+    <ClInclude Include="resource\component\camera_conf.h">
+      <Filter>resource\component</Filter>
+    </ClInclude>
+    <ClInclude Include="resource\component\mesh.h">
+      <Filter>resource\component</Filter>
+    </ClInclude>
+    <ClInclude Include="resource\manager\resource_manager.h">
+      <Filter>resource\manager</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\engine\engine.cpp">
@@ -222,15 +258,17 @@
     <ClCompile Include="core\os\mutex.cpp">
       <Filter>core\os</Filter>
     </ClCompile>
+    <ClCompile Include="core\os\pool_allocator.cpp">
+      <Filter>core\os</Filter>
+    </ClCompile>
     <ClCompile Include="core\string\lstring.cpp">
       <Filter>core\string</Filter>
     </ClCompile>
     <ClCompile Include="render\input.cpp">
-      <Filter>server\display</Filter>
+      <Filter>render</Filter>
     </ClCompile>
-    <ClCompile Include="resource\component\camera_conf.h" />
-    <ClCompile Include="resource\component\mesh.h" />
-    <ClCompile Include="core\templates\sort_array.h" />
-    <ClCompile Include="core\os\pool_allocator.cpp" />
+    <ClCompile Include="io\resource_load.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

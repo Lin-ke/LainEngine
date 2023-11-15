@@ -132,13 +132,16 @@
     <ClInclude Include="core\string\lstring.h" />
     <ClInclude Include="core\templates\cowdata.h" />
     <ClInclude Include="core\templates\safe_refcount.h" />
+    <ClInclude Include="core\templates\sort_array.h" />
     <ClInclude Include="core\templates\vector.h" />
     <ClInclude Include="core\typedefs.h" />
     <ClInclude Include="core\varint\array.h" />
-    <ClInclude Include="render\input.h" />
     <ClInclude Include="function\script.h" />
-    <ClInclude Include="resource\component\camera.h" />
+    <ClInclude Include="render\input.h" />
     <ClInclude Include="resource\common\world.h" />
+    <ClInclude Include="resource\component\camera.h" />
+    <ClInclude Include="resource\component\camera_conf.h" />
+    <ClInclude Include="resource\component\mesh.h" />
     <ClInclude Include="resource\manager\resource_manager.h" />
   </ItemGroup>
   <ItemGroup>
@@ -164,12 +167,10 @@
     <ClCompile Include="core\os\mutex.cpp" />
     <ClCompile Include="core\os\pool_allocator.cpp" />
     <ClCompile Include="core\string\lstring.cpp" />
-    <ClCompile Include="core\templates\sort_array.h" />
-    <ClCompile Include="resource\component\camera_conf.h" />
+    <ClCompile Include="io\resource_load.cpp" />
     <ClCompile Include="render\input.cpp">
       <ObjectFileName>$(IntDir)\input1.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="resource\component\mesh.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\thirdparty\spdlog\spdlog.vcxproj">

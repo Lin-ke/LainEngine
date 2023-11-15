@@ -1,5 +1,4 @@
 #include "common/precompiled.h"
-
 #include "generator/reflection_generator.h"
 
 #include "language_types/class.h"
@@ -10,6 +9,7 @@
 
 namespace Generator
 {
+
     ReflectionGenerator::ReflectionGenerator(std::string                             source_directory,
                                              std::function<std::string(std::string)> get_include_function) :
         GeneratorInterface(source_directory + "/_generated/reflection", source_directory, get_include_function)
@@ -33,6 +33,7 @@ namespace Generator
     int ReflectionGenerator::generate(std::string path, SchemaMoudle schema)
     {
         static const std::string vector_prefix = "std::vector<";
+        static const std::string Vec_prefix = "Vector<";
 
         std::string    file_path = processFileName(path);
 
@@ -47,6 +48,8 @@ namespace Generator
         // class defs
         for (auto class_temp : schema.classes)
         {
+            L_PRINT("class name:", class_temp->getClassName());
+            
             if (!class_temp->shouldCompile())
                 continue;
 
@@ -65,18 +68,22 @@ namespace Generator
                 if (!field->shouldCompile())
                     continue;
                 field_names.emplace_back(field->m_name);
+                L_PRINT(field->m_display_name, field->m_type);
                 bool is_array = field->m_type.find(vector_prefix) == 0;
-                if (is_array)
+                bool is_vec_array = field->m_type.find(Vec_prefix) == 0;
+                if (is_array || is_vec_array)
                 {
                     std::string array_useful_name = field->m_type;
 
                     Utils::formatQualifiedName(array_useful_name);
-
+                    
                     std::string item_type = field->m_type;
 
                     item_type = Utils::getNameWithoutContainer(item_type);
 
                     vector_map[field->m_type] = std::make_pair(array_useful_name, item_type);
+
+                    L_PRINT("ADD PAIR", array_useful_name, item_type);
                 }
             }
 
@@ -86,6 +93,8 @@ namespace Generator
                 {
                     class_def.set("vector_exist", true);
                 }
+                
+                
                 for (auto vector_item : vector_map)
                 {
                     std::string    array_useful_name = vector_item.second.first;
@@ -94,6 +103,7 @@ namespace Generator
                     vector_define.set("vector_useful_name", array_useful_name);
                     vector_define.set("vector_type_name", vector_item.first);
                     vector_define.set("vector_element_type_name", item_type);
+                    vector_define.set("vector_is_cow_vector", (array_useful_name.find("Vector") == 0));
                     vector_defines.push_back(vector_define);
                 }
             }

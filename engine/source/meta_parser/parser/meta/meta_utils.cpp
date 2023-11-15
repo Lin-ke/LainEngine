@@ -333,4 +333,8 @@ namespace Utils
         }
         return ret_string;
     }
+
+    bool beginsWith(const std::string& source_string, const std::string& sub_string){
+        return source_string.find(sub_string) == 0;
+    }
 } // namespace Utils

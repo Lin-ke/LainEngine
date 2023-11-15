@@ -44,6 +44,8 @@ namespace Generator
     void GeneratorInterface::genClassFieldRenderData(std::shared_ptr<Class> class_temp, Mustache::data& feild_defs)
     {
         static const std::string vector_prefix = "std::vector<";
+        static const std::string Vec_prefix = "Vector<";
+
 
         for (auto& field : class_temp->m_fields)
         {
@@ -54,8 +56,10 @@ namespace Generator
             filed_define.set("class_field_name", field->m_name);
             filed_define.set("class_field_type", field->m_type);
             filed_define.set("class_field_display_name", field->m_display_name);
-            bool is_vector = field->m_type.find(vector_prefix) == 0;
+            bool is_vector = (field->m_type.find(vector_prefix) == 0) || (field->m_type.find(Vec_prefix) == 0);
             filed_define.set("class_field_is_vector", is_vector);
+            bool is_cow_vector = (field->m_type.find(Vec_prefix) == 0);
+            filed_define.set("class_field_is_cow_vector", is_cow_vector);
             feild_defs.push_back(filed_define);
         }
     }

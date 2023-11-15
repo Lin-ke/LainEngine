@@ -57,12 +57,13 @@ namespace Generator
                     }
                 }
             }
+            
             for (auto field : class_temp->m_fields)
             {
                 if (!field->shouldCompile())
                     continue;
                 // deal vector
-                if (field->m_type.find("std::vector") == 0)
+                if ((field->m_type.find("std::vector") == 0)||(field->m_type.find("Vector<") == 0))
                 {
                     auto include_file = m_get_include_func(field->m_name);
                     if (!include_file.empty())

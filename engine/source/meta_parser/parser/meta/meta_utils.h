@@ -55,6 +55,7 @@ namespace Utils
 
     std::string convertNameToUpperCamelCase(const std::string& name, std::string pat);
 
+    inline bool beginsWith(const std::string& source_string, const std::string& sub_string);
 } // namespace Utils
 
 #include "meta_utils.hpp"

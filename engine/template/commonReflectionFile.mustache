@@ -58,11 +58,11 @@ namespace Reflection{
             }
             static void* get(int index,void* instance){
                 //todo: should check validation
-                return static_cast<void*>(&((*static_cast<{{{vector_type_name}}}*>(instance))[index]));
+                return static_cast<void*>(&((*static_cast<{{{vector_type_name}}}*>(instance)){{#vector_is_cow_vector}}.write{{/vector_is_cow_vector}}[index]));
             }
             static void set(int index, void* instance, void* element_value){
                 //todo: should check validation
-                (*static_cast<{{{vector_type_name}}}*>(instance))[index] = *static_cast<{{{vector_element_type_name}}}*>(element_value);
+                (*static_cast<{{{vector_type_name}}}*>(instance)){{#vector_is_cow_vector}}.write{{/vector_is_cow_vector}}[index] = *static_cast<{{{vector_element_type_name}}}*>(element_value);
             }
     };
 #endif //Array{{vector_useful_name}}Operator
@@ -111,4 +111,4 @@ namespace TypeWrappersRegister{
 }//namespace TypeWrappersRegister
 
 }//namespace Reflection
-}//namespace Piccolo
+}//namespace lain

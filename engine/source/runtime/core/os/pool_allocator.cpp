@@ -14,16 +14,17 @@
 	} while (0);
 
 void PoolAllocator::mt_lock() const {
+	//_global_lock();
 }
 
 void PoolAllocator::mt_unlock() const {
+	//_global_unlock();
 }
 
 bool PoolAllocator::get_free_entry(EntryArrayPos* p_pos) {
 	if (entry_count == entry_max) {
 		return false;
 	}
-
 	for (int i = 0; i < entry_max; i++) {
 		if (entry_array[i].len == 0) {
 			*p_pos = i;

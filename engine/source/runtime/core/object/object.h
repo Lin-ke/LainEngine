@@ -1,5 +1,9 @@
 //#pragma once
 //
+//#include "runtime/function/framework/component/component.h"
+//#include "runtime/function/framework/object/object_id_allocator.h"
+//
+//#include "runtime/resource/res_type/common/object.h"
 //#include <memory>
 //#include <string>
 //#include <unordered_set>

@@ -19,10 +19,12 @@ namespace lain
         Test1 test1_out;
         // test on array
         Test2 test2_in;
+        Test3 test3_in; // test my array.
+
         test2_in.m_test_base_array.emplace_back("Test1", &test1_in);
+
         Test1 Test2_temp;
         test2_in.m_test_base_array.emplace_back("Test1", &Test2_temp);
-
         // serializer & deserializer
 
         // write Test1_in (object) to Test1_json_in (json)
@@ -35,7 +37,28 @@ namespace lain
 
         auto&& Test1_json = Json::parse(test1_context, err);
         Serializer::read(Test1_json, test1_out);
-        //L_CORE_INFO(test1_context);
+        Vector<Vector<int>> t11;
+        auto t12 = Vector<int>{ 1,2,3 };
+        
+        t11.push_back(t12);
+        t11.push_back(t12);
+        t11.push_back(t12);
+        //t11.resize(3);
+        //t11.set(0, t12);
+        //t11.set(1, t12);
+        //t11.set(2, t12);
+
+        std::cout << refcount(t12) << std::endl;
+        
+        //test3_in.m_test_base_array.resize(3);
+        //test3_in.m_test_base_array.set(0, t2);
+        //test3_in.m_test_base_array.set(1, t2);
+        //test3_in.m_test_base_array.set(2, t2);
+        // push_back push的是值，所以会先调用拷贝构造const&函数导致一次引用计数，随后因为临时变量析构消失。
+        // 这样导致原先的引用计数为1，但是大家都指向了那一块内存。
+
+        // 但是 push_back应该是正确的
+     
 
         auto        Test2_json_in = Serializer::write(test2_in);
         std::string test2_context = Test2_json_in.dump();

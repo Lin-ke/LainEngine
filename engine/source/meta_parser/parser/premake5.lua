@@ -14,6 +14,7 @@ project "Parser"
       -- use lower
       includedirs
       {
+
          "%{prj.location}",
          "%{IncludeDir.llvm}",
          "%{IncludeDir.mustache}",

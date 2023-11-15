@@ -1,8 +1,10 @@
 
 #include "mutex.h"
-
+/// <summary>
+/// allows to lock and unlock more than one times.
+/// </summary>
 static Mutex _global_mutex;
-// È«¾ÖËø
+
 
 void _global_lock() {
 	_global_mutex.lock();

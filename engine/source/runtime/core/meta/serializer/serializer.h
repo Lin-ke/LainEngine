@@ -1,9 +1,10 @@
 #pragma once
 #include "runtime/core/meta/json.h"
 #include "runtime/core/meta/reflection/reflection.h"
-
+#include <vector>
+#include "runtime/core/templates/vector.h"
 #include <cassert>
-
+#include <string>
 namespace lain
 {
     template<typename...>
@@ -57,7 +58,6 @@ namespace lain
         template<typename T>
         static Json write(const T& instance)
         {
-
             if constexpr (std::is_pointer<T>::value)
             {
                 return writePointer((T)instance);
@@ -82,6 +82,57 @@ namespace lain
                 return instance;
             }
         }
+
+        template<typename T>
+        static Json write(const lain::Vector<T>& instance) {
+            Json::array array_json;
+            for (int i = 0; i < instance.size();i++) {
+                array_json.emplace_back(write(instance[i]));
+            }
+            return array_json;
+        }
+        template<typename T>
+        static Vector<T>& read(const Json& json_context, lain::Vector<T>& instance) {
+            if (!json_context.is_array()) {
+                return instance;
+            }
+            Json::array json_array = json_context.array_items();
+            instance.resize(json_array.size());
+            for (int i = 0; i < json_array.size(); i++) {
+                T newT;
+                Serializer::read(json_array[i], instance.write[i]);
+                instance.set(i,newT); // 这里交给了T的=实现。
+			}
+
+            return instance;
+        }
+
+        template<typename ELEM>
+        static Json write(const std::vector<ELEM>& cont)
+        {
+            Json::array v;
+            for (auto&& element : cont)
+            {
+                v.emplace_back(Serializer::write(element));
+            }
+            return v;
+        }
+        template<typename T>
+        static std::vector<T>& read(const Json& json_context, std::vector<T>& instance)
+        {
+            if (!json_context.is_array()) {
+                return instance;
+            }
+            Json::array json_array = json_context.array_items();
+            instance.resize(json_array.size());
+            for (int i = 0; i < json_array.size(); i++) {
+                Serializer::read(json_array[i], instance[i]);
+            }
+
+            return instance;
+        }
+        
+
     };
 
     // implementation of base types
@@ -119,6 +170,9 @@ namespace lain
     Json Serializer::write(const std::string& instance);
     template<>
     std::string& Serializer::read(const Json& json_context, std::string& instance);
+    // vector
+    
+   
 
     // template<>
     // Json Serializer::write(const Reflection::object& instance);
