@@ -128,15 +128,19 @@
     <ClInclude Include="core\os\mutex.h" />
     <ClInclude Include="core\os\os.h" />
     <ClInclude Include="core\os\pool_allocator.h" />
+    <ClInclude Include="core\os\thread_safe.h" />
     <ClInclude Include="core\string\char_utils.h" />
     <ClInclude Include="core\string\lstring.h" />
     <ClInclude Include="core\templates\cowdata.h" />
     <ClInclude Include="core\templates\safe_refcount.h" />
+    <ClInclude Include="core\templates\singleton.h" />
     <ClInclude Include="core\templates\sort_array.h" />
     <ClInclude Include="core\templates\vector.h" />
     <ClInclude Include="core\typedefs.h" />
     <ClInclude Include="core\varint\array.h" />
     <ClInclude Include="function\script.h" />
+    <ClInclude Include="io\resource.h" />
+    <ClInclude Include="io\resource_load.h" />
     <ClInclude Include="render\input.h" />
     <ClInclude Include="resource\common\world.h" />
     <ClInclude Include="resource\component\camera.h" />
@@ -165,6 +169,7 @@
     <ClCompile Include="core\object\refcount.cpp" />
     <ClCompile Include="core\os\memory.cpp" />
     <ClCompile Include="core\os\mutex.cpp" />
+    <ClCompile Include="core\os\os.cpp" />
     <ClCompile Include="core\os\pool_allocator.cpp" />
     <ClCompile Include="core\string\lstring.cpp" />
     <ClCompile Include="io\resource_load.cpp" />

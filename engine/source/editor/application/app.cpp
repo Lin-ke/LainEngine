@@ -12,11 +12,18 @@
 #include <core/templates/vector.h>
 #include <core/templates/safe_refcount.h>
 #include <core/meta/meta_example.h>
+#include <core/os/os.h>
 using lain::Vector;
+void another_phy() {
+	L_PRINT("os_ptr", os);
+
+}
 int YminusA(int a, lain::Vector2& obj);
 void TryERR_FAIL_INDEX();
 int main(int argc, char** argv) {
-	lain::Log::Init();
+	L_PRINT("os_ptr", os2);
+
+	L_PRINT("os_ptr", os);
 	L_CORE_ERROR("Hello! Var={0}", 5);
 	L_INFO("Hello! Var={0}", 5);
 	L_PRINT(Memory::get_mem_usage());
@@ -31,6 +38,7 @@ int main(int argc, char** argv) {
 	L_PRINT(p_ref.getTypeName());
 	
 }
+
 
 void TryERR_FAIL_INDEX() {
 	ERR_FAIL_INDEX(-1, 3);

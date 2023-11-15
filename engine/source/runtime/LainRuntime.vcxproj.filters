@@ -46,6 +46,9 @@
     <Filter Include="function">
       <UniqueIdentifier>{4B3824D4-3705-7FDF-601E-6D874C4AB46D}</UniqueIdentifier>
     </Filter>
+    <Filter Include="io">
+      <UniqueIdentifier>{3D785900-2904-880B-92B2-880B7E5D880B}</UniqueIdentifier>
+    </Filter>
     <Filter Include="render">
       <UniqueIdentifier>{E5CF2C19-D171-57EF-BA2C-6B43A66DDE3F}</UniqueIdentifier>
     </Filter>
@@ -151,6 +154,9 @@
     <ClInclude Include="core\os\pool_allocator.h">
       <Filter>core\os</Filter>
     </ClInclude>
+    <ClInclude Include="core\os\thread_safe.h">
+      <Filter>core\os</Filter>
+    </ClInclude>
     <ClInclude Include="core\string\char_utils.h">
       <Filter>core\string</Filter>
     </ClInclude>
@@ -161,6 +167,9 @@
       <Filter>core\templates</Filter>
     </ClInclude>
     <ClInclude Include="core\templates\safe_refcount.h">
+      <Filter>core\templates</Filter>
+    </ClInclude>
+    <ClInclude Include="core\templates\singleton.h">
       <Filter>core\templates</Filter>
     </ClInclude>
     <ClInclude Include="core\templates\sort_array.h">
@@ -177,6 +186,12 @@
     </ClInclude>
     <ClInclude Include="function\script.h">
       <Filter>function</Filter>
+    </ClInclude>
+    <ClInclude Include="io\resource.h">
+      <Filter>io</Filter>
+    </ClInclude>
+    <ClInclude Include="io\resource_load.h">
+      <Filter>io</Filter>
     </ClInclude>
     <ClInclude Include="render\input.h">
       <Filter>render</Filter>
@@ -258,17 +273,20 @@
     <ClCompile Include="core\os\mutex.cpp">
       <Filter>core\os</Filter>
     </ClCompile>
+    <ClCompile Include="core\os\os.cpp">
+      <Filter>core\os</Filter>
+    </ClCompile>
     <ClCompile Include="core\os\pool_allocator.cpp">
       <Filter>core\os</Filter>
     </ClCompile>
     <ClCompile Include="core\string\lstring.cpp">
       <Filter>core\string</Filter>
     </ClCompile>
+    <ClCompile Include="io\resource_load.cpp">
+      <Filter>io</Filter>
+    </ClCompile>
     <ClCompile Include="render\input.cpp">
       <Filter>render</Filter>
-    </ClCompile>
-    <ClCompile Include="io\resource_load.cpp">
-      <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
