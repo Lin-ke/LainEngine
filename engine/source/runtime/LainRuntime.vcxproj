@@ -104,6 +104,7 @@
     <ClInclude Include="core\error\error_macros.h" />
     <ClInclude Include="core\input\input.h" />
     <ClInclude Include="core\log\log.h" />
+    <ClInclude Include="core\mainloop\main.h" />
     <ClInclude Include="core\math\axis_aligned.h" />
     <ClInclude Include="core\math\math.h" />
     <ClInclude Include="core\math\math_headers.h" />
@@ -138,6 +139,7 @@
     <ClInclude Include="core\templates\vector.h" />
     <ClInclude Include="core\typedefs.h" />
     <ClInclude Include="core\varint\array.h" />
+    <ClInclude Include="function\display\displayer.h" />
     <ClInclude Include="function\script.h" />
     <ClInclude Include="io\resource.h" />
     <ClInclude Include="io\resource_load.h" />

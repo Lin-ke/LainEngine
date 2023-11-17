@@ -211,6 +211,8 @@
     <ClInclude Include="resource\manager\resource_manager.h">
       <Filter>resource\manager</Filter>
     </ClInclude>
+    <ClInclude Include="core\mainloop\main.h" />
+    <ClInclude Include="function\display\displayer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\engine\engine.cpp">
