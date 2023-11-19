@@ -134,6 +134,8 @@
     <ClInclude Include="core\string\char_utils.h" />
     <ClInclude Include="core\string\lstring.h" />
     <ClInclude Include="core\templates\cowdata.h" />
+    <ClInclude Include="core\templates\pair.h" />
+    <ClInclude Include="core\templates\rb_map.h" />
     <ClInclude Include="core\templates\safe_refcount.h" />
     <ClInclude Include="core\templates\singleton.h" />
     <ClInclude Include="core\templates\sort_array.h" />
@@ -141,7 +143,6 @@
     <ClInclude Include="core\typedefs.h" />
     <ClInclude Include="core\varint\array.h" />
     <ClInclude Include="function\display\display_event.h" />
-    <ClInclude Include="function\display\displayer.h" />
     <ClInclude Include="function\display\window.h" />
     <ClInclude Include="function\display\window_system.h" />
     <ClInclude Include="function\script.h" />
@@ -179,7 +180,6 @@
     <ClCompile Include="core\os\os.cpp" />
     <ClCompile Include="core\os\pool_allocator.cpp" />
     <ClCompile Include="core\string\lstring.cpp" />
-    <ClCompile Include="function\display\displayer.cpp" />
     <ClCompile Include="function\display\window_system.cpp" />
     <ClCompile Include="io\resource_load.cpp" />
     <ClCompile Include="render\input.cpp">

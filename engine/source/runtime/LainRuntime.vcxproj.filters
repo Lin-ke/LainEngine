@@ -178,6 +178,12 @@
     <ClInclude Include="core\templates\cowdata.h">
       <Filter>core\templates</Filter>
     </ClInclude>
+    <ClInclude Include="core\templates\pair.h">
+      <Filter>core\templates</Filter>
+    </ClInclude>
+    <ClInclude Include="core\templates\rb_map.h">
+      <Filter>core\templates</Filter>
+    </ClInclude>
     <ClInclude Include="core\templates\safe_refcount.h">
       <Filter>core\templates</Filter>
     </ClInclude>
@@ -197,9 +203,6 @@
       <Filter>core\varint</Filter>
     </ClInclude>
     <ClInclude Include="function\display\display_event.h">
-      <Filter>function\display</Filter>
-    </ClInclude>
-    <ClInclude Include="function\display\displayer.h">
       <Filter>function\display</Filter>
     </ClInclude>
     <ClInclude Include="function\display\window.h">
@@ -308,9 +311,6 @@
     </ClCompile>
     <ClCompile Include="core\string\lstring.cpp">
       <Filter>core\string</Filter>
-    </ClCompile>
-    <ClCompile Include="function\display\displayer.cpp">
-      <Filter>function\display</Filter>
     </ClCompile>
     <ClCompile Include="function\display\window_system.cpp">
       <Filter>function\display</Filter>
