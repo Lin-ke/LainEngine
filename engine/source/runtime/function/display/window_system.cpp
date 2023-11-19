@@ -3,7 +3,7 @@
 
 namespace lain {
     WindowSystem* WindowSystem::p_singleton = nullptr;
-    int WindowSystem::m_windowid = 0;
+    int WindowSystem::m_windowid = WindowSystem::MAIN_WINDOW_ID;
 
     WindowSystem::~WindowSystem()
     {
@@ -51,10 +51,11 @@ namespace lain {
 
     int WindowSystem::NewWindow(WindowCreateInfo create_info) {
         GLFWwindow* window = glfwCreateWindow(create_info.width, create_info.height, create_info.title, nullptr, nullptr);
-        // bind call_backs
         // add
         if (!window) {
             L_ERROR(__FUNCTION__, "create window error, check glfw");
+            glfwTerminate();
+            return;
         }
 
         int id = WindowSystem::m_windowid;
@@ -64,11 +65,17 @@ namespace lain {
             wd.p_window = window;
             wd.height = create_info.height;
             wd.width = create_info.width;
+            // initialization
         }
+        // update UserPointer
+        for (auto iter = m_windows.begin(); iter != m_windows.end(); ++iter) {
+            glfwSetWindowUserPointer(iter->value.p_window, &iter->value);
+        }
+
         
         return id;
     }
-    template<typename T>
+    
 
 
 

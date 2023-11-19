@@ -17,7 +17,7 @@ namespace lain
     {
         int         width{ 1280 };
         int         height{ 720 };
-        const char* title{ "Piccolo" };
+        const char* title{ "Window" };
         bool        is_fullscreen{ false };
     };
 
@@ -51,28 +51,64 @@ namespace lain
         typedef std::function<void(int, int)>           onWindowSizeFunc;
         typedef std::function<void()>                   onWindowCloseFunc;
 
-        void registerOnResetFunc(onResetFunc func) { m_onResetFunc.push_back(func); }
-        void registerOnKeyFunc(onKeyFunc func) { m_onKeyFunc.push_back(func); }
-        void registerOnCharFunc(onCharFunc func) { m_onCharFunc.push_back(func); }
-        void registerOnCharModsFunc(onCharModsFunc func) { m_onCharModsFunc.push_back(func); }
-        void registerOnMouseButtonFunc(onMouseButtonFunc func) { m_onMouseButtonFunc.push_back(func); }
-        void registerOnCursorPosFunc(onCursorPosFunc func) { m_onCursorPosFunc.push_back(func); }
-        void registerOnCursorEnterFunc(onCursorEnterFunc func) { m_onCursorEnterFunc.push_back(func); }
-        void registerOnScrollFunc(onScrollFunc func) { m_onScrollFunc.push_back(func); }
-        void registerOnDropFunc(onDropFunc func) { m_onDropFunc.push_back(func); }
-        void registerOnWindowSizeFunc(onWindowSizeFunc func) { m_onWindowSizeFunc.push_back(func); }
-        void registerOnWindowCloseFunc(onWindowCloseFunc func) { m_onWindowCloseFunc.push_back(func); }
+        void registerOnResetFunc(onResetFunc func, int wid) {
+            ERR_FAIL_COND(!m_windows.has(wid));
+            m_windows[wid].m_onResetFunc.push_back(func);
+        }
+        void registerOnKeyFunc(onKeyFunc func, int wid) {
+            ERR_FAIL_COND(!m_windows.has(wid));
+            m_windows[wid].m_onKeyFunc.push_back(func);
+        }
+        void registerOnCharFunc(onCharFunc func, int wid) {
+            ERR_FAIL_COND(!m_windows.has(wid));
+            m_windows[wid].m_onCharFunc.push_back(func);
+        }
+        void registerOnCharModsFunc(onCharModsFunc func, int wid) {
+            ERR_FAIL_COND(!m_windows.has(wid));
+            m_windows[wid].m_onCharModsFunc.push_back(func);
+        }
+        void registerOnMouseButtonFunc(onMouseButtonFunc func, int wid) {
+            ERR_FAIL_COND(!m_windows.has(wid));
+            m_windows[wid].m_onMouseButtonFunc.push_back(func);
+        }
+        void registerOnCursorPosFunc(onCursorPosFunc func, int wid) {
+            ERR_FAIL_COND(!m_windows.has(wid));
+            m_windows[wid].m_onCursorPosFunc.push_back(func);
+        }
+        void registerOnCursorEnterFunc(onCursorEnterFunc func, int wid) {
+            ERR_FAIL_COND(!m_windows.has(wid));
+            m_windows[wid].m_onCursorEnterFunc.push_back(func);
+        }
+        void registerOnScrollFunc(onScrollFunc func, int wid) {
+            ERR_FAIL_COND(!m_windows.has(wid));
+            m_windows[wid].m_onScrollFunc.push_back(func);
+        }
+        void registerOnDropFunc(onDropFunc func, int wid) {
+            ERR_FAIL_COND(!m_windows.has(wid));
+            m_windows[wid].m_onDropFunc.push_back(func);
+        }
+        void registerOnWindowSizeFunc(onWindowSizeFunc func, int wid) {
+            ERR_FAIL_COND(!m_windows.has(wid));
+            m_windows[wid].m_onWindowSizeFunc.push_back(func);
+        }
+        void registerOnWindowCloseFunc(onWindowCloseFunc func, int wid) {
+            ERR_FAIL_COND(!m_windows.has(wid));
+            m_windows[wid].m_onWindowCloseFunc.push_back(func);
+        }
         int NewWindow(WindowCreateInfo create_info);
 
-        bool isMouseButtonDown(int button) const
+        bool isMouseButtonDown(int button, int wid = MAIN_WINDOW_ID) const
         {
+            ERR_FAIL_COND(!m_windows.has(wid));
             if (button < GLFW_MOUSE_BUTTON_1 || button > GLFW_MOUSE_BUTTON_LAST)
             {
                 return false;
             }
-            return glfwGetMouseButton(m_window, button) == GLFW_PRESS;
+            return glfwGetMouseButton(m_windows[wid].p_window, button) == GLFW_PRESS;
         }
-        bool getFocusMode() const { return m_is_focus_mode; }
+        bool getFocusMode(int wid) const {  ERR_FAIL_COND(!m_windows.has(wid));
+        return m_windows[wid].m_is_focus_mode;
+        }
         void setFocusMode(bool mode);
 
         WindowID GetWindowAtPos(const Point2& point) const;
@@ -81,147 +117,93 @@ namespace lain
         // window event callbacks
         static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
         {
-            WindowSystem* app = (WindowSystem*)glfwGetWindowUserPointer(window);
+            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
-            {
-                app->onKey(key, scancode, action, mods);
+            {   
+                for (auto& func : app->m_onKeyFunc) {
+                    func(key, scancode, action, mods);
+                }
+               
             }
         }
         static void charCallback(GLFWwindow* window, unsigned int codepoint)
         {
-            WindowSystem* app = (WindowSystem*)glfwGetWindowUserPointer(window);
+            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                app->onChar(codepoint);
+                for(auto& func: app->m_onCharFunc){func(codepoint);}
             }
         }
         static void charModsCallback(GLFWwindow* window, unsigned int codepoint, int mods)
         {
-            WindowSystem* app = (WindowSystem*)glfwGetWindowUserPointer(window);
+            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                app->onCharMods(codepoint, mods);
+                for(auto& func: app->m_onCharModsFunc){func(codepoint, mods);}
             }
         }
         static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
         {
-            WindowSystem* app = (WindowSystem*)glfwGetWindowUserPointer(window);
+            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                app->onMouseButton(button, action, mods);
+                for(auto& func: app->m_onMouseButtonFunc){func(button, action, mods);}
             }
         }
         static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
         {
-            WindowSystem* app = (WindowSystem*)glfwGetWindowUserPointer(window);
+            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                app->onCursorPos(xpos, ypos);
+                for(auto& func: app->m_onCursorPosFunc){func(xpos, ypos);}
             }
         }
         static void cursorEnterCallback(GLFWwindow* window, int entered)
         {
-            WindowSystem* app = (WindowSystem*)glfwGetWindowUserPointer(window);
+            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                app->onCursorEnter(entered);
+                for(auto& func: app->m_onCursorEnterFunc){func(entered);}
             }
         }
         static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
         {
-            WindowSystem* app = (WindowSystem*)glfwGetWindowUserPointer(window);
+            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                app->onScroll(xoffset, yoffset);
+                for(auto& func: app->m_onScrollFunc){func(xoffset, yoffset);}
             }
         }
         static void dropCallback(GLFWwindow* window, int count, const char** paths)
         {
-            WindowSystem* app = (WindowSystem*)glfwGetWindowUserPointer(window);
+            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                app->onDrop(count, paths);
+                for(auto& func: app->m_onDropFunc){func(count, paths);}
             }
         }
         static void windowSizeCallback(GLFWwindow* window, int width, int height)
         {
-            WindowSystem* app = (WindowSystem*)glfwGetWindowUserPointer(window);
+            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                app->m_width = width;
-                app->m_height = height;
+                app->width = width;
+                app->height = height;
             }
         }
         static void windowCloseCallback(GLFWwindow* window) { glfwSetWindowShouldClose(window, true); }
 
-        void onReset()
-        {
-            for (auto& func : m_onResetFunc)
-                func();
-        }
-        void onKey(int key, int scancode, int action, int mods)
-        {
-            for (auto& func : m_onKeyFunc)
-                func(key, scancode, action, mods);
-        }
-        void onChar(unsigned int codepoint)
-        {
-            for (auto& func : m_onCharFunc)
-                func(codepoint);
-        }
-        void onCharMods(int codepoint, unsigned int mods)
-        {
-            for (auto& func : m_onCharModsFunc)
-                func(codepoint, mods);
-        }
-        void onMouseButton(int button, int action, int mods)
-        {
-            for (auto& func : m_onMouseButtonFunc)
-                func(button, action, mods);
-        }
-        void onCursorPos(double xpos, double ypos)
-        {
-            for (auto& func : m_onCursorPosFunc)
-                func(xpos, ypos);
-        }
-        void onCursorEnter(int entered)
-        {
-            for (auto& func : m_onCursorEnterFunc)
-                func(entered);
-        }
-        void onScroll(double xoffset, double yoffset)
-        {
-            for (auto& func : m_onScrollFunc)
-                func(xoffset, yoffset);
-        }
-        void onDrop(int count, const char** paths)
-        {
-            for (auto& func : m_onDropFunc)
-                func(count, paths);
-        }
-        void onWindowSize(int width, int height)
-        {
-            for (auto& func : m_onWindowSizeFunc)
-                func(width, height);
-        }
         Vector<int> get_window_list() const;
         
     private:
         RBMap<int, WindowData> m_windows;
         static WindowSystem* p_singleton;
-        static int m_windowid;
-        Vector<onResetFunc>       m_onResetFunc;
-        Vector<onKeyFunc>         m_onKeyFunc;
-        Vector<onCharFunc>        m_onCharFunc;
-        Vector<onCharModsFunc>    m_onCharModsFunc;
-        Vector<onMouseButtonFunc> m_onMouseButtonFunc;
-        Vector<onCursorPosFunc>   m_onCursorPosFunc;
-        Vector<onCursorEnterFunc> m_onCursorEnterFunc;
-        Vector<onScrollFunc>      m_onScrollFunc;
-        Vector<onDropFunc>        m_onDropFunc;
-        Vector<onWindowSizeFunc>  m_onWindowSizeFunc;
-        Vector<onWindowCloseFunc> m_onWindowCloseFunc;
+        static int m_windowid; // windows_counter
 
+        enum {
+            MAIN_WINDOW_ID = 0,
+            INVALID_WINDOW_ID = -1
+        };
 
 
     };
@@ -243,6 +225,7 @@ namespace lain
         bool exclusive = false;
         bool context_created = false;
         bool mpass = false;
+        bool m_is_focus_mode = true;
 
         // Used to transfer data between events using timer.
         WPARAM saved_wparam;
@@ -280,18 +263,19 @@ namespace lain
         bool ime_suppress_next_keyup = false;
 
         bool layered_window = false;
-
-        WindowSystem::onResetFunc       m_onResetFunc;
-        WindowSystem::onKeyFunc        m_onKeyFunc;
-        WindowSystem::onCharFunc        m_onCharFunc;
-        WindowSystem::onCharModsFunc    m_onCharModsFunc;
-        WindowSystem::onMouseButtonFunc m_onMouseButtonFunc;
-        WindowSystem::onCursorPosFunc   m_onCursorPosFunc;
-        WindowSystem::onCursorEnterFunc m_onCursorEnterFunc;
-        WindowSystem::onScrollFunc      m_onScrollFunc;
-        WindowSystem::onDropFunc        m_onDropFunc;
-        WindowSystem::onWindowSizeFunc  m_onWindowSizeFunc;
-        WindowSystem::onWindowCloseFunc m_onWindowCloseFunc;
+        // 把这里变成vector的可以降低耦合
+        // 这样不同的函数可以承担不同的任务
+        Vector<WindowSystem::onResetFunc>       m_onResetFunc;
+        Vector < WindowSystem::onKeyFunc>        m_onKeyFunc;
+        Vector < WindowSystem::onCharFunc>     m_onCharFunc;
+        Vector < WindowSystem::onCharModsFunc >   m_onCharModsFunc;
+        Vector < WindowSystem::onMouseButtonFunc >m_onMouseButtonFunc;
+        Vector < WindowSystem::onCursorPosFunc >  m_onCursorPosFunc;
+        Vector < WindowSystem::onCursorEnterFunc> m_onCursorEnterFunc;
+        Vector < WindowSystem::onScrollFunc  >    m_onScrollFunc;
+        Vector < WindowSystem::onDropFunc   >     m_onDropFunc;
+        Vector < WindowSystem::onWindowSizeFunc>  m_onWindowSizeFunc;
+        Vector < WindowSystem::onWindowCloseFunc> m_onWindowCloseFunc;
 
         //WindowID transient_parent = INVALID_WINDOW_ID;
         //HashSet<WindowID> transient_children;
@@ -301,13 +285,8 @@ namespace lain
     };
     
 
-    enum {
-        MAIN_WINDOW_ID = 0,
-        INVALID_WINDOW_ID = -1
-    };
+    
 
-    template <typename T>
-    void _bind_callback(string name, T function);
 } // namespace lain
 
 #endif
