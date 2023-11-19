@@ -10,8 +10,6 @@ namespace lain {
 	template <class T>
 	class Vector;
 
-	typedef uint32_t u32;
-
 	template <class T>
 	class CowData {
 		template<class TV>

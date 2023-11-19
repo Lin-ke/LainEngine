@@ -2,57 +2,29 @@
 #ifndef _ENGINE_H_
 
 #define _ENGINE_H_// !_ENGINE_H_
-
+#include "base.h"
 #include <atomic>
 #include <chrono>
 #include <filesystem>
 #include <string>
 #include <unordered_set>
 
-namespace lain
-{
-    extern bool                            g_is_editor_mode;
-    extern std::unordered_set<std::string> g_editor_tick_component_types;
+class Engine {
+public:
 
-    class Engine
-    {
-        friend class PiccoloEditor;
+	static Engine* singleton;
+	u64 m_frame_ticks = 0;
+	u64 m_frame_fps = 0;
+	double m_fps = 1;
 
-        static const float s_fps_alpha;
 
-    public:
-        void startEngine(const std::string& config_file_path);
-        void shutdownEngine();
+	Engine::Engine() {
+		singleton = this;
+	}
+	L_INLINE static Engine* Engine::GetSingleton() {
+		return singleton;
+	}
 
-        void initialize();
-        void clear();
 
-        bool isQuit() const { return m_is_quit; }
-        void run();
-        bool tickOneFrame(float delta_time);
-
-        int getFPS() const { return m_fps; }
-
-    protected:
-        void logicalTick(float delta_time);
-        bool rendererTick(float delta_time);
-
-        void calculateFPS(float delta_time);
-
-        /**
-         *  Each frame can only be called once
-         */
-        float calculateDeltaTime();
-
-    protected:
-        bool m_is_quit{ false };
-
-        std::chrono::steady_clock::time_point m_last_tick_time_point{ std::chrono::steady_clock::now() };
-
-        float m_average_duration{ 0.f };
-        int   m_frame_count{ 0 };
-        int   m_fps{ 0 };
-    };
-
-} // namespace Piccolo
+};
 #endif

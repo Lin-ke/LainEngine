@@ -1,8 +1,16 @@
 #pragma once
+#ifndef __MAIN_H__
+#define __MAIN_H__
+#include "base.h"
 class Main {
-public:
-	static bool loop() {
-		return true; // go on loop;
+	// static
+	static uint64_t last_ticks;
+	static uint32_t frames;
+	static int iterating;
 
-	}
+public:
+	static bool Loop();
+	static void Init();
+	L_INLINE bool IsInloop() { return (iterating > 0); }
 };
+#endif

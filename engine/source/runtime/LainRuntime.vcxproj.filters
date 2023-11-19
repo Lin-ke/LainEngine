@@ -16,6 +16,9 @@
     <Filter Include="core\log">
       <UniqueIdentifier>{3F57D44A-2B24-2F56-543D-1DFE406964E4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="core\mainloop">
+      <UniqueIdentifier>{7C315876-E8F1-D3AC-B12C-1D2A1DAC1889}</UniqueIdentifier>
+    </Filter>
     <Filter Include="core\math">
       <UniqueIdentifier>{07925FA5-73FC-131C-BC3A-C5C128E4F170}</UniqueIdentifier>
     </Filter>
@@ -45,6 +48,9 @@
     </Filter>
     <Filter Include="function">
       <UniqueIdentifier>{4B3824D4-3705-7FDF-601E-6D874C4AB46D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="function\display">
+      <UniqueIdentifier>{D0127580-BC0B-94D2-E53D-7957D19573DE}</UniqueIdentifier>
     </Filter>
     <Filter Include="io">
       <UniqueIdentifier>{3D785900-2904-880B-92B2-880B7E5D880B}</UniqueIdentifier>
@@ -76,11 +82,17 @@
     <ClInclude Include="core\error\error_macros.h">
       <Filter>core\error</Filter>
     </ClInclude>
-    <ClInclude Include="core\input\input.h">
+    <ClInclude Include="core\input\key_input.h">
+      <Filter>core\input</Filter>
+    </ClInclude>
+    <ClInclude Include="core\input\mouse_input.h">
       <Filter>core\input</Filter>
     </ClInclude>
     <ClInclude Include="core\log\log.h">
       <Filter>core\log</Filter>
+    </ClInclude>
+    <ClInclude Include="core\mainloop\main.h">
+      <Filter>core\mainloop</Filter>
     </ClInclude>
     <ClInclude Include="core\math\axis_aligned.h">
       <Filter>core\math</Filter>
@@ -184,6 +196,18 @@
     <ClInclude Include="core\varint\array.h">
       <Filter>core\varint</Filter>
     </ClInclude>
+    <ClInclude Include="function\display\display_event.h">
+      <Filter>function\display</Filter>
+    </ClInclude>
+    <ClInclude Include="function\display\displayer.h">
+      <Filter>function\display</Filter>
+    </ClInclude>
+    <ClInclude Include="function\display\window.h">
+      <Filter>function\display</Filter>
+    </ClInclude>
+    <ClInclude Include="function\display\window_system.h">
+      <Filter>function\display</Filter>
+    </ClInclude>
     <ClInclude Include="function\script.h">
       <Filter>function</Filter>
     </ClInclude>
@@ -211,8 +235,6 @@
     <ClInclude Include="resource\manager\resource_manager.h">
       <Filter>resource\manager</Filter>
     </ClInclude>
-    <ClInclude Include="core\mainloop\main.h" />
-    <ClInclude Include="function\display\displayer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\engine\engine.cpp">
@@ -226,6 +248,9 @@
     </ClCompile>
     <ClCompile Include="core\log\log.cpp">
       <Filter>core\log</Filter>
+    </ClCompile>
+    <ClCompile Include="core\mainloop\main.cpp">
+      <Filter>core\mainloop</Filter>
     </ClCompile>
     <ClCompile Include="core\math\axis_aligned.cpp">
       <Filter>core\math</Filter>
@@ -283,6 +308,12 @@
     </ClCompile>
     <ClCompile Include="core\string\lstring.cpp">
       <Filter>core\string</Filter>
+    </ClCompile>
+    <ClCompile Include="function\display\displayer.cpp">
+      <Filter>function\display</Filter>
+    </ClCompile>
+    <ClCompile Include="function\display\window_system.cpp">
+      <Filter>function\display</Filter>
     </ClCompile>
     <ClCompile Include="io\resource_load.cpp">
       <Filter>io</Filter>

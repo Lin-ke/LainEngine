@@ -19,7 +19,9 @@ project "LainRuntime"
    
           "%{IncludeDir.spdlog}",
           "%{IncludeDir.glfw}",
-          "%{IncludeDir.json11}"
+          "%{IncludeDir.json11}",
+         "%{IncludeDir.VulkanSDK}"
+
       }
       -- the links aligns with the project names in premakes.lua
       links
@@ -28,6 +30,7 @@ project "LainRuntime"
          "glfw",
          "json11",
          "PreCompile"
+
 		}
       
       filter "system:windows"
