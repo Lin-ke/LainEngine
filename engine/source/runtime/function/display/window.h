@@ -4,6 +4,7 @@
 #define __WINDOW_H__
 #include "core/string/lstring.h"
 #include <GLFW/glfw3.h>
+// 感觉不需要window的抽象 只需要windowdata的抽象
 class WindowSystem;
 namespace lain{
 
@@ -11,7 +12,6 @@ namespace lain{
 		friend class WindowSystem;
 	public:
 		Window() {
-			m_id = WindowSystem::WindowId();
 		}
 		~Window() {
 			glfwDestroyWindow(m_window);
@@ -24,7 +24,7 @@ namespace lain{
 		GLFWwindow* m_window{ nullptr };
 		int         m_width{ 0 };
 		int         m_height{ 0 };
-
+		// window configs
 		bool m_is_focus_mode{ false };
 		
 

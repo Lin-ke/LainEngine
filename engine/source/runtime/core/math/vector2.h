@@ -8,6 +8,7 @@
 
 namespace lain
 {
+
     REFLECTION_TYPE(Vector2)
     CLASS(Vector2, Fields)
     {
@@ -337,5 +338,6 @@ namespace lain
         static const Vector2 NEGATIVE_UNIT_Y;
         static const Vector2 UNIT_SCALE;
     };
-
+    typedef Vector2 Size2;
+    typedef Vector2 Point2;
 } // namespace lain

@@ -8,11 +8,11 @@
 #include "window.h"
 #include <array>
 #include <functional>
+#include "core/math/vector2.h"
 #include "core/templates/vector.h"
 #include "core/templates/rb_map.h"
 namespace lain
 {
-    
     struct WindowCreateInfo
     {
         int         width{ 1280 };
@@ -23,6 +23,9 @@ namespace lain
 
     class WindowSystem
     {
+        typedef int WindowID;
+
+
     public:
 
         WindowSystem() {
@@ -71,9 +74,8 @@ namespace lain
         }
         bool getFocusMode() const { return m_is_focus_mode; }
         void setFocusMode(bool mode);
-        L_INLINE static int WindowId() {
-            return m_windowid++;
-        }
+
+        WindowID GetWindowAtPos(const Point2& point) const;
     protected:
 
         // window event callbacks
@@ -202,7 +204,8 @@ namespace lain
             for (auto& func : m_onWindowSizeFunc)
                 func(width, height);
         }
-
+        Vector<int> get_window_list() const;
+        
     private:
         RBMap<int, WindowData> m_windows;
         static WindowSystem* p_singleton;
@@ -224,7 +227,7 @@ namespace lain
     };
     struct WindowData {
         HWND hWnd;
-
+        GLFWwindow* p_window;
 
         bool maximized = false;
         bool minimized = false;
@@ -268,7 +271,6 @@ namespace lain
         Size2 window_rect;
         Point2 last_pos;
 
-        ObjectID instance_id;
 
         // IME
         HIMC im_himc;
@@ -279,18 +281,33 @@ namespace lain
 
         bool layered_window = false;
 
-        Callable rect_changed_callback;
-        Callable event_callback;
-        Callable input_event_callback;
-        Callable input_text_callback;
-        Callable drop_files_callback;
+        WindowSystem::onResetFunc       m_onResetFunc;
+        WindowSystem::onKeyFunc        m_onKeyFunc;
+        WindowSystem::onCharFunc        m_onCharFunc;
+        WindowSystem::onCharModsFunc    m_onCharModsFunc;
+        WindowSystem::onMouseButtonFunc m_onMouseButtonFunc;
+        WindowSystem::onCursorPosFunc   m_onCursorPosFunc;
+        WindowSystem::onCursorEnterFunc m_onCursorEnterFunc;
+        WindowSystem::onScrollFunc      m_onScrollFunc;
+        WindowSystem::onDropFunc        m_onDropFunc;
+        WindowSystem::onWindowSizeFunc  m_onWindowSizeFunc;
+        WindowSystem::onWindowCloseFunc m_onWindowCloseFunc;
 
-        WindowID transient_parent = INVALID_WINDOW_ID;
-        HashSet<WindowID> transient_children;
+        //WindowID transient_parent = INVALID_WINDOW_ID;
+        //HashSet<WindowID> transient_children;
 
-        bool is_popup = false;
-        Rect2i parent_safe_rect;
+        //bool is_popup = false;
+        //Rect2i parent_safe_rect;
     };
+    
+
+    enum {
+        MAIN_WINDOW_ID = 0,
+        INVALID_WINDOW_ID = -1
+    };
+
+    template <typename T>
+    void _bind_callback(string name, T function);
 } // namespace lain
 
 #endif
