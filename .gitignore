@@ -4,9 +4,10 @@ bin/
 bin-int/
 x64/
 
+__pycache__/
 **/bin/
 **/bin-int/
-
+VulkanSDK/
 *.txt
 *.log
 

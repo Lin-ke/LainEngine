@@ -7,14 +7,20 @@ import platform
 
 # # Make sure everything we need for the setup is installed
 # PythonRequirements.Validate()
-
-# from SetupPremake import PremakeConfiguration as PremakeRequirements
-# from SetupVulkan import VulkanConfiguration as VulkanRequirements
 if "setup" not in os.listdir("./"):
-    os.chdir('./../') # Change from devtools/scripts directory to root
+    os.chdir('./../') 
+# from SetupPremake import PremakeConfiguration as PremakeRequirements
+
+from SetupVulkan import VulkanConfiguration as VulkanRequirements
+# Change from devtools/scripts directory to root
 # root
 # premakeInstalled = PremakeRequirements.Validate()
-# VulkanRequirements.Validate()
+try:
+    if "VULKAN_SDK" not in os.environ.keys():
+        VulkanRequirements.Validate()
+except Exception as e:
+    print(e)
+    print("Something wrong, you need to manually install vulkan")
 
 # print("\nUpdating submodules...")
 # subprocess.call(["git", "submodule", "update", "--init", "--recursive"])
