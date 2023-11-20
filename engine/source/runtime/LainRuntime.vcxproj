@@ -124,6 +124,7 @@
     <ClInclude Include="core\meta\reflection\reflection_register.h" />
     <ClInclude Include="core\meta\serializer\serializer.h" />
     <ClInclude Include="core\object\object.h" />
+    <ClInclude Include="core\object\object_id.h" />
     <ClInclude Include="core\object\refcount.h" />
     <ClInclude Include="core\os\condition_variable.h" />
     <ClInclude Include="core\os\memory.h" />
@@ -136,7 +137,7 @@
     <ClInclude Include="core\templates\cowdata.h" />
     <ClInclude Include="core\templates\pair.h" />
     <ClInclude Include="core\templates\rb_map.h" />
-    <ClInclude Include="core\templates\safe_refcount.h" />
+    <ClInclude Include="core\templates\safe_numeric.h" />
     <ClInclude Include="core\templates\singleton.h" />
     <ClInclude Include="core\templates\sort_array.h" />
     <ClInclude Include="core\templates\vector.h" />
@@ -152,8 +153,11 @@
     <ClInclude Include="resource\common\world.h" />
     <ClInclude Include="resource\component\camera.h" />
     <ClInclude Include="resource\component\camera_conf.h" />
+    <ClInclude Include="resource\component\component.h" />
     <ClInclude Include="resource\component\mesh.h" />
+    <ClInclude Include="resource\component\object.h" />
     <ClInclude Include="resource\manager\resource_manager.h" />
+    <ClInclude Include="viewport.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\engine\engine.cpp" />
@@ -180,6 +184,7 @@
     <ClCompile Include="core\os\os.cpp" />
     <ClCompile Include="core\os\pool_allocator.cpp" />
     <ClCompile Include="core\string\lstring.cpp" />
+    <ClCompile Include="core\templates\object_id.cpp" />
     <ClCompile Include="function\display\window_system.cpp" />
     <ClCompile Include="io\resource_load.cpp" />
     <ClCompile Include="render\input.cpp">

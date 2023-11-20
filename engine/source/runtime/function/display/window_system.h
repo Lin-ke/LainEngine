@@ -193,6 +193,17 @@ namespace lain
         void setFocusMode(bool mode) {};
 
         WindowID GetWindowAtPos(const Point2& point) const;
+
+        void SwapBuffers() {
+            for (const KeyValue<WindowID, WindowData>& E : m_windows) {
+                auto p_window = E.value.p_window;
+                glfwMakeContextCurrent(p_window);
+                // do the rendering
+                // 这样设计合理吗？
+                glfwSwapBuffers(p_window);
+
+            }
+        }
     protected:
 
         // window event callbacks
@@ -213,8 +224,7 @@ namespace lain
         {
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
-            {
-                for(auto& func: app->m_onCharFunc){func(codepoint);}
+            {      for(auto& func: app->m_onCharFunc){func(codepoint);}
             }
         }
         static void charModsCallback(GLFWwindow* window, unsigned int codepoint, int mods)
@@ -265,6 +275,7 @@ namespace lain
                 for(auto& func: app->m_onDropFunc){func(count, paths);}
             }
         }
+        // we just resize here. Further we will using so
         static void windowSizeCallback(GLFWwindow* window, int width, int height)
         {
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
@@ -272,9 +283,19 @@ namespace lain
             {
                 app->width = width;
                 app->height = height;
+                for (auto& func : app->m_onWindowSizeFunc) { func(width, height); }
             }
+
         }
-        static void windowCloseCallback(GLFWwindow* window) { glfwSetWindowShouldClose(window, true); }
+        static void windowCloseCallback(GLFWwindow* window) {
+            glfwSetWindowShouldClose(window, true);
+        WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
+            if (app)
+            {
+                for (auto& func : app->m_onWindowCloseFunc) { func(); }
+            }
+            L_PRINT("close callback called", window);
+        }
 
         Vector<int> get_window_list() const;
         

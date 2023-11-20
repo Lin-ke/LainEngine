@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __SAFE_REFCOUNT__
-#define __SAFE_REFCOUNT__
+#ifndef __safe_numeric__
+#define __safe_numeric__
 #include <core/typedefs.h>
 #include <base.h>
 #include <atomic>
@@ -115,4 +115,4 @@ public :
 };
 typedef SafeNumeric<uint32_t> s_u32;
 typedef SafeNumeric<uint64_t> s_u64;
-#endif // __SAFE_REFCOUNT__
+#endif // __safe_numeric__

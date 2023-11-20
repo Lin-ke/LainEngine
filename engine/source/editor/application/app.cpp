@@ -10,7 +10,7 @@
 #include <core/os/memory.h>
 #include <core/templates/cowdata.h>
 #include <core/templates/vector.h>
-#include <core/templates/safe_refcount.h>
+#include <core/templates/safe_numeric.h>
 #include <core/meta/meta_example.h>
 #include <core/os/os.h>
 using lain::Vector;

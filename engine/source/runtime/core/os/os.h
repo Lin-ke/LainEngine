@@ -46,6 +46,7 @@ class OSWin :public OS {
 };
 
 
+
 #endif // !__OS_H__
 
 // 子类习惯上加virtual使更清晰

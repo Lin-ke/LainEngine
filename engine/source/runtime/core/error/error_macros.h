@@ -4,7 +4,7 @@
 
 #include "core/typedefs.h"
 
-#include <atomic> // We'd normally use safe_refcount.h, but that would cause circular includes.
+#include <atomic> // We'd normally use safe_numeric.h, but that would cause circular includes.
 #include <string>
 typedef  std::string String;
 

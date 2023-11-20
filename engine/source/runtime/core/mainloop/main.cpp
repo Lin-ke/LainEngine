@@ -20,7 +20,6 @@ static lain::WindowSystem* window_system = nullptr;
 	 window_system = memnew(lain::WindowSystem);
 	 window_system->Initialize();
 	 window_system->NewWindow(lain::WindowCreateInfo());
-
 	 
 
  }
@@ -40,6 +39,12 @@ bool Main::Loop() {
 	Engine::GetSingleton()->m_frame_ticks = time;
 	
 	// do all the ticks
+	
+
+
 	// sever's sending message
+	// render server sending to windows
+	lain::WindowSystem::GetSingleton()->SwapBuffers();
+
 	return  true;
 }

@@ -3,7 +3,7 @@
 #include <base.h>
 #include "core/error/error_macros.h"
 #include "core/os/memory.h"
-#include <core/templates/safe_refcount.h>
+#include <core/templates/safe_numeric.h>
 #include <type_traits>
 namespace lain {
 

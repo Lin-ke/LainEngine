@@ -9,14 +9,17 @@ void OSWin::Run() {
 	while (true) {
 		//ÈË»ú½»»¥
 		// display.send_events;
-		lain::WindowSystem::GetSingleton()->PollEvents();
 		bool exit = lain::WindowSystem::GetSingleton()->ShouldClose();
+
 		
 		if (!Main::Loop()||exit) {
 			break;
 		}
+		lain::WindowSystem::GetSingleton()->PollEvents();
 
 	}
+	L_PRINT("Exiting. Have a nice day.");
+
 }
 void OSWin::Initialize() {
 

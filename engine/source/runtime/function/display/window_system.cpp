@@ -1,6 +1,7 @@
 #include "base.h"
 #include "window_system.h"	
 namespace lain {
+
     WindowSystem* WindowSystem::p_singleton = nullptr;
     int WindowSystem::m_windowid = WindowSystem::MAIN_WINDOW_ID;
 
@@ -12,20 +13,25 @@ namespace lain {
 
     void WindowSystem::Initialize()
     {
+        if (!glfwInit())
+        {
+            L_CORE_ERROR(__FUNCTION__, "failed to initialize GLFW");
+            return;
+        }
+
         if (!glfwVulkanSupported())
         {
             L_CORE_ERROR("glfw Vulkan not supported.");
         }
-        if (!glfwInit())
-        {
-            L_PRINT(__FUNCTION__, "failed to initialize GLFW");
-            return;
-        }
+
+        L_PRINT("window system initialized");
+
     }
 
     void  WindowSystem::PollEvents() const {
         glfwPollEvents();
     }
+
     bool WindowSystem::ShouldClose() const {
         bool should_close = true;
         for (const KeyValue<WindowID, WindowData>& E : m_windows) {
@@ -49,7 +55,6 @@ namespace lain {
             glfwTerminate();
         }
         // Setup input callbacks
-        glfwSetWindowUserPointer(window, this);
         glfwSetKeyCallback(window, keyCallback);
         glfwSetCharCallback(window, charCallback);
         glfwSetCharModsCallback(window, charModsCallback);
@@ -73,9 +78,11 @@ namespace lain {
             wd.width = create_info.width;
             // initialization
         }
+
         // update UserPointer
         for (auto iter = m_windows.begin(); iter != m_windows.end(); ++iter) {
             glfwSetWindowUserPointer(iter->value.p_window, &iter->value);
+            L_PRINT("bind window user pointer", iter->value.p_window, &iter->value);
         }
         m_windowid += 1;
         
