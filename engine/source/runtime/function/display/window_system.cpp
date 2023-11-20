@@ -1,6 +1,5 @@
 #include "base.h"
 #include "window_system.h"	
-
 namespace lain {
     WindowSystem* WindowSystem::p_singleton = nullptr;
     int WindowSystem::m_windowid = WindowSystem::MAIN_WINDOW_ID;
@@ -11,7 +10,7 @@ namespace lain {
             
     }
 
-    void WindowSystem::initialize()
+    void WindowSystem::Initialize()
     {
         if (!glfwVulkanSupported())
         {
@@ -22,41 +21,48 @@ namespace lain {
             L_PRINT(__FUNCTION__, "failed to initialize GLFW");
             return;
         }
-
-           
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        //m_window = glfwCreateWindow(create_info.width, create_info.height, create_info.title, nullptr, nullptr);
-        //if (!m_window)
-        //{
-        //    L_PRINT(__FUNCTION__, "failed to create window");
-        //    glfwTerminate();
-        //    return;
-        //}
-
-        //// Setup input callbacks
-        //glfwSetWindowUserPointer(m_window, this);
-        //glfwSetKeyCallback(m_window, keyCallback);
-        //glfwSetCharCallback(m_window, charCallback);
-        //glfwSetCharModsCallback(m_window, charModsCallback);
-        //glfwSetMouseButtonCallback(m_window, mouseButtonCallback);
-        //glfwSetCursorPosCallback(m_window, cursorPosCallback);
-        //glfwSetCursorEnterCallback(m_window, cursorEnterCallback);
-        //glfwSetScrollCallback(m_window, scrollCallback);
-        //glfwSetDropCallback(m_window, dropCallback);
-        //glfwSetWindowSizeCallback(m_window, windowSizeCallback);
-        //glfwSetWindowCloseCallback(m_window, windowCloseCallback);
-
-        //glfwSetInputMode(m_window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
     }
 
+    void  WindowSystem::PollEvents() const {
+        glfwPollEvents();
+    }
+    bool WindowSystem::ShouldClose() const {
+        bool should_close = true;
+        for (const KeyValue<WindowID, WindowData>& E : m_windows) {
+            should_close&=glfwWindowShouldClose(E.value.p_window);
+        }
+        return should_close;
+    }
+    /// <summary>
+    /// TODO:在create_info里加入
+    /// 1. 窗口初始化位置信息。窗口占屏幕信息
+    /// 
+    /// </summary>
+    /// <param name="create_info"></param>
+    /// <returns> id </returns>
     int WindowSystem::NewWindow(WindowCreateInfo create_info) {
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         GLFWwindow* window = glfwCreateWindow(create_info.width, create_info.height, create_info.title, nullptr, nullptr);
         // add
         if (!window) {
             L_ERROR(__FUNCTION__, "create window error, check glfw");
             glfwTerminate();
-            return;
         }
+        // Setup input callbacks
+        glfwSetWindowUserPointer(window, this);
+        glfwSetKeyCallback(window, keyCallback);
+        glfwSetCharCallback(window, charCallback);
+        glfwSetCharModsCallback(window, charModsCallback);
+        glfwSetMouseButtonCallback(window, mouseButtonCallback);
+        glfwSetCursorPosCallback(window, cursorPosCallback);
+        glfwSetCursorEnterCallback(window, cursorEnterCallback);
+        glfwSetScrollCallback(window, scrollCallback);
+        glfwSetDropCallback(window, dropCallback);
+        glfwSetWindowSizeCallback(window, windowSizeCallback);
+        glfwSetWindowCloseCallback(window, windowCloseCallback);
+
+        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+
 
         int id = WindowSystem::m_windowid;
         WindowData& wd = m_windows[id];
@@ -71,7 +77,7 @@ namespace lain {
         for (auto iter = m_windows.begin(); iter != m_windows.end(); ++iter) {
             glfwSetWindowUserPointer(iter->value.p_window, &iter->value);
         }
-
+        m_windowid += 1;
         
         return id;
     }
@@ -79,21 +85,6 @@ namespace lain {
 
 
 
-    /*void WindowSystem::pollEvents() const { glfwPollEvents(); }
-
-    bool WindowSystem::shouldClose() const { return glfwWindowShouldClose(m_window); }
-
-    void WindowSystem::setTitle(const char* title) { glfwSetWindowTitle(m_window, title); }
-
-    GLFWwindow* WindowSystem::getWindow() const { return m_window; }
-
-    std::array<int, 2> WindowSystem::getWindowSize() const { return std::array<int, 2>({ m_width, m_height }); }
-    
-    void WindowSystem::setFocusMode(bool mode)
-    {
-        m_is_focus_mode = mode;
-        glfwSetInputMode(m_window, GLFW_CURSOR, m_is_focus_mode ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
-    }*/
     WindowSystem::WindowID WindowSystem::GetWindowAtPos(const Point2& p_position) const {
         POINT p;
         Point2 offset(0, 0);

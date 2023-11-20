@@ -1,5 +1,6 @@
 #include "os.h"
 #include "core/mainloop/main.h"
+#include "function/display/window_system.h"
 #include <timeapi.h>
 OS* OS::p_singleton = nullptr;
 void OSWin::Run() {
@@ -8,7 +9,10 @@ void OSWin::Run() {
 	while (true) {
 		//ÈË»ú½»»¥
 		// display.send_events;
-		if (!Main::Loop()) {
+		lain::WindowSystem::GetSingleton()->PollEvents();
+		bool exit = lain::WindowSystem::GetSingleton()->ShouldClose();
+		
+		if (!Main::Loop()||exit) {
 			break;
 		}
 

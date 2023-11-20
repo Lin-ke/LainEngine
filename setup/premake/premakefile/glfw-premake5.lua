@@ -10,6 +10,7 @@ project "glfw"
 		"include/GLFW/glfw3.h",
 		"include/GLFW/glfw3native.h",
 		"src/glfw_config.h",
+		"src/platform.c",
 		"src/context.c",
 		"src/init.c",
 		"src/input.c",
@@ -25,6 +26,7 @@ project "glfw"
 
 		files
 		{
+			"src/posix_module.c",
 			"src/x11_init.c",
 			"src/x11_monitor.c",
 			"src/x11_window.c",
@@ -48,6 +50,7 @@ project "glfw"
 
 		files
 		{
+			"src/win32_module.c",
 			"src/win32_init.c",
 			"src/win32_joystick.c",
 			"src/win32_monitor.c",

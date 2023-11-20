@@ -1,10 +1,10 @@
 #include "main.h"
 #include "core/os/os.h"
 #include "core/engine/engine.h"
-#include "function/display/displayer.h"
+#include "function/display/window_system.h"
 //  initialization part
 static Engine* engine = nullptr;
-
+static lain::WindowSystem* window_system = nullptr;
 
 
 // Main loop vairables
@@ -16,7 +16,14 @@ static Engine* engine = nullptr;
  /// </summary>
  void Main::Init() {
 	 OS::GetSingleton()->Initialize();
-}
+	 engine = memnew(Engine); // 
+	 window_system = memnew(lain::WindowSystem);
+	 window_system->Initialize();
+	 window_system->NewWindow(lain::WindowCreateInfo());
+
+	 
+
+ }
 /// <summary>
 /// Main iteration.
 /// </summary>

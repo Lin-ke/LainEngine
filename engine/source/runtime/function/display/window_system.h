@@ -5,6 +5,7 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 #include "window.h"
 #include <array>
 #include <functional>
@@ -20,7 +21,94 @@ namespace lain
         const char* title{ "Window" };
         bool        is_fullscreen{ false };
     };
+    typedef std::function<void()>                   onResetFunc;
+    typedef std::function<void(int, int, int, int)> onKeyFunc;
+    typedef std::function<void(unsigned int)>       onCharFunc;
+    typedef std::function<void(int, unsigned int)>  onCharModsFunc;
+    typedef std::function<void(int, int, int)>      onMouseButtonFunc;
+    typedef std::function<void(double, double)>     onCursorPosFunc;
+    typedef std::function<void(int)>                onCursorEnterFunc;
+    typedef std::function<void(double, double)>     onScrollFunc;
+    typedef std::function<void(int, const char**)>  onDropFunc;
+    typedef std::function<void(int, int)>           onWindowSizeFunc;
+    typedef std::function<void()>                   onWindowCloseFunc;
+    struct WindowData {
 
+        HWND hWnd;
+        GLFWwindow* p_window;
+
+        bool maximized = false;
+        bool minimized = false;
+        bool fullscreen = false;
+        bool multiwindow_fs = false;
+        bool borderless = false;
+        bool resizable = true;
+        bool window_focused = false;
+        bool was_maximized = false;
+        bool always_on_top = false;
+        bool no_focus = false;
+        bool window_has_focus = false;
+        bool exclusive = false;
+        bool context_created = false;
+        bool mpass = false;
+        bool m_is_focus_mode = true;
+
+        // Used to transfer data between events using timer.
+        WPARAM saved_wparam;
+        LPARAM saved_lparam;
+
+        // Timers.
+        uint32_t move_timer_id = 0U;
+        uint32_t focus_timer_id = 0U;
+
+        HANDLE wtctx;
+        int min_pressure;
+        int max_pressure;
+        bool tilt_supported;
+        bool pen_inverted = false;
+        bool block_mm = false;
+
+        int last_pressure_update;
+        float last_pressure;
+        Vector2 last_tilt;
+        bool last_pen_inverted = false;
+
+        Size2 min_size;
+        Size2 max_size;
+        int width = 0, height = 0;
+
+        Size2 window_rect;
+        Point2 last_pos;
+
+
+        // IME
+        HIMC im_himc;
+        Vector2 im_position;
+        bool ime_active = false;
+        bool ime_in_progress = false;
+        bool ime_suppress_next_keyup = false;
+
+        bool layered_window = false;
+        // 把这里变成vector的可以降低耦合
+        // 这样不同的函数可以承担不同的任务
+        Vector<onResetFunc>       m_onResetFunc;
+        Vector < onKeyFunc>        m_onKeyFunc;
+        Vector < onCharFunc>     m_onCharFunc;
+        Vector < onCharModsFunc >   m_onCharModsFunc;
+        Vector < onMouseButtonFunc >m_onMouseButtonFunc;
+        Vector < onCursorPosFunc >  m_onCursorPosFunc;
+        Vector < onCursorEnterFunc> m_onCursorEnterFunc;
+        Vector < onScrollFunc  >    m_onScrollFunc;
+        Vector < onDropFunc   >     m_onDropFunc;
+        Vector < onWindowSizeFunc>  m_onWindowSizeFunc;
+        Vector < onWindowCloseFunc> m_onWindowCloseFunc;
+
+        //WindowID transient_parent = INVALID_WINDOW_ID;
+        //HashSet<WindowID> transient_children;
+
+        //bool is_popup = false;
+        //Rect2i parent_safe_rect;
+    };
     class WindowSystem
     {
         typedef int WindowID;
@@ -32,24 +120,17 @@ namespace lain
             p_singleton = this;
         };
         ~WindowSystem();
-        void               initialize();
-        void               pollEvents() const;
-        bool               shouldClose() const;
-        void               setTitle(const char* title);
-        GLFWwindow* getWindow() const;
-        std::array<int, 2> getWindowSize() const;
+        L_INLINE static WindowSystem* GetSingleton() {
+            return p_singleton;
+        }
+        void               Initialize();
+        void               PollEvents() const;
+        bool               ShouldClose() const;
+        void               setTitle(const char* title) {};
+        GLFWwindow* getWindow() const {};
+        std::array<int, 2> getWindowSize() const {};
 
-        typedef std::function<void()>                   onResetFunc;
-        typedef std::function<void(int, int, int, int)> onKeyFunc;
-        typedef std::function<void(unsigned int)>       onCharFunc;
-        typedef std::function<void(int, unsigned int)>  onCharModsFunc;
-        typedef std::function<void(int, int, int)>      onMouseButtonFunc;
-        typedef std::function<void(double, double)>     onCursorPosFunc;
-        typedef std::function<void(int)>                onCursorEnterFunc;
-        typedef std::function<void(double, double)>     onScrollFunc;
-        typedef std::function<void(int, const char**)>  onDropFunc;
-        typedef std::function<void(int, int)>           onWindowSizeFunc;
-        typedef std::function<void()>                   onWindowCloseFunc;
+
 
         void registerOnResetFunc(onResetFunc func, int wid) {
             ERR_FAIL_COND(!m_windows.has(wid));
@@ -109,12 +190,14 @@ namespace lain
         bool getFocusMode(int wid) const {  ERR_FAIL_COND(!m_windows.has(wid));
         return m_windows[wid].m_is_focus_mode;
         }
-        void setFocusMode(bool mode);
+        void setFocusMode(bool mode) {};
 
         WindowID GetWindowAtPos(const Point2& point) const;
     protected:
 
         // window event callbacks
+        // 这些glfw绑定keycallback，然后发生这一事件后调用在vector里的callback。
+        // TODO：满足多窗口
         static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
         {
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
@@ -207,82 +290,7 @@ namespace lain
 
 
     };
-    struct WindowData {
-        HWND hWnd;
-        GLFWwindow* p_window;
 
-        bool maximized = false;
-        bool minimized = false;
-        bool fullscreen = false;
-        bool multiwindow_fs = false;
-        bool borderless = false;
-        bool resizable = true;
-        bool window_focused = false;
-        bool was_maximized = false;
-        bool always_on_top = false;
-        bool no_focus = false;
-        bool window_has_focus = false;
-        bool exclusive = false;
-        bool context_created = false;
-        bool mpass = false;
-        bool m_is_focus_mode = true;
-
-        // Used to transfer data between events using timer.
-        WPARAM saved_wparam;
-        LPARAM saved_lparam;
-
-        // Timers.
-        uint32_t move_timer_id = 0U;
-        uint32_t focus_timer_id = 0U;
-
-        HANDLE wtctx;
-        int min_pressure;
-        int max_pressure;
-        bool tilt_supported;
-        bool pen_inverted = false;
-        bool block_mm = false;
-
-        int last_pressure_update;
-        float last_pressure;
-        Vector2 last_tilt;
-        bool last_pen_inverted = false;
-
-        Size2 min_size;
-        Size2 max_size;
-        int width = 0, height = 0;
-
-        Size2 window_rect;
-        Point2 last_pos;
-
-
-        // IME
-        HIMC im_himc;
-        Vector2 im_position;
-        bool ime_active = false;
-        bool ime_in_progress = false;
-        bool ime_suppress_next_keyup = false;
-
-        bool layered_window = false;
-        // 把这里变成vector的可以降低耦合
-        // 这样不同的函数可以承担不同的任务
-        Vector<WindowSystem::onResetFunc>       m_onResetFunc;
-        Vector < WindowSystem::onKeyFunc>        m_onKeyFunc;
-        Vector < WindowSystem::onCharFunc>     m_onCharFunc;
-        Vector < WindowSystem::onCharModsFunc >   m_onCharModsFunc;
-        Vector < WindowSystem::onMouseButtonFunc >m_onMouseButtonFunc;
-        Vector < WindowSystem::onCursorPosFunc >  m_onCursorPosFunc;
-        Vector < WindowSystem::onCursorEnterFunc> m_onCursorEnterFunc;
-        Vector < WindowSystem::onScrollFunc  >    m_onScrollFunc;
-        Vector < WindowSystem::onDropFunc   >     m_onDropFunc;
-        Vector < WindowSystem::onWindowSizeFunc>  m_onWindowSizeFunc;
-        Vector < WindowSystem::onWindowCloseFunc> m_onWindowCloseFunc;
-
-        //WindowID transient_parent = INVALID_WINDOW_ID;
-        //HashSet<WindowID> transient_children;
-
-        //bool is_popup = false;
-        //Rect2i parent_safe_rect;
-    };
     
 
     
