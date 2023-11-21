@@ -41,7 +41,7 @@ bool Main::Loop() {
 	Engine::GetSingleton()->m_frame_ticks = time;
 	
 	// do all the ticks
-	if (window_system->CanAnyWindowDraw() && render_system->IsInLoop()) {
+	if (window_system->CanAnyWindowDraw() && render_system->IsLoopEnabled()) {
 		// rendering
 	}
 

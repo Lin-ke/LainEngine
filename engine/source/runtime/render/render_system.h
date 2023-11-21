@@ -12,8 +12,11 @@ namespace lain{
         L_INLINE static RenderSystem* GetSingleton() {
             return p_singleton;
         }
-        L_INLINE bool IsInLoop() {
+        L_INLINE bool IsLoopEnabled() {
             return m_render_loop_enabled;
+        }
+        L_INLINE void SetLoopEnabled(bool enabled) {
+            m_render_loop_enabled = enabled;
         }
     private:
         static RenderSystem* p_singleton;
