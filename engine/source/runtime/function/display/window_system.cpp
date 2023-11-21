@@ -65,7 +65,7 @@ namespace lain {
         glfwSetDropCallback(window, dropCallback);
         glfwSetWindowSizeCallback(window, windowSizeCallback);
         glfwSetWindowCloseCallback(window, windowCloseCallback);
-
+        glfwSetWindowIconifyCallback(window, windowIconifyCallback);
         glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
 
 

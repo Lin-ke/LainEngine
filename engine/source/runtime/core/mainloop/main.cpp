@@ -2,9 +2,12 @@
 #include "core/os/os.h"
 #include "core/engine/engine.h"
 #include "function/display/window_system.h"
+#include "render/render_system.h"
+
 //  initialization part
 static Engine* engine = nullptr;
 static lain::WindowSystem* window_system = nullptr;
+static lain::RenderSystem* render_system = nullptr;
 
 
 // Main loop vairables
@@ -18,9 +21,9 @@ static lain::WindowSystem* window_system = nullptr;
 	 OS::GetSingleton()->Initialize();
 	 engine = memnew(Engine); // 
 	 window_system = memnew(lain::WindowSystem);
+	 render_system = memnew(lain::RenderSystem);
 	 window_system->Initialize();
 	 window_system->NewWindow(lain::WindowCreateInfo());
-	 
 
  }
 /// <summary>
@@ -31,7 +34,6 @@ static lain::WindowSystem* window_system = nullptr;
 bool Main::Loop() {
 	// gettime
 	u64 time = OS::GetSingleton()->GetTimeUsec();
-
 	// update engine
 	u64 delta_time_usec = time - last_ticks;
 	last_ticks = time;
@@ -39,12 +41,12 @@ bool Main::Loop() {
 	Engine::GetSingleton()->m_frame_ticks = time;
 	
 	// do all the ticks
-	
-
+	if (window_system->CanAnyWindowDraw() && render_system->IsInLoop()) {
+		// rendering
+	}
 
 	// sever's sending message
 	// render server sending to windows
-	lain::WindowSystem::GetSingleton()->SwapBuffers();
-
+	window_system->SwapBuffers();
 	return  true;
 }

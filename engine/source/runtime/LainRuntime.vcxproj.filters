@@ -43,14 +43,17 @@
     <Filter Include="core\templates">
       <UniqueIdentifier>{CC76585A-B844-4C60-A1D8-BC868D4528C5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="core\varint">
-      <UniqueIdentifier>{91978990-FD4C-0286-8641-FC5CF2F5F889}</UniqueIdentifier>
+    <Filter Include="core\variant">
+      <UniqueIdentifier>{1252BCA1-FEB4-4B46-A73A-84FC937C17C9}</UniqueIdentifier>
     </Filter>
     <Filter Include="function">
       <UniqueIdentifier>{4B3824D4-3705-7FDF-601E-6D874C4AB46D}</UniqueIdentifier>
     </Filter>
     <Filter Include="function\display">
       <UniqueIdentifier>{D0127580-BC0B-94D2-E53D-7957D19573DE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="function\ui">
+      <UniqueIdentifier>{D82F8330-44E5-FB25-CDD9-F5FC398EF229}</UniqueIdentifier>
     </Filter>
     <Filter Include="io">
       <UniqueIdentifier>{3D785900-2904-880B-92B2-880B7E5D880B}</UniqueIdentifier>
@@ -202,10 +205,13 @@
     <ClInclude Include="core\typedefs.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="core\varint\array.h">
-      <Filter>core\varint</Filter>
+    <ClInclude Include="core\variant\array.h">
+      <Filter>core\variant</Filter>
     </ClInclude>
     <ClInclude Include="function\display\display_event.h">
+      <Filter>function\display</Filter>
+    </ClInclude>
+    <ClInclude Include="function\display\viewport.h">
       <Filter>function\display</Filter>
     </ClInclude>
     <ClInclude Include="function\display\window.h">
@@ -217,6 +223,9 @@
     <ClInclude Include="function\script.h">
       <Filter>function</Filter>
     </ClInclude>
+    <ClInclude Include="function\ui\window_ui.h">
+      <Filter>function\ui</Filter>
+    </ClInclude>
     <ClInclude Include="io\resource.h">
       <Filter>io</Filter>
     </ClInclude>
@@ -224,6 +233,9 @@
       <Filter>io</Filter>
     </ClInclude>
     <ClInclude Include="render\input.h">
+      <Filter>render</Filter>
+    </ClInclude>
+    <ClInclude Include="render\render_system.h">
       <Filter>render</Filter>
     </ClInclude>
     <ClInclude Include="resource\common\world.h">
@@ -247,7 +259,6 @@
     <ClInclude Include="resource\manager\resource_manager.h">
       <Filter>resource\manager</Filter>
     </ClInclude>
-    <ClInclude Include="viewport.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\engine\engine.cpp">
@@ -304,6 +315,9 @@
     <ClCompile Include="core\object\object.cpp">
       <Filter>core\object</Filter>
     </ClCompile>
+    <ClCompile Include="core\object\object_id.cpp">
+      <Filter>core\object</Filter>
+    </ClCompile>
     <ClCompile Include="core\object\refcount.cpp">
       <Filter>core\object</Filter>
     </ClCompile>
@@ -322,9 +336,6 @@
     <ClCompile Include="core\string\lstring.cpp">
       <Filter>core\string</Filter>
     </ClCompile>
-    <ClCompile Include="core\templates\object_id.cpp">
-      <Filter>core\templates</Filter>
-    </ClCompile>
     <ClCompile Include="function\display\window_system.cpp">
       <Filter>function\display</Filter>
     </ClCompile>
@@ -333,6 +344,12 @@
     </ClCompile>
     <ClCompile Include="render\input.cpp">
       <Filter>render</Filter>
+    </ClCompile>
+    <ClCompile Include="render\render_system.cpp">
+      <Filter>render</Filter>
+    </ClCompile>
+    <ClCompile Include="resource\component\transform_component.cpp">
+      <Filter>resource\component</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

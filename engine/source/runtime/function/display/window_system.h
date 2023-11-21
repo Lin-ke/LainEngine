@@ -109,6 +109,7 @@ namespace lain
         //bool is_popup = false;
         //Rect2i parent_safe_rect;
     };
+    
     class WindowSystem
     {
         typedef int WindowID;
@@ -187,12 +188,22 @@ namespace lain
             }
             return glfwGetMouseButton(m_windows[wid].p_window, button) == GLFW_PRESS;
         }
-        bool getFocusMode(int wid) const {  ERR_FAIL_COND(!m_windows.has(wid));
-        return m_windows[wid].m_is_focus_mode;
+        bool getFocusMode(int wid) const {
+            ERR_FAIL_COND(!m_windows.has(wid));
+            return m_windows[wid].m_is_focus_mode;
         }
         void setFocusMode(bool mode) {};
 
         WindowID GetWindowAtPos(const Point2& point) const;
+
+        bool CanAnyWindowDraw() {
+            for (const KeyValue<WindowID, WindowData>& E : m_windows) {
+                if (!E.value.minimized) {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         void SwapBuffers() {
             for (const KeyValue<WindowID, WindowData>& E : m_windows) {
@@ -209,22 +220,24 @@ namespace lain
         // window event callbacks
         // 这些glfw绑定keycallback，然后发生这一事件后调用在vector里的callback。
         // TODO：满足多窗口
+        // 需要static来绑定。
         static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
         {
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
-            {   
+            {
                 for (auto& func : app->m_onKeyFunc) {
                     func(key, scancode, action, mods);
                 }
-               
+
             }
         }
         static void charCallback(GLFWwindow* window, unsigned int codepoint)
         {
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
-            {      for(auto& func: app->m_onCharFunc){func(codepoint);}
+            {
+                for (auto& func : app->m_onCharFunc) { func(codepoint); }
             }
         }
         static void charModsCallback(GLFWwindow* window, unsigned int codepoint, int mods)
@@ -232,7 +245,7 @@ namespace lain
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                for(auto& func: app->m_onCharModsFunc){func(codepoint, mods);}
+                for (auto& func : app->m_onCharModsFunc) { func(codepoint, mods); }
             }
         }
         static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
@@ -240,7 +253,7 @@ namespace lain
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                for(auto& func: app->m_onMouseButtonFunc){func(button, action, mods);}
+                for (auto& func : app->m_onMouseButtonFunc) { func(button, action, mods); }
             }
         }
         static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
@@ -248,7 +261,7 @@ namespace lain
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                for(auto& func: app->m_onCursorPosFunc){func(xpos, ypos);}
+                for (auto& func : app->m_onCursorPosFunc) { func(xpos, ypos); }
             }
         }
         static void cursorEnterCallback(GLFWwindow* window, int entered)
@@ -256,7 +269,7 @@ namespace lain
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                for(auto& func: app->m_onCursorEnterFunc){func(entered);}
+                for (auto& func : app->m_onCursorEnterFunc) { func(entered); }
             }
         }
         static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
@@ -264,7 +277,7 @@ namespace lain
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                for(auto& func: app->m_onScrollFunc){func(xoffset, yoffset);}
+                for (auto& func : app->m_onScrollFunc) { func(xoffset, yoffset); }
             }
         }
         static void dropCallback(GLFWwindow* window, int count, const char** paths)
@@ -272,7 +285,7 @@ namespace lain
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                for(auto& func: app->m_onDropFunc){func(count, paths);}
+                for (auto& func : app->m_onDropFunc) { func(count, paths); }
             }
         }
         // we just resize here. Further we will using so
@@ -289,7 +302,7 @@ namespace lain
         }
         static void windowCloseCallback(GLFWwindow* window) {
             glfwSetWindowShouldClose(window, true);
-        WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
+            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
                 for (auto& func : app->m_onWindowCloseFunc) { func(); }
@@ -297,6 +310,15 @@ namespace lain
             L_PRINT("close callback called", window);
         }
 
+        static void windowIconifyCallback(GLFWwindow* window,int flag) {
+            
+            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
+            if (app) {
+                if (flag) // GL_TRUE, iconified
+                    app->minimized = true;
+                else{ app->minimized = false; }
+            }
+        }
         Vector<int> get_window_list() const;
         
     private:

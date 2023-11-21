@@ -1,6 +1,7 @@
 #ifndef __PARSER_HEADER_H__
 #define __PARSER_HEADER_H__
 #include  "D:/LainEngine/engine/source/runtime/base.h"
+#include  "D:/LainEngine/engine/source/runtime/viewport.h"
 #include  "D:/LainEngine/engine/source/runtime/core/typedefs.h"
 #include  "D:/LainEngine/engine/source/runtime/core/engine/engine.h"
 #include  "D:/LainEngine/engine/source/runtime/core/error/error.h"
@@ -27,6 +28,7 @@
 #include  "D:/LainEngine/engine/source/runtime/core/meta/reflection/reflection_register.h"
 #include  "D:/LainEngine/engine/source/runtime/core/meta/serializer/serializer.h"
 #include  "D:/LainEngine/engine/source/runtime/core/object/object.h"
+#include  "D:/LainEngine/engine/source/runtime/core/object/object_id.h"
 #include  "D:/LainEngine/engine/source/runtime/core/object/refcount.h"
 #include  "D:/LainEngine/engine/source/runtime/core/os/condition_variable.h"
 #include  "D:/LainEngine/engine/source/runtime/core/os/memory.h"
@@ -39,7 +41,7 @@
 #include  "D:/LainEngine/engine/source/runtime/core/templates/cowdata.h"
 #include  "D:/LainEngine/engine/source/runtime/core/templates/pair.h"
 #include  "D:/LainEngine/engine/source/runtime/core/templates/rb_map.h"
-#include  "D:/LainEngine/engine/source/runtime/core/templates/safe_refcount.h"
+#include  "D:/LainEngine/engine/source/runtime/core/templates/safe_numeric.h"
 #include  "D:/LainEngine/engine/source/runtime/core/templates/singleton.h"
 #include  "D:/LainEngine/engine/source/runtime/core/templates/sort_array.h"
 #include  "D:/LainEngine/engine/source/runtime/core/templates/vector.h"
@@ -54,6 +56,8 @@
 #include  "D:/LainEngine/engine/source/runtime/resource/common/world.h"
 #include  "D:/LainEngine/engine/source/runtime/resource/component/camera.h"
 #include  "D:/LainEngine/engine/source/runtime/resource/component/camera_conf.h"
+#include  "D:/LainEngine/engine/source/runtime/resource/component/component.h"
 #include  "D:/LainEngine/engine/source/runtime/resource/component/mesh.h"
+#include  "D:/LainEngine/engine/source/runtime/resource/component/object.h"
 #include  "D:/LainEngine/engine/source/runtime/resource/manager/resource_manager.h"
 #endif

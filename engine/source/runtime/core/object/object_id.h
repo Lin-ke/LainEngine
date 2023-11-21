@@ -12,6 +12,5 @@ namespace lain {
 		static s_u32 m_next_id;
 	};
 }
-s_u32 lain::ObjectIDAllocator::m_next_id{ 0 };
 
 #endif // !__OBJECT_ID_H__
