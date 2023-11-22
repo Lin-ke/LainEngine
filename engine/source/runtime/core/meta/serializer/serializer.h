@@ -1,4 +1,5 @@
 #pragma once
+#include "base.h"
 #include "runtime/core/meta/json.h"
 #include "runtime/core/meta/reflection/reflection.h"
 #include <vector>
@@ -64,7 +65,12 @@ namespace lain
             }
             else
             {
-                static_assert(always_false<T>, "Serializer::write<T> has not been implemented yet!");
+#ifdef _MSC_VER
+                static_assert(always_false<T>,__FUNCSIG__);
+#else
+                static_assert(always_false<T>, __PRETTY_FUNCTION__);
+#endif            
+                
                 return Json();
             }
         }

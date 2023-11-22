@@ -103,6 +103,12 @@
     <ClInclude Include="core\math\math.h">
       <Filter>core\math</Filter>
     </ClInclude>
+    <ClInclude Include="core\math\math_defs.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\math\math_funcs.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
     <ClInclude Include="core\math\math_headers.h">
       <Filter>core\math</Filter>
     </ClInclude>
@@ -119,6 +125,9 @@
       <Filter>core\math</Filter>
     </ClInclude>
     <ClInclude Include="core\math\random.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\math\random_pcg.h">
       <Filter>core\math</Filter>
     </ClInclude>
     <ClInclude Include="core\math\transform.h">
@@ -184,6 +193,12 @@
     <ClInclude Include="core\templates\cowdata.h">
       <Filter>core\templates</Filter>
     </ClInclude>
+    <ClInclude Include="core\templates\hash_funcs.h">
+      <Filter>core\templates</Filter>
+    </ClInclude>
+    <ClInclude Include="core\templates\hash_map.h">
+      <Filter>core\templates</Filter>
+    </ClInclude>
     <ClInclude Include="core\templates\pair.h">
       <Filter>core\templates</Filter>
     </ClInclude>
@@ -232,10 +247,13 @@
     <ClInclude Include="io\resource_load.h">
       <Filter>io</Filter>
     </ClInclude>
-    <ClInclude Include="render\input.h">
+    <ClInclude Include="render\render_system.h">
       <Filter>render</Filter>
     </ClInclude>
-    <ClInclude Include="render\render_system.h">
+    <ClInclude Include="render\render_system_globals.h">
+      <Filter>render</Filter>
+    </ClInclude>
+    <ClInclude Include="render\viewport.h">
       <Filter>render</Filter>
     </ClInclude>
     <ClInclude Include="resource\common\world.h">
@@ -257,6 +275,9 @@
       <Filter>resource\component</Filter>
     </ClInclude>
     <ClInclude Include="resource\manager\resource_manager.h">
+      <Filter>resource\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="resource\manager\rid.h">
       <Filter>resource\manager</Filter>
     </ClInclude>
   </ItemGroup>
@@ -341,9 +362,6 @@
     </ClCompile>
     <ClCompile Include="io\resource_load.cpp">
       <Filter>io</Filter>
-    </ClCompile>
-    <ClCompile Include="render\input.cpp">
-      <Filter>render</Filter>
     </ClCompile>
     <ClCompile Include="render\render_system.cpp">
       <Filter>render</Filter>

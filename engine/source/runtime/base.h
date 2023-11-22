@@ -62,14 +62,18 @@ L_INLINE void L_CORE_PRINT(const Types&... args)
 # define L_JSON(x) L_PRINT(__FUNCTION__, __LINE__, "json of ",#x,lain::Serializer::write(x).dump());
 # define L_CORE_JSON(x) L_CORE_PRINT("json of " + std::string(#x) + " " + (lain::Serializer::write(x).dump()));
 
-
+# define L_NAME(x) #x
+#define __CONCAT(a, b) a ## b
+#define CONCAT2(a, b) __CONCAT(a, b)
+#define CONCAT3(a,b,c) CONCAT2(CONCAT2(a,b),c)
 //#define refcount(type, x) (*(reinterpret_cast<s_u32*> (const_cast<type*>(x.ptr())) - 2)).get()
 # define refcount(x) x._refcount()
 void _global_lock();
 void _global_unlock();
 typedef uint64_t u64;
 typedef uint32_t u32;
-
+// godot's devbranch mark;
+# define DEV_ENABLED
 #endif // __BASE__
 
 // 成员变量 首字母标识

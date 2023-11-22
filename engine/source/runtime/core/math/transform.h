@@ -2,6 +2,8 @@
 #include "runtime/core/math/matrix4.h"
 #include "runtime/core/math/quaternion.h"
 #include "runtime/core/math/vector3.h"
+#include "runtime/core/math/vector2.h"
+
 #include "runtime/core/meta/reflection/reflection.h"
 
 namespace lain
@@ -27,5 +29,21 @@ namespace lain
             temp.makeTransform(m_position, m_scale, m_rotation);
             return temp;
         }
+    };
+    REFLECTION_TYPE(Transform2D)
+        CLASS(Transform2D, Fields)
+    {
+        REFLECTION_BODY(Transform);
+
+    public:
+        Vector2    m_position{ Vector2::ZERO };
+        Vector2    m_scale{ Vector2::UNIT_SCALE };
+        Quaternion m_rotation{ Quaternion::IDENTITY };
+
+        Transform2D() = default;
+        Transform2D(const Vector2 & position, const Quaternion & rotation, const Vector2 & scale) :
+            m_position{ position }, m_scale{ scale }, m_rotation{ rotation }
+        {}
+
     };
 } // namespace lain

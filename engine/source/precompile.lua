@@ -15,14 +15,4 @@ function precompile()
     json_path = path.getabsolute(json_path)
     return All_headers
 end
--- json_path = "../../precompile.json"
---     save_file = io.open(json_path, "w")
 
---     for k,v in ipairs(Runtime_headers) do
---         save_file:write("" .. v .. ";")
---     end
---     for k,v in ipairs(Editor_headers) do
---         save_file:write(v .. ";")
---     end
-
---     save_file:close()
