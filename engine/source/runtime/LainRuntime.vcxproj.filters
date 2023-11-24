@@ -163,7 +163,7 @@
     <ClInclude Include="core\object\object_id.h">
       <Filter>core\object</Filter>
     </ClInclude>
-    <ClInclude Include="core\object\refcount.h">
+    <ClInclude Include="core\object\safe_refcount.h">
       <Filter>core\object</Filter>
     </ClInclude>
     <ClInclude Include="core\os\condition_variable.h">
@@ -280,6 +280,7 @@
     <ClInclude Include="resource\manager\rid.h">
       <Filter>resource\manager</Filter>
     </ClInclude>
+    <ClInclude Include="core\object\refcount.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\engine\engine.cpp">

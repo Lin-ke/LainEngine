@@ -26,7 +26,10 @@ namespace lain{
 			RID senario;
 			RID render_target;
 			RID render_target_texture;
-			Ref<RenderSceneBuffers> render_buffers;
+
+			// options
+
+			//Ref<RenderSceneBuffers> render_buffers;
 			// size; configs;
 			int m_to_screen;
 

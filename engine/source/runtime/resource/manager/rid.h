@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #ifndef RID_H
 #define RID_H
 
@@ -12,7 +12,10 @@ public:
 private:
 	static s_u64 m_next_id;
 };
-
+//A handle for a Resource's unique identifier.
+//Description
+//
+//The RID Variant type is used to access a low - level resource by its unique ID.RIDs are opaque, which means they do not grant access to the resource by themselves.They are used by the low - level server classes, such as DisplayServer, RenderingServer, TextServer, etc.
 class RID {
 	uint64_t _id = 0;
 

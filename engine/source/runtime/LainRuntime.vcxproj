@@ -129,6 +129,7 @@
     <ClInclude Include="core\object\object.h" />
     <ClInclude Include="core\object\object_id.h" />
     <ClInclude Include="core\object\refcount.h" />
+    <ClInclude Include="core\object\safe_refcount.h" />
     <ClInclude Include="core\os\condition_variable.h" />
     <ClInclude Include="core\os\memory.h" />
     <ClInclude Include="core\os\mutex.h" />
