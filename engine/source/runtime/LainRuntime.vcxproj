@@ -99,6 +99,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="base.h" />
+    <ClInclude Include="core\cropto\crypto_core.h" />
     <ClInclude Include="core\engine\engine.h" />
     <ClInclude Include="core\error\error.h" />
     <ClInclude Include="core\error\error_macros.h" />
@@ -107,6 +108,7 @@
     <ClInclude Include="core\log\log.h" />
     <ClInclude Include="core\mainloop\main.h" />
     <ClInclude Include="core\math\axis_aligned.h" />
+    <ClInclude Include="core\math\color.h" />
     <ClInclude Include="core\math\math.h" />
     <ClInclude Include="core\math\math_defs.h" />
     <ClInclude Include="core\math\math_funcs.h" />
@@ -114,6 +116,7 @@
     <ClInclude Include="core\math\math_marcos.h" />
     <ClInclude Include="core\math\matrix3.h" />
     <ClInclude Include="core\math\matrix4.h" />
+    <ClInclude Include="core\math\ok_color.h" />
     <ClInclude Include="core\math\quaternion.h" />
     <ClInclude Include="core\math\random.h" />
     <ClInclude Include="core\math\random_pcg.h" />
@@ -128,16 +131,21 @@
     <ClInclude Include="core\meta\serializer\serializer.h" />
     <ClInclude Include="core\object\object.h" />
     <ClInclude Include="core\object\object_id.h" />
-    <ClInclude Include="core\object\refcount.h" />
+    <ClInclude Include="core\object\refcounted.h" />
     <ClInclude Include="core\object\safe_refcount.h" />
+    <ClInclude Include="core\variant\variant.h" />
     <ClInclude Include="core\os\condition_variable.h" />
     <ClInclude Include="core\os\memory.h" />
     <ClInclude Include="core\os\mutex.h" />
     <ClInclude Include="core\os\os.h" />
     <ClInclude Include="core\os\pool_allocator.h" />
     <ClInclude Include="core\os\thread_safe.h" />
+    <ClInclude Include="core\scene\node.h" />
+    <ClInclude Include="core\scene\scene_tree.h" />
     <ClInclude Include="core\string\char_utils.h" />
-    <ClInclude Include="core\string\lstring.h" />
+    <ClInclude Include="core\string\ustring.h" />
+    <ClInclude Include="core\string\ucaps.h" />
+    <ClInclude Include="core\templates\array.h" />
     <ClInclude Include="core\templates\cowdata.h" />
     <ClInclude Include="core\templates\hash_funcs.h" />
     <ClInclude Include="core\templates\hash_map.h" />
@@ -157,6 +165,7 @@
     <ClInclude Include="function\ui\window_ui.h" />
     <ClInclude Include="io\resource.h" />
     <ClInclude Include="io\resource_load.h" />
+    <ClInclude Include="core\string\print_string.h" />
     <ClInclude Include="render\render_system.h" />
     <ClInclude Include="render\render_system_globals.h" />
     <ClInclude Include="render\viewport.h" />
@@ -170,6 +179,7 @@
     <ClInclude Include="resource\manager\rid.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="core\math\color.cpp" />
     <ClCompile Include="core\engine\engine.cpp" />
     <ClCompile Include="core\error\error_macros.cpp" />
     <ClCompile Include="core\input\input.cpp" />
@@ -189,16 +199,22 @@
     <ClCompile Include="core\meta\serializer\serializer.cpp" />
     <ClCompile Include="core\object\object.cpp" />
     <ClCompile Include="core\object\object_id.cpp" />
-    <ClCompile Include="core\object\refcount.cpp" />
+    <ClCompile Include="core\object\refcounted.cpp" />
     <ClCompile Include="core\os\memory.cpp" />
     <ClCompile Include="core\os\mutex.cpp" />
     <ClCompile Include="core\os\os.cpp" />
     <ClCompile Include="core\os\pool_allocator.cpp" />
-    <ClCompile Include="core\string\lstring.cpp" />
+    <ClCompile Include="core\scene\scene_tree.cpp" />
+    <ClCompile Include="core\string\ustring.cpp" />
+    <ClCompile Include="core\string\string_name.h" />
+    <ClCompile Include="core\string\ustringutils.cpp" />
+    <ClCompile Include="core\variant\callable.cpp" />
     <ClCompile Include="function\display\window_system.cpp" />
     <ClCompile Include="io\resource_load.cpp" />
+    <ClCompile Include="core\scene\node.cpp" />
     <ClCompile Include="render\render_system.cpp" />
     <ClCompile Include="resource\component\transform_component.cpp" />
+    <ClCompile Include="core\variant\variant.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\thirdparty\spdlog\spdlog.vcxproj">
@@ -213,6 +229,10 @@
     <ProjectReference Include="..\PreCompile.vcxproj">
       <Project>{75B3BCBE-616B-FE0B-CA72-D767B64999FC}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="color_names.inc" />
+    <None Include="core\string\char_range.inc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

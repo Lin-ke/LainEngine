@@ -187,7 +187,7 @@
     <ClInclude Include="core\string\char_utils.h">
       <Filter>core\string</Filter>
     </ClInclude>
-    <ClInclude Include="core\string\lstring.h">
+    <ClInclude Include="core\string\ustring.h">
       <Filter>core\string</Filter>
     </ClInclude>
     <ClInclude Include="core\templates\cowdata.h">
@@ -280,7 +280,16 @@
     <ClInclude Include="resource\manager\rid.h">
       <Filter>resource\manager</Filter>
     </ClInclude>
-    <ClInclude Include="core\object\refcount.h" />
+    <ClInclude Include="core\object\refcounted.h" />
+    <ClInclude Include="core\scene\scene_tree.h" />
+    <ClInclude Include="core\scene\node.h" />
+    <ClInclude Include="core\variant\variant.h" />
+    <ClInclude Include="core\templates\array.h" />
+    <ClInclude Include="core\string\ucaps.h" />
+    <ClInclude Include="core\math\color.h" />
+    <ClInclude Include="core\math\ok_color.h" />
+    <ClInclude Include="core\string\print_string.h" />
+    <ClInclude Include="core\cropto\crypto_core.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\engine\engine.cpp">
@@ -340,7 +349,7 @@
     <ClCompile Include="core\object\object_id.cpp">
       <Filter>core\object</Filter>
     </ClCompile>
-    <ClCompile Include="core\object\refcount.cpp">
+    <ClCompile Include="core\object\refcounted.cpp">
       <Filter>core\object</Filter>
     </ClCompile>
     <ClCompile Include="core\os\memory.cpp">
@@ -355,7 +364,7 @@
     <ClCompile Include="core\os\pool_allocator.cpp">
       <Filter>core\os</Filter>
     </ClCompile>
-    <ClCompile Include="core\string\lstring.cpp">
+    <ClCompile Include="core\string\ustring.cpp">
       <Filter>core\string</Filter>
     </ClCompile>
     <ClCompile Include="function\display\window_system.cpp">
@@ -370,5 +379,18 @@
     <ClCompile Include="resource\component\transform_component.cpp">
       <Filter>resource\component</Filter>
     </ClCompile>
+    <ClCompile Include="core\scene\scene_tree.cpp" />
+    <ClCompile Include="core\scene\node.cpp" />
+    <ClCompile Include="core\variant\callable.cpp" />
+    <ClCompile Include="core\string\string_name.h" />
+    <ClCompile Include="core\variant\variant.cpp" />
+    <ClCompile Include="core\string\ustringutils.cpp" />
+    <ClCompile Include="core\math\color.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="core\string\char_range.inc">
+      <Filter>core\string</Filter>
+    </None>
+    <None Include="color_names.inc" />
   </ItemGroup>
 </Project>

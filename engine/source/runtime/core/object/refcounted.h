@@ -191,77 +191,75 @@ public:
 	}
 };
 
-class WeakRef : public RefCounted {
-	GDCLASS(WeakRef, RefCounted);
-
-	ObjectID ref;
-
-protected:
-	static void _bind_methods();
-
-public:
-	Variant get_ref() const;
-	void set_obj(Object* p_object);
-	void set_ref(const Ref<RefCounted>& p_ref);
-
-	WeakRef() {}
-};
-
-template <class T>
-struct PtrToArg<Ref<T>> {
-	_FORCE_INLINE_ static Ref<T> convert(const void* p_ptr) {
-		// p_ptr points to a RefCounted object
-		return Ref<T>(const_cast<T*>(reinterpret_cast<const T*>(p_ptr)));
-	}
-
-	typedef Ref<T> EncodeT;
-
-	_FORCE_INLINE_ static void encode(Ref<T> p_val, const void* p_ptr) {
-		// p_ptr points to an EncodeT object which is a Ref<T> object.
-		*(const_cast<Ref<RefCounted> *>(reinterpret_cast<const Ref<RefCounted> *>(p_ptr))) = p_val;
-	}
-};
-
-template <class T>
-struct PtrToArg<const Ref<T>&> {
-	typedef Ref<T> EncodeT;
-
-	_FORCE_INLINE_ static Ref<T> convert(const void* p_ptr) {
-		// p_ptr points to a RefCounted object
-		return Ref<T>((T*)p_ptr);
-	}
-};
-
-template <class T>
-struct GetTypeInfo<Ref<T>> {
-	static const Variant::Type VARIANT_TYPE = Variant::OBJECT;
-	static const GodotTypeInfo::Metadata METADATA = GodotTypeInfo::METADATA_NONE;
-
-	static inline PropertyInfo get_class_info() {
-		return PropertyInfo(Variant::OBJECT, String(), PROPERTY_HINT_RESOURCE_TYPE, T::get_class_static());
-	}
-};
-
-template <class T>
-struct GetTypeInfo<const Ref<T>&> {
-	static const Variant::Type VARIANT_TYPE = Variant::OBJECT;
-	static const GodotTypeInfo::Metadata METADATA = GodotTypeInfo::METADATA_NONE;
-
-	static inline PropertyInfo get_class_info() {
-		return PropertyInfo(Variant::OBJECT, String(), PROPERTY_HINT_RESOURCE_TYPE, T::get_class_static());
-	}
-};
-
-template <class T>
-struct VariantInternalAccessor<Ref<T>> {
-	static _FORCE_INLINE_ Ref<T> get(const Variant* v) { return Ref<T>(*VariantInternal::get_object(v)); }
-	static _FORCE_INLINE_ void set(Variant* v, const Ref<T>& p_ref) { VariantInternal::refcounted_object_assign(v, p_ref.ptr()); }
-};
-
-template <class T>
-struct VariantInternalAccessor<const Ref<T>&> {
-	static _FORCE_INLINE_ Ref<T> get(const Variant* v) { return Ref<T>(*VariantInternal::get_object(v)); }
-	static _FORCE_INLINE_ void set(Variant* v, const Ref<T>& p_ref) { VariantInternal::refcounted_object_assign(v, p_ref.ptr()); }
-};
+//class WeakRef : public RefCounted {
+//	ObjectID ref;
+//
+//protected:
+//	static void _bind_methods();
+//
+//public:
+//	Variant get_ref() const;
+//	void set_obj(Object* p_object);
+//	void set_ref(const Ref<RefCounted>& p_ref);
+//
+//	WeakRef() {}
+//};
+//
+//template <class T>
+//struct PtrToArg<Ref<T>> {
+//	_FORCE_INLINE_ static Ref<T> convert(const void* p_ptr) {
+//		// p_ptr points to a RefCounted object
+//		return Ref<T>(const_cast<T*>(reinterpret_cast<const T*>(p_ptr)));
+//	}
+//
+//	typedef Ref<T> EncodeT;
+//
+//	_FORCE_INLINE_ static void encode(Ref<T> p_val, const void* p_ptr) {
+//		// p_ptr points to an EncodeT object which is a Ref<T> object.
+//		*(const_cast<Ref<RefCounted> *>(reinterpret_cast<const Ref<RefCounted> *>(p_ptr))) = p_val;
+//	}
+//};
+//
+//template <class T>
+//struct PtrToArg<const Ref<T>&> {
+//	typedef Ref<T> EncodeT;
+//
+//	_FORCE_INLINE_ static Ref<T> convert(const void* p_ptr) {
+//		// p_ptr points to a RefCounted object
+//		return Ref<T>((T*)p_ptr);
+//	}
+//};
+//
+//template <class T>
+//struct GetTypeInfo<Ref<T>> {
+//	static const Variant::Type VARIANT_TYPE = Variant::OBJECT;
+//	static const GodotTypeInfo::Metadata METADATA = GodotTypeInfo::METADATA_NONE;
+//
+//	static inline PropertyInfo get_class_info() {
+//		return PropertyInfo(Variant::OBJECT, String(), PROPERTY_HINT_RESOURCE_TYPE, T::get_class_static());
+//	}
+//};
+//
+//template <class T>
+//struct GetTypeInfo<const Ref<T>&> {
+//	static const Variant::Type VARIANT_TYPE = Variant::OBJECT;
+//	static const GodotTypeInfo::Metadata METADATA = GodotTypeInfo::METADATA_NONE;
+//
+//	static inline PropertyInfo get_class_info() {
+//		return PropertyInfo(Variant::OBJECT, String(), PROPERTY_HINT_RESOURCE_TYPE, T::get_class_static());
+//	}
+//};
+//
+//template <class T>
+//struct VariantInternalAccessor<Ref<T>> {
+//	static _FORCE_INLINE_ Ref<T> get(const Variant* v) { return Ref<T>(*VariantInternal::get_object(v)); }
+//	static _FORCE_INLINE_ void set(Variant* v, const Ref<T>& p_ref) { VariantInternal::refcounted_object_assign(v, p_ref.ptr()); }
+//};
+//
+//template <class T>
+//struct VariantInternalAccessor<const Ref<T>&> {
+//	static _FORCE_INLINE_ Ref<T> get(const Variant* v) { return Ref<T>(*VariantInternal::get_object(v)); }
+//	static _FORCE_INLINE_ void set(Variant* v, const Ref<T>& p_ref) { VariantInternal::refcounted_object_assign(v, p_ref.ptr()); }
+//};
 
 #endif // !__REFCOUNT_H__

@@ -2,80 +2,13 @@
 #ifndef __CORE_OBJECT_H__
 #define __CORE_OBJECT_H__
 #pragma once
+// base class of all object
+class Object {
+	// for gc
+	
+	// signal (event)
 
-#include "resource/component/component.h"
+};
 
-#include "resource/component/object.h"
-#include "object_id.h"
-#include <memory>
-#include <string>
-#include <unordered_set>
-#include <vector>
-
-namespace lain
-{
-    /// GObject : Game Object base class
-    class GObject : public std::enable_shared_from_this<GObject>
-    {
-        typedef std::unordered_set<std::string> TypeNameSet;
-
-    public:
-        GObject(GObjectID id) : m_id{ id } {}
-        virtual ~GObject();
-
-        virtual void tick(float delta_time);
-
-        bool load(const ObjectInstanceRes& object_instance_res);
-        void save(ObjectInstanceRes& out_object_instance_res);
-
-        GObjectID getID() const { return m_id; }
-
-        void               setName(std::string name) { m_name = name; }
-        const std::string& getName() const { return m_name; }
-
-        bool hasComponent(const std::string& compenent_type_name) const;
-
-        std::vector<Reflection::ReflectionPtr<Component>> getComponents() { return m_components; }
-
-        template<typename TComponent>
-        TComponent* tryGetComponent(const std::string& compenent_type_name)
-        {
-            for (auto& component : m_components)
-            {
-                if (component.getTypeName() == compenent_type_name)
-                {
-                    return static_cast<TComponent*>(component.operator->());
-                }
-            }
-
-            return nullptr;
-        }
-
-        template<typename TComponent>
-        const TComponent* tryGetComponentConst(const std::string& compenent_type_name) const
-        {
-            for (const auto& component : m_components)
-            {
-                if (component.getTypeName() == compenent_type_name)
-                {
-                    return static_cast<const TComponent*>(component.operator->());
-                }
-            }
-            return nullptr;
-        }
-
-#define tryGetComponent(COMPONENT_TYPE) tryGetComponent<COMPONENT_TYPE>(#COMPONENT_TYPE)
-#define tryGetComponentConst(COMPONENT_TYPE) tryGetComponentConst<const COMPONENT_TYPE>(#COMPONENT_TYPE)
-
-    protected:
-        GObjectID   m_id{ k_invalid_gobject_id };
-        std::string m_name;
-        std::string m_definition_url;
-
-        // we have to use the ReflectionPtr due to that the components need to be reflected 
-        // in editor, and it's polymorphism
-        std::vector<Reflection::ReflectionPtr<Component>> m_components;
-    };
-} // namespace Piccolo
 
 #endif // !__CORE_OBJECT_H__

@@ -6,14 +6,20 @@
 #include <core/templates/safe_numeric.h>
 #include <type_traits>
 namespace lain {
-
+	class CharString;
+	class Char16String;
 	template <class T>
 	class Vector;
+	class String;
 
 	template <class T>
 	class CowData {
+		friend class CharString;
+		friend class Char16String;
+
 		template<class TV>
 		friend class Vector;
+		friend class String;
 	private:
 		// structure:
 		// memory: (refcount(safe); size(uint) ; data)
