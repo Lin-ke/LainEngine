@@ -205,6 +205,7 @@
     <ClCompile Include="core\os\os.cpp" />
     <ClCompile Include="core\os\pool_allocator.cpp" />
     <ClCompile Include="core\scene\scene_tree.cpp" />
+    <ClCompile Include="core\string\print_string.cpp" />
     <ClCompile Include="core\string\ustring.cpp" />
     <ClCompile Include="core\string\string_name.h" />
     <ClCompile Include="core\string\ustringutils.cpp" />

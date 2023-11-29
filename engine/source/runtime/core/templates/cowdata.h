@@ -310,11 +310,11 @@ namespace lain {
 	int CowData<T>::Find(const T& p_val, int p_from) const {
 		int ret = -1;
 
-		if (p_from < 0 || size() == 0) {
+		if (p_from < 0 || Size() == 0) {
 			return ret;
 		}
 
-		for (int i = p_from; i < size(); i++) {
+		for (int i = p_from; i < Size(); i++) {
 			if (Get(i) == p_val) {
 				ret = i;
 				break;
@@ -336,7 +336,7 @@ namespace lain {
 		}
 
 		for (int i = p_from; i >= 0; i--) {
-			if (get(i) == p_val) {
+			if (Get(i) == p_val) {
 				return i;
 			}
 		}

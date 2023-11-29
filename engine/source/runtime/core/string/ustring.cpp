@@ -8,6 +8,7 @@
 #include "core/string/string_name.h"
 #include "core/string/ucaps.h"
 #include "core/variant/variant.h"
+#include "core/string/string_name.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -3998,29 +3999,29 @@ static int _humanize_digits(int p_num) {
 	}
 }
 
-String String::humanize_size(uint64_t p_size) {
-	uint64_t _div = 1;
-	Vector<String> prefixes;
-	prefixes.push_back(RTR("B"));
-	prefixes.push_back(RTR("KiB"));
-	prefixes.push_back(RTR("MiB"));
-	prefixes.push_back(RTR("GiB"));
-	prefixes.push_back(RTR("TiB"));
-	prefixes.push_back(RTR("PiB"));
-	prefixes.push_back(RTR("EiB"));
-
-	int prefix_idx = 0;
-
-	while (prefix_idx < prefixes.size() - 1 && p_size >(_div * 1024)) {
-		_div *= 1024;
-		prefix_idx++;
-	}
-
-	const int digits = prefix_idx > 0 ? _humanize_digits(p_size / _div) : 0;
-	const double divisor = prefix_idx > 0 ? _div : 1;
-
-	return String::num(p_size / divisor).pad_decimals(digits) + " " + prefixes[prefix_idx];
-}
+//String String::humanize_size(uint64_t p_size) {
+//	uint64_t _div = 1;
+//	Vector<String> prefixes;
+//	prefixes.push_back(RTR("B"));
+//	prefixes.push_back(RTR("KiB"));
+//	prefixes.push_back(RTR("MiB"));
+//	prefixes.push_back(RTR("GiB"));
+//	prefixes.push_back(RTR("TiB"));
+//	prefixes.push_back(RTR("PiB"));
+//	prefixes.push_back(RTR("EiB"));
+//
+//	int prefix_idx = 0;
+//
+//	while (prefix_idx < prefixes.size() - 1 && p_size >(_div * 1024)) {
+//		_div *= 1024;
+//		prefix_idx++;
+//	}
+//
+//	const int digits = prefix_idx > 0 ? _humanize_digits(p_size / _div) : 0;
+//	const double divisor = prefix_idx > 0 ? _div : 1;
+//
+//	return String::num(p_size / divisor).pad_decimals(digits) + " " + prefixes[prefix_idx];
+//}
 
 bool String::is_absolute_path() const {
 	if (length() > 1) {

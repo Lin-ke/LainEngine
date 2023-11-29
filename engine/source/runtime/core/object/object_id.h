@@ -8,6 +8,7 @@
 // Also, need to be explicitly only castable to 64 bits integer types
 // to avoid bugs due to loss of precision
 
+// ²»ÓÃs_u64Âð
 class ObjectID {
 	uint64_t id = 0;
 

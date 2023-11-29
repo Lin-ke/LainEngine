@@ -4,9 +4,12 @@
 #include "base.h"
 #include "core/templates/safe_numeric.h"
 #include "core/object/safe_refcount.h"
-
+#include "core/string/ustring.h"
+#define UNIQUE_NODE_PREFIX "%"
 //https://docs.godotengine.org/en/stable/classes/class_stringname.html
 // For compare speed
+namespace lain {
+
 class StringName {
 	struct _Data
 	{
@@ -25,4 +28,6 @@ class StringName {
 		_Data() {}
 	};
 };
+}
+
 #endif // !__STRING_NAME_H__

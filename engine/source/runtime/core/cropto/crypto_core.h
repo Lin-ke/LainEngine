@@ -4,6 +4,7 @@
 #define CRYPTO_CORE_H
 
 #include "core/object/refcounted.h"
+namespace lain {
 
 class CryptoCore {
 public:
@@ -83,9 +84,11 @@ public:
 	static Error b64_encode(uint8_t* r_dst, int p_dst_len, size_t* r_len, const uint8_t* p_src, int p_src_len);
 	static Error b64_decode(uint8_t* r_dst, int p_dst_len, size_t* r_len, const uint8_t* p_src, int p_src_len);
 
-	static Error md5(const uint8_t* p_src, int p_src_len, unsigned char r_hash[16]);
-	static Error sha1(const uint8_t* p_src, int p_src_len, unsigned char r_hash[20]);
-	static Error sha256(const uint8_t* p_src, int p_src_len, unsigned char r_hash[32]);
+	static Error md5(const uint8_t* p_src, int p_src_len, unsigned char r_hash[16]) { return OK; }
+	static Error sha1(const uint8_t* p_src, int p_src_len, unsigned char r_hash[20]) { return OK; }
+	static Error sha256(const uint8_t* p_src, int p_src_len, unsigned char r_hash[32]) { return OK; }
 };
+}
+
 
 #endif // CRYPTO_CORE_H

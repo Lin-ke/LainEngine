@@ -7,14 +7,13 @@
 #include "core/templates/cowdata.h"
 #include "core/templates/vector.h"
 #include "core/typedefs.h"
-#include "core/variant/variant.h"
 #include "core/variant/array.h"
 
 /*************************************************************************/
 /*  CharProxy                                                            */
 /*************************************************************************/
 namespace lain {
-
+	// why is it designed to be a proxy?
 	template <class T>
 	class CharProxy {
 		friend class Char16String;
@@ -35,11 +34,11 @@ namespace lain {
 			_cowdata(p_other._cowdata) {}
 
 		_FORCE_INLINE_ operator T() const {
-			if (unlikely(_index == _cowdata.size())) {
+			if (unlikely(_index == _cowdata.Size())) {
 				return _null;
 			}
 
-			return _cowdata.get(_index);
+			return _cowdata.Get(_index);
 		}
 
 		_FORCE_INLINE_ const T* operator&() const {
@@ -47,7 +46,7 @@ namespace lain {
 		}
 
 		_FORCE_INLINE_ void operator=(const T& p_other) const {
-			_cowdata.set(_index, p_other);
+			_cowdata.Set(_index, p_other);
 		}
 
 		_FORCE_INLINE_ void operator=(const CharProxy<T>& p_other) const {
@@ -556,5 +555,3 @@ namespace lain {
 	}
 }
 #endif // USTRING_GODOT_H
-//#include <string>
-//typedef  std::string String;

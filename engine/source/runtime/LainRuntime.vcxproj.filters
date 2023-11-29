@@ -386,6 +386,7 @@
     <ClCompile Include="core\variant\variant.cpp" />
     <ClCompile Include="core\string\ustringutils.cpp" />
     <ClCompile Include="core\math\color.cpp" />
+    <ClCompile Include="core\string\print_string.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="core\string\char_range.inc">

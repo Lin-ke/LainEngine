@@ -33,6 +33,7 @@
 // So this in a way that does not require memory allocation
 // the old way leaked memory
 // this is not used as often as for more performance to make sense
+namespace lain{
 
 struct NamedColor {
 	const char *name;
@@ -190,4 +191,5 @@ static NamedColor named_colors[] = {
 	{ "YELLOW", Color::hex(0xFFFF00FF) },
 	{ "YELLOW_GREEN", Color::hex(0x9ACD32FF) },
 	{ nullptr, Color() },
-};
+	};
+}

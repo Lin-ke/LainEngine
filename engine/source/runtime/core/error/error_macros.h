@@ -3,11 +3,13 @@
 #define ERROR_MACROS_H
 
 #include "core/typedefs.h"
-#include "core/string/ustring.h"
-using lain::String;
 
 #include <atomic> // We'd normally use safe_numeric.h, but that would cause circular includes.
 
+// 前置声明命名空间下的类
+namespace lain {
+	class String;
+}
 enum ErrorHandlerType {
 	ERR_HANDLER_ERROR,
 	ERR_HANDLER_WARNING,
@@ -34,11 +36,11 @@ void remove_error_handler(const ErrorHandlerList* p_handler);
 // Functions used by the error macros.
 
 void _err_print_error(const char* p_function, const char* p_file, int p_line, const char* p_error, bool p_editor_notify = false, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
-void _err_print_error(const char* p_function, const char* p_file, int p_line, const String& p_error, bool p_editor_notify = false, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
+void _err_print_error(const char* p_function, const char* p_file, int p_line, const lain::String& p_error, bool p_editor_notify = false, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
 void _err_print_error(const char* p_function, const char* p_file, int p_line, const char* p_error, const char* p_message, bool p_editor_notify = false, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
-void _err_print_error(const char* p_function, const char* p_file, int p_line, const String& p_error, const char* p_message, bool p_editor_notify = false, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
-void _err_print_error(const char* p_function, const char* p_file, int p_line, const char* p_error, const String& p_message, bool p_editor_notify = false, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
-void _err_print_error(const char* p_function, const char* p_file, int p_line, const String& p_error, const String& p_message, bool p_editor_notify = false, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
+void _err_print_error(const char* p_function, const char* p_file, int p_line, const lain::String& p_error, const char* p_message, bool p_editor_notify = false, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
+void _err_print_error(const char* p_function, const char* p_file, int p_line, const char* p_error, const lain::String& p_message, bool p_editor_notify = false, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
+void _err_print_error(const char* p_function, const char* p_file, int p_line, const lain::String& p_error, const lain::String& p_message, bool p_editor_notify = false, ErrorHandlerType p_type = ERR_HANDLER_ERROR);
 void _err_print_index_error(const char* p_function, const char* p_file, int p_line, int64_t p_index, int64_t p_size, const char* p_index_str, const char* p_size_str, const char* p_message = "", bool p_editor_notify = false, bool fatal = false);
 
 void _err_flush_stdout();

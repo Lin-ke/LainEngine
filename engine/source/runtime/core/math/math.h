@@ -12,7 +12,7 @@ namespace lain
 {
     static const float Math_POS_INFINITY = std::numeric_limits<float>::infinity();
     static const float Math_NEG_INFINITY = -std::numeric_limits<float>::infinity();
-    static const float Math_PI           = 3.14159265358979323846264338327950288f;
+    static const float Math_PI = 3.1415926535897932384626433833;
     static const float Math_ONE_OVER_PI  = 1.0f / Math_PI;
     static const float Math_TWO_PI       = 2.0f * Math_PI;
     static const float Math_HALF_PI      = 0.5f * Math_PI;

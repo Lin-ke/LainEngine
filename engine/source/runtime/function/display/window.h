@@ -2,11 +2,12 @@
 
 #ifndef __WINDOW_H__
 #define __WINDOW_H__
-#include "core/string/lstring.h"
+#include "core/string/ustring.h"
 #include <GLFW/glfw3.h>
 // 感觉不需要window的抽象 只需要windowdata的抽象
-class WindowSystem;
+
 namespace lain{
+	class WindowSystem;
 
 	class Window {
 		friend class WindowSystem;

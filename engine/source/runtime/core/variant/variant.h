@@ -35,7 +35,6 @@ namespace lain {
 
 			TRANSFORM2D,
 			TRANSFORM3D,
-			QUATERNION,
 			PROJECTION,
 
 			// engine
@@ -73,24 +72,28 @@ namespace lain {
 		L_INLINE String get_type_name() {
 			return get_type_name(m_type);
 		}
+		void operator=(const Variant& p_variant); // only this is enough for all the other types
 
 	};
 
 	template <typename... VarArgs>
 	String vformat(const String& p_text, const VarArgs... p_args) {
-		Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
-		Array args_array;
-		args_array.resize(sizeof...(p_args));
-		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
-			args_array[i] = args[i];
-		}
-
-		bool error = false;
-		String fmt = p_text.sprintf(args_array, &error);
-
-		ERR_FAIL_COND_V_MSG(error, String(), fmt);
-
-		return fmt;
+		return "";
 	}
+	//String vformat(const String& p_text, const VarArgs... p_args) {
+	//	Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
+	//	Array args_array;
+	//	args_array.resize(sizeof...(p_args));
+	//	for (uint32_t i = 0; i < sizeof...(p_args); i++) {
+	//		args_array[i] = args[i];
+	//	}
+
+	//	bool error = false;
+	//	String fmt = p_text.sprintf(args_array, &error);
+
+	//	ERR_FAIL_COND_V_MSG(error, String(), fmt);
+
+	//	return fmt;
+	//}
 };
 #endif // !__VARIANT_H__
