@@ -96,6 +96,7 @@ public:
     Json(const std::string &value); // STRING
     Json(std::string &&value);      // STRING
     Json(const char * value);       // STRING
+    Json(const char32_t* value);
     Json(const array &values);      // ARRAY
     Json(array &&values);           // ARRAY
     Json(const object &values);     // OBJECT

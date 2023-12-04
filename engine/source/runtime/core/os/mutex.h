@@ -11,6 +11,7 @@ class MutexLock;
 
 
 // Impl设计模式，接口封装，对底层隐藏细节（具体是哪种锁）
+// 鸭子类型
 template <class StdMutexT>
 class MutexImpl {
 	friend class MutexLock<MutexImpl<StdMutexT>>;

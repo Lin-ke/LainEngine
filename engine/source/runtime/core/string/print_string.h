@@ -38,7 +38,7 @@ extern bool is_print_verbose_enabled();
 #define print_verbose(m_text)             \
 	{                                     \
 		if (is_print_verbose_enabled()) { \
-			print_line(m_text);           \
+			L_STRPRINT(m_text);           \
 		}                                 \
 	}
 
@@ -60,5 +60,5 @@ void print_line_rich(Variant p_var, Args... p_args) {
 	__print_line_rich(stringify_variants(p_var, p_args...));
 }
 
-#endif // PRINT_STRING_H
 }
+#endif // PRINT_STRING_H

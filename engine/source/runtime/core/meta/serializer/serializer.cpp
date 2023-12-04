@@ -87,6 +87,19 @@ namespace lain
         return instance = json_context.string_value();
     }
 
+    template<>
+    Json Serializer::write(const String& instance)
+    {
+        return Json(std::string(instance.utf8().get_data()));
+    }
+    template<>
+    String& Serializer::read(const Json& json_context, String& instance)
+    {
+        assert(json_context.is_string());
+        // 这里有一点左值右值的问题
+        instance = json_context.string_value().c_str();
+        return instance;
+    }
     // template<>
     // Json Serializer::write(const Reflection::object& instance)
     //{

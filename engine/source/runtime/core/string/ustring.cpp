@@ -2,7 +2,7 @@
 #include "ustring.h"
 #include "core/cropto/crypto_core.h"
 #include "core/math/color.h"
-#include "core/math/math_funcs.h"
+#include "core/math/math.h"
 #include "core/os/memory.h"
 #include "core/string/print_string.h"
 #include "core/string/string_name.h"

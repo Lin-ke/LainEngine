@@ -103,15 +103,16 @@
     <ClInclude Include="core\engine\engine.h" />
     <ClInclude Include="core\error\error.h" />
     <ClInclude Include="core\error\error_macros.h" />
+    <ClInclude Include="core\gobject\gobject.h" />
     <ClInclude Include="core\input\key_input.h" />
     <ClInclude Include="core\input\mouse_input.h" />
     <ClInclude Include="core\log\log.h" />
     <ClInclude Include="core\mainloop\main.h" />
     <ClInclude Include="core\math\axis_aligned.h" />
     <ClInclude Include="core\math\color.h" />
+    <ClInclude Include="core\math\hashfuncs.h" />
     <ClInclude Include="core\math\math.h" />
     <ClInclude Include="core\math\math_defs.h" />
-    <ClInclude Include="core\math\math_funcs.h" />
     <ClInclude Include="core\math\math_headers.h" />
     <ClInclude Include="core\math\math_marcos.h" />
     <ClInclude Include="core\math\matrix3.h" />
@@ -133,6 +134,9 @@
     <ClInclude Include="core\object\object_id.h" />
     <ClInclude Include="core\object\refcounted.h" />
     <ClInclude Include="core\object\safe_refcount.h" />
+    <ClInclude Include="core\object\signal.h" />
+    <ClInclude Include="core\object\signal_system.h" />
+    <ClInclude Include="core\templates\list.h" />
     <ClInclude Include="core\variant\variant.h" />
     <ClInclude Include="core\os\condition_variable.h" />
     <ClInclude Include="core\os\memory.h" />
@@ -176,7 +180,7 @@
     <ClInclude Include="resource\component\mesh.h" />
     <ClInclude Include="resource\component\object.h" />
     <ClInclude Include="resource\manager\resource_manager.h" />
-    <ClInclude Include="resource\manager\rid.h" />
+    <ClInclude Include="core\resource\rid.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\math\color.cpp" />
@@ -204,12 +208,14 @@
     <ClCompile Include="core\os\mutex.cpp" />
     <ClCompile Include="core\os\os.cpp" />
     <ClCompile Include="core\os\pool_allocator.cpp" />
+    <ClCompile Include="core\resource\res_manager.cpp" />
     <ClCompile Include="core\scene\scene_tree.cpp" />
     <ClCompile Include="core\string\print_string.cpp" />
+    <ClCompile Include="core\string\string_name.cpp" />
     <ClCompile Include="core\string\ustring.cpp" />
     <ClCompile Include="core\string\string_name.h" />
     <ClCompile Include="core\string\ustringutils.cpp" />
-    <ClCompile Include="core\variant\callable.cpp" />
+    <ClCompile Include="core\variant\callable.h" />
     <ClCompile Include="function\display\window_system.cpp" />
     <ClCompile Include="io\resource_load.cpp" />
     <ClCompile Include="core\scene\node.cpp" />

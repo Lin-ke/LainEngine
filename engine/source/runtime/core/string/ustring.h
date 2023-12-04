@@ -151,8 +151,9 @@ namespace lain {
 			len = p_len;
 		}
 	};
-
+	class Serializer;
 	class String {
+		friend class Serializer;
 		CowData<char32_t> _cowdata;
 		static const char32_t _null;
 		static const char32_t _replacement_char;
@@ -240,6 +241,7 @@ namespace lain {
 
 		const char32_t* get_data() const;
 		/* standard size stuff */
+
 
 		_FORCE_INLINE_ int length() const {
 			int s = size();

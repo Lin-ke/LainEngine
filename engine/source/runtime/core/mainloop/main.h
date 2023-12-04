@@ -2,6 +2,8 @@
 #ifndef __MAIN_H__
 #define __MAIN_H__
 #include "base.h"
+namespace lain {
+
 class Main {
 	// static
 	static uint64_t last_ticks;
@@ -13,4 +15,6 @@ public:
 	static void Init();
 	L_INLINE bool IsInloop() { return (iterating > 0); }
 };
+}
+
 #endif

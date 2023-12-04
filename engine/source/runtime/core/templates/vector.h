@@ -93,7 +93,7 @@ namespace lain {
 
 		 template <class Comparator, bool Validate = SORT_ARRAY_VALIDATE_ENABLED, class... Args>
 		 void sort_custom(Args &&...args) {
-			 int len = _cowdata.size();
+			 int len = _cowdata.Size();
 			 if (len == 0) {
 				 return;
 			 }

@@ -5,14 +5,14 @@
 OS* OS::p_singleton = nullptr;
 void OSWin::Run() {
 	// init
-	Main::Init();
+	lain::Main::Init();
 	while (true) {
 		//ÈË»ú½»»¥
 		// display.send_events;
 		bool exit = lain::WindowSystem::GetSingleton()->ShouldClose();
 
 		
-		if (!Main::Loop()||exit) {
+		if (!lain::Main::Loop()||exit) {
 			break;
 		}
 		lain::WindowSystem::GetSingleton()->PollEvents();

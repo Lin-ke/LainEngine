@@ -4,10 +4,8 @@
 #endif // !__RES_OBJECT_H__
 
 #include "runtime/core/meta/reflection/reflection.h"
-
-
-#include <string>
-#include <vector>
+#include "core/string/ustring.h"
+#include "core/templates/vector.h"
 
 namespace lain
 {
@@ -19,8 +17,8 @@ namespace lain
         REFLECTION_BODY(ComponentDefinitionRes);
 
     public:
-        std::string m_type_name;
-        std::string m_component;
+        String m_type_name;
+        String m_component;
     };
 
     REFLECTION_TYPE(ObjectDefinitionRes)
@@ -29,7 +27,7 @@ namespace lain
         REFLECTION_BODY(ObjectDefinitionRes);
 
     public:
-        std::vector<Reflection::ReflectionPtr<Component>> m_components;
+        Vector<Reflection::ReflectionPtr<Component>> m_components;
     };
 
     REFLECTION_TYPE(ObjectInstanceRes)
@@ -38,9 +36,9 @@ namespace lain
         REFLECTION_BODY(ObjectInstanceRes);
 
     public:
-        std::string              m_name;
-        std::string              m_definition;
+        String              m_name;
+        String              m_definition;
 
-        std::vector<Reflection::ReflectionPtr<Component>> m_instanced_components;
+        Vector<Reflection::ReflectionPtr<Component>> m_instanced_components;
     };
-} // namespace Piccolo
+} 

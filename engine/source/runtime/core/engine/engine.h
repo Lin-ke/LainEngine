@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <string>
 #include <unordered_set>
+namespace lain {
 
 class Engine {
 public:
@@ -27,4 +28,6 @@ public:
 
 
 };
+}
+
 #endif

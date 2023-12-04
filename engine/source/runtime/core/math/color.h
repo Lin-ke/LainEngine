@@ -3,7 +3,7 @@
 #ifndef COLOR_H
 #define COLOR_H
 
-#include "core/math/math_funcs.h"
+#include "core/math/math.h"
 
 namespace lain {
 	class String;

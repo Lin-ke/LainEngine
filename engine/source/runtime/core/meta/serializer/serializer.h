@@ -4,6 +4,7 @@
 #include "runtime/core/meta/reflection/reflection.h"
 #include <vector>
 #include "runtime/core/templates/vector.h"
+#include "runtime/core/string/ustring.h"
 #include <cassert>
 #include <string>
 namespace lain
@@ -176,6 +177,11 @@ namespace lain
     Json Serializer::write(const std::string& instance);
     template<>
     std::string& Serializer::read(const Json& json_context, std::string& instance);
+
+    template<>
+    Json Serializer::write(const String& instance);
+    template<>
+    String& Serializer::read(const Json& json_context, String& instance);
     // vector
     
    

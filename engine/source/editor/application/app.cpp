@@ -13,15 +13,17 @@
 #include <core/templates/safe_numeric.h>
 #include <core/meta/meta_example.h>
 #include <core/os/os.h>
+#include "core/string/ustring.h"
 using lain::Vector;
+using lain::String;
 int YminusA(int a, lain::Vector2& obj);
 void TryERR_FAIL_INDEX();
 int main(int argc, char** argv) {
 	// main function
 	OSWin os = OSWin();
 
-	
 	OSWin::GetSingleton()->Run();
+
 }
 
 void TryERR_FAIL_INDEX() {

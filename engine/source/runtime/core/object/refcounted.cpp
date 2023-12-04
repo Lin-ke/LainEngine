@@ -1,4 +1,6 @@
 #include "refcounted.h"
+namespace lain {
+
 bool RefCounted::init_ref() {
 	return false;
 
@@ -18,4 +20,5 @@ int RefCounted::get_reference_count() const {
 
 RefCounted::RefCounted() {
 
+}
 }

@@ -31,7 +31,7 @@
 //
 //#ifndef HASHFUNCS_H
 //#define HASHFUNCS_H
-//#include "core/math/math_funcs.h"
+//#include "core/math/math.h"
 //#include "core/typedefs.h"
 //#include "core/math/vector2.h"
 //#include "core/math/vector3.h"

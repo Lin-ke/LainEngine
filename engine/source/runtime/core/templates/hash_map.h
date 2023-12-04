@@ -1,11 +1,9 @@
 #ifndef HASH_MAP_H
 #define HASH_MAP_H
-#include <unordered_map>
 
-#define HashMap std::unordered_map
-//#include "core/math/math_funcs.h"
+//#include "core/math/math.h"
 //#include "core/os/memory.h"
-//#include "core/templates/hashfuncs.h"
+//#include "core/math/hashfuncs.h"
 //#include "core/templates/paged_allocator.h"
 //#include "core/templates/pair.h"
 //

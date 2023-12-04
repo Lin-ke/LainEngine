@@ -4,7 +4,6 @@
 #include "runtime/core/math/transform.h"
 
 #include "runtime/resource/component/component.h"
-#include "core/object/object.h"
 
 namespace lain
 {

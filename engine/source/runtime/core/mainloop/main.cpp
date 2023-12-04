@@ -5,7 +5,9 @@
 #include "render/render_system.h"
 
 //  initialization part
-static Engine* engine = nullptr;
+namespace lain {
+
+static lain::Engine* engine = nullptr;
 static lain::WindowSystem* window_system = nullptr;
 static lain::RenderSystem* render_system = nullptr;
 
@@ -49,4 +51,5 @@ bool Main::Loop() {
 	// render server sending to windows
 	window_system->SwapBuffers();
 	return  true;
+}
 }

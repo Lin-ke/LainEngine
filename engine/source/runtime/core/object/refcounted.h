@@ -5,7 +5,9 @@
 #include "object.h"
 #include "core/os/memory.h"
 #include "safe_refcount.h"
-class RefCounted {
+namespace lain {
+
+class RefCounted: public Object{
 private:
 	SafeRefCount refcount_init;
 	SafeRefCount refcount;
@@ -261,5 +263,6 @@ public:
 //	static _FORCE_INLINE_ Ref<T> get(const Variant* v) { return Ref<T>(*VariantInternal::get_object(v)); }
 //	static _FORCE_INLINE_ void set(Variant* v, const Ref<T>& p_ref) { VariantInternal::refcounted_object_assign(v, p_ref.ptr()); }
 //};
+}
 
 #endif // !__REFCOUNT_H__

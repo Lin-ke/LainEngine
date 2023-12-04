@@ -22,13 +22,13 @@ namespace fs = std::filesystem;
 
 namespace Mustache = kainjow::mustache;
 
-#define L_DEBUG_GENERATOR true
-//#define L_DEBUG_GENERATOR false
-#define L_PRINT(...) if(L_DEBUG_GENERATOR) l_print(__FUNCTION__, __VA_ARGS__);
-template <typename ... Types>
-void  l_print(const Types&... args)
-{
-    std::ostringstream  ss;
-    std::initializer_list <int> { ([&args, &ss] {ss << (args) << "\t"; }(), 0)...};
-    std::cout << ss.str() << std::endl;
-}
+//#define L_DEBUG_GENERATOR true
+////#define L_DEBUG_GENERATOR false
+//#define L_PRINT(...) if(L_DEBUG_GENERATOR) l_print(__FUNCTION__, __VA_ARGS__);
+//template <typename ... Types>
+//void  l_print(const Types&... args)
+//{
+//    std::ostringstream  ss;
+//    std::initializer_list <int> { ([&args, &ss] {ss << (args) << "\t"; }(), 0)...};
+//    std::cout << ss.str() << std::endl;
+//}

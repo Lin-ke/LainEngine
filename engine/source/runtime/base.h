@@ -22,13 +22,14 @@
 #define L_CORE_INFO(...)	lain::Log::GetCoreLogger()->info(__VA_ARGS__)
 #define L_CORE_WARN(...)	lain::Log::GetCoreLogger()->warn(__VA_ARGS__)
 #define L_CORE_ERROR(...)	lain::Log::GetCoreLogger()->error(__VA_ARGS__)
-#define L_CORE_FATAL(...)	lain::Log::GetCoreLogger()->fatal(__VA_ARGS__)
+
+#define CSTR(x) (x).utf8().get_data()
+
 
 #define L_TRACE(...)	lain::Log::GetClientLogger()->trace(__VA_ARGS__)
 #define L_INFO(...)	lain::Log::GetClientLogger()->info(__VA_ARGS__)
 #define L_WARN(...)	lain::Log::GetClientLogger()->warn(__VA_ARGS__)
 #define L_ERROR(...)	lain::Log::GetClientLogger()->error(__VA_ARGS__)
-#define L_FATAL(...)	lain::Log::GetClientLogger()->fatal(__VA_ARGS__)
 
 // inline:
 // # define L_INLINE __forceinline 
@@ -44,12 +45,20 @@ void  L_PRINT(const Types&... args)
 	L_INFO(ss.str());
 }
 
+// duck class
+template <typename ... Types>
+void  L_STRPRINT(const Types&... args)
+{
+	std::ostringstream  ss;
+	std::initializer_list <int> {  ([&args, &ss] {   ss <<  CSTR(args) << " "; }(), 0)...};
+	L_CORE_INFO(ss.str());
+}
 template <typename ... Types>
 void  L_PERROR(const Types&... args)
 {
 	std::ostringstream  ss;
 	std::initializer_list <int> { ([&args, &ss] {ss << (args) << " "; }(), 0)...};
-	L_ERROR(ss.str());
+	L_CORE_ERROR(ss.str());
 }
 
 

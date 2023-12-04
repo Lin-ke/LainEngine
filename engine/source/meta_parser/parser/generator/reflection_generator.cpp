@@ -48,7 +48,6 @@ namespace Generator
         // class defs
         for (auto class_temp : schema.classes)
         {
-            L_PRINT("class name:", class_temp->getClassName());
             
             if (!class_temp->shouldCompile())
                 continue;
@@ -68,7 +67,6 @@ namespace Generator
                 if (!field->shouldCompile())
                     continue;
                 field_names.emplace_back(field->m_name);
-                L_PRINT(field->m_display_name, field->m_type);
                 bool is_array = field->m_type.find(vector_prefix) == 0;
                 bool is_vec_array = field->m_type.find(Vec_prefix) == 0;
                 if (is_array || is_vec_array)
@@ -83,7 +81,7 @@ namespace Generator
 
                     vector_map[field->m_type] = std::make_pair(array_useful_name, item_type);
 
-                    L_PRINT("ADD PAIR", array_useful_name, item_type);
+                    //L_PRINT("ADD PAIR", array_useful_name, item_type);
                 }
             }
 

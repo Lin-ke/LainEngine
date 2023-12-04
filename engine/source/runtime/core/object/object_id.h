@@ -9,6 +9,8 @@
 // to avoid bugs due to loss of precision
 
 // ²»ÓÃs_u64Âð
+namespace lain {
+
 class ObjectID {
 	uint64_t id = 0;
 
@@ -30,5 +32,6 @@ public:
 	_ALWAYS_INLINE_ explicit ObjectID(const uint64_t p_id) { id = p_id; }
 	_ALWAYS_INLINE_ explicit ObjectID(const int64_t p_id) { id = p_id; }
 };
+}
 
 #endif // OBJECT_ID_H
