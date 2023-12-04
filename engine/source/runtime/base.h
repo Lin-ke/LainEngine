@@ -85,7 +85,3 @@ typedef uint32_t u32;
 # define DEV_ENABLED
 #endif // __BASE__
 
-// 成员变量 首字母标识
-// 函数：大驼峰， 私有函数前面加_
-// TODO: 函数绑定 ,参考godot的class_db.h，现在的method绑定比较直接。
-// 函数绑定的作用是什么？

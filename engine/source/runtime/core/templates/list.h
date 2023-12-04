@@ -13,6 +13,7 @@
  * using the same API, or features such as erasing an element
  * from the iterator.
  */
+namespace lain {
 
 template <class T, class A = DefaultAllocator>
 class List {
@@ -744,5 +745,6 @@ public:
 		}
 	}
 };
+}
 
 #endif // LIST_H

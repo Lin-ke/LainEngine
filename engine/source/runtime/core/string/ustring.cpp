@@ -2285,6 +2285,9 @@ String::String(const StrRange& p_range) {
 	copy_from(p_range.c_str, p_range.len);
 }
 
+String::String(const std::string& p_str) {
+	copy_from(p_str.c_str());
+}
 int64_t String::hex_to_int() const {
 	int len = length();
 	if (len == 0) {

@@ -1,11 +1,10 @@
 #pragma once
 #include "runtime/core/meta/json.h"
-
+#include "runtime/core/templates/vector.h"
 #include <functional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
 
 namespace lain
 {
@@ -143,9 +142,9 @@ namespace lain
             TypeMeta(std::string type_name);
 
         private:
-            std::vector<FieldAccessor, std::allocator<FieldAccessor>>   m_fields;
-            std::vector<MethodAccessor, std::allocator<MethodAccessor>> m_methods;
-            std::string                                                 m_type_name;
+            Vector<FieldAccessor>   m_fields;
+            Vector<MethodAccessor> m_methods;
+            std::string              m_type_name;
 
             bool m_is_valid;
         };
@@ -209,7 +208,7 @@ namespace lain
             const char*          m_method_name;
         };
         /**
-         *  Function reflection is not implemented, so use this as an std::vector accessor
+         *  Function reflection is not implemented, so use this as an Vector accessor
          */
         class ArrayAccessor
         {

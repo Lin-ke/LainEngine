@@ -21,7 +21,7 @@ public:
 		p_singleton = this;
 		
 	}
-	// 多态需要虚析构函数（并总被解释为虚函数）
+	// need virtual
 	virtual ~OS() {
 		p_singleton = nullptr;
 	}

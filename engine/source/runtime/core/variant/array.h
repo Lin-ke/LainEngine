@@ -4,6 +4,8 @@
 #include "core/typedefs.h"
 
 #include <climits>
+namespace lain {
+
 class Variant;
 class ArrayPrivate;
 class Object;
@@ -103,5 +105,6 @@ public:
 	Array();
 	~Array();
 };
+}
 
 #endif // ARRAY_H

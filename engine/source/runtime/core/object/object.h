@@ -9,8 +9,8 @@
 #include "core/math/hashfuncs.h"
 // base class of all object
 namespace lain {
-
-class Object {
+	REFLECTION_TYPE(Object)
+		CLASS(Object, WhiteListFields){
 public:
 
 	Object(ObjectID id) { m_instance_id = id; }
@@ -36,9 +36,9 @@ private:
 			List<Connection>::Element* cE = nullptr;
 		};
 		//MethodInfo user;
-		// HashMap<Callable, Slot, HashableHasher<Callable>> slot_map;
+		 HashMap<Callable, Slot, HashableHasher<Callable>> slot_map;
 	};
-	// HashMap<StringName, SignalData> signal_map;
+	 HashMap<StringName, SignalData> signal_map;
 
 	// for gc
 	

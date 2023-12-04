@@ -82,7 +82,7 @@ namespace lain {
         // update UserPointer
         for (auto iter = m_windows.begin(); iter != m_windows.end(); ++iter) {
             glfwSetWindowUserPointer(iter->value.p_window, &iter->value);
-            L_PRINT("bind window user pointer", iter->value.p_window, &iter->value);
+            //L_PRINT("bind window user pointer", iter->value.p_window, &iter->value);
         }
         m_windowid += 1;
         

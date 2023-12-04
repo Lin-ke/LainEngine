@@ -113,4 +113,9 @@ namespace lain {
 
 		_global_unlock();
 	}
+
+	bool is_print_verbose_enabled() {
+		return true;
+	}
+
 }

@@ -1,12 +1,15 @@
 #pragma once
-#include "runtime/core/meta/reflection/reflection.h"
+#ifndef __COMPONENT_H__
+#define __COMPONENT_H__
 
+#include "runtime/core/meta/reflection/reflection.h"
+#include "runtime/core/object/object.h"
 namespace lain
 {
     class GObject;
     // Component
     REFLECTION_TYPE(Component)
-        CLASS(Component, WhiteListFields)
+        CLASS(Component : public Object, WhiteListFields)
     {
         REFLECTION_BODY(Component)
     protected:
@@ -31,3 +34,4 @@ namespace lain
     };
 
 } // namespace Piccolo
+#endif // !__COMPONENT_H__

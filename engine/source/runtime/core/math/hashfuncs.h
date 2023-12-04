@@ -359,6 +359,7 @@ struct HashMapHasherDefault {
 };
 
 // TODO: Fold this into HashMapHasherDefault once C++20 concepts are allowed
+// duck type
 template <class T>
 struct HashableHasher {
 	static _FORCE_INLINE_ uint32_t hash(const T& hashable) { return hashable.hash(); }

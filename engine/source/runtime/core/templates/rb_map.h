@@ -9,6 +9,7 @@
 
 // based on the very nice implementation of rb-trees by:
 // https://web.archive.org/web/20120507164830/https://web.mit.edu/~emin/www/source_code/red_black_tree/index.html
+namespace lain {
 
 template <class K, class V, class C = Comparator<K>, class A = DefaultAllocator>
 class RBMap {
@@ -750,5 +751,6 @@ public:
 		clear();
 	}
 };
+}
 
 #endif // RB_MAP_H

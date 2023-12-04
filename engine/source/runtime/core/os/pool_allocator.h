@@ -12,6 +12,7 @@
  * (@TODO) abstraction should be greater, because in many platforms, you need to manage a nonreachable memory.
  * // 然而在godot库里并没有用
  */
+namespace lain {
 
 enum {
 	POOL_ALLOCATOR_INVALID_ID = -1 ///< default invalid value. use INVALID_ID( id ) to test
@@ -118,3 +119,4 @@ public:
 };
 
 #endif // POOL_ALLOCATOR_H
+}

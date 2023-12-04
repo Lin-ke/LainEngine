@@ -307,7 +307,7 @@ namespace lain
             {
                 for (auto& func : app->m_onWindowCloseFunc) { func(); }
             }
-            L_PRINT("close callback called", window);
+            //L_PRINT("close callback called", window);
         }
 
         static void windowIconifyCallback(GLFWwindow* window,int flag) {

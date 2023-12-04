@@ -12,31 +12,29 @@
 #ifndef PAD_ALIGN
 #define PAD_ALIGN 16 //must always be greater than this at much, 128 bits
 #endif
-
-class Memory {
+	class Memory {
 #ifdef L_DEBUG
-	static SafeNumeric<uint64_t> mem_usage;
-	static SafeNumeric<uint64_t> max_usage;
+		static SafeNumeric<uint64_t> mem_usage;
+		static SafeNumeric<uint64_t> max_usage;
 #endif
 
-	static SafeNumeric<uint64_t> alloc_count;
+		static SafeNumeric<uint64_t> alloc_count;
 
-public:
-	static void* alloc_static(size_t p_bytes, bool p_pad_align = false);
-	static void* realloc_static(void* p_memory, size_t p_bytes, bool p_pad_align = false);
-	static void free_static(void* p_ptr, bool p_pad_align = false);
+	public:
+		static void* alloc_static(size_t p_bytes, bool p_pad_align = false);
+		static void* realloc_static(void* p_memory, size_t p_bytes, bool p_pad_align = false);
+		static void free_static(void* p_ptr, bool p_pad_align = false);
 
-	static uint64_t get_mem_available();
-	static uint64_t get_mem_usage();
-	static uint64_t get_mem_max_usage();
-};
+		static uint64_t get_mem_available();
+		static uint64_t get_mem_usage();
+		static uint64_t get_mem_max_usage();
+	};
 
-class DefaultAllocator {
-public:
-	_FORCE_INLINE_ static void* alloc(size_t p_memory) { return Memory::alloc_static(p_memory, false); }
-	_FORCE_INLINE_ static void free(void* p_ptr) { Memory::free_static(p_ptr, false); }
-};
-
+	class DefaultAllocator {
+	public:
+		_FORCE_INLINE_ static void* alloc(size_t p_memory) { return Memory::alloc_static(p_memory, false); }
+		_FORCE_INLINE_ static void free(void* p_ptr) { Memory::free_static(p_ptr, false); }
+	};
 void* operator new(size_t p_size, const char* p_description); ///< operator new that takes a description and uses MemoryStaticPool
 void* operator new(size_t p_size, void* (*p_allocfunc)(size_t p_size)); ///< operator new that takes a description and uses MemoryStaticPool
 

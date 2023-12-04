@@ -12,6 +12,7 @@
 		memmove(_dst, _src, aligned((m_entry).len));          \
 		(m_entry).pos = m_to_pos;                             \
 	} while (0);
+namespace lain {
 
 void PoolAllocator::mt_lock() const {
 	//_global_lock();
@@ -557,4 +558,5 @@ PoolAllocator::~PoolAllocator() {
 
 	memdelete_arr(entry_array);
 	memdelete_arr(entry_indices);
+}
 }

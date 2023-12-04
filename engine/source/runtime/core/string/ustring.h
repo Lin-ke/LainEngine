@@ -431,6 +431,7 @@ namespace lain {
 		_FORCE_INLINE_ String() {}
 		_FORCE_INLINE_ String(const String& p_str) { _cowdata._Ref(p_str._cowdata); }
 		_FORCE_INLINE_ void operator=(const String& p_str) { _cowdata._Ref(p_str._cowdata); }
+		
 
 		Vector<uint8_t> to_ascii_buffer() const;
 		Vector<uint8_t> to_utf8_buffer() const;
@@ -445,6 +446,7 @@ namespace lain {
 		String(const wchar_t* p_str, int p_clip_to_len);
 		String(const char32_t* p_str, int p_clip_to_len);
 		String(const StrRange& p_range);
+		String(const std::string& p_str);
 	};
 
 	bool operator==(const char* p_chr, const String& p_str);

@@ -25,7 +25,7 @@ void OSWin::Initialize() {
 
 	QueryPerformanceFrequency((LARGE_INTEGER*)&ticks_per_second);
 	QueryPerformanceCounter((LARGE_INTEGER*)&ticks_start);
-	L_PRINT(ticks_per_second, ticks_start);
+	//L_PRINT(ticks_per_second, ticks_start);
 	timeBeginPeriod(1);
 }
 

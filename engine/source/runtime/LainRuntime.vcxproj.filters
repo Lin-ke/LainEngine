@@ -4,6 +4,9 @@
     <Filter Include="core">
       <UniqueIdentifier>{4E40957C-3A77-960D-E363-7C10CF79120F}</UniqueIdentifier>
     </Filter>
+    <Filter Include="core\cropto">
+      <UniqueIdentifier>{94AD6965-0063-E25A-8957-DC31F50BD95E}</UniqueIdentifier>
+    </Filter>
     <Filter Include="core\engine">
       <UniqueIdentifier>{331BC769-9FD0-3F5F-28C5-393694793663}</UniqueIdentifier>
     </Filter>
@@ -36,6 +39,12 @@
     </Filter>
     <Filter Include="core\os">
       <UniqueIdentifier>{3FDCB8D3-ABBB-376F-B4D3-C24520329ED0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core\resource">
+      <UniqueIdentifier>{45F6F45E-B1B6-7095-7AF1-B912E670B571}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core\scene">
+      <UniqueIdentifier>{0B40BF51-F7F7-009F-60FF-D9FA4CD69B8F}</UniqueIdentifier>
     </Filter>
     <Filter Include="core\string">
       <UniqueIdentifier>{34EFE18A-A0A4-5A80-2999-5457954D5184}</UniqueIdentifier>
@@ -76,6 +85,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="base.h" />
+    <ClInclude Include="core\cropto\crypto_core.h">
+      <Filter>core\cropto</Filter>
+    </ClInclude>
     <ClInclude Include="core\engine\engine.h">
       <Filter>core\engine</Filter>
     </ClInclude>
@@ -97,10 +109,16 @@
     <ClInclude Include="core\mainloop\main.h">
       <Filter>core\mainloop</Filter>
     </ClInclude>
+    <ClInclude Include="core\math\math.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
     <ClInclude Include="core\math\axis_aligned.h">
       <Filter>core\math</Filter>
     </ClInclude>
-    <ClInclude Include="core\math\math.h">
+    <ClInclude Include="core\math\color.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\math\hashfuncs.h">
       <Filter>core\math</Filter>
     </ClInclude>
     <ClInclude Include="core\math\math_defs.h">
@@ -116,6 +134,9 @@
       <Filter>core\math</Filter>
     </ClInclude>
     <ClInclude Include="core\math\matrix4.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\math\ok_color.h">
       <Filter>core\math</Filter>
     </ClInclude>
     <ClInclude Include="core\math\quaternion.h">
@@ -160,7 +181,16 @@
     <ClInclude Include="core\object\object_id.h">
       <Filter>core\object</Filter>
     </ClInclude>
+    <ClInclude Include="core\object\refcounted.h">
+      <Filter>core\object</Filter>
+    </ClInclude>
     <ClInclude Include="core\object\safe_refcount.h">
+      <Filter>core\object</Filter>
+    </ClInclude>
+    <ClInclude Include="core\object\signal.h">
+      <Filter>core\object</Filter>
+    </ClInclude>
+    <ClInclude Include="core\object\signal_system.h">
       <Filter>core\object</Filter>
     </ClInclude>
     <ClInclude Include="core\os\condition_variable.h">
@@ -181,7 +211,31 @@
     <ClInclude Include="core\os\thread_safe.h">
       <Filter>core\os</Filter>
     </ClInclude>
+    <ClInclude Include="core\resource\rid.h">
+      <Filter>core\resource</Filter>
+    </ClInclude>
+    <ClInclude Include="core\scene\node.h">
+      <Filter>core\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="core\scene\node_path.h">
+      <Filter>core\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="core\scene\node_res.h">
+      <Filter>core\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="core\scene\scene_tree.h">
+      <Filter>core\scene</Filter>
+    </ClInclude>
     <ClInclude Include="core\string\char_utils.h">
+      <Filter>core\string</Filter>
+    </ClInclude>
+    <ClInclude Include="core\string\print_string.h">
+      <Filter>core\string</Filter>
+    </ClInclude>
+    <ClInclude Include="core\string\string_name.h">
+      <Filter>core\string</Filter>
+    </ClInclude>
+    <ClInclude Include="core\string\ucaps.h">
       <Filter>core\string</Filter>
     </ClInclude>
     <ClInclude Include="core\string\ustring.h">
@@ -194,6 +248,9 @@
       <Filter>core\templates</Filter>
     </ClInclude>
     <ClInclude Include="core\templates\hash_map.h">
+      <Filter>core\templates</Filter>
+    </ClInclude>
+    <ClInclude Include="core\templates\list.h">
       <Filter>core\templates</Filter>
     </ClInclude>
     <ClInclude Include="core\templates\pair.h">
@@ -214,10 +271,19 @@
     <ClInclude Include="core\templates\vector.h">
       <Filter>core\templates</Filter>
     </ClInclude>
+    <ClInclude Include="core\templates\vset.h">
+      <Filter>core\templates</Filter>
+    </ClInclude>
     <ClInclude Include="core\typedefs.h">
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="core\variant\array.h">
+      <Filter>core\variant</Filter>
+    </ClInclude>
+    <ClInclude Include="core\variant\callable.h">
+      <Filter>core\variant</Filter>
+    </ClInclude>
+    <ClInclude Include="core\variant\variant.h">
       <Filter>core\variant</Filter>
     </ClInclude>
     <ClInclude Include="function\display\display_event.h">
@@ -268,30 +334,15 @@
     <ClInclude Include="resource\component\mesh.h">
       <Filter>resource\component</Filter>
     </ClInclude>
-    <ClInclude Include="resource\component\object.h">
-      <Filter>resource\component</Filter>
-    </ClInclude>
     <ClInclude Include="resource\manager\resource_manager.h">
       <Filter>resource\manager</Filter>
     </ClInclude>
-    <ClInclude Include="core\resource\rid.h">
-      <Filter>resource\manager</Filter>
-    </ClInclude>
-    <ClInclude Include="core\object\refcounted.h" />
-    <ClInclude Include="core\scene\scene_tree.h" />
-    <ClInclude Include="core\scene\node.h" />
-    <ClInclude Include="core\variant\variant.h" />
-    <ClInclude Include="core\templates\array.h" />
-    <ClInclude Include="core\string\ucaps.h" />
-    <ClInclude Include="core\math\color.h" />
-    <ClInclude Include="core\math\ok_color.h" />
-    <ClInclude Include="core\string\print_string.h" />
-    <ClInclude Include="core\cropto\crypto_core.h" />
-    <ClInclude Include="core\object\signal.h" />
-    <ClInclude Include="core\templates\list.h" />
-    <ClInclude Include="core\object\signal_system.h" />
-    <ClInclude Include="core\gobject\gobject.h" />
-    <ClInclude Include="core\math\hashfuncs.h" />
+    <ClInclude Include="core\resource\resource.h" />
+    <ClInclude Include="core\resource\resource_uid.h" />
+    <ClInclude Include="core\templates\self_list.h" />
+    <ClInclude Include="core\templates\hash_set.h" />
+    <ClInclude Include="core\templates\page_allocator.h" />
+    <ClInclude Include="core\math\vector2i.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\engine\engine.cpp">
@@ -310,6 +361,9 @@
       <Filter>core\mainloop</Filter>
     </ClCompile>
     <ClCompile Include="core\math\axis_aligned.cpp">
+      <Filter>core\math</Filter>
+    </ClCompile>
+    <ClCompile Include="core\math\color.cpp">
       <Filter>core\math</Filter>
     </ClCompile>
     <ClCompile Include="core\math\math.cpp">
@@ -366,8 +420,35 @@
     <ClCompile Include="core\os\pool_allocator.cpp">
       <Filter>core\os</Filter>
     </ClCompile>
+    <ClCompile Include="core\resource\res_manager.cpp">
+      <Filter>core\resource</Filter>
+    </ClCompile>
+    <ClCompile Include="core\scene\node.cpp">
+      <Filter>core\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="core\scene\node_path.cpp">
+      <Filter>core\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="core\scene\scene_tree.cpp">
+      <Filter>core\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="core\string\print_string.cpp">
+      <Filter>core\string</Filter>
+    </ClCompile>
+    <ClCompile Include="core\string\string_name.cpp">
+      <Filter>core\string</Filter>
+    </ClCompile>
     <ClCompile Include="core\string\ustring.cpp">
       <Filter>core\string</Filter>
+    </ClCompile>
+    <ClCompile Include="core\string\ustringutils.cpp">
+      <Filter>core\string</Filter>
+    </ClCompile>
+    <ClCompile Include="core\variant\callable.cpp">
+      <Filter>core\variant</Filter>
+    </ClCompile>
+    <ClCompile Include="core\variant\variant.cpp">
+      <Filter>core\variant</Filter>
     </ClCompile>
     <ClCompile Include="function\display\window_system.cpp">
       <Filter>function\display</Filter>
@@ -375,27 +456,16 @@
     <ClCompile Include="io\resource_load.cpp">
       <Filter>io</Filter>
     </ClCompile>
+    <ClCompile Include="node_path.cpp" />
     <ClCompile Include="render\render_system.cpp">
       <Filter>render</Filter>
     </ClCompile>
     <ClCompile Include="resource\component\transform_component.cpp">
       <Filter>resource\component</Filter>
     </ClCompile>
-    <ClCompile Include="core\scene\scene_tree.cpp" />
-    <ClCompile Include="core\scene\node.cpp" />
-    <ClCompile Include="core\string\string_name.h" />
-    <ClCompile Include="core\variant\variant.cpp" />
-    <ClCompile Include="core\string\ustringutils.cpp" />
-    <ClCompile Include="core\math\color.cpp" />
-    <ClCompile Include="core\string\print_string.cpp" />
-    <ClCompile Include="core\variant\callable.h" />
-    <ClCompile Include="core\string\string_name.cpp" />
-    <ClCompile Include="core\resource\res_manager.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="core\string\char_range.inc">
-      <Filter>core\string</Filter>
-    </None>
-    <None Include="color_names.inc" />
+    <ClCompile Include="core\variant\typed_array.h" />
+    <ClCompile Include="core\resource\resource.cpp" />
+    <ClCompile Include="core\resource\resource_uid.cpp" />
+    <ClCompile Include="core\math\vector2i.cpp" />
   </ItemGroup>
 </Project>

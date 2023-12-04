@@ -3,6 +3,8 @@
 #define __PAIR_H__
 
 #include "base.h"
+namespace lain {
+
 template <class F, class S>
 struct Pair {
 	F first;
@@ -80,5 +82,6 @@ struct KeyValueSort {
 		return A.key < B.key;
 	}
 };
+}
 
 #endif // !__PAIRS_H__

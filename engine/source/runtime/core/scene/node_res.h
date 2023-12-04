@@ -1,7 +1,7 @@
 #pragma once
-#ifndef __RES_OBJECT_H__
-#define __RES_OBJECT_H__
-#endif // !__RES_OBJECT_H__
+#ifndef __RES_Node_H__
+#define __RES_Node_H__
+#endif // !__RES_Node_H__
 
 #include "runtime/core/meta/reflection/reflection.h"
 #include "core/string/ustring.h"
@@ -21,19 +21,19 @@ namespace lain
         String m_component;
     };
 
-    REFLECTION_TYPE(ObjectDefinitionRes)
-        CLASS(ObjectDefinitionRes, Fields)
+    REFLECTION_TYPE(NodeDefinitionRes)
+        CLASS(NodeDefinitionRes, Fields)
     {
-        REFLECTION_BODY(ObjectDefinitionRes);
+        REFLECTION_BODY(NodeDefinitionRes);
 
     public:
         Vector<Reflection::ReflectionPtr<Component>> m_components;
     };
 
-    REFLECTION_TYPE(ObjectInstanceRes)
-        CLASS(ObjectInstanceRes, Fields)
+    REFLECTION_TYPE(NodeInstanceRes)
+        CLASS(NodeInstanceRes, Fields)
     {
-        REFLECTION_BODY(ObjectInstanceRes);
+        REFLECTION_BODY(NodeInstanceRes);
 
     public:
         String              m_name;
