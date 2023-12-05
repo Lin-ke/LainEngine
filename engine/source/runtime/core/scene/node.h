@@ -27,9 +27,9 @@ namespace lain {
         void               setName(StringName name) { m_name = name; }
         const String& getName() const { return m_name; }
 
-        bool hasComponent(const String& compenent_type_name) const;
+        bool hasComponent(const StringName& compenent_type_name) const;
 
-        std::vector<Reflection::ReflectionPtr<Component>> getComponents() { return m_components; }
+        Vector<Reflection::ReflectionPtr<Component>> getComponents() { return m_components; }
 
         template<typename TComponent>
         TComponent* tryGetComponent(const String& compenent_type_name)

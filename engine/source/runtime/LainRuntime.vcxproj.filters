@@ -343,6 +343,8 @@
     <ClInclude Include="core\templates\hash_set.h" />
     <ClInclude Include="core\templates\page_allocator.h" />
     <ClInclude Include="core\math\vector2i.h" />
+    <ClInclude Include="core\resource\res_importer.h" />
+    <ClInclude Include="core\os\time_enums.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\engine\engine.cpp">

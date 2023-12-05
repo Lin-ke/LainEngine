@@ -59,3 +59,30 @@ uint64_t OSWin::GetTimeUsec() const {
 
 	return time;
 }
+OS::DateTime OSWin::GetDateTime(bool p_utc) const {
+	SYSTEMTIME systemtime;
+	if (p_utc) {
+		GetSystemTime(&systemtime);
+	}
+	else {
+		GetLocalTime(&systemtime);
+	}
+
+	//Get DST information from Windows, but only if p_utc is false.
+	TIME_ZONE_INFORMATION info;
+	bool is_daylight = false;
+	if (!p_utc && GetTimeZoneInformation(&info) == TIME_ZONE_ID_DAYLIGHT) {
+		is_daylight = true;
+	}
+
+	DateTime dt;
+	dt.year = systemtime.wYear;
+	dt.month = Month(systemtime.wMonth);
+	dt.day = systemtime.wDay;
+	dt.weekday = Weekday(systemtime.wDayOfWeek);
+	dt.hour = systemtime.wHour;
+	dt.minute = systemtime.wMinute;
+	dt.second = systemtime.wSecond;
+	dt.dst = is_daylight;
+	return dt;
+}

@@ -5,6 +5,7 @@
 #include "core/templates/singleton.h"
 #include "memory.h"
 #include "thread_safe.h"
+#include "time_enums.h"
 
 // abstruct of the OS
 class OS {
@@ -21,28 +22,46 @@ public:
 		p_singleton = this;
 		
 	}
+	struct DateTime {
+		int64_t year;
+		Month month;
+		uint8_t day;
+		Weekday weekday;
+		uint8_t hour;
+		uint8_t minute;
+		uint8_t second;
+		bool dst;
+	};
 	// need virtual
 	virtual ~OS() {
 		p_singleton = nullptr;
 	}
 	virtual u64 GetTimeUsec() const = 0;
-	
+	virtual DateTime GetDateTime() const = 0;
 	static L_INLINE  OS* GetSingleton() {
 		return p_singleton;
 	}
+	
+
 
 };
+
+
+
 class OSWin :public OS {
 	u64 ticks_start = 0;
 	u64 ticks_per_second = 0;
 	public:
 	virtual	u64 GetTimeUsec() const;
+	virtual	DateTime GetDateTime(bool p_utc) const;
+
 	virtual void Initialize();
 	virtual void Finialize() {}
 	virtual void Run();
 	OSWin() {
 		lain::Log::Init();
 	}
+
 };
 
 

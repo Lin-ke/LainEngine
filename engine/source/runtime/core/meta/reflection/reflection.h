@@ -307,7 +307,7 @@ namespace lain
                 return *this;
             }
 
-            std::string getTypeName() const { return m_type_name; }
+            String getTypeName() const { return String(m_type_name.c_str()); }
 
             void setTypeName(std::string name) { m_type_name = name; }
 
