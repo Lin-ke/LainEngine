@@ -45,7 +45,7 @@ namespace lain
             }
 
             Serializer::read(Resource_json, out_Resource);
-            return true;
+            return truez
         }
 
         template<typename ResourceType>

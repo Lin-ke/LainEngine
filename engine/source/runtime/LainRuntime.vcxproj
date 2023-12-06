@@ -99,6 +99,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="base.h" />
+    <ClInclude Include="core\config\project_settings.h" />
     <ClInclude Include="core\cropto\crypto_core.h" />
     <ClInclude Include="core\engine\engine.h" />
     <ClInclude Include="core\error\error.h" />
@@ -137,6 +138,8 @@
     <ClInclude Include="core\object\signal.h" />
     <ClInclude Include="core\object\signal_system.h" />
     <ClInclude Include="core\os\condition_variable.h" />
+    <ClInclude Include="core\os\dir_access.h" />
+    <ClInclude Include="core\os\file_access.h" />
     <ClInclude Include="core\os\memory.h" />
     <ClInclude Include="core\os\mutex.h" />
     <ClInclude Include="core\os\os.h" />
@@ -182,6 +185,8 @@
     <ClInclude Include="function\ui\window_ui.h" />
     <ClInclude Include="io\resource.h" />
     <ClInclude Include="io\resource_load.h" />
+    <ClInclude Include="platform\io\dir_access_windows.h" />
+    <ClInclude Include="platform\io\file_access_windows.h" />
     <ClInclude Include="render\render_system.h" />
     <ClInclude Include="render\render_system_globals.h" />
     <ClInclude Include="render\viewport.h" />
@@ -193,6 +198,7 @@
     <ClInclude Include="resource\manager\resource_manager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="core\config\project_settings.cpp" />
     <ClCompile Include="core\engine\engine.cpp" />
     <ClCompile Include="core\error\error_macros.cpp" />
     <ClCompile Include="core\input\input.cpp" />
@@ -215,6 +221,8 @@
     <ClCompile Include="core\object\object.cpp" />
     <ClCompile Include="core\object\object_id.cpp" />
     <ClCompile Include="core\object\refcounted.cpp" />
+    <ClCompile Include="core\os\dir_access.cpp" />
+    <ClCompile Include="core\os\file_access.cpp" />
     <ClCompile Include="core\os\memory.cpp" />
     <ClCompile Include="core\os\mutex.cpp" />
     <ClCompile Include="core\os\os.cpp" />
@@ -236,6 +244,8 @@
     <ClCompile Include="node_path.cpp">
       <ObjectFileName>$(IntDir)\node_path1.obj</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="platform\io\dir_access_windows.cpp" />
+    <ClCompile Include="platform\io\file_access_windows.cpp" />
     <ClCompile Include="render\render_system.cpp" />
     <ClCompile Include="resource\component\transform_component.cpp" />
     <ClCompile Include="core\resource\resource_uid.cpp" />

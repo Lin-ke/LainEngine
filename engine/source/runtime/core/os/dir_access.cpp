@@ -1,4 +1,7 @@
 #include "dir_access.h"
+#include "core/config/project_settings.h"
+#include "core/os/os.h"
+
 namespace lain {
 
 DirAccess::CreateFunc DirAccess::create_func[ACCESS_MAX] = { nullptr, nullptr, nullptr };
@@ -18,5 +21,50 @@ Ref<DirAccess> DirAccess::create(AccessType p_access){
 	}
 
 	return da;
+}
+String DirAccess::_get_root_path() const {
+	switch (m_access_type) {
+	case ACCESS_RESOURCES:
+		return ProjectSettings::GetSingleton()->GetResourcePath();
+	case ACCESS_USERDATA:
+		return OS::GetSingleton()->GetUserDataDir();
+	default:
+		return "";
+	}
+}
+
+
+String DirAccess::fix_path(String p_path) const {
+	switch (m_access_type) {
+	case ACCESS_RESOURCES: {
+		if (ProjectSettings::GetSingleton()) {
+			if (p_path.begins_with("res://")) {
+				String resource_path = ProjectSettings::GetSingleton()->GetResourcePath();
+				if (!resource_path.is_empty()) {
+					return p_path.replace_first("res:/", resource_path);
+				}
+				return p_path.replace_first("res://", "");
+			}
+		}
+
+	} break;
+	case ACCESS_USERDATA: {
+		if (p_path.begins_with("user://")) {
+			String data_dir = OS::GetSingleton()->GetUserDataDir();
+			if (!data_dir.is_empty()) {
+				return p_path.replace_first("user:/", data_dir);
+			}
+			return p_path.replace_first("user://", "");
+		}
+
+	} break;
+	case ACCESS_FILESYSTEM: {
+		return p_path;
+	} break;
+	case ACCESS_MAX:
+		break; // Can't happen, but silences warning
+	}
+
+	return p_path;
 }
 }

@@ -8,7 +8,7 @@
 namespace lain {
 
 	// 用于与文件系统进行交互的类
-	class DirAccess {
+	class DirAccess: public RefCounted {
 		//  CreateFunc 定义为一个函数指针类型，该函数返回一个 Ref<DirAccess> 对象
 
 		typedef Ref<DirAccess>(*CreateFunc)();
@@ -20,7 +20,6 @@ namespace lain {
 			ACCESS_FILESYSTEM,
 			ACCESS_MAX
 		};
-	private:
 		AccessType m_access_type = ACCESS_FILESYSTEM;
 		virtual String _get_root_string() const{
 				switch (m_access_type) {
@@ -37,20 +36,18 @@ namespace lain {
 		virtual bool dir_exists(String p_dir) = 0;
 		virtual bool is_readable(String p_dir) { return true; };
 		virtual bool is_writable(String p_dir) { return true; };
-
+		String _get_root_path() const;
+		virtual String fix_path(String p_path) const;
 		virtual Error change_dir(String p_dir) = 0; ///< can be relative or absolute, return false on success
+		virtual String get_current_dir(bool p_drive = false) const = 0;
 
 		static bool exists(String p_dir);
 		static DirAccess::CreateFunc DirAccess::create_func[ACCESS_MAX]; 
+		// factory
 		static Ref<DirAccess> DirAccess::create(AccessType p_access); 
 
-	};
-	class DirAcessSTD :public DirAccess{
-		String current_dir;
-		virtual Error change_dir(String p_dir) {
-			std::filesystem::path currentPath = std::filesystem::current_path();
-		}
 	};
 }
 
 #endif // !__DIR_ACCESS_H__
+/// c++ tips: 子类（B）中可以用A::访问父类的方法

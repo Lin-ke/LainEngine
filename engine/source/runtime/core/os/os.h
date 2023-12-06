@@ -2,12 +2,14 @@
 #ifndef __OS_H__
 #define __OS_H__
 #include "runtime/base.h"
-#include "core/templates/singleton.h"
 #include "memory.h"
 #include "thread_safe.h"
 #include "time_enums.h"
+#include "core/config/project_settings.h"
 
 // abstruct of the OS
+namespace lain {
+
 class OS {
 public:
 	static OS* p_singleton;
@@ -37,13 +39,19 @@ public:
 		p_singleton = nullptr;
 	}
 	virtual u64 GetTimeUsec() const = 0;
-	virtual DateTime GetDateTime() const = 0;
+	virtual DateTime GetDateTime(bool p_utc) const = 0;
+	// Absolute path to res:// ( if not reload)
+	virtual String GetResourceDir() const;
+
+	// OS specific path for user://
+	virtual String GetUserDataDir() const;
+
 	static L_INLINE  OS* GetSingleton() {
 		return p_singleton;
 	}
 	
 
-
+	
 };
 
 
@@ -59,11 +67,12 @@ class OSWin :public OS {
 	virtual void Finialize() {}
 	virtual void Run();
 	OSWin() {
-		lain::Log::Init();
+		Log::Init();
 	}
 
 };
 
+}
 
 
 #endif // !__OS_H__

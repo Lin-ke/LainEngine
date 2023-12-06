@@ -1,6 +1,7 @@
 #pragma once
 #include "runtime/core/meta/json.h"
 #include "runtime/core/templates/vector.h"
+#include "core/string/ustring.h"
 #include <functional>
 #include <string>
 #include <unordered_map>

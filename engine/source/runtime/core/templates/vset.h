@@ -5,6 +5,7 @@
 #include "base.h"
 #include "core/templates/vector.h"
 #include "core/typedefs.h"
+namespace lain {
 
 template <class T>
 class VSet {
@@ -114,5 +115,6 @@ public:
 		return _data[p_index];
 	}
 };
+}
 
 #endif // VSET_H

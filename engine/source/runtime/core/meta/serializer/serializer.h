@@ -44,7 +44,7 @@ namespace lain
         static Json write(const Reflection::ReflectionPtr<T>& instance)
         {
             T*          instance_ptr = static_cast<T*>(instance.operator->());
-            std::string type_name    = instance.getTypeName();
+            std::string type_name    = instance.getTypeName().utf8().get_data();
             return Json::object {{"$typeName", Json(type_name)},
                                   {"$context", Reflection::TypeMeta::writeByName(type_name, instance_ptr)}};
         }

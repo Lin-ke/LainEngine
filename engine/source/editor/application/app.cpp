@@ -14,23 +14,26 @@
 #include <core/meta/meta_example.h>
 #include <core/os/os.h>
 #include "core/string/ustring.h"
-using lain::Vector;
-using lain::String;
-int YminusA(int a, lain::Vector2& obj);
+using namespace lain;
+int YminusA(int a, Vector2& obj);
 void TryERR_FAIL_INDEX();
+
 int main(int argc, char** argv) {
 	// main function
 	OSWin os = OSWin();
 
 	OSWin::GetSingleton()->Run();
-
+	// test part
+	auto a = Vector2(2, 2);
+	auto p = YminusA(2, a);
+	L_JSON(a);
 }
 
 void TryERR_FAIL_INDEX() {
 	ERR_FAIL_INDEX(-1, 3);
 }
-int YminusA(int a, lain::Vector2& obj) {
-	auto meta = lain::Reflection::TypeMeta::newMetaFromName("Vector2");
+int YminusA(int a, Vector2& obj) {
+	auto meta = Reflection::TypeMeta::newMetaFromName("Vector2");
 	if (!meta.isValid()) {
 		L_ERROR("meta is not valid");
 	}

@@ -345,6 +345,11 @@
     <ClInclude Include="core\math\vector2i.h" />
     <ClInclude Include="core\resource\res_importer.h" />
     <ClInclude Include="core\os\time_enums.h" />
+    <ClInclude Include="core\os\dir_access.h" />
+    <ClInclude Include="core\config\project_settings.h" />
+    <ClInclude Include="core\os\file_access.h" />
+    <ClInclude Include="platform\io\file_access_windows.h" />
+    <ClInclude Include="platform\io\dir_access_windows.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\engine\engine.cpp">
@@ -469,5 +474,10 @@
     <ClCompile Include="core\resource\resource.cpp" />
     <ClCompile Include="core\resource\resource_uid.cpp" />
     <ClCompile Include="core\math\vector2i.cpp" />
+    <ClCompile Include="core\config\project_settings.cpp" />
+    <ClCompile Include="core\os\dir_access.cpp" />
+    <ClCompile Include="core\os\file_access.cpp" />
+    <ClCompile Include="platform\io\file_access_windows.cpp" />
+    <ClCompile Include="platform\io\dir_access_windows.cpp" />
   </ItemGroup>
 </Project>

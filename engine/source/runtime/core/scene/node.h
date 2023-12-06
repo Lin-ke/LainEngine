@@ -57,7 +57,14 @@ namespace lain {
             }
             return nullptr;
         }
-
+        /// <summary>
+        /// especially before or especially after other nodes
+        /// </summary>
+        enum InternalMode {
+            INTERNAL_MODE_DISABLED,
+            INTERNAL_MODE_FRONT,
+            INTERNAL_MODE_BACK,
+        };
 #define tryGetComponent(COMPONENT_TYPE) tryGetComponent<COMPONENT_TYPE>(#COMPONENT_TYPE)
 #define tryGetComponentConst(COMPONENT_TYPE) tryGetComponentConst<const COMPONENT_TYPE>(#COMPONENT_TYPE)
 

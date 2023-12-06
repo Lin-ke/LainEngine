@@ -2,20 +2,28 @@
 #include "core/mainloop/main.h"
 #include "function/display/window_system.h"
 #include <timeapi.h>
+namespace lain {
 OS* OS::p_singleton = nullptr;
+ String OS::GetResourceDir() const {
+	return ProjectSettings::GetSingleton()->GetResourcePath();
+}
+ String OS::GetUserDataDir() const {
+	 return ".";
+ }
+
 void OSWin::Run() {
 	// init
-	lain::Main::Init();
+	Main::Init();
 	while (true) {
 		//ÈË»ú½»»¥
 		// display.send_events;
-		bool exit = lain::WindowSystem::GetSingleton()->ShouldClose();
+		bool exit = WindowSystem::GetSingleton()->ShouldClose();
 
 		
-		if (!lain::Main::Loop()||exit) {
+		if (!Main::Loop()||exit) {
 			break;
 		}
-		lain::WindowSystem::GetSingleton()->PollEvents();
+		WindowSystem::GetSingleton()->PollEvents();
 
 	}
 	L_PRINT("Exiting. Have a nice day.");
@@ -85,4 +93,5 @@ OS::DateTime OSWin::GetDateTime(bool p_utc) const {
 	dt.second = systemtime.wSecond;
 	dt.dst = is_daylight;
 	return dt;
+}
 }

@@ -198,7 +198,10 @@ namespace lain {
 			return _cowdata.Get(p_index);
 		}
 		_FORCE_INLINE_ CharProxy<char32_t> operator[](int p_index) { return CharProxy<char32_t>(p_index, _cowdata); }
-
+		
+		friend std::ostream& operator<<(std::ostream& output, const String& p_str){
+			output << p_str.utf8().get_data(); return output;
+		}
 		bool operator==(const String& p_str) const;
 		bool operator!=(const String& p_str) const;
 		String operator+(const String& p_str) const;
