@@ -1,5 +1,32 @@
 #include "dir_access_windows.h"
 namespace lain {
+
+	Error DirAccessWin::make_dir(String p_dir) {
+
+			p_dir = fix_path(p_dir);
+		if (p_dir.is_relative_path()) {
+			p_dir = current_dir.path_join(p_dir);
+			p_dir = fix_path(p_dir);
+		}
+
+		p_dir = p_dir.simplify_path().replace("/", "\\");
+
+		bool success;
+		int err;
+
+		success = CreateDirectoryW((LPCWSTR)(p_dir.utf16().get_data()), nullptr);
+		err = GetLastError();
+
+		if (success) {
+			return OK;
+		}
+
+		if (err == ERROR_ALREADY_EXISTS || err == ERROR_ACCESS_DENIED) {
+			return ERR_ALREADY_EXISTS;
+		}
+
+		return ERR_CANT_CREATE;
+	}
 	String DirAccessWin::get_current_dir(bool p_include_drive) const {
 		String base = _get_root_path();
 		if (!base.is_empty()) {
@@ -25,4 +52,6 @@ namespace lain {
 			return current_dir;
 		}
 	}
+
+
 }

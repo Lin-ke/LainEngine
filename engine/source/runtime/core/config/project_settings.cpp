@@ -17,6 +17,12 @@ namespace lain {
 		
 		return OK;
 	}
+	const PackedStringArray ProjectSettings::get_required_features() {
+		PackedStringArray features;
+		features.append(VERSION_BRANCH);
+		return features;
+	}
+
 
 	/// private
 	Error ProjectSettings::_initialize(const String p_path, bool p_ignore_override) {

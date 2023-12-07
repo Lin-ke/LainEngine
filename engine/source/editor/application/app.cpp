@@ -19,6 +19,7 @@ int YminusA(int a, Vector2& obj);
 void TryERR_FAIL_INDEX();
 
 int main(int argc, char** argv) {
+	std::cout << VERSION_BRANCH << std::endl;
 	// main function
 	OSWin os = OSWin();
 

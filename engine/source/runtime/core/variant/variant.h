@@ -6,7 +6,19 @@
 #include "core/object/object_id.h"
 #include "core/resource/rid.h"
 #include "core/string/ustring.h"
+#include "core/templates/vector.h"
+#include "core/math/color.h"
+
 namespace lain {
+	typedef Vector<uint8_t> PackedByteArray;
+	typedef Vector<int32_t> PackedInt32Array;
+	typedef Vector<int64_t> PackedInt64Array;
+	typedef Vector<float> PackedFloat32Array;
+	typedef Vector<double> PackedFloat64Array;
+	typedef Vector<String> PackedStringArray;
+	typedef Vector<Vector2> PackedVector2Array;
+	typedef Vector<Vector3> PackedVector3Array;
+	typedef Vector<Color> PackedColorArray;
 	class Object;
 	class Variant {
 		enum Type

@@ -18,14 +18,7 @@ static lain::ProjectSettings* globals = nullptr;
  uint64_t Main::last_ticks = 0;
  uint32_t Main::frames = 0;
  int Main::iterating = 0;
- class A {
- public:virtual void a(bool a_ = true) = 0;
- };
- class B :public A {
- public:virtual void a(bool a_ = false) {
-	 L_PRINT((a_ ? "true" : "false"));
- }
- };
+
 
  /// <summary>
  /// Main initialization.
@@ -33,12 +26,10 @@ static lain::ProjectSettings* globals = nullptr;
  void Main::Init() {
 	 // logger
 	 OS::GetSingleton()->Initialize();
+	
 	 Reflection::TypeMetaRegister::metaRegister();
 	 engine = memnew(Engine); // 
 	 window_system = memnew(lain::WindowSystem);
-	 A* b = memnew(B);
-	 b->a();
-
 	 render_system = memnew(lain::RenderSystem);
 	 globals = memnew(lain::ProjectSettings);
 	 window_system->Initialize();

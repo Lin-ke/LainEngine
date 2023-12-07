@@ -1,6 +1,8 @@
 #pragma once
 # ifndef __BASE__
 # define __BASE__
+
+#define VERSION_BRANCH "0.1"
 #ifdef L_DEBUG
 	#if defined(L_PLATFORM_WINDOWS)
 		#define L_DEBUGBREAK() __debugbreak()
@@ -72,9 +74,11 @@ L_INLINE void L_CORE_PRINT(const Types&... args)
 # define L_CORE_JSON(x) L_CORE_PRINT("json of " + std::string(#x) + " " + (lain::Serializer::write(x).dump()));
 
 # define L_NAME(x) #x
-#define __CONCAT(a, b) a ## b
+#define __CONCAT(a, b) a##b
 #define CONCAT2(a, b) __CONCAT(a, b)
 #define CONCAT3(a,b,c) CONCAT2(CONCAT2(a,b),c)
+
+
 //#define refcount(type, x) (*(reinterpret_cast<s_u32*> (const_cast<type*>(x.ptr())) - 2)).get()
 # define refcount(x) x._refcount()
 void _global_lock();

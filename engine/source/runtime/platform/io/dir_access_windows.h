@@ -20,6 +20,8 @@ public:
 		String prev_dir = String::utf16((const char16_t*)real_current_path.generic_u16string().c_str());
 
 	}
+	Error make_dir(String p_path);
+
 	String get_current_dir(bool p_include_drive = true) const;
 	
 };
