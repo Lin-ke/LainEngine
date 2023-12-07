@@ -265,6 +265,9 @@ namespace lain {
 		int rfind(const String& p_str, int p_from = -1) const; ///< return <0 if failed
 		int rfindn(const String& p_str, int p_from = -1) const; ///< return <0 if failed, case insensitive
 		int findmk(const Vector<String>& p_keys, int p_from = 0, int* r_key = nullptr) const; ///< return <0 if failed
+		int find_first_not_of(const char* p_pattern, int index = 0) const;
+		int find_last_not_of(const char* p_pattern, int index = -1) const;
+
 		bool match(const String& p_wildcard) const;
 		bool matchn(const String& p_wildcard) const;
 		bool begins_with(const String& p_string) const;
@@ -289,6 +292,7 @@ namespace lain {
 		String pad_zeros(int p_digits) const;
 		String trim_prefix(const String& p_prefix) const;
 		String trim_suffix(const String& p_suffix) const;
+		String trim() const ;
 		String lpad(int min_length, const String& character = " ") const;
 		String rpad(int min_length, const String& character = " ") const;
 		//String sprintf(const Array& values, bool* error) const;

@@ -44,7 +44,8 @@ namespace lain {
 		static bool exists(String p_dir);
 		static DirAccess::CreateFunc DirAccess::create_func[ACCESS_MAX]; 
 		// factory
-		static Ref<DirAccess> DirAccess::create(AccessType p_access); 
+		static Ref<DirAccess> create(AccessType p_access); 
+		static Ref<DirAccess> create_for_path(const String& p_path);
 
 	};
 }

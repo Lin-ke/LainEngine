@@ -1,4 +1,5 @@
 #include "variant.h"
+#include "core/os/memory.h"
 namespace lain {
 	String Variant::get_type_name(Variant::Type p_type) {
 		switch (p_type) {
@@ -84,5 +85,23 @@ namespace lain {
 			return "UNKNOWN";
 		};
 	}
+
+	Variant::Variant(const String& p_string) {
+		type = STRING;
+		memnew_placement(_data._mem, String(p_string));
+	}
+	Variant::Variant(const char* const p_cstring) {
+		type = STRING;
+		memnew_placement(_data._mem, String((const char*)p_cstring));
+	}
+
+	Variant::Variant(const Vector<String>& p_string_array) {
+		type = PACKED_STRING_ARRAY;
+		_data.packed_array = PackedArrayRef<String>::create(p_string_array);
+	}
+	u32 Variant::recursive_hash(int recursion_count) const {
+		return 114514;
+	}
+
 		
 }

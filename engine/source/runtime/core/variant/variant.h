@@ -56,10 +56,10 @@ namespace lain {
 
 			
 			// arrays
-			VECTOR // is it possiable?
-
+			VECTOR,
+			PACKED_STRING_ARRAY
 		};
-		Type m_type;
+		Type type;
 		struct ObjData {
 			ObjectID id;
 			Object* obj = nullptr;
@@ -70,23 +70,37 @@ namespace lain {
 			double _float;
 			void* _ptr; //generic pointer
 			uint8_t _mem[sizeof(ObjData) > (sizeof(real_t) * 4) ? sizeof(ObjData) : (sizeof(real_t) * 4)]{ 0 };
-		} m_data alignas(8);
+		} _data alignas(8);
 
 
 		// constructor
-		Variant(const Variant*) {}
-		Variant(const Variant**) {}
+		Variant(const Variant*);
+		Variant(const Variant**);
 	public:
 		_FORCE_INLINE_ Type get_type() const {
-			return m_type;
+			return type;
 		}
 		static String get_type_name(Variant::Type p_type);
 		L_INLINE String get_type_name() {
-			return get_type_name(m_type);
+			return get_type_name(type);
 		}
 		void operator=(const Variant& p_variant); // only this is enough for all the other types
+		typedef void (*ObjectConstruct)(const String& p_text, void* ud, Variant& r_value);
+		static void construct_from_string(const String& p_string, Variant& r_value, ObjectConstruct p_obj_construct = nullptr, void* p_construct_ud = nullptr);
+		u32 recursive_hash(int recursion_count) const;
+		uint32_t Variant::hash() const {
+			return recursive_hash(0);
+		}
+
+
+		///constructors
+		Variant(const Vector<String>& p_string_array);
+		Variant(const String& p_string);
+		Variant(const StringName& p_string);
+		Variant(const char* const p_cstring)
 
 	};
+
 
 	template <typename... VarArgs>
 	String vformat(const String& p_text, const VarArgs... p_args) {

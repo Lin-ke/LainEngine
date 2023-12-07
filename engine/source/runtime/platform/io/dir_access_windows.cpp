@@ -1,6 +1,22 @@
 #include "dir_access_windows.h"
 namespace lain {
+	bool DirAccessWin::file_exists(String p_file) {
 
+			if (!p_file.is_absolute_path()) {
+				p_file = get_current_dir().path_join(p_file);
+			}
+
+		p_file = fix_path(p_file);
+
+		DWORD fileAttr;
+
+		fileAttr = GetFileAttributesW((LPCWSTR)(p_file.utf16().get_data()));
+		if (INVALID_FILE_ATTRIBUTES == fileAttr) {
+			return false;
+		}
+
+		return !(fileAttr & FILE_ATTRIBUTE_DIRECTORY);
+	}
 	Error DirAccessWin::make_dir(String p_dir) {
 
 			p_dir = fix_path(p_dir);

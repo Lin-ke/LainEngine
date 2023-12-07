@@ -31,4 +31,5 @@ namespace lain
         Vector3 m_max_corner {
             -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
     };
+
 } // namespace lain

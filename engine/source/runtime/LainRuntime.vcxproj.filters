@@ -4,6 +4,9 @@
     <Filter Include="core">
       <UniqueIdentifier>{4E40957C-3A77-960D-E363-7C10CF79120F}</UniqueIdentifier>
     </Filter>
+    <Filter Include="core\config">
+      <UniqueIdentifier>{B3AB3265-1F61-AB5A-A855-A531140AA25E}</UniqueIdentifier>
+    </Filter>
     <Filter Include="core\cropto">
       <UniqueIdentifier>{94AD6965-0063-E25A-8957-DC31F50BD95E}</UniqueIdentifier>
     </Filter>
@@ -61,11 +64,20 @@
     <Filter Include="function\display">
       <UniqueIdentifier>{D0127580-BC0B-94D2-E53D-7957D19573DE}</UniqueIdentifier>
     </Filter>
+    <Filter Include="function\project">
+      <UniqueIdentifier>{B18FE230-9D88-0183-C6BA-E607B212E18E}</UniqueIdentifier>
+    </Filter>
     <Filter Include="function\ui">
       <UniqueIdentifier>{D82F8330-44E5-FB25-CDD9-F5FC398EF229}</UniqueIdentifier>
     </Filter>
     <Filter Include="io">
       <UniqueIdentifier>{3D785900-2904-880B-92B2-880B7E5D880B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="platform">
+      <UniqueIdentifier>{4A63C33C-3630-1E48-5F49-0CF04B7553D6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="platform\io">
+      <UniqueIdentifier>{F1EC55E0-5DA2-CED5-E696-C8AC524BC5D9}</UniqueIdentifier>
     </Filter>
     <Filter Include="render">
       <UniqueIdentifier>{E5CF2C19-D171-57EF-BA2C-6B43A66DDE3F}</UniqueIdentifier>
@@ -85,6 +97,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="base.h" />
+    <ClInclude Include="core\config\project_settings.h">
+      <Filter>core\config</Filter>
+    </ClInclude>
     <ClInclude Include="core\cropto\crypto_core.h">
       <Filter>core\cropto</Filter>
     </ClInclude>
@@ -109,9 +124,6 @@
     <ClInclude Include="core\mainloop\main.h">
       <Filter>core\mainloop</Filter>
     </ClInclude>
-    <ClInclude Include="core\math\math.h">
-      <Filter>core\math</Filter>
-    </ClInclude>
     <ClInclude Include="core\math\axis_aligned.h">
       <Filter>core\math</Filter>
     </ClInclude>
@@ -119,6 +131,9 @@
       <Filter>core\math</Filter>
     </ClInclude>
     <ClInclude Include="core\math\hashfuncs.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\math\math.h">
       <Filter>core\math</Filter>
     </ClInclude>
     <ClInclude Include="core\math\math_defs.h">
@@ -152,6 +167,9 @@
       <Filter>core\math</Filter>
     </ClInclude>
     <ClInclude Include="core\math\vector2.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\math\vector2i.h">
       <Filter>core\math</Filter>
     </ClInclude>
     <ClInclude Include="core\math\vector3.h">
@@ -196,6 +214,12 @@
     <ClInclude Include="core\os\condition_variable.h">
       <Filter>core\os</Filter>
     </ClInclude>
+    <ClInclude Include="core\os\dir_access.h">
+      <Filter>core\os</Filter>
+    </ClInclude>
+    <ClInclude Include="core\os\file_access.h">
+      <Filter>core\os</Filter>
+    </ClInclude>
     <ClInclude Include="core\os\memory.h">
       <Filter>core\os</Filter>
     </ClInclude>
@@ -210,6 +234,18 @@
     </ClInclude>
     <ClInclude Include="core\os\thread_safe.h">
       <Filter>core\os</Filter>
+    </ClInclude>
+    <ClInclude Include="core\os\time_enums.h">
+      <Filter>core\os</Filter>
+    </ClInclude>
+    <ClInclude Include="core\resource\res_importer.h">
+      <Filter>core\resource</Filter>
+    </ClInclude>
+    <ClInclude Include="core\resource\resource.h">
+      <Filter>core\resource</Filter>
+    </ClInclude>
+    <ClInclude Include="core\resource\resource_uid.h">
+      <Filter>core\resource</Filter>
     </ClInclude>
     <ClInclude Include="core\resource\rid.h">
       <Filter>core\resource</Filter>
@@ -250,7 +286,13 @@
     <ClInclude Include="core\templates\hash_map.h">
       <Filter>core\templates</Filter>
     </ClInclude>
+    <ClInclude Include="core\templates\hash_set.h">
+      <Filter>core\templates</Filter>
+    </ClInclude>
     <ClInclude Include="core\templates\list.h">
+      <Filter>core\templates</Filter>
+    </ClInclude>
+    <ClInclude Include="core\templates\page_allocator.h">
       <Filter>core\templates</Filter>
     </ClInclude>
     <ClInclude Include="core\templates\pair.h">
@@ -260,6 +302,9 @@
       <Filter>core\templates</Filter>
     </ClInclude>
     <ClInclude Include="core\templates\safe_numeric.h">
+      <Filter>core\templates</Filter>
+    </ClInclude>
+    <ClInclude Include="core\templates\self_list.h">
       <Filter>core\templates</Filter>
     </ClInclude>
     <ClInclude Include="core\templates\singleton.h">
@@ -283,6 +328,9 @@
     <ClInclude Include="core\variant\callable.h">
       <Filter>core\variant</Filter>
     </ClInclude>
+    <ClInclude Include="core\variant\typed_array.h">
+      <Filter>core\variant</Filter>
+    </ClInclude>
     <ClInclude Include="core\variant\variant.h">
       <Filter>core\variant</Filter>
     </ClInclude>
@@ -298,6 +346,9 @@
     <ClInclude Include="function\display\window_system.h">
       <Filter>function\display</Filter>
     </ClInclude>
+    <ClInclude Include="function\project\project_manager.h">
+      <Filter>function\project</Filter>
+    </ClInclude>
     <ClInclude Include="function\script.h">
       <Filter>function</Filter>
     </ClInclude>
@@ -309,6 +360,12 @@
     </ClInclude>
     <ClInclude Include="io\resource_load.h">
       <Filter>io</Filter>
+    </ClInclude>
+    <ClInclude Include="platform\io\dir_access_windows.h">
+      <Filter>platform\io</Filter>
+    </ClInclude>
+    <ClInclude Include="platform\io\file_access_windows.h">
+      <Filter>platform\io</Filter>
     </ClInclude>
     <ClInclude Include="render\render_system.h">
       <Filter>render</Filter>
@@ -337,21 +394,11 @@
     <ClInclude Include="resource\manager\resource_manager.h">
       <Filter>resource\manager</Filter>
     </ClInclude>
-    <ClInclude Include="core\resource\resource.h" />
-    <ClInclude Include="core\resource\resource_uid.h" />
-    <ClInclude Include="core\templates\self_list.h" />
-    <ClInclude Include="core\templates\hash_set.h" />
-    <ClInclude Include="core\templates\page_allocator.h" />
-    <ClInclude Include="core\math\vector2i.h" />
-    <ClInclude Include="core\resource\res_importer.h" />
-    <ClInclude Include="core\os\time_enums.h" />
-    <ClInclude Include="core\os\dir_access.h" />
-    <ClInclude Include="core\config\project_settings.h" />
-    <ClInclude Include="core\os\file_access.h" />
-    <ClInclude Include="platform\io\file_access_windows.h" />
-    <ClInclude Include="platform\io\dir_access_windows.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="core\config\project_settings.cpp">
+      <Filter>core\config</Filter>
+    </ClCompile>
     <ClCompile Include="core\engine\engine.cpp">
       <Filter>core\engine</Filter>
     </ClCompile>
@@ -388,6 +435,9 @@
     <ClCompile Include="core\math\vector2.cpp">
       <Filter>core\math</Filter>
     </ClCompile>
+    <ClCompile Include="core\math\vector2i.cpp">
+      <Filter>core\math</Filter>
+    </ClCompile>
     <ClCompile Include="core\math\vector3.cpp">
       <Filter>core\math</Filter>
     </ClCompile>
@@ -415,6 +465,12 @@
     <ClCompile Include="core\object\refcounted.cpp">
       <Filter>core\object</Filter>
     </ClCompile>
+    <ClCompile Include="core\os\dir_access.cpp">
+      <Filter>core\os</Filter>
+    </ClCompile>
+    <ClCompile Include="core\os\file_access.cpp">
+      <Filter>core\os</Filter>
+    </ClCompile>
     <ClCompile Include="core\os\memory.cpp">
       <Filter>core\os</Filter>
     </ClCompile>
@@ -428,6 +484,12 @@
       <Filter>core\os</Filter>
     </ClCompile>
     <ClCompile Include="core\resource\res_manager.cpp">
+      <Filter>core\resource</Filter>
+    </ClCompile>
+    <ClCompile Include="core\resource\resource.cpp">
+      <Filter>core\resource</Filter>
+    </ClCompile>
+    <ClCompile Include="core\resource\resource_uid.cpp">
       <Filter>core\resource</Filter>
     </ClCompile>
     <ClCompile Include="core\scene\node.cpp">
@@ -460,24 +522,23 @@
     <ClCompile Include="function\display\window_system.cpp">
       <Filter>function\display</Filter>
     </ClCompile>
+    <ClCompile Include="function\project\project_mananger.cpp">
+      <Filter>function\project</Filter>
+    </ClCompile>
     <ClCompile Include="io\resource_load.cpp">
       <Filter>io</Filter>
     </ClCompile>
-    <ClCompile Include="node_path.cpp" />
+    <ClCompile Include="platform\io\dir_access_windows.cpp">
+      <Filter>platform\io</Filter>
+    </ClCompile>
+    <ClCompile Include="platform\io\file_access_windows.cpp">
+      <Filter>platform\io</Filter>
+    </ClCompile>
     <ClCompile Include="render\render_system.cpp">
       <Filter>render</Filter>
     </ClCompile>
     <ClCompile Include="resource\component\transform_component.cpp">
       <Filter>resource\component</Filter>
     </ClCompile>
-    <ClCompile Include="core\variant\typed_array.h" />
-    <ClCompile Include="core\resource\resource.cpp" />
-    <ClCompile Include="core\resource\resource_uid.cpp" />
-    <ClCompile Include="core\math\vector2i.cpp" />
-    <ClCompile Include="core\config\project_settings.cpp" />
-    <ClCompile Include="core\os\dir_access.cpp" />
-    <ClCompile Include="core\os\file_access.cpp" />
-    <ClCompile Include="platform\io\file_access_windows.cpp" />
-    <ClCompile Include="platform\io\dir_access_windows.cpp" />
   </ItemGroup>
 </Project>

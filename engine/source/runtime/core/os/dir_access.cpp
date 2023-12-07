@@ -22,6 +22,22 @@ Ref<DirAccess> DirAccess::create(AccessType p_access){
 
 	return da;
 }
+
+Ref<DirAccess> DirAccess::create_for_path(const String& p_path) {
+	Ref<DirAccess> da;
+	if (p_path.begins_with("res://")) {
+		da = create(ACCESS_RESOURCES);
+	}
+	else if (p_path.begins_with("user://")) {
+		da = create(ACCESS_USERDATA);
+	}
+	else {
+		da = create(ACCESS_FILESYSTEM);
+	}
+
+	return da;
+}
+
 String DirAccess::_get_root_path() const {
 	switch (m_access_type) {
 	case ACCESS_RESOURCES:

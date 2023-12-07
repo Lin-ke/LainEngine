@@ -12,6 +12,7 @@ workspace "Lain"
 	}
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 parser_path = "%{wks.location}engine/bin"
+
 if os.isdir("engine/bin") == false then
    os.mkdir("engine/bin")
 end

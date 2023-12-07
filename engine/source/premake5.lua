@@ -1,6 +1,4 @@
 require "precompile"
-precompile()
-
 p = path.getabsolute("../..")
 
 if (os.ishost("windows")) then
@@ -20,7 +18,6 @@ end
 project "PreCompile"
         targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
         objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
-      include "precompile.lua"
       kind "Utility"
       links {
           "Parser",
@@ -28,5 +25,6 @@ project "PreCompile"
 
        -- may call some python to generate .json
        postbuildcommands {
+          (PREMAKE_PATH .. " --file=\"./precompile.lua\""),
           (parser_obj .. " ".. precompile_params_path .. " " .. parser_input .." " ..  (p .. "/engine/source ")..  sysinclude .." " .. "lain " ..  "0"),
        }

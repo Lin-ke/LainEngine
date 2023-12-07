@@ -47,6 +47,7 @@ namespace lain
 
         Vector<Vector<Reflection::ReflectionPtr<BaseTest>>> m_test_base_array;
     };
+
     void metaExample();
     
 } // namespace lain

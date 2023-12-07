@@ -24,6 +24,24 @@ namespace lain {
 	}
 
 
+	String ProjectSettings::GlobalizePath(const String& p_path) const {
+		if (p_path.begins_with("res://")) {
+			if (!resource_path.is_empty()) {
+				return p_path.replace("res:/", resource_path);
+			}
+			return p_path.replace("res://", "");
+		}
+		else if (p_path.begins_with("user://")) {
+			String data_dir = OS::GetSingleton()->GetUserDataDir();
+			if (!data_dir.is_empty()) {
+				return p_path.replace("user:/", data_dir);
+			}
+			return p_path.replace("user://", "");
+		}
+
+		return p_path;
+	}
+
 	/// private
 	Error ProjectSettings::_initialize(const String p_path, bool p_ignore_override) {
 		if (!OSRESDIR.is_empty()) {
@@ -106,7 +124,7 @@ namespace lain {
 		}
 		return (err_text == OK && err_binary == OK) ? OK : ERR_FILE_NOT_FOUND;
 	}
-
+	// @TODO
 	Error ProjectSettings::_load_settings_text(const String& p_path) { 
 		Error err;
 		Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ, &err);

@@ -13,6 +13,7 @@ namespace lain {
 class OS {
 public:
 	static OS* p_singleton;
+	String m_execpath;
 	
 	virtual void Run() = 0;
 	virtual void Finialize() = 0;
@@ -46,35 +47,21 @@ public:
 	// OS specific path for user://
 	virtual String GetUserDataDir() const;
 
+	virtual String GetExecutablePath() const { return m_execpath; }
+
 	static L_INLINE  OS* GetSingleton() {
 		return p_singleton;
 	}
+	virtual String GetDataPath() { return "/"; }
 	
-
+	virtual String GetConfigPath() const { return "."; }
 	
+	String GetSafeDirName(const String& p_dir_name, bool p_allow_paths) const;
 };
 
-
-
-class OSWin :public OS {
-	u64 ticks_start = 0;
-	u64 ticks_per_second = 0;
-	public:
-	virtual	u64 GetTimeUsec() const;
-	virtual	DateTime GetDateTime(bool p_utc) const;
-
-	virtual void Initialize();
-	virtual void Finialize() {}
-	virtual void Run();
-	OSWin() {
-		Log::Init();
-	}
-
-};
 
 }
 
-
+// It is customary to add virtual in subclasses to make it clearer ( no is OK)
 #endif // !__OS_H__
 
-// 子类习惯上加virtual使更清晰

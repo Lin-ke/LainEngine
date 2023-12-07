@@ -24,6 +24,8 @@ public:
 
 	String get_current_dir(bool p_include_drive = true) const;
 	
+
+	bool file_exists(String p_file);
 };
 }
 

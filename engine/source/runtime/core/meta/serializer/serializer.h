@@ -184,7 +184,10 @@ namespace lain
     String& Serializer::read(const Json& json_context, String& instance);
     // vector
     
-   
+    template<>
+    Json Serializer::write(const u64& instance);
+    template<>
+    u64& Serializer::read(const Json& json_context, u64& instance);
 
     // template<>
     // Json Serializer::write(const Reflection::object& instance);

@@ -15,4 +15,5 @@ function precompile()
     json_path = path.getabsolute(json_path)
     return All_headers
 end
-
+precompile()
+print("--Generate precompile.json--")
