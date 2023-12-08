@@ -20,7 +20,9 @@ namespace lain {
 	typedef Vector<Vector3> PackedVector3Array;
 	typedef Vector<Color> PackedColorArray;
 	class Object;
+	class ConfigParser;
 	class Variant {
+	public:
 		enum Type
 		{
 			NIL,
@@ -59,7 +61,9 @@ namespace lain {
 			VECTOR,
 			PACKED_STRING_ARRAY
 		};
-		Type type;
+	private:
+
+		Type type = NIL;
 		struct ObjData {
 			ObjectID id;
 			Object* obj = nullptr;

@@ -5,6 +5,9 @@
 #include "core/variant/variant.h"
 #include "core/templates/hash_map.h"
 #include "core/string/string_name.h"
+#include "core/os/file_access.h"
+#include "core/meta/reflection/reflection.h"
+#include <regex>
 namespace lain {
 	class ProjectSettings {
 public:
@@ -44,35 +47,44 @@ private:
 	
 	};
 
-    class KeyValueParser {
+    class ConfigParser {
     public:
+         Ref<FileAccess> f;
          void parseFile(const String& filename) {
             std::ifstream file(CSTR(filename));
             std::string line;
 
             String currentField;
-
-            while (std::getline(file, line)) {
+            bool inValue;
+            std::getline(file, line);
+            while (!file.eof()) {
                 if (isField(line)) {
                     currentField = getField(line);
+                    inValue = false;
+                    std::getline(file, line);
                 }
                 else if (isKeyValue(line)) {
-                    auto keyValue = getKeyValue(line);
-                    String key = currentField + "/" + keyValue.first;
-                    m_hashmap[key] = keyValue.second;
+                    
+                    inValue = true;
+                    int delimiterPos = line.find("=", 0);
+                    String key = line.substr(0, delimiterPos).c_str(); key = key.trim();
+                    String value = line.substr(delimiterPos).c_str();
+                    while (std::getline(file, line)) {
+                        if (isKeyValue(line) || isField(line) ||  line == "") break;
+                        value += line.c_str();
+                    }
+                    Variant variant_value = constructFromString(value);
+                    if (variant_value.get_type() == Variant::Type::NIL) {
+                        L_CORE_WARN("NIL config meet: " + currentField + "/" + key);
+                    }
+                    m_hashmap[currentField + "/" + key] =  variant_value;
+                    
                 }
+
             }
         }
 
-        std::string getValue(const std::string& field, const std::string& key) {
-            std::string fullKey = field + "/" + key;
-            if (m_hashmap.find(fullKey) != m_hashmap.end()) {
-                return m_hashmap[fullKey];
-            }
-            else {
-                return "";  // 如果键不存在，则返回空字符串
-            }
-        }
+        
 
     private:
          HashMap<String, Variant> m_hashmap;
@@ -84,22 +96,31 @@ private:
          String getField(const String& line) {
             return line.substr(1, line.size() - 2);
         }
-
+         // 不允许一个字符串占多行
+         // 不允许名中带有引号
          bool isKeyValue(const std::string& line) {
-            return line.find('=') != std::string::npos;
+            int equalpos =  line.find('=');
+            if (equalpos == std::string::npos) return false;
+            int firstquote = line.find('"');
+            if (firstquote < equalpos) return false;
+            return true;
+            
         }
-
-         Pair<String, Variant> getKeyValue(const String& line) {
-            int delimiterPos = line.find("=", 0);
-            String key = line.substr(0, delimiterPos).trim();
-            Variant value = constructFromString(line.substr(delimiterPos + 1).trim());
-            return Pair(key, value);
-        }
+         // 基本类+（类名+json类）
+         // 基本类包括：Vector<Variant>，即[]；double ； String
          Variant constructFromString(const String& p_str) {
+             
              if (p_str.begins_with("PackedStringArray")) {
 
             }
              else if (p_str.begins_with("\"")) {
+
+             }
+             // Json
+             else if (p_str.begins_with("{")) {
+
+             }
+             else if (p_str.begins_with("[")) {
 
              }
              

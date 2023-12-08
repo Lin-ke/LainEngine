@@ -189,6 +189,7 @@
     <ClInclude Include="io\resource_load.h" />
     <ClInclude Include="platform\io\dir_access_windows.h" />
     <ClInclude Include="platform\io\file_access_windows.h" />
+    <ClInclude Include="platform\io\os_windows.h" />
     <ClInclude Include="render\render_system.h" />
     <ClInclude Include="render\render_system_globals.h" />
     <ClInclude Include="render\viewport.h" />
@@ -246,6 +247,7 @@
     <ClCompile Include="io\resource_load.cpp" />
     <ClCompile Include="platform\io\dir_access_windows.cpp" />
     <ClCompile Include="platform\io\file_access_windows.cpp" />
+    <ClCompile Include="platform\io\os_windows.cpp" />
     <ClCompile Include="render\render_system.cpp" />
     <ClCompile Include="resource\component\transform_component.cpp" />
   </ItemGroup>
