@@ -104,8 +104,6 @@ namespace lain {
 		Variant(const char* const p_cstring);
 		Variant() { type = NIL; }
 	};
-
-
 	template <typename... VarArgs>
 	String vformat(const String& p_text, const VarArgs... p_args) {
 		return "";

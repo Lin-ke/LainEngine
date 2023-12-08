@@ -50,7 +50,7 @@ private:
     class ConfigParser {
     public:
          Ref<FileAccess> f;
-         void parseFile(const String& filename) {
+         void ParseFile(const String& filename) {
             std::ifstream file(CSTR(filename));
             std::string line;
 
@@ -58,22 +58,22 @@ private:
             bool inValue;
             std::getline(file, line);
             while (!file.eof()) {
-                if (isField(line)) {
-                    currentField = getField(line);
+                if (IsField(line)) {
+                    currentField = GetField(line);
                     inValue = false;
                     std::getline(file, line);
                 }
-                else if (isKeyValue(line)) {
+                else if (IsKeyValue(line)) {
                     
                     inValue = true;
                     int delimiterPos = line.find("=", 0);
                     String key = line.substr(0, delimiterPos).c_str(); key = key.trim();
-                    String value = line.substr(delimiterPos).c_str();
+                    String value = line.substr(delimiterPos+1, line.length()).c_str();
                     while (std::getline(file, line)) {
-                        if (isKeyValue(line) || isField(line) ||  line == "") break;
+                        if (IsKeyValue(line) || IsField(line) ||  line == "") break;
                         value += line.c_str();
                     }
-                    Variant variant_value = constructFromString(value);
+                    Variant variant_value = ConstructFromString(value);
                     if (variant_value.get_type() == Variant::Type::NIL) {
                         L_CORE_WARN("NIL config meet: " + currentField + "/" + key);
                     }
@@ -89,16 +89,16 @@ private:
     private:
          HashMap<String, Variant> m_hashmap;
 
-         bool isField(const std::string& line) {
+         bool IsField(const std::string& line) {
             return line.size() > 2 && line.front() == '[' && line.back() == ']';
         }
 
-         String getField(const String& line) {
+         String GetField(const String& line) {
             return line.substr(1, line.size() - 2);
         }
          // 不允许一个字符串占多行
          // 不允许名中带有引号
-         bool isKeyValue(const std::string& line) {
+         bool IsKeyValue(const std::string& line) {
             int equalpos =  line.find('=');
             if (equalpos == std::string::npos) return false;
             int firstquote = line.find('"');
@@ -108,20 +108,54 @@ private:
         }
          // 基本类+（类名+json类）
          // 基本类包括：Vector<Variant>，即[]；double ； String
-         Variant constructFromString(const String& p_str) {
-             if (p_str == "") return Variant();
+         Variant ConstructFromString(const String& p_str) {
+             if (p_str == "") 
+                 return Variant();
              if (p_str.begins_with("Packed")) {
                  
             }
              else if (p_str.begins_with("\"")) {
-                 String value = p_str;
+                 return Variant(p_str);
              }
-             // Json
-             else if (p_str.begins_with("{")) {
+             else {
+                 std::string p_stdstring = p_str.utf8().get_data();
+                 std::string error;
+                 if (p_str.begins_with("{") || p_str.begins_with("[") ) {
+                     auto&& json = Json::parse(p_stdstring, error);
+                 }
+                 else if (p_str.contains("{")) {
+                     int brevepos = p_stdstring.find("{");
+                     std::string class_name = p_stdstring.substr(0, brevepos);
+                     std::string class_data = p_stdstring.substr(brevepos,p_stdstring.length());
+                     auto meta = Reflection::TypeMeta::newMetaFromName(class_name);
+                     if (!meta.isValid()) {
+                         error = "Meta not valid. Reflection to " + class_name + " failed.";
+                         return Variant();
+                     }
+                     
+                 }  
 
+
+                if (!error.empty())
+                {
+                    L_CORE_WARN("parse json file {} failed!", p_str);
+                     return Variant();
+                 }
              }
+             //  Dictionary
+             
              else if (p_str.begins_with("[")) {
-
+                 std::string err;  
+                  Json::parse(p_str.utf8().get_data(), err);
+                 
+             }
+             else if(atoi(p_str.utf8().get_data()) ){
+                 return Varint()
+             }
+             
+             else {
+                 // try to find {
+                 
              }
              
          }
