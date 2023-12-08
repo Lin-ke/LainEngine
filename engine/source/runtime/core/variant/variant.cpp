@@ -86,6 +86,26 @@ namespace lain {
 		};
 	}
 
+
+	Variant::Variant(int64_t p_int) {
+		type = INT;
+		_data._int = p_int;
+	}
+
+	Variant::Variant(uint64_t p_int) {
+		type = INT;
+		_data._int = p_int;
+	}
+
+	Variant::Variant(float p_float) {
+		type = FLOAT;
+		_data._float = p_float;
+	}
+
+	Variant::Variant(double p_double) {
+		type = FLOAT;
+		_data._float = p_double;
+	}
 	Variant::Variant(const String& p_string) {
 		type = STRING;
 		memnew_placement(_data._mem, String(p_string));

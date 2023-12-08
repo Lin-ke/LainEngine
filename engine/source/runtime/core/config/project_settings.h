@@ -106,9 +106,12 @@ private:
             return true;
             
         }
-         // 基本类+（类名+json类）
          // 基本类包括：Vector<Variant>，即[]；double ； String
-         Variant ConstructFromString(const String& p_str) {
+         Variant ConstructFromString(const String& p_str, int recursize_depth =0 ) {
+             if (recursize_depth > 128) {
+                 L_CORE_ERROR("than max recursize depth");
+                 return Variant();
+             }
              if (p_str == "") 
                  return Variant();
              if (p_str.begins_with("Packed")) {
@@ -122,18 +125,29 @@ private:
                  std::string error;
                  if (p_str.begins_with("{") || p_str.begins_with("[") ) {
                      auto&& json = Json::parse(p_stdstring, error);
+
                  }
                  else if (p_str.contains("{")) {
                      int brevepos = p_stdstring.find("{");
-                     std::string class_name = p_stdstring.substr(0, brevepos);
-                     std::string class_data = p_stdstring.substr(brevepos,p_stdstring.length());
+                     std::string class_name = trim(p_stdstring.substr(0, brevepos));
+
+                     std::string class_data = p_stdstring.substr(brevepos, p_stdstring.length() - brevepos);
                      auto meta = Reflection::TypeMeta::newMetaFromName(class_name);
                      if (!meta.isValid()) {
                          error = "Meta not valid. Reflection to " + class_name + " failed.";
                          return Variant();
                      }
+                     // do something
                      
+                     // 这里应该建立这个类型的对象
                  }  
+                 else if (IsNumericExpression(p_stdstring)) {
+                     double string_double_value = std::stod(p_stdstring);
+                     if ((int)(string_double_value) == string_double_value) {
+                         return Variant((int)string_double_value);
+                     }
+                     return Variant(string_double_value);
+                 }
 
 
                 if (!error.empty())
@@ -142,22 +156,29 @@ private:
                      return Variant();
                  }
              }
-             //  Dictionary
-             
-             else if (p_str.begins_with("[")) {
-                 std::string err;  
-                  Json::parse(p_str.utf8().get_data(), err);
-                 
+
+         }
+
+         std::string trim(const std::string& str) {
+             size_t begin = str.find_first_not_of(" ");
+             if (begin == std::string::npos) {
+                 return "";
              }
-             else if(atoi(p_str.utf8().get_data()) ){
-                 return Varint()
+
+             size_t end = str.find_last_not_of(" ");
+             if (end == std::string::npos) {
+                 return "";
              }
-             
-             else {
-                 // try to find {
-                 
-             }
-             
+
+             return str.substr(begin, end - begin + 1);
+         }
+
+         bool IsNumericExpression(const std::string& expression) {
+             // 正则表达式模式，用于匹配数字类型的表达式
+             std::regex pattern("^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$");
+
+             // 使用 std::regex_match() 函数进行匹配
+             return std::regex_match(expression, pattern);
          }
 
     };
