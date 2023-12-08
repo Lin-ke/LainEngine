@@ -109,12 +109,12 @@ private:
          // 基本类+（类名+json类）
          // 基本类包括：Vector<Variant>，即[]；double ； String
          Variant constructFromString(const String& p_str) {
-             
-             if (p_str.begins_with("PackedStringArray")) {
-
+             if (p_str == "") return Variant();
+             if (p_str.begins_with("Packed")) {
+                 
             }
              else if (p_str.begins_with("\"")) {
-
+                 String value = p_str;
              }
              // Json
              else if (p_str.begins_with("{")) {

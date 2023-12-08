@@ -131,6 +131,7 @@
     <ClInclude Include="core\meta\reflection\reflection.h" />
     <ClInclude Include="core\meta\reflection\reflection_register.h" />
     <ClInclude Include="core\meta\serializer\serializer.h" />
+    <ClInclude Include="core\object\gobject.h" />
     <ClInclude Include="core\object\object.h" />
     <ClInclude Include="core\object\object_id.h" />
     <ClInclude Include="core\object\refcounted.h" />

@@ -193,6 +193,9 @@
     <ClInclude Include="core\meta\serializer\serializer.h">
       <Filter>core\meta\serializer</Filter>
     </ClInclude>
+    <ClInclude Include="core\object\gobject.h">
+      <Filter>core\object</Filter>
+    </ClInclude>
     <ClInclude Include="core\object\object.h">
       <Filter>core\object</Filter>
     </ClInclude>
@@ -367,6 +370,9 @@
     <ClInclude Include="platform\io\file_access_windows.h">
       <Filter>platform\io</Filter>
     </ClInclude>
+    <ClInclude Include="platform\io\os_windows.h">
+      <Filter>platform\io</Filter>
+    </ClInclude>
     <ClInclude Include="render\render_system.h">
       <Filter>render</Filter>
     </ClInclude>
@@ -532,6 +538,9 @@
       <Filter>platform\io</Filter>
     </ClCompile>
     <ClCompile Include="platform\io\file_access_windows.cpp">
+      <Filter>platform\io</Filter>
+    </ClCompile>
+    <ClCompile Include="platform\io\os_windows.cpp">
       <Filter>platform\io</Filter>
     </ClCompile>
     <ClCompile Include="render\render_system.cpp">

@@ -101,8 +101,8 @@ namespace lain {
 		Variant(const Vector<String>& p_string_array);
 		Variant(const String& p_string);
 		Variant(const StringName& p_string);
-		Variant(const char* const p_cstring)
-
+		Variant(const char* const p_cstring);
+		Variant() { type = NIL; }
 	};
 
 
