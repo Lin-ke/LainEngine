@@ -138,6 +138,7 @@ namespace lain
             bool isValid() { return m_is_valid; }
 
             TypeMeta& operator=(const TypeMeta& dest);
+            
 
         private:
             TypeMeta(std::string type_name);

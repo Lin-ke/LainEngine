@@ -7,6 +7,7 @@
 #include "core/string/string_name.h"
 #include "core/os/file_access.h"
 #include "core/meta/reflection/reflection.h"
+#include "core/meta/serializer/serializer.h"
 #include <regex>
 namespace lain {
 	class ProjectSettings {
@@ -106,8 +107,21 @@ private:
             return true;
             
         }
+         template< typename T>
+         Variant load(Json json) {
+             T v;
+             Serializer::read(json, v);
+             return Variant(v);
+         }
+         template<typename T>
+         Variant load(T& v, Json json) {
+             std::string error;
+             Serializer::read(json, v);
+             return Variant(v);
+         }
          // 基本类包括：Vector<Variant>，即[]；double ； String
          Variant ConstructFromString(const String& p_str, int recursize_depth =0 ) {
+             std::string error;
              if (recursize_depth > 128) {
                  L_CORE_ERROR("than max recursize depth");
                  return Variant();
@@ -115,48 +129,74 @@ private:
              if (p_str == "") 
                  return Variant();
              if (p_str.begins_with("Packed")) {
-                 
-            }
-             else if (p_str.begins_with("\"")) {
-                 return Variant(p_str);
-             }
-             else {
-                 std::string p_stdstring = p_str.utf8().get_data();
+                 std::string p_stdstring = p_str.trim().utf8().get_data();
+                 int brankpos = p_stdstring.find("[");
+                 int rbrankpos = p_stdstring.rfind("]");
+                 if (brankpos != std::string::npos && rbrankpos != std::string::npos && brankpos == rbrankpos) {
+                     error = "not valid PackedString";
+                     L_CORE_ERROR(error);
+                     return Variant();
+                 }
                  std::string error;
-                 if (p_str.begins_with("{") || p_str.begins_with("[") ) {
+                 auto&& json = Json::parse(p_stdstring.substr(brankpos, rbrankpos - brankpos +1), error);
+                 if (!error.empty())
+                 {
+                     L_CORE_ERROR("parse json file {} failed!", p_str);
+                     return Variant();
+                 }
+                 if (p_str.begins_with("PackedString")) {
+                     return load<Vector<String>>(json);
+                 }
+                 else if (p_str.begins_with("PackedFloat")) {
+                     return load<Vector<double>>(json);
+                 }
+                 else if (p_str.begins_with("PackedInt")) {
+                     return load<Vector<int>>(json);
+                 }
+             }
+             
+             else if (p_str.begins_with("\"")) {
+                 String p_str_ = p_str.trim();
+                 if (p_str_.length() < 2 && p_str_.rfind("\"") != p_str_.length() - 1) {
+                     L_CORE_ERROR("not valid String");
+                     return Variant();
+                 }
+                 return Variant(p_str_.substr(1, p_str_.length() - 2));
+             }
+             else { // Other class?
+                 std::string p_stdstring = p_str.trim().utf8().get_data();
+                 if (p_str.begins_with("{")) {
                      auto&& json = Json::parse(p_stdstring, error);
-
                  }
                  else if (p_str.contains("{")) {
                      int brevepos = p_stdstring.find("{");
                      std::string class_name = trim(p_stdstring.substr(0, brevepos));
 
                      std::string class_data = p_stdstring.substr(brevepos, p_stdstring.length() - brevepos);
-                     auto meta = Reflection::TypeMeta::newMetaFromName(class_name);
-                     if (!meta.isValid()) {
-                         error = "Meta not valid. Reflection to " + class_name + " failed.";
-                         return Variant();
+                     auto meta_instance = Reflection::TypeMeta::newFromNameAndJson(class_name, Json::parse(class_data, error));
+                     if (!error.empty()) {
+                         L_CORE_ERROR("Meta not valid. Reflection to " + class_name + " failed." + error);
                      }
+
                      // do something
-                     
                      // 这里应该建立这个类型的对象
                  }  
                  else if (IsNumericExpression(p_stdstring)) {
                      double string_double_value = std::stod(p_stdstring);
                      if ((int)(string_double_value) == string_double_value) {
-                         return Variant((int)string_double_value);
+                         return Variant((int64_t)string_double_value);
                      }
                      return Variant(string_double_value);
                  }
 
 
-                if (!error.empty())
-                {
-                    L_CORE_WARN("parse json file {} failed!", p_str);
-                     return Variant();
-                 }
+                
              }
-
+             if (!error.empty())
+             {
+                 L_CORE_WARN("parse json file {} failed!", p_str);
+                 return Variant();
+             }
          }
 
          std::string trim(const std::string& str) {

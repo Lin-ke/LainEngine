@@ -55,7 +55,8 @@ namespace lain {
 			OBJECT,
 			CALLABLE,
 			RID,
-
+			// reflect
+			REFLECTIONPTR,
 			
 			// arrays
 			VECTOR,

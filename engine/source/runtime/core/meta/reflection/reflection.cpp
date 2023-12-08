@@ -65,7 +65,6 @@ namespace lain
             m_array_map.clear();
         }
 
-        // ����TypeMeta
         TypeMeta::TypeMeta(std::string type_name) : m_type_name(type_name)
         {
             m_is_valid = false;
@@ -138,7 +137,6 @@ namespace lain
         }
 
         std::string TypeMeta::getTypeName() { return m_type_name; }
-        // �޸�ԭ�ȵ�ָ��
         int TypeMeta::getFieldsList(FieldAccessor*& out_list)
         {
             int count = m_fields.size();
