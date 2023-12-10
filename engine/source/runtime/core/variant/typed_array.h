@@ -1,7 +1,6 @@
 #ifndef TYPED_ARRAY_H
 #define TYPED_ARRAY_H
 
-#include "core/object/object.h"
 #include "core/variant/array.h"
 #include "core/variant/variant.h"
 namespace lain {

@@ -134,6 +134,7 @@
     <ClInclude Include="core\object\gobject.h" />
     <ClInclude Include="core\object\object.h" />
     <ClInclude Include="core\object\object_id.h" />
+    <ClInclude Include="core\object\objectdb.h" />
     <ClInclude Include="core\object\refcounted.h" />
     <ClInclude Include="core\object\safe_refcount.h" />
     <ClInclude Include="core\object\signal.h" />
@@ -145,6 +146,7 @@
     <ClInclude Include="core\os\mutex.h" />
     <ClInclude Include="core\os\os.h" />
     <ClInclude Include="core\os\pool_allocator.h" />
+    <ClInclude Include="core\os\spin_lock.h" />
     <ClInclude Include="core\os\thread_safe.h" />
     <ClInclude Include="core\os\time_enums.h" />
     <ClInclude Include="core\resource\res_importer.h" />
@@ -224,6 +226,7 @@
     <ClCompile Include="core\meta\serializer\serializer.cpp" />
     <ClCompile Include="core\object\object.cpp" />
     <ClCompile Include="core\object\object_id.cpp" />
+    <ClCompile Include="core\object\objectdb.cpp" />
     <ClCompile Include="core\object\refcounted.cpp" />
     <ClCompile Include="core\os\dir_access.cpp" />
     <ClCompile Include="core\os\file_access.cpp" />

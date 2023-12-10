@@ -202,6 +202,9 @@
     <ClInclude Include="core\object\object_id.h">
       <Filter>core\object</Filter>
     </ClInclude>
+    <ClInclude Include="core\object\objectdb.h">
+      <Filter>core\object</Filter>
+    </ClInclude>
     <ClInclude Include="core\object\refcounted.h">
       <Filter>core\object</Filter>
     </ClInclude>
@@ -233,6 +236,9 @@
       <Filter>core\os</Filter>
     </ClInclude>
     <ClInclude Include="core\os\pool_allocator.h">
+      <Filter>core\os</Filter>
+    </ClInclude>
+    <ClInclude Include="core\os\spin_lock.h">
       <Filter>core\os</Filter>
     </ClInclude>
     <ClInclude Include="core\os\thread_safe.h">
@@ -466,6 +472,9 @@
       <Filter>core\object</Filter>
     </ClCompile>
     <ClCompile Include="core\object\object_id.cpp">
+      <Filter>core\object</Filter>
+    </ClCompile>
+    <ClCompile Include="core\object\objectdb.cpp">
       <Filter>core\object</Filter>
     </ClCompile>
     <ClCompile Include="core\object\refcounted.cpp">
