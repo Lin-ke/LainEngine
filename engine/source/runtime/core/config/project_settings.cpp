@@ -124,12 +124,16 @@ namespace lain {
 		}
 		return (err_text == OK && err_binary == OK) ? OK : ERR_FILE_NOT_FOUND;
 	}
-	// @TODO
+	
 	Error ProjectSettings::_load_settings_text(const String& p_path) { 
 		Error err;
 		Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ, &err);
+		auto cp = ConfigParser();
 
 		if (f.is_null()) {
+			cp.ParseFile("proj.setting");
+			auto hashset = cp.m_hashmap;
+
 			// FIXME: Above 'err' error code is ERR_FILE_CANT_OPEN if the file is missing
 			// This needs to be streamlined if we want decent error reporting
 			return ERR_FILE_NOT_FOUND;

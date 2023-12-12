@@ -31,7 +31,7 @@ namespace lain {
 
 	};
 	L_INLINE bool is_ref_counted() const { return m_type_is_reference; }
-	ObjectID get_instance_id() { return m_instance_id; }
+	ObjectID get_instance_id() const { return m_instance_id; }
 private:
 	ObjectID m_instance_id;
 	bool m_type_is_reference = false;
@@ -53,6 +53,6 @@ private:
 	};
 
 }
-
+// const 限定符是必要的，因为const对象拒绝调用非const方法
 
 #endif // !__CORE_OBJECT_H__

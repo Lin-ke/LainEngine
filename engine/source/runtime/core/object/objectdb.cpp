@@ -7,6 +7,8 @@ namespace lain{
 	ObjectDB::ObjectSlot* ObjectDB::object_slots = nullptr;
 	uint64_t ObjectDB::validator_counter = 0;
 	ObjectID ObjectDB::add_instance(Object* p_object) {
+		spin_lock.lock();
+
 		if (unlikely(slot_count == slot_max)) {
 			CRASH_COND(slot_count == (1 << OBJECTDB_SLOT_MAX_COUNT_BITS));
 
@@ -24,6 +26,8 @@ namespace lain{
 		if (object_slots[slot].object != nullptr) {
 			//spin_lock.unlock();
 			ERR_FAIL_COND_V(object_slots[slot].object != nullptr, ObjectID());
+			spin_lock.unlock();
+
 		}
 		object_slots[slot].object = p_object;
 		object_slots[slot].is_ref_counted = p_object->is_ref_counted();
@@ -43,11 +47,14 @@ namespace lain{
 
 		slot_count++;
 
+		spin_lock.unlock();
 
 		return ObjectID(id);
 	}
 
 	void ObjectDB::remove_instance(Object* p_object) {
+		spin_lock.lock();
+
 		uint64_t t = p_object->get_instance_id();
 		uint32_t slot = t & OBJECTDB_SLOT_MAX_COUNT_MASK; //slot is always valid on valid object
 		//decrease slot count
@@ -58,6 +65,7 @@ namespace lain{
 		object_slots[slot].validator = 0;
 		object_slots[slot].is_ref_counted = false;
 		object_slots[slot].object = nullptr;
+		spin_lock.unlock();
 
 	}
 

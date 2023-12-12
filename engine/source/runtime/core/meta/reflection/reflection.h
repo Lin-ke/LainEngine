@@ -139,7 +139,6 @@ namespace lain
 
             TypeMeta& operator=(const TypeMeta& dest);
             
-
         private:
             TypeMeta(std::string type_name);
 
@@ -240,6 +239,13 @@ namespace lain
         {
         public:
             ReflectionInstance(TypeMeta meta, void* instance) : m_meta(meta), m_instance(instance) {}
+            //@TODO vector是cow的；还有个指针，应该没有额外开销，这里以后看看
+            ReflectionInstance (ReflectionInstance&& r_val) noexcept: m_meta(r_val.m_meta), m_instance(r_val.m_instance) {
+                r_val.m_instance = nullptr; // is it necessary?
+            }
+            ReflectionInstance(const ReflectionInstance& l_val) : m_meta(l_val.m_meta), m_instance(l_val.m_instance){}
+
+
             ReflectionInstance() : m_meta(), m_instance(nullptr) {}
 
             ReflectionInstance& operator=(ReflectionInstance& dest);

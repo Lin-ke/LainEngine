@@ -84,11 +84,11 @@ private:
 
             }
         }
-
+         HashMap<String, Variant> m_hashmap;
         
 
     private:
-         HashMap<String, Variant> m_hashmap;
+         
 
          bool IsField(const std::string& line) {
             return line.size() > 2 && line.front() == '[' && line.back() == ']';
@@ -118,6 +118,15 @@ private:
              std::string error;
              Serializer::read(json, v);
              return Variant(v);
+         }
+        Reflection::ReflectionInstance* JsonToObj(Json json, const std::string& p_stdstring, std::string& error) {
+             Reflection::ReflectionInstance meta_instance = Reflection::TypeMeta::newFromNameAndJson(json["$typeName"].string_value(), Json::parse(p_stdstring, error));
+             if (!error.empty()) {
+                 return nullptr;
+             }
+             Reflection::ReflectionInstance* instance_ptr = nullptr;
+             memnew_placement(instance_ptr, Reflection::ReflectionInstance(meta_instance));
+             return instance_ptr;
          }
          // 基本类包括：Vector<Variant>，即[]；double ； String
          Variant ConstructFromString(const String& p_str, int recursize_depth =0 ) {
@@ -167,20 +176,19 @@ private:
                  std::string p_stdstring = p_str.trim().utf8().get_data();
                  if (p_str.begins_with("{")) {
                      auto&& json = Json::parse(p_stdstring, error);
-                 }
-                 else if (p_str.contains("{")) {
-                     int brevepos = p_stdstring.find("{");
-                     std::string class_name = trim(p_stdstring.substr(0, brevepos));
-
-                     std::string class_data = p_stdstring.substr(brevepos, p_stdstring.length() - brevepos);
-                     auto meta_instance = Reflection::TypeMeta::newFromNameAndJson(class_name, Json::parse(class_data, error));
-                     if (!error.empty()) {
-                         L_CORE_ERROR("Meta not valid. Reflection to " + class_name + " failed." + error);
+                     if(json["$typeName"].is_string()){
+                         auto instance_ptr = JsonToObj(json, p_stdstring, error);
+                         if (!error.empty()) {
+                             L_CORE_ERROR("Meta not valid. Reflection to " + json["$typeName"].string_value() + " failed." + error);
+                             return Variant();
+                         }
+                         return Variant(instance_ptr);
                      }
-
-                     // do something
-                     // 这里应该建立这个类型的对象
-                 }  
+                     else {
+                         // dictionary
+                     }
+                 }
+                
                  else if (IsNumericExpression(p_stdstring)) {
                      double string_double_value = std::stod(p_stdstring);
                      if ((int)(string_double_value) == string_double_value) {

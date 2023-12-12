@@ -9,6 +9,8 @@
 #include "core/templates/vector.h"
 #include "core/math/color.h"
 #include "core/object/safe_refcount.h"
+#include "core/meta/reflection/reflection.h"
+
 namespace lain {
 	typedef Vector<uint8_t> PackedByteArray;
 	typedef Vector<int32_t> PackedInt32Array;
@@ -56,11 +58,14 @@ namespace lain {
 			CALLABLE,
 			RID,
 			// reflect
-			REFLECTIONPTR,
+			REFLECTIONINSTANCE,
 			
 			// arrays
 			VECTOR,
-			PACKED_STRING_ARRAY
+			PACKED_STRING_ARRAY,
+			PACKED_FLOAT32_ARRAY,
+			PACKED_INT32_ARRAY
+
 		};
 	private:
 
@@ -131,6 +136,7 @@ namespace lain {
 			ObjectID id;
 			Object* obj = nullptr;
 		};
+		
 		union {
 			bool _bool;
 			int64_t _int;
@@ -139,11 +145,12 @@ namespace lain {
 			PackedArrayRefBase* packed_array;
 			uint8_t _mem[sizeof(ObjData) > (sizeof(real_t) * 4) ? sizeof(ObjData) : (sizeof(real_t) * 4)]{ 0 };
 		} _data alignas(8);
-
+		ObjData& _get_obj();
 
 		// constructor
 		Variant(const Variant*);
 		Variant(const Variant**);
+		String stringify(int recursion_count) const;
 	public:
 		_FORCE_INLINE_ Type get_type() const {
 			return type;
@@ -163,6 +170,14 @@ namespace lain {
 
 		///constructors
 		Variant(const Vector<String>& p_string_array);
+		Variant(const Vector<float>& p_float_array);
+		Variant(const Vector<int64_t>& p_int64_array);
+		Variant(const Vector<int32_t>& p_int32_array);
+
+
+		Variant(const Object* p_obj);
+		Variant(const Reflection::ReflectionInstance* p_instance);
+
 		Variant(const String& p_string);
 		Variant(const StringName& p_string);
 		Variant(const char* const p_cstring);
