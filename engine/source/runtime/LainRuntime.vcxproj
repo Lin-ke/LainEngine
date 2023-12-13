@@ -130,6 +130,7 @@
     <ClInclude Include="core\meta\meta_example.h" />
     <ClInclude Include="core\meta\reflection\reflection.h" />
     <ClInclude Include="core\meta\reflection\reflection_register.h" />
+    <ClInclude Include="core\meta\reflection\type_info.h" />
     <ClInclude Include="core\meta\serializer\serializer.h" />
     <ClInclude Include="core\object\gobject.h" />
     <ClInclude Include="core\object\object.h" />
@@ -179,6 +180,7 @@
     <ClInclude Include="core\typedefs.h" />
     <ClInclude Include="core\variant\array.h" />
     <ClInclude Include="core\variant\callable.h" />
+    <ClInclude Include="core\variant\dictionary.h" />
     <ClInclude Include="core\variant\typed_array.h" />
     <ClInclude Include="core\variant\variant.h" />
     <ClInclude Include="function\display\display_event.h" />
@@ -244,6 +246,7 @@
     <ClCompile Include="core\string\string_name.cpp" />
     <ClCompile Include="core\string\ustring.cpp" />
     <ClCompile Include="core\string\ustringutils.cpp" />
+    <ClCompile Include="core\variant\dictionary.cpp" />
     <ClCompile Include="core\variant\callable.cpp" />
     <ClCompile Include="core\variant\variant.cpp" />
     <ClCompile Include="function\display\window_system.cpp" />

@@ -406,6 +406,8 @@
     <ClInclude Include="resource\manager\resource_manager.h">
       <Filter>resource\manager</Filter>
     </ClInclude>
+    <ClInclude Include="core\variant\dictionary.h" />
+    <ClInclude Include="core\meta\reflection\type_info.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\config\project_settings.cpp">
@@ -558,5 +560,6 @@
     <ClCompile Include="resource\component\transform_component.cpp">
       <Filter>resource\component</Filter>
     </ClCompile>
+    <ClCompile Include="core\variant\dictionary.cpp" />
   </ItemGroup>
 </Project>

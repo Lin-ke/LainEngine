@@ -28,43 +28,57 @@ namespace lain {
 		enum Type
 		{
 			NIL,
+
 			// atomic types
-			// Packing and unpacking
 			BOOL,
 			INT,
 			FLOAT,
 			STRING,
 
-			// using pointer
+			// math types
 			VECTOR2,
 			VECTOR2I,
-			RECT2, 
+			RECT2,
 			RECT2I,
 			VECTOR3,
 			VECTOR3I,
-
+			TRANSFORM2D,
 			VECTOR4,
 			VECTOR4I,
 			PLANE,
-			AABB,
 			QUATERNION,
-
-			TRANSFORM2D,
+			AABB,
+			BASIS,
 			TRANSFORM3D,
 			PROJECTION,
 
-			// engine
+			// misc types
+			COLOR,
+			STRING_NAME,
+			NODE_PATH,
+			RID,
 			OBJECT,
 			CALLABLE,
-			RID,
+			SIGNAL,
+			DICTIONARY,
+			ARRAY,
+
+			// typed arrays
+			PACKED_BYTE_ARRAY,
+			PACKED_INT32_ARRAY,
+			PACKED_INT64_ARRAY,
+			PACKED_FLOAT32_ARRAY,
+			PACKED_FLOAT64_ARRAY,
+			PACKED_STRING_ARRAY,
+			PACKED_VECTOR2_ARRAY,
+			PACKED_VECTOR3_ARRAY,
+			PACKED_COLOR_ARRAY,
+
 			// reflect
 			REFLECTIONINSTANCE,
+			VARIANT_MAX,
+
 			
-			// arrays
-			VECTOR,
-			PACKED_STRING_ARRAY,
-			PACKED_FLOAT32_ARRAY,
-			PACKED_INT32_ARRAY
 
 		};
 	private:
@@ -162,6 +176,7 @@ namespace lain {
 		void operator=(const Variant& p_variant); // only this is enough for all the other types
 		typedef void (*ObjectConstruct)(const String& p_text, void* ud, Variant& r_value);
 		static void construct_from_string(const String& p_string, Variant& r_value, ObjectConstruct p_obj_construct = nullptr, void* p_construct_ud = nullptr);
+		
 		u32 recursive_hash(int recursion_count) const;
 		uint32_t Variant::hash() const {
 			return recursive_hash(0);
@@ -207,5 +222,12 @@ namespace lain {
 
 	//	return fmt;
 	//}
+	struct VariantHasher {
+		static _FORCE_INLINE_ uint32_t hash(const Variant& p_variant) { return p_variant.hash(); }
+	};
+	struct StringLikeVariantComparator {
+		static bool compare(const Variant& p_lhs, const Variant& p_rhs);
+	};
 };
+
 #endif // !__VARIANT_H__
