@@ -408,6 +408,7 @@
     </ClInclude>
     <ClInclude Include="core\variant\dictionary.h" />
     <ClInclude Include="core\meta\reflection\type_info.h" />
+    <ClInclude Include="core\math\vector3i.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\config\project_settings.cpp">
@@ -561,5 +562,6 @@
       <Filter>resource\component</Filter>
     </ClCompile>
     <ClCompile Include="core\variant\dictionary.cpp" />
+    <ClCompile Include="core\variant\variant_header.h" />
   </ItemGroup>
 </Project>

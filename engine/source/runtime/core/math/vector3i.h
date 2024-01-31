@@ -8,102 +8,103 @@
 
 namespace lain
 {
-    class Vector3i;
-    REFLECTION_TYPE(Vector3)
-    CLASS(Vector3, Fields)
+    class Vector3;
+    REFLECTION_TYPE(Vector3i)
+        CLASS(Vector3i, Fields)
     {
-        REFLECTION_BODY(Vector3);
-        friend class Vector3i;
+        REFLECTION_BODY(Vector3i);
+        friend class Vector3;
     public:
-        float x {0.f};
-        float y {0.f};
-        float z {0.f};
+        int32_t x{ 0 };
+        int32_t y{ 0 };
+        int32_t z{ 0 };
 
     public:
-        Vector3() = default;
-        Vector3(float x_, float y_, float z_) : x {x_}, y {y_}, z {z_} {}
-        Vector3(const Vector3i& p_v);
-        explicit Vector3(const float coords[3]) : x {coords[0]}, y {coords[1]}, z {coords[2]} {}
+        Vector3i() = default;
+        Vector3i(float x_, float y_, float z_) : x{ x_ }, y{ y_ }, z{ z_ } {}
+        Vector3i(const Vector3& p_v);
 
-        float operator[](size_t i) const
+        explicit Vector3i(const float coords[3]) : x{ coords[0] }, y{ coords[1] }, z{ coords[2] } {}
+
+        int32_t operator[](size_t i) const
         {
             assert(i < 3);
             return *(&x + i);
         }
 
-        float& operator[](size_t i)
+        int32_t& operator[](size_t i)
         {
             assert(i < 3);
             return *(&x + i);
         }
         /// Pointer accessor for direct copying
-        float* ptr() { return &x; }
+        int32_t* ptr() { return &x; }
         /// Pointer accessor for direct copying
-        const float* ptr() const { return &x; }
+        const int32_t* ptr() const { return &x; }
 
-        bool operator==(const Vector3& rhs) const { return (x == rhs.x && y == rhs.y && z == rhs.z); }
+        bool operator==(const Vector3i & rhs) const { return (x == rhs.x && y == rhs.y && z == rhs.z); }
 
-        bool operator!=(const Vector3& rhs) const { return x != rhs.x || y != rhs.y || z != rhs.z; }
+        bool operator!=(const Vector3i & rhs) const { return x != rhs.x || y != rhs.y || z != rhs.z; }
 
         // arithmetic operations
-        Vector3 operator+(const Vector3& rhs) const { return Vector3(x + rhs.x, y + rhs.y, z + rhs.z); }
+        Vector3i operator+(const Vector3i & rhs) const { return Vector3i(x + rhs.x, y + rhs.y, z + rhs.z); }
 
-        Vector3 operator-(const Vector3& rhs) const { return Vector3(x - rhs.x, y - rhs.y, z - rhs.z); }
+        Vector3i operator-(const Vector3i & rhs) const { return Vector3i(x - rhs.x, y - rhs.y, z - rhs.z); }
 
-        Vector3 operator*(float scalar) const { return Vector3(x * scalar, y * scalar, z * scalar); }
+        Vector3i operator*(float scalar) const { return Vector3i(x * scalar, y * scalar, z * scalar); }
 
-        Vector3 operator*(const Vector3& rhs) const { return Vector3(x * rhs.x, y * rhs.y, z * rhs.z); }
+        Vector3i operator*(const Vector3i & rhs) const { return Vector3i(x * rhs.x, y * rhs.y, z * rhs.z); }
 
-        Vector3 operator/(float scalar) const
+        Vector3i operator/(float scalar) const
         {
             assert(scalar != 0.0);
-            return Vector3(x / scalar, y / scalar, z / scalar);
+            return Vector3i(x / scalar, y / scalar, z / scalar);
         }
 
-        Vector3 operator/(const Vector3& rhs) const
+        Vector3i operator/(const Vector3i & rhs) const
         {
             assert((rhs.x != 0 && rhs.y != 0 && rhs.z != 0));
-            return Vector3(x / rhs.x, y / rhs.y, z / rhs.z);
+            return Vector3i(x / rhs.x, y / rhs.y, z / rhs.z);
         }
 
-        const Vector3& operator+() const { return *this; }
+        const Vector3i& operator+() const { return *this; }
 
-        Vector3 operator-() const { return Vector3(-x, -y, -z); }
+        Vector3i operator-() const { return Vector3i(-x, -y, -z); }
 
-        // overloaded operators to help Vector3
-        friend Vector3 operator*(float scalar, const Vector3& rhs)
+        // overloaded operators to help Vector3i
+        friend Vector3i operator*(float scalar, const Vector3i & rhs)
         {
-            return Vector3(scalar * rhs.x, scalar * rhs.y, scalar * rhs.z);
+            return Vector3i(scalar * rhs.x, scalar * rhs.y, scalar * rhs.z);
         }
 
-        friend Vector3 operator/(float scalar, const Vector3& rhs)
+        friend Vector3i operator/(float scalar, const Vector3i & rhs)
         {
             assert(rhs.x != 0 && rhs.y != 0 && rhs.z != 0);
-            return Vector3(scalar / rhs.x, scalar / rhs.y, scalar / rhs.z);
+            return Vector3i(scalar / rhs.x, scalar / rhs.y, scalar / rhs.z);
         }
 
-        friend Vector3 operator+(const Vector3& lhs, float rhs)
+        friend Vector3i operator+(const Vector3i & lhs, float rhs)
         {
-            return Vector3(lhs.x + rhs, lhs.y + rhs, lhs.z + rhs);
+            return Vector3i(lhs.x + rhs, lhs.y + rhs, lhs.z + rhs);
         }
 
-        friend Vector3 operator+(float lhs, const Vector3& rhs)
+        friend Vector3i operator+(float lhs, const Vector3i & rhs)
         {
-            return Vector3(lhs + rhs.x, lhs + rhs.y, lhs + rhs.z);
+            return Vector3i(lhs + rhs.x, lhs + rhs.y, lhs + rhs.z);
         }
 
-        friend Vector3 operator-(const Vector3& lhs, float rhs)
+        friend Vector3i operator-(const Vector3i & lhs, float rhs)
         {
-            return Vector3(lhs.x - rhs, lhs.y - rhs, lhs.z - rhs);
+            return Vector3i(lhs.x - rhs, lhs.y - rhs, lhs.z - rhs);
         }
 
-        friend Vector3 operator-(float lhs, const Vector3& rhs)
+        friend Vector3i operator-(float lhs, const Vector3i & rhs)
         {
-            return Vector3(lhs - rhs.x, lhs - rhs.y, lhs - rhs.z);
+            return Vector3i(lhs - rhs.x, lhs - rhs.y, lhs - rhs.z);
         }
 
         // arithmetic updates
-        Vector3& operator+=(const Vector3& rhs)
+        Vector3i& operator+=(const Vector3i & rhs)
         {
             x += rhs.x;
             y += rhs.y;
@@ -111,7 +112,7 @@ namespace lain
             return *this;
         }
 
-        Vector3& operator+=(float scalar)
+        Vector3i& operator+=(float scalar)
         {
             x += scalar;
             y += scalar;
@@ -119,7 +120,7 @@ namespace lain
             return *this;
         }
 
-        Vector3& operator-=(const Vector3& rhs)
+        Vector3i& operator-=(const Vector3i & rhs)
         {
             x -= rhs.x;
             y -= rhs.y;
@@ -127,7 +128,7 @@ namespace lain
             return *this;
         }
 
-        Vector3& operator-=(float scalar)
+        Vector3i& operator-=(float scalar)
         {
             x -= scalar;
             y -= scalar;
@@ -135,7 +136,7 @@ namespace lain
             return *this;
         }
 
-        Vector3& operator*=(float scalar)
+        Vector3i& operator*=(float scalar)
         {
             x *= scalar;
             y *= scalar;
@@ -143,7 +144,7 @@ namespace lain
             return *this;
         }
 
-        Vector3& operator*=(const Vector3& rhs)
+        Vector3i& operator*=(const Vector3i & rhs)
         {
             x *= rhs.x;
             y *= rhs.y;
@@ -151,7 +152,7 @@ namespace lain
             return *this;
         }
 
-        Vector3& operator/=(float scalar)
+        Vector3i& operator/=(float scalar)
         {
             assert(scalar != 0.0);
             x /= scalar;
@@ -160,7 +161,7 @@ namespace lain
             return *this;
         }
 
-        Vector3& operator/=(const Vector3& rhs)
+        Vector3i& operator/=(const Vector3i & rhs)
         {
             assert(rhs.x != 0 && rhs.y != 0 && rhs.z != 0);
             x /= rhs.x;
@@ -199,7 +200,7 @@ namespace lain
         instead.
         */
 
-        float distance(const Vector3& rhs) const { return (*this - rhs).length(); }
+        float distance(const Vector3i & rhs) const { return (*this - rhs).length(); }
 
         /** Returns the square of the distance to another vector.
         @remarks
@@ -212,7 +213,7 @@ namespace lain
         without incurring the square root.
         */
 
-        float squaredDistance(const Vector3& rhs) const { return (*this - rhs).squaredLength(); }
+        float squaredDistance(const Vector3i & rhs) const { return (*this - rhs).squaredLength(); }
 
         /** Calculates the dot (scalar) product of this vector with another.
         @remarks
@@ -229,7 +230,7 @@ namespace lain
         A float representing the dot product value.
         */
 
-        float dotProduct(const Vector3& vec) const { return x * vec.x + y * vec.y + z * vec.z; }
+        float dotProduct(const Vector3i & vec) const { return x * vec.x + y * vec.y + z * vec.z; }
 
         /** Normalizes the vector.
         @remarks
@@ -266,7 +267,7 @@ namespace lain
         @returns
         A vector which is the result of the cross-product. This
         vector will <b>NOT</b> be normalised, to maximize efficiency
-        - call Vector3::normalise on the result if you wish this to
+        - call Vector3i::normalise on the result if you wish this to
         be done. As for which side the resultant vector will be on, the
         returned vector will be on the side from which the arc from 'this'
         to rkVector is anticlockwise, e.g. UNIT_Y.crossProduct(UNIT_Z)
@@ -282,9 +283,9 @@ namespace lain
         (assuming you're using a CRT monitor, of course).
         */
 
-        Vector3 crossProduct(const Vector3& rhs) const
+        Vector3i crossProduct(const Vector3i & rhs) const
         {
-            return Vector3(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x);
+            return Vector3i(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x);
         }
 
         /** Sets this vector's components to the minimum of its own and the
@@ -294,7 +295,7 @@ namespace lain
         value of x, y and z from both vectors. Lowest is taken just
         numerically, not magnitude, so -1 < 0.
         */
-        void makeFloor(const Vector3& cmp)
+        void makeFloor(const Vector3i & cmp)
         {
             if (cmp.x < x)
                 x = cmp.x;
@@ -311,7 +312,7 @@ namespace lain
         value of x, y and z from both vectors. Highest is taken just
         numerically, not magnitude, so 1 > -3.
         */
-        void makeCeil(const Vector3& cmp)
+        void makeCeil(const Vector3i & cmp)
         {
             if (cmp.x > x)
                 x = cmp.x;
@@ -326,7 +327,7 @@ namespace lain
         Vectors do not have to be unit-length but must represent directions.
         */
 
-        Radian angleBetween(const Vector3& dest) const
+        Radian angleBetween(const Vector3i & dest) const
         {
             float len_product = length() * dest.length();
 
@@ -348,13 +349,13 @@ namespace lain
         ANY axis of rotation is valid.
         */
 
-        Quaternion getRotationTo(const Vector3& dest, const Vector3& fallback_axis = Vector3::ZERO) const
+        Quaternion getRotationTo(const Vector3i & dest, const Vector3i & fallback_axis = Vector3i::ZERO) const
         {
             // Based on Stan Melax's article in Game Programming Gems
             Quaternion q;
             // Copy, since cannot modify local
-            Vector3 v0 = *this;
-            Vector3 v1 = dest;
+            Vector3i v0 = *this;
+            Vector3i v1 = dest;
             v0.normalise();
             v1.normalise();
 
@@ -366,7 +367,7 @@ namespace lain
             }
             if (d < (1e-6f - 1.0f))
             {
-                if (fallback_axis != Vector3::ZERO)
+                if (fallback_axis != Vector3i::ZERO)
                 {
                     // rotate 180 degrees about the fall back axis
                     q.fromAngleAxis(Radian(Math_PI), fallback_axis);
@@ -374,19 +375,19 @@ namespace lain
                 else
                 {
                     // Generate an axis
-                    Vector3 axis = Vector3::UNIT_X.crossProduct(*this);
+                    Vector3i axis = Vector3i::UNIT_X.crossProduct(*this);
                     if (axis.isZeroLength()) // pick another if collinear
-                        axis = Vector3::UNIT_Y.crossProduct(*this);
+                        axis = Vector3i::UNIT_Y.crossProduct(*this);
                     axis.normalise();
                     q.fromAngleAxis(Radian(Math_PI), axis);
                 }
             }
             else
             {
-                float s    = Math::sqrt((1 + d) * 2);
+                float s = Math::sqrt((1 + d) * 2);
                 float invs = 1 / s;
 
-                Vector3 c = v0.crossProduct(v1);
+                Vector3i c = v0.crossProduct(v1);
 
                 q.x = c.x * invs;
                 q.y = c.y * invs;
@@ -409,9 +410,9 @@ namespace lain
         /** As normalise, except that this vector is unaffected and the
         normalised vector is returned as a copy. */
 
-        Vector3 normalisedCopy(void) const
+        Vector3i normalisedCopy(void) const
         {
-            Vector3 ret = *this;
+            Vector3i ret = *this;
             ret.normalise();
             return ret;
         }
@@ -419,36 +420,36 @@ namespace lain
         /** Calculates a reflection vector to the plane with the given normal .
         @remarks NB assumes 'this' is pointing AWAY FROM the plane, invert if it is not.
         */
-        Vector3 reflect(const Vector3& normal) const
+        Vector3i reflect(const Vector3i & normal) const
         {
-            return Vector3(*this - (2 * this->dotProduct(normal) * normal));
+            return Vector3i(*this - (2 * this->dotProduct(normal) * normal));
         }
 
         /** Calculates projection to a plane with the given normal
         @param normal The normal of given plane
         */
-        Vector3 project(const Vector3& normal) const { return Vector3(*this - (this->dotProduct(normal) * normal)); }
+        Vector3i project(const Vector3i & normal) const { return Vector3i(*this - (this->dotProduct(normal) * normal)); }
 
-        Vector3 absoluteCopy() const { return Vector3(fabsf(x), fabsf(y), fabsf(z)); }
+        Vector3i absoluteCopy() const { return Vector3i(fabsf(x), fabsf(y), fabsf(z)); }
 
-        static Vector3 lerp(const Vector3& lhs, const Vector3& rhs, float alpha) { return lhs + alpha * (rhs - lhs); }
+        static Vector3i lerp(const Vector3i & lhs, const Vector3i & rhs, float alpha) { return lhs + alpha * (rhs - lhs); }
 
-        static Vector3 clamp(const Vector3& v, const Vector3& min, const Vector3& max)
+        static Vector3i clamp(const Vector3i & v, const Vector3i & min, const Vector3i & max)
         {
-            return Vector3(
+            return Vector3i(
                 Math::clamp(v.x, min.x, max.x), Math::clamp(v.y, min.y, max.y), Math::clamp(v.z, min.z, max.z));
         }
 
-        static float getMaxElement(const Vector3& v) { return Math::getMaxElement(v.x, v.y, v.z); }
+        static int32_t getMaxElement(const Vector3i & v) { return Math::getMaxElement(v.x, v.y, v.z); }
         bool         isNaN() const { return Math::isNan(x) || Math::isNan(y) || Math::isNan(z); }
         // special points
-        static const Vector3 ZERO;
-        static const Vector3 UNIT_X;
-        static const Vector3 UNIT_Y;
-        static const Vector3 UNIT_Z;
-        static const Vector3 NEGATIVE_UNIT_X;
-        static const Vector3 NEGATIVE_UNIT_Y;
-        static const Vector3 NEGATIVE_UNIT_Z;
-        static const Vector3 UNIT_SCALE;
+        static const Vector3i ZERO;
+        static const Vector3i UNIT_X;
+        static const Vector3i UNIT_Y;
+        static const Vector3i UNIT_Z;
+        static const Vector3i NEGATIVE_UNIT_X;
+        static const Vector3i NEGATIVE_UNIT_Y;
+        static const Vector3i NEGATIVE_UNIT_Z;
+        static const Vector3i UNIT_SCALE;
     };
 } // namespace lain

@@ -125,6 +125,7 @@
     <ClInclude Include="core\math\vector2.h" />
     <ClInclude Include="core\math\vector2i.h" />
     <ClInclude Include="core\math\vector3.h" />
+    <ClInclude Include="core\math\vector3i.h" />
     <ClInclude Include="core\math\vector4.h" />
     <ClInclude Include="core\meta\json.h" />
     <ClInclude Include="core\meta\meta_example.h" />
@@ -249,6 +250,7 @@
     <ClCompile Include="core\variant\dictionary.cpp" />
     <ClCompile Include="core\variant\callable.cpp" />
     <ClCompile Include="core\variant\variant.cpp" />
+    <ClCompile Include="core\variant\variant_header.h" />
     <ClCompile Include="function\display\window_system.cpp" />
     <ClCompile Include="function\project\project_mananger.cpp" />
     <ClCompile Include="io\resource_load.cpp" />
