@@ -43,7 +43,7 @@ namespace lain {
 		return cache_path_cache;
 	}
 	String OSWin::GetUserDataDir() const {
-		String appname = GetSafeDirName(GLOBAL_GET("application/config/name"));
+		String appname = GetSafeDirName(GLOBAL_GET("application/config/name"), true);
 		if (!appname.is_empty()) {
 			return GetDataPath().path_join("lain").path_join("app_userdata").path_join(appname).replace("\\", "/");
 		}

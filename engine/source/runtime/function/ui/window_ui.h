@@ -6,12 +6,12 @@
 namespace lain
 {
     class WindowSystem;
-    class RenderSystem;
+    class RenderingSystem;
 
     struct WindowUIInitInfo
     {
         std::shared_ptr<WindowSystem> window_system;
-        std::shared_ptr<RenderSystem> render_system;
+        std::shared_ptr<RenderingSystem> render_system;
     };
 
     class WindowUI

@@ -10,7 +10,6 @@
 #include "core/math/color.h"
 #include "core/object/safe_refcount.h"
 #include "core/meta/reflection/reflection.h"
-
 namespace lain {
 	typedef Vector<uint8_t> PackedByteArray;
 	typedef Vector<int32_t> PackedInt32Array;
@@ -23,7 +22,9 @@ namespace lain {
 	typedef Vector<Color> PackedColorArray;
 	class Object;
 	class ConfigParser;
+	class VariantInternal;
 	class Variant {
+		friend class VariantInternal;
 	public:
 		enum Type
 		{
@@ -159,8 +160,8 @@ namespace lain {
 			PackedArrayRefBase* packed_array;
 			uint8_t _mem[sizeof(ObjData) > (sizeof(real_t) * 4) ? sizeof(ObjData) : (sizeof(real_t) * 4)]{ 0 };
 		} _data alignas(8);
+		const ObjData& _get_obj() const;
 		ObjData& _get_obj();
-
 		// constructor
 		Variant(const Variant*);
 		Variant(const Variant**);
@@ -173,21 +174,30 @@ namespace lain {
 		L_INLINE String get_type_name() {
 			return get_type_name(type);
 		}
-		void operator=(const Variant& p_variant); // only this is enough for all the other types
+		void reference(const Variant& p_variant);
+		void operator=(const Variant& p_variant); // only this is enough for all the other 
+		
+		bool operator==(const Variant& p_variant) const;
+
 		typedef void (*ObjectConstruct)(const String& p_text, void* ud, Variant& r_value);
 		static void construct_from_string(const String& p_string, Variant& r_value, ObjectConstruct p_obj_construct = nullptr, void* p_construct_ud = nullptr);
 		
 		u32 recursive_hash(int recursion_count) const;
+		bool hash_compare(const Variant& p_variant, int recursion_count = 0) const;
 		uint32_t Variant::hash() const {
 			return recursive_hash(0);
 		}
 
+		void zero();
+		Variant duplicate(bool p_deep = false) const;
+		Variant recursive_duplicate(bool p_deep, int recursion_count) const;
 
 		///constructors
 		Variant(const Vector<String>& p_string_array);
 		Variant(const Vector<float>& p_float_array);
 		Variant(const Vector<int64_t>& p_int64_array);
 		Variant(const Vector<int32_t>& p_int32_array);
+		Variant(const Vector<double>& p_double_array);
 
 
 		Variant(const Object* p_obj);

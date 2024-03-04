@@ -9,6 +9,8 @@
 #include "core/meta/reflection/reflection.h"
 #include "core/meta/serializer/serializer.h"
 #include <regex>
+// TODO:
+#define GLOBAL_GET(m_var) ProjectSettings::GetSingleton()->GetSetting(m_var)
 namespace lain {
 	class ProjectSettings {
 public:
@@ -36,6 +38,7 @@ public:
 	~ProjectSettings() {
 		p_singleton = nullptr;
 	}
+    String GetSetting(const StringName& p_name) const;
 	String GetResourcePath() const { return resource_path; }
 	 String GetProjectDataName() const { return project_data_dir_name; }
 	 String GetProjectDataPath() const { return "res://" + project_data_dir_name; }
@@ -160,7 +163,7 @@ private:
                      return load<Vector<double>>(json);
                  }
                  else if (p_str.begins_with("PackedInt")) {
-                     return load<Vector<int>>(json);
+                     return load<Vector<int32_t>>(json);
                  }
              }
              
@@ -189,7 +192,7 @@ private:
                      }
                  }
                 
-                 else if (IsNumericExpression(p_stdstring)) {
+                 else if (IsNumericExpression   (p_stdstring)) {
                      double string_double_value = std::stod(p_stdstring);
                      if ((int)(string_double_value) == string_double_value) {
                          return Variant((int64_t)string_double_value);

@@ -6,6 +6,7 @@
 namespace lain {
 	ProjectList::ProjectList(){
 	}
+	ProjectManager* ProjectManager::p_singleton = nullptr;
 	ProjectManager::ProjectManager() {
 		p_singleton = this;
 		m_project_list = memnew(ProjectList);
@@ -15,6 +16,5 @@ namespace lain {
 	ProjectManager::~ProjectManager() {
 		p_singleton = nullptr;
 	}
-
 	
 }

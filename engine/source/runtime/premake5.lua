@@ -18,8 +18,6 @@ project "LainRuntime"
       includedirs
       {
          prjprefix,
-         (prjprefix.. "/runtime/"),
-   
           "%{IncludeDir.spdlog}",
           "%{IncludeDir.glfw}",
           "%{IncludeDir.json11}",

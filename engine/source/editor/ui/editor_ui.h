@@ -17,7 +17,7 @@ namespace lain
 {
     class PiccoloEditor;
     class WindowSystem;
-    class RenderSystem;
+    class RenderingSystem;
 
     class EditorUI : public WindowUI
     {

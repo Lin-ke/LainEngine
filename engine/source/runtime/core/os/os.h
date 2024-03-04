@@ -46,6 +46,7 @@ public:
 
 	// OS specific path for user://
 	virtual String GetUserDataDir() const;
+	virtual String GetCachePath() const;
 
 	virtual String GetExecutablePath() const { return m_execpath; }
 

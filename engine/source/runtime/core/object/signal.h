@@ -14,8 +14,8 @@ class Signal {
 			return object.is_null() && name == StringName();
 		}
 		Object* get_object() const;
-		ObjectID get_object_id() const;
-		StringName get_name() const;
+		_FORCE_INLINE_ ObjectID get_object_id() const { return object; }
+		_FORCE_INLINE_ StringName get_name() const { return name; }
 
 		bool operator==(const Signal& p_signal) const;
 		bool operator!=(const Signal& p_signal) const;

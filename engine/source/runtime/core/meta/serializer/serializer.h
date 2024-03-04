@@ -85,7 +85,7 @@ namespace lain
             }
             else
             {
-                static_assert(always_false<T>, "Serializer::read<T> has not been implemented yet!");
+                static_assert(always_false<T>, __FUNCSIG__);
                 return instance;
             }
         }

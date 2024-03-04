@@ -26,6 +26,7 @@ group ""
 
 group "Tools"
    include "engine/source/meta_parser/parser"
+   include "engine/source/runtime/resource/shader"
 group ""
 
 group "Engine"

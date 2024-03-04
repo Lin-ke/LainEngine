@@ -2,7 +2,7 @@
 // render globals
 #ifndef RENDERING_SYSTEM_GLOBALS_H
 #define RENDERING_SYSTEM_GLOBALS_H
-class RenderSystemGlobals {
+class RenderingSystemGlobals {
 public:
 	//static bool threaded;
 
@@ -24,5 +24,5 @@ public:
     //static Render
 };
 
-#define RSG RenderSystemGlobals
+#define RSG RenderingSystemGlobals
 #endif 

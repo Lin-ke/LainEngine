@@ -12,7 +12,7 @@
 #include <core/templates/vector.h>
 #include <core/templates/safe_numeric.h>
 #include <core/meta/meta_example.h>
-#include <core/os/os.h>
+#include <platform/io/os_windows.h>
 #include "core/string/ustring.h"
 using namespace lain;
 int YminusA(int a, Vector2& obj);
@@ -24,10 +24,7 @@ int main(int argc, char** argv) {
 	OSWin os = OSWin();
 
 	OSWin::GetSingleton()->Run();
-	// test part
-	auto a = Vector2(2, 2);
-	auto p = YminusA(2, a);
-	L_JSON(a);
+	
 }
 
 void TryERR_FAIL_INDEX() {

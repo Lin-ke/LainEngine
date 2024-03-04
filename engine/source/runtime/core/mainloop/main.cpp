@@ -11,7 +11,7 @@ namespace lain {
 
 static lain::Engine* engine = nullptr;
 static lain::WindowSystem* window_system = nullptr;
-static lain::RenderSystem* render_system = nullptr;
+static lain::RenderingSystem* render_system = nullptr;
 static lain::ProjectSettings* globals = nullptr;
 
 // Main loop vairables
@@ -30,7 +30,7 @@ static lain::ProjectSettings* globals = nullptr;
 	 Reflection::TypeMetaRegister::metaRegister();
 	 engine = memnew(Engine); // 
 	 window_system = memnew(lain::WindowSystem);
-	 render_system = memnew(lain::RenderSystem);
+	 render_system = memnew(lain::RenderingSystem);
 	 globals = memnew(lain::ProjectSettings);
 	 window_system->Initialize();
 	 window_system->NewWindow(lain::WindowCreateInfo());

@@ -57,7 +57,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLFW_INCLUDE_NONE;L_PLATFORM_WINDOWS;L_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..;.;..\..\thirdparty\spdlog\include;..\..\thirdparty\glfw\include;..\..\thirdparty\json11;C:\VulkanSDK\1.3.216.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;.;..\..\thirdparty\spdlog\include;..\..\thirdparty\glfw\include;..\..\thirdparty\json11;C:\VulkanSDK1\1.3.216.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
@@ -78,7 +78,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLFW_INCLUDE_NONE;L_PLATFORM_WINDOWS;L_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..;.;..\..\thirdparty\spdlog\include;..\..\thirdparty\glfw\include;..\..\thirdparty\json11;C:\VulkanSDK\1.3.216.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;.;..\..\thirdparty\spdlog\include;..\..\thirdparty\glfw\include;..\..\thirdparty\json11;C:\VulkanSDK1\1.3.216.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -184,6 +184,8 @@
     <ClInclude Include="core\variant\dictionary.h" />
     <ClInclude Include="core\variant\typed_array.h" />
     <ClInclude Include="core\variant\variant.h" />
+    <ClInclude Include="core\variant\variant_header.h" />
+    <ClInclude Include="core\variant\variant_internal.h" />
     <ClInclude Include="function\display\display_event.h" />
     <ClInclude Include="function\display\viewport.h" />
     <ClInclude Include="function\display\window.h" />
@@ -196,7 +198,7 @@
     <ClInclude Include="platform\io\dir_access_windows.h" />
     <ClInclude Include="platform\io\file_access_windows.h" />
     <ClInclude Include="platform\io\os_windows.h" />
-    <ClInclude Include="render\render_system.h" />
+    <ClInclude Include="render\rendering_system.h" />
     <ClInclude Include="render\render_system_globals.h" />
     <ClInclude Include="render\viewport.h" />
     <ClInclude Include="resource\common\world.h" />
@@ -222,6 +224,7 @@
     <ClCompile Include="core\math\vector2.cpp" />
     <ClCompile Include="core\math\vector2i.cpp" />
     <ClCompile Include="core\math\vector3.cpp" />
+    <ClCompile Include="core\math\vector3i.cpp" />
     <ClCompile Include="core\math\vector4.cpp" />
     <ClCompile Include="core\meta\meta_example.cpp" />
     <ClCompile Include="core\meta\reflection\reflection.cpp" />
@@ -231,6 +234,7 @@
     <ClCompile Include="core\object\object_id.cpp" />
     <ClCompile Include="core\object\objectdb.cpp" />
     <ClCompile Include="core\object\refcounted.cpp" />
+    <ClCompile Include="core\object\signal.cpp" />
     <ClCompile Include="core\os\dir_access.cpp" />
     <ClCompile Include="core\os\file_access.cpp" />
     <ClCompile Include="core\os\memory.cpp" />
@@ -247,17 +251,18 @@
     <ClCompile Include="core\string\string_name.cpp" />
     <ClCompile Include="core\string\ustring.cpp" />
     <ClCompile Include="core\string\ustringutils.cpp" />
-    <ClCompile Include="core\variant\dictionary.cpp" />
+    <ClCompile Include="core\variant\array.cpp" />
     <ClCompile Include="core\variant\callable.cpp" />
+    <ClCompile Include="core\variant\dictionary.cpp" />
     <ClCompile Include="core\variant\variant.cpp" />
-    <ClCompile Include="core\variant\variant_header.h" />
+    <ClCompile Include="core\variant\variant_internal.cpp" />
     <ClCompile Include="function\display\window_system.cpp" />
     <ClCompile Include="function\project\project_mananger.cpp" />
     <ClCompile Include="io\resource_load.cpp" />
     <ClCompile Include="platform\io\dir_access_windows.cpp" />
     <ClCompile Include="platform\io\file_access_windows.cpp" />
     <ClCompile Include="platform\io\os_windows.cpp" />
-    <ClCompile Include="render\render_system.cpp" />
+    <ClCompile Include="render\rendering_system.cpp" />
     <ClCompile Include="resource\component\transform_component.cpp" />
   </ItemGroup>
   <ItemGroup>

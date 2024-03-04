@@ -5,6 +5,7 @@
 #include "core/variant/variant.h"
 // required in this order by VariantInternal, do not remove this comment.
 #include "core/object/object.h"
+#include "core/variant/variant_internal.h"
 //#include "core/variant/type_info.h"
 //#include "core/variant/variant_internal.h"
 namespace lain {

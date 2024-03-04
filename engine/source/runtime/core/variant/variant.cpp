@@ -7,7 +7,6 @@ namespace lain {
 		case NIL: {
 			return "Nil";
 		}
-
 				// Atomic types.
 		case BOOL: {
 			return "bool";
@@ -70,9 +69,9 @@ namespace lain {
 		}
 
 					   // Miscellaneous types.
-		//case COLOR: {
-		//	return "Color";
-		//}
+		case COLOR: {
+			return "Color";
+		}
 		case RID: {
 			return "RID";
 		}
@@ -107,6 +106,7 @@ namespace lain {
 		type = FLOAT;
 		_data._float = p_double;
 	}
+
 	Variant::Variant(const String& p_string) {
 		type = STRING;
 		memnew_placement(_data._mem, String(p_string));
@@ -128,11 +128,18 @@ namespace lain {
 		type = PACKED_INT32_ARRAY;
 		_data.packed_array = PackedArrayRef<int32_t>::create(p_int32_array);
 	}
+	Variant::Variant(const Vector<double>& p_double_array) {
+		type = PACKED_FLOAT64_ARRAY;
+		_data.packed_array = PackedArrayRef<double>::create(p_double_array);
+	}
 
 	Variant::Variant(const Reflection::ReflectionInstance* p_instance) {
 		type = REFLECTIONINSTANCE;
 		memnew_placement(_data._ptr,void*);
 		_data._ptr = const_cast<Reflection::ReflectionInstance*>(p_instance);
+	}
+	const Variant::ObjData& Variant::_get_obj() const {
+		return *reinterpret_cast<const ObjData*>(&_data._mem[0]);
 	}
 	Variant::ObjData& Variant::_get_obj() {
 		return *reinterpret_cast<ObjData*>(&_data._mem[0]);
@@ -183,61 +190,61 @@ namespace lain {
 			case VECTOR2: {
 				return HashMapHasherDefault::hash(*reinterpret_cast<const Vector2*>(_data._mem));
 			} break;
-			case VECTOR2I: {
-				return HashMapHasherDefault::hash(*reinterpret_cast<const Vector2i*>(_data._mem));
-			} break;
-			case RECT2: {
-				return HashMapHasherDefault::hash(*reinterpret_cast<const Rect2*>(_data._mem));
-			} break;
-			case RECT2I: {
-				return HashMapHasherDefault::hash(*reinterpret_cast<const Rect2i*>(_data._mem));
-			} break;
-			case TRANSFORM2D: {
-				uint32_t h = HASH_MURMUR3_SEED;
-				const Transform2D& t = *_data._transform2d;
-				h = hash_murmur3_one_real(t[0].x, h);
-				h = hash_murmur3_one_real(t[0].y, h);
-				h = hash_murmur3_one_real(t[1].x, h);
-				h = hash_murmur3_one_real(t[1].y, h);
-				h = hash_murmur3_one_real(t[2].x, h);
-				h = hash_murmur3_one_real(t[2].y, h);
+			//case VECTOR2I: {
+			//	return HashMapHasherDefault::hash(*reinterpret_cast<const Vector2i*>(_data._mem));
+			//} break;
+			//case RECT2: {
+			//	return HashMapHasherDefault::hash(*reinterpret_cast<const Rect2*>(_data._mem));
+			//} break;
+			//case RECT2I: {
+			//	return HashMapHasherDefault::hash(*reinterpret_cast<const Rect2i*>(_data._mem));
+			//} break;
+			//case TRANSFORM2D: {
+			//	uint32_t h = HASH_MURMUR3_SEED;
+			//	const Transform2D& t = *_data._transform2d;
+			//	h = hash_murmur3_one_real(t[0].x, h);
+			//	h = hash_murmur3_one_real(t[0].y, h);
+			//	h = hash_murmur3_one_real(t[1].x, h);
+			//	h = hash_murmur3_one_real(t[1].y, h);
+			//	h = hash_murmur3_one_real(t[2].x, h);
+			//	h = hash_murmur3_one_real(t[2].y, h);
 
-				return hash_fmix32(h);
-			} break;
-			case VECTOR3: {
-				return HashMapHasherDefault::hash(*reinterpret_cast<const Vector3*>(_data._mem));
-			} break;
-			case VECTOR3I: {
-				return HashMapHasherDefault::hash(*reinterpret_cast<const Vector3i*>(_data._mem));
-			} break;
-			case VECTOR4: {
-				return HashMapHasherDefault::hash(*reinterpret_cast<const Vector4*>(_data._mem));
-			} break;
-			case VECTOR4I: {
-				return HashMapHasherDefault::hash(*reinterpret_cast<const Vector4i*>(_data._mem));
-			} break;
-			case PLANE: {
-				uint32_t h = HASH_MURMUR3_SEED;
-				const Plane& p = *reinterpret_cast<const Plane*>(_data._mem);
-				h = hash_murmur3_one_real(p.normal.x, h);
-				h = hash_murmur3_one_real(p.normal.y, h);
-				h = hash_murmur3_one_real(p.normal.z, h);
-				h = hash_murmur3_one_real(p.d, h);
-				return hash_fmix32(h);
-			} break;
-			case AABB: {
-				return HashMapHasherDefault::hash(*_data._aabb);
-			} break;
-			case QUATERNION: {
-				uint32_t h = HASH_MURMUR3_SEED;
-				const Quaternion& q = *reinterpret_cast<const Quaternion*>(_data._mem);
-				h = hash_murmur3_one_real(q.x, h);
-				h = hash_murmur3_one_real(q.y, h);
-				h = hash_murmur3_one_real(q.z, h);
-				h = hash_murmur3_one_real(q.w, h);
-				return hash_fmix32(h);
-			} break;
-			case BASIS: {
+			//	return hash_fmix32(h);
+			//} break;
+			//case VECTOR3: {
+			//	return HashMapHasherDefault::hash(*reinterpret_cast<const Vector3*>(_data._mem));
+			//} break;
+			//case VECTOR3I: {
+			//	return HashMapHasherDefault::hash(*reinterpret_cast<const Vector3i*>(_data._mem));
+			//} break;
+			//case VECTOR4: {
+			//	return HashMapHasherDefault::hash(*reinterpret_cast<const Vector4*>(_data._mem));
+			//} break;
+			//case VECTOR4I: {
+			//	return HashMapHasherDefault::hash(*reinterpret_cast<const Vector4i*>(_data._mem));
+			//} break;
+			///*case PLANE: {
+			//	uint32_t h = HASH_MURMUR3_SEED;
+			//	const Plane& p = *reinterpret_cast<const Plane*>(_data._mem);
+			//	h = hash_murmur3_one_real(p.normal.x, h);
+			//	h = hash_murmur3_one_real(p.normal.y, h);
+			//	h = hash_murmur3_one_real(p.normal.z, h);
+			//	h = hash_murmur3_one_real(p.d, h);
+			//	return hash_fmix32(h);
+			//} break;
+			//case AABB: {
+			//	return HashMapHasherDefault::hash(*_data._aabb);
+			//} break;*/
+			//case QUATERNION: {
+			//	uint32_t h = HASH_MURMUR3_SEED;
+			//	const Quaternion& q = *reinterpret_cast<const Quaternion*>(_data._mem);
+			//	h = hash_murmur3_one_real(q.x, h);
+			//	h = hash_murmur3_one_real(q.y, h);
+			//	h = hash_murmur3_one_real(q.z, h);
+			//	h = hash_murmur3_one_real(q.w, h);
+			//	return hash_fmix32(h);
+			//} break;
+			/*case BASIS: {
 				uint32_t h = HASH_MURMUR3_SEED;
 				const Basis& b = *_data._basis;
 				h = hash_murmur3_one_real(b[0].x, h);
@@ -288,7 +295,7 @@ namespace lain {
 				h = hash_murmur3_one_real(t.columns[3].z, h);
 				h = hash_murmur3_one_real(t.columns[3].w, h);
 				return hash_fmix32(h);
-			} break;
+			} break;*/
 				// misc types
 			case COLOR: {
 				uint32_t h = HASH_MURMUR3_SEED;
@@ -308,13 +315,13 @@ namespace lain {
 			case STRING_NAME: {
 				return reinterpret_cast<const StringName*>(_data._mem)->hash();
 			} break;
-			case NODE_PATH: {
+			/*case NODE_PATH: {
 				return reinterpret_cast<const NodePath*>(_data._mem)->hash();
 			} break;
 			case DICTIONARY: {
 				return reinterpret_cast<const Dictionary*>(_data._mem)->recursive_hash(recursion_count);
 
-			} break;
+			} break;*/
 			case CALLABLE: {
 				return reinterpret_cast<const Callable*>(_data._mem)->hash();
 
@@ -496,96 +503,96 @@ namespace lain {
 		}
 
 			
-		case DICTIONARY: {
-			const Dictionary& d = *reinterpret_cast<const Dictionary*>(_data._mem);
-			if (recursion_count > MAX_RECURSION) {
-				ERR_PRINT("Maximum dictionary recursion reached!");
-				return "{ ... }";
-			}
+		//case DICTIONARY: {
+		//	const Dictionary& d = *reinterpret_cast<const Dictionary*>(_data._mem);
+		//	if (recursion_count > MAX_RECURSION) {
+		//		ERR_PRINT("Maximum dictionary recursion reached!");
+		//		return "{ ... }";
+		//	}
 
-			// Add leading and trailing space to Dictionary printing. This distinguishes it
-			// from array printing on fonts that have similar-looking {} and [] characters.
-			String str("{ ");
-			List<Variant> keys;
-			d.get_key_list(&keys);
+		//	// Add leading and trailing space to Dictionary printing. This distinguishes it
+		//	// from array printing on fonts that have similar-looking {} and [] characters.
+		//	String str("{ ");
+		//	List<Variant> keys;
+		//	d.get_key_list(&keys);
 
-			Vector<_VariantStrPair> pairs;
+		//	Vector<_VariantStrPair> pairs;
 
-			recursion_count++;
-			for (List<Variant>::Element* E = keys.front(); E; E = E->next()) {
-				_VariantStrPair sp;
-				sp.key = stringify_variant_clean(E->get(), recursion_count);
-				sp.value = stringify_variant_clean(d[E->get()], recursion_count);
+		//	recursion_count++;
+		//	for (List<Variant>::Element* E = keys.front(); E; E = E->next()) {
+		//		_VariantStrPair sp;
+		//		sp.key = stringify_variant_clean(E->get(), recursion_count);
+		//		sp.value = stringify_variant_clean(d[E->get()], recursion_count);
 
-				pairs.push_back(sp);
-			}
+		//		pairs.push_back(sp);
+		//	}
 
-			for (int i = 0; i < pairs.size(); i++) {
-				if (i > 0) {
-					str += ", ";
-				}
-				str += pairs[i].key + ": " + pairs[i].value;
-			}
-			str += " }";
+		//	for (int i = 0; i < pairs.size(); i++) {
+		//		if (i > 0) {
+		//			str += ", ";
+		//		}
+		//		str += pairs[i].key + ": " + pairs[i].value;
+		//	}
+		//	str += " }";
 
-			return str;
-		}
-		case PACKED_VECTOR2_ARRAY: {
-			return stringify_vector(operator Vector<Vector2>(), recursion_count);
-		}
-		case PACKED_VECTOR3_ARRAY: {
-			return stringify_vector(operator Vector<Vector3>(), recursion_count);
-		}
-		case PACKED_COLOR_ARRAY: {
-			return stringify_vector(operator Vector<Color>(), recursion_count);
-		}
-		case PACKED_STRING_ARRAY: {
-			return stringify_vector(operator Vector<String>(), recursion_count);
-		}
-		case PACKED_BYTE_ARRAY: {
-			return stringify_vector(operator Vector<uint8_t>(), recursion_count);
-		}
-		case PACKED_INT32_ARRAY: {
-			return stringify_vector(operator Vector<int32_t>(), recursion_count);
-		}
-		case PACKED_INT64_ARRAY: {
-			return stringify_vector(operator Vector<int64_t>(), recursion_count);
-		}
-		case PACKED_FLOAT32_ARRAY: {
-			return stringify_vector(operator Vector<float>(), recursion_count);
-		}
-		case PACKED_FLOAT64_ARRAY: {
-			return stringify_vector(operator Vector<double>(), recursion_count);
-		}
-		case ARRAY: {
-			Array arr = operator Array();
-			if (recursion_count > MAX_RECURSION) {
-				ERR_PRINT("Maximum array recursion reached!");
-				return "[...]";
-			}
+		//	return str;
+		//}
+		//case PACKED_VECTOR2_ARRAY: {
+		//	return stringify_vector(operator Vector<Vector2>(), recursion_count);
+		//}
+		//case PACKED_VECTOR3_ARRAY: {
+		//	return stringify_vector(operator Vector<Vector3>(), recursion_count);
+		//}
+		//case PACKED_COLOR_ARRAY: {
+		//	return stringify_vector(operator Vector<Color>(), recursion_count);
+		//}
+		//case PACKED_STRING_ARRAY: {
+		//	return stringify_vector(operator Vector<String>(), recursion_count);
+		//}
+		//case PACKED_BYTE_ARRAY: {
+		//	return stringify_vector(operator Vector<uint8_t>(), recursion_count);
+		//}
+		//case PACKED_INT32_ARRAY: {
+		//	return stringify_vector(operator Vector<int32_t>(), recursion_count);
+		//}
+		//case PACKED_INT64_ARRAY: {
+		//	return stringify_vector(operator Vector<int64_t>(), recursion_count);
+		//}
+		//case PACKED_FLOAT32_ARRAY: {
+		//	return stringify_vector(operator Vector<float>(), recursion_count);
+		//}
+		//case PACKED_FLOAT64_ARRAY: {
+		//	return stringify_vector(operator Vector<double>(), recursion_count);
+		//}
+		//case ARRAY: {
+		//	Array arr = operator Array();
+		//	if (recursion_count > MAX_RECURSION) {
+		//		ERR_PRINT("Maximum array recursion reached!");
+		//		return "[...]";
+		//	}
 
-			return stringify_vector(arr, recursion_count);
-		}
-		case OBJECT: {
-			if (_get_obj().obj) {
-				if (!_get_obj().id.is_ref_counted() && ObjectDB::get_instance(_get_obj().id) == nullptr) {
-					return "<Freed Object>";
-				}
+		//	return stringify_vector(arr, recursion_count);
+		//}
+		//case OBJECT: {
+		//	if (_get_obj().obj) {
+		//		if (!_get_obj().id.is_ref_counted() && ObjectDB::get_instance(_get_obj().id) == nullptr) {
+		//			return "<Freed Object>";
+		//		}
 
-				return _get_obj().obj->to_string();
-			}
-			else {
-				return "<Object#null>";
-			}
-		}
-		case CALLABLE: {
+		//		return _get_obj().obj->to_string();
+		//	}
+		//	else {
+		//		return "<Object#null>";
+		//	}
+		//}
+		/*case CALLABLE: {
 			const Callable& c = *reinterpret_cast<const Callable*>(_data._mem);
 			return c;
 		}
 		case SIGNAL: {
 			const Signal& s = *reinterpret_cast<const Signal*>(_data._mem);
 			return s;
-		}
+		}*/
 		case RID: {
 			const ::RID& s = *reinterpret_cast<const ::RID*>(_data._mem);
 			return "RID(" + itos(s.get_id()) + ")";
@@ -595,4 +602,377 @@ namespace lain {
 		}
 		}
 	}
+
+
+	/*
+	* hash compare
+	* 
+	*/
+	bool Variant::operator==(const Variant& p_variant) const {
+		return hash_compare(p_variant);
+	}
+
+	bool Variant::hash_compare(const Variant& p_variant, int recursion_count) const {
+		return true;
+	}
+
+	/*
+	* copy
+	*/
+	Variant Variant::duplicate(bool p_deep) const {
+		return recursive_duplicate(p_deep, 0);
+	}
+	Variant Variant::recursive_duplicate(bool p_deep, int recursion_count) const {
+		return Variant();
+	}
+
+	// equal to another variant
+	void Variant::reference(const Variant& p_variant) {
+		switch (type) {
+		case NIL:
+		case BOOL:
+		case INT:
+		case FLOAT:
+			break;
+		default:
+			//clear(); // _clear_internal
+			type = NIL;
+		}
+		type = p_variant.type;
+
+		switch (p_variant.type) {
+		case NIL: {
+			// None.
+		} break;
+
+			// Atomic types.
+		case BOOL: {
+			_data._bool = p_variant._data._bool;
+		} break;
+		case INT: {
+			_data._int = p_variant._data._int;
+		} break;
+		case FLOAT: {
+			_data._float = p_variant._data._float;
+		} break;
+		case STRING: {
+			memnew_placement(_data._mem, String(*reinterpret_cast<const String*>(p_variant._data._mem)));
+		} break;
+
+			// Math types.
+		case VECTOR2: {
+			memnew_placement(_data._mem, Vector2(*reinterpret_cast<const Vector2*>(p_variant._data._mem)));
+		} break;
+		/*case VECTOR2I: {
+			memnew_placement(_data._mem, Vector2i(*reinterpret_cast<const Vector2i*>(p_variant._data._mem)));
+		} break;
+		case RECT2: {
+			memnew_placement(_data._mem, Rect2(*reinterpret_cast<const Rect2*>(p_variant._data._mem)));
+		} break;
+		case RECT2I: {
+			memnew_placement(_data._mem, Rect2i(*reinterpret_cast<const Rect2i*>(p_variant._data._mem)));
+		} break;
+		case TRANSFORM2D: {
+			_data._transform2d = (Transform2D*)Pools::_bucket_small.alloc();
+			memnew_placement(_data._transform2d, Transform2D(*p_variant._data._transform2d));
+		} break;
+		case VECTOR3: {
+			memnew_placement(_data._mem, Vector3(*reinterpret_cast<const Vector3*>(p_variant._data._mem)));
+		} break;
+		case VECTOR3I: {
+			memnew_placement(_data._mem, Vector3i(*reinterpret_cast<const Vector3i*>(p_variant._data._mem)));
+		} break;
+		case VECTOR4: {
+			memnew_placement(_data._mem, Vector4(*reinterpret_cast<const Vector4*>(p_variant._data._mem)));
+		} break;
+		case VECTOR4I: {
+			memnew_placement(_data._mem, Vector4i(*reinterpret_cast<const Vector4i*>(p_variant._data._mem)));
+		} break;
+		case PLANE: {
+			memnew_placement(_data._mem, Plane(*reinterpret_cast<const Plane*>(p_variant._data._mem)));
+		} break;
+		case AABB: {
+			_data._aabb = (::AABB*)Pools::_bucket_small.alloc();
+			memnew_placement(_data._aabb, ::AABB(*p_variant._data._aabb));
+		} break;
+		case QUATERNION: {
+			memnew_placement(_data._mem, Quaternion(*reinterpret_cast<const Quaternion*>(p_variant._data._mem)));
+		} break;
+		case BASIS: {
+			_data._basis = (Basis*)Pools::_bucket_medium.alloc();
+			memnew_placement(_data._basis, Basis(*p_variant._data._basis));
+		} break;
+		case TRANSFORM3D: {
+			_data._transform3d = (Transform3D*)Pools::_bucket_medium.alloc();
+			memnew_placement(_data._transform3d, Transform3D(*p_variant._data._transform3d));
+		} break;
+		case PROJECTION: {
+			_data._projection = (Projection*)Pools::_bucket_large.alloc();
+			memnew_placement(_data._projection, Projection(*p_variant._data._projection));
+		} break;*/
+
+			// Miscellaneous types.
+		case COLOR: {
+			memnew_placement(_data._mem, Color(*reinterpret_cast<const Color*>(p_variant._data._mem)));
+		} break;
+		case RID: {
+			memnew_placement(_data._mem, ::RID(*reinterpret_cast<const ::RID*>(p_variant._data._mem)));
+		} break;
+		case OBJECT: {
+			memnew_placement(_data._mem, ObjData);
+
+			if (p_variant._get_obj().obj && p_variant._get_obj().id.is_ref_counted()) {
+				RefCounted* ref_counted = static_cast<RefCounted*>(p_variant._get_obj().obj);
+				if (!ref_counted->reference()) {
+					_get_obj().obj = nullptr;
+					_get_obj().id = ObjectID();
+					break;
+				}
+			}
+
+			_get_obj().obj = const_cast<Object*>(p_variant._get_obj().obj);
+			_get_obj().id = p_variant._get_obj().id;
+		} break;
+		/*case CALLABLE: {
+			memnew_placement(_data._mem, Callable(*reinterpret_cast<const Callable*>(p_variant._data._mem)));
+		} break;*/
+		case SIGNAL: {
+			memnew_placement(_data._mem, Signal(*reinterpret_cast<const Signal*>(p_variant._data._mem)));
+		} break;
+		case STRING_NAME: {
+			memnew_placement(_data._mem, StringName(*reinterpret_cast<const StringName*>(p_variant._data._mem)));
+		} break;
+		/*case NODE_PATH: {
+			memnew_placement(_data._mem, NodePath(*reinterpret_cast<const NodePath*>(p_variant._data._mem)));
+		} break;
+		case DICTIONARY: {
+			memnew_placement(_data._mem, Dictionary(*reinterpret_cast<const Dictionary*>(p_variant._data._mem)));
+		} break;
+		case ARRAY: {
+			memnew_placement(_data._mem, Array(*reinterpret_cast<const Array*>(p_variant._data._mem)));
+		} break;*/
+
+			// Arrays.
+		case PACKED_BYTE_ARRAY: {
+			_data.packed_array = static_cast<PackedArrayRef<uint8_t> *>(p_variant._data.packed_array)->reference();
+			if (!_data.packed_array) {
+				_data.packed_array = PackedArrayRef<uint8_t>::create();
+			}
+		} break;
+		case PACKED_INT32_ARRAY: {
+			_data.packed_array = static_cast<PackedArrayRef<int32_t> *>(p_variant._data.packed_array)->reference();
+			if (!_data.packed_array) {
+				_data.packed_array = PackedArrayRef<int32_t>::create();
+			}
+		} break;
+		case PACKED_INT64_ARRAY: {
+			_data.packed_array = static_cast<PackedArrayRef<int64_t> *>(p_variant._data.packed_array)->reference();
+			if (!_data.packed_array) {
+				_data.packed_array = PackedArrayRef<int64_t>::create();
+			}
+		} break;
+		case PACKED_FLOAT32_ARRAY: {
+			_data.packed_array = static_cast<PackedArrayRef<float> *>(p_variant._data.packed_array)->reference();
+			if (!_data.packed_array) {
+				_data.packed_array = PackedArrayRef<float>::create();
+			}
+		} break;
+		case PACKED_FLOAT64_ARRAY: {
+			_data.packed_array = static_cast<PackedArrayRef<double> *>(p_variant._data.packed_array)->reference();
+			if (!_data.packed_array) {
+				_data.packed_array = PackedArrayRef<double>::create();
+			}
+		} break;
+		case PACKED_STRING_ARRAY: {
+			_data.packed_array = static_cast<PackedArrayRef<String> *>(p_variant._data.packed_array)->reference();
+			if (!_data.packed_array) {
+				_data.packed_array = PackedArrayRef<String>::create();
+			}
+		} break;
+		case PACKED_VECTOR2_ARRAY: {
+			_data.packed_array = static_cast<PackedArrayRef<Vector2> *>(p_variant._data.packed_array)->reference();
+			if (!_data.packed_array) {
+				_data.packed_array = PackedArrayRef<Vector2>::create();
+			}
+		} break;
+		case PACKED_VECTOR3_ARRAY: {
+			_data.packed_array = static_cast<PackedArrayRef<Vector3> *>(p_variant._data.packed_array)->reference();
+			if (!_data.packed_array) {
+				_data.packed_array = PackedArrayRef<Vector3>::create();
+			}
+		} break;
+		case PACKED_COLOR_ARRAY: {
+			_data.packed_array = static_cast<PackedArrayRef<Color> *>(p_variant._data.packed_array)->reference();
+			if (!_data.packed_array) {
+				_data.packed_array = PackedArrayRef<Color>::create();
+			}
+		} break;
+		default: {
+		}
+		}
+	}
+
+	void Variant::operator=(const Variant& p_variant) {
+		if (unlikely(this == &p_variant)) {
+			return;
+		}
+
+		if (unlikely(type != p_variant.type)) {
+			reference(p_variant);
+			return;
+		}
+
+		switch (p_variant.type) {
+		case NIL: {
+			// none
+		} break;
+
+			// atomic types
+		case BOOL: {
+			_data._bool = p_variant._data._bool;
+		} break;
+		case INT: {
+			_data._int = p_variant._data._int;
+		} break;
+		case FLOAT: {
+			_data._float = p_variant._data._float;
+		} break;
+		case STRING: {
+			*reinterpret_cast<String*>(_data._mem) = *reinterpret_cast<const String*>(p_variant._data._mem);
+		} break;
+
+			// math types
+		case VECTOR2: {
+			*reinterpret_cast<Vector2*>(_data._mem) = *reinterpret_cast<const Vector2*>(p_variant._data._mem);
+		} break;
+		//case VECTOR2I: {
+		//	*reinterpret_cast<Vector2i*>(_data._mem) = *reinterpret_cast<const Vector2i*>(p_variant._data._mem);
+		//} break;
+		//case RECT2: {
+		//	*reinterpret_cast<Rect2*>(_data._mem) = *reinterpret_cast<const Rect2*>(p_variant._data._mem);
+		//} break;
+		//case RECT2I: {
+		//	*reinterpret_cast<Rect2i*>(_data._mem) = *reinterpret_cast<const Rect2i*>(p_variant._data._mem);
+		//} break;
+		//case TRANSFORM2D: {
+		//	*_data._transform2d = *(p_variant._data._transform2d);
+		//} break;
+		//case VECTOR3: {
+		//	*reinterpret_cast<Vector3*>(_data._mem) = *reinterpret_cast<const Vector3*>(p_variant._data._mem);
+		//} break;
+		//case VECTOR3I: {
+		//	*reinterpret_cast<Vector3i*>(_data._mem) = *reinterpret_cast<const Vector3i*>(p_variant._data._mem);
+		//} break;
+		//case VECTOR4: {
+		//	*reinterpret_cast<Vector4*>(_data._mem) = *reinterpret_cast<const Vector4*>(p_variant._data._mem);
+		//} break;
+		//case VECTOR4I: {
+		//	*reinterpret_cast<Vector4i*>(_data._mem) = *reinterpret_cast<const Vector4i*>(p_variant._data._mem);
+		//} break;
+		//case PLANE: {
+		//	*reinterpret_cast<Plane*>(_data._mem) = *reinterpret_cast<const Plane*>(p_variant._data._mem);
+		//} break;
+
+		//case AABB: {
+		//	*_data._aabb = *(p_variant._data._aabb);
+		//} break;
+		//case QUATERNION: {
+		//	*reinterpret_cast<Quaternion*>(_data._mem) = *reinterpret_cast<const Quaternion*>(p_variant._data._mem);
+		//} break;
+		//case BASIS: {
+		//	*_data._basis = *(p_variant._data._basis);
+		//} break;
+		//case TRANSFORM3D: {
+		//	*_data._transform3d = *(p_variant._data._transform3d);
+		//} break;
+		//case PROJECTION: {
+		//	*_data._projection = *(p_variant._data._projection);
+		//} break;
+
+		//	// misc types
+		//case COLOR: {
+		//	*reinterpret_cast<Color*>(_data._mem) = *reinterpret_cast<const Color*>(p_variant._data._mem);
+		//} break;
+		//case RID: {
+		//	*reinterpret_cast<::RID*>(_data._mem) = *reinterpret_cast<const ::RID*>(p_variant._data._mem);
+		//} break;
+		/*case OBJECT: {
+			if (_get_obj().id.is_ref_counted()) {
+				//we are safe that there is a reference here
+				RefCounted* ref_counted = static_cast<RefCounted*>(_get_obj().obj);
+				if (ref_counted->unreference()) {
+					memdelete(ref_counted);
+				}
+			}
+
+			if (p_variant._get_obj().obj && p_variant._get_obj().id.is_ref_counted()) {
+				RefCounted* ref_counted = static_cast<RefCounted*>(p_variant._get_obj().obj);
+				if (!ref_counted->reference()) {
+					_get_obj().obj = nullptr;
+					_get_obj().id = ObjectID();
+					break;
+				}
+			}
+
+			_get_obj().obj = const_cast<Object*>(p_variant._get_obj().obj);
+			_get_obj().id = p_variant._get_obj().id;
+
+		} break;
+			case CALLABLE: {
+			*reinterpret_cast<Callable*>(_data._mem) = *reinterpret_cast<const Callable*>(p_variant._data._mem);
+		} break;
+		case SIGNAL: {
+			*reinterpret_cast<Signal*>(_data._mem) = *reinterpret_cast<const Signal*>(p_variant._data._mem);
+		} break;
+
+		case STRING_NAME: {
+			*reinterpret_cast<StringName*>(_data._mem) = *reinterpret_cast<const StringName*>(p_variant._data._mem);
+		} break;
+		case NODE_PATH: {
+			*reinterpret_cast<NodePath*>(_data._mem) = *reinterpret_cast<const NodePath*>(p_variant._data._mem);
+		} break;
+		case DICTIONARY: {
+			*reinterpret_cast<Dictionary*>(_data._mem) = *reinterpret_cast<const Dictionary*>(p_variant._data._mem);
+		} break;
+		case ARRAY: {
+			*reinterpret_cast<Array*>(_data._mem) = *reinterpret_cast<const Array*>(p_variant._data._mem);
+		} break;*/
+
+			// arrays
+		case PACKED_BYTE_ARRAY: {
+			_data.packed_array = PackedArrayRef<uint8_t>::reference_from(_data.packed_array, p_variant._data.packed_array);
+		} break;
+		case PACKED_INT32_ARRAY: {
+			_data.packed_array = PackedArrayRef<int32_t>::reference_from(_data.packed_array, p_variant._data.packed_array);
+		} break;
+		case PACKED_INT64_ARRAY: {
+			_data.packed_array = PackedArrayRef<int64_t>::reference_from(_data.packed_array, p_variant._data.packed_array);
+		} break;
+		case PACKED_FLOAT32_ARRAY: {
+			_data.packed_array = PackedArrayRef<float>::reference_from(_data.packed_array, p_variant._data.packed_array);
+		} break;
+		case PACKED_FLOAT64_ARRAY: {
+			_data.packed_array = PackedArrayRef<double>::reference_from(_data.packed_array, p_variant._data.packed_array);
+		} break;
+		case PACKED_STRING_ARRAY: {
+			_data.packed_array = PackedArrayRef<String>::reference_from(_data.packed_array, p_variant._data.packed_array);
+		} break;
+		case PACKED_VECTOR2_ARRAY: {
+			_data.packed_array = PackedArrayRef<Vector2>::reference_from(_data.packed_array, p_variant._data.packed_array);
+		} break;
+		case PACKED_VECTOR3_ARRAY: {
+			_data.packed_array = PackedArrayRef<Vector3>::reference_from(_data.packed_array, p_variant._data.packed_array);
+		} break;
+		case PACKED_COLOR_ARRAY: {
+			_data.packed_array = PackedArrayRef<Color>::reference_from(_data.packed_array, p_variant._data.packed_array);
+		} break;
+		default: {
+		}
+		}
+	}
+	/*
+	* transfer to other types
+	*/
+
+
 }

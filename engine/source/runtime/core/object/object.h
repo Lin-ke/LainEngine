@@ -8,9 +8,13 @@
 #include "core/variant/callable.h"
 #include "core/templates/hash_map.h"
 #include "core/math/hashfuncs.h"
+#include "core/meta/reflection/reflection.h"
 // base class of all object
 namespace lain {
-	class Object{
+	REFLECTION_TYPE(Object)
+		CLASS(Object, WhiteListFields)
+	{
+		REFLECTION_BODY(Object);
 	public:
 		Object() {}
 		Object(ObjectID id) { m_instance_id = id; m_type_is_reference = false; }

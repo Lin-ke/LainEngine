@@ -30,7 +30,7 @@ namespace lain {
 	REFLECTION_TYPE(ProjectList)
 	CLASS(ProjectList,Fields){
 		REFLECTION_BODY(ProjectList);
-	public: ProjectList() {}
+public: ProjectList();
 	private:
 		Vector<ProjectListItem> m_projects;
 

@@ -175,6 +175,9 @@
     <ClInclude Include="core\math\vector3.h">
       <Filter>core\math</Filter>
     </ClInclude>
+    <ClInclude Include="core\math\vector3i.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
     <ClInclude Include="core\math\vector4.h">
       <Filter>core\math</Filter>
     </ClInclude>
@@ -188,6 +191,9 @@
       <Filter>core\meta\reflection</Filter>
     </ClInclude>
     <ClInclude Include="core\meta\reflection\reflection_register.h">
+      <Filter>core\meta\reflection</Filter>
+    </ClInclude>
+    <ClInclude Include="core\meta\reflection\type_info.h">
       <Filter>core\meta\reflection</Filter>
     </ClInclude>
     <ClInclude Include="core\meta\serializer\serializer.h">
@@ -337,10 +343,19 @@
     <ClInclude Include="core\variant\callable.h">
       <Filter>core\variant</Filter>
     </ClInclude>
+    <ClInclude Include="core\variant\dictionary.h">
+      <Filter>core\variant</Filter>
+    </ClInclude>
     <ClInclude Include="core\variant\typed_array.h">
       <Filter>core\variant</Filter>
     </ClInclude>
     <ClInclude Include="core\variant\variant.h">
+      <Filter>core\variant</Filter>
+    </ClInclude>
+    <ClInclude Include="core\variant\variant_header.h">
+      <Filter>core\variant</Filter>
+    </ClInclude>
+    <ClInclude Include="core\variant\variant_internal.h">
       <Filter>core\variant</Filter>
     </ClInclude>
     <ClInclude Include="function\display\display_event.h">
@@ -379,7 +394,7 @@
     <ClInclude Include="platform\io\os_windows.h">
       <Filter>platform\io</Filter>
     </ClInclude>
-    <ClInclude Include="render\render_system.h">
+    <ClInclude Include="render\rendering_system.h">
       <Filter>render</Filter>
     </ClInclude>
     <ClInclude Include="render\render_system_globals.h">
@@ -406,9 +421,6 @@
     <ClInclude Include="resource\manager\resource_manager.h">
       <Filter>resource\manager</Filter>
     </ClInclude>
-    <ClInclude Include="core\variant\dictionary.h" />
-    <ClInclude Include="core\meta\reflection\type_info.h" />
-    <ClInclude Include="core\math\vector3i.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\config\project_settings.cpp">
@@ -456,6 +468,9 @@
     <ClCompile Include="core\math\vector3.cpp">
       <Filter>core\math</Filter>
     </ClCompile>
+    <ClCompile Include="core\math\vector3i.cpp">
+      <Filter>core\math</Filter>
+    </ClCompile>
     <ClCompile Include="core\math\vector4.cpp">
       <Filter>core\math</Filter>
     </ClCompile>
@@ -481,6 +496,9 @@
       <Filter>core\object</Filter>
     </ClCompile>
     <ClCompile Include="core\object\refcounted.cpp">
+      <Filter>core\object</Filter>
+    </ClCompile>
+    <ClCompile Include="core\object\signal.cpp">
       <Filter>core\object</Filter>
     </ClCompile>
     <ClCompile Include="core\os\dir_access.cpp">
@@ -531,10 +549,19 @@
     <ClCompile Include="core\string\ustringutils.cpp">
       <Filter>core\string</Filter>
     </ClCompile>
+    <ClCompile Include="core\variant\array.cpp">
+      <Filter>core\variant</Filter>
+    </ClCompile>
     <ClCompile Include="core\variant\callable.cpp">
       <Filter>core\variant</Filter>
     </ClCompile>
+    <ClCompile Include="core\variant\dictionary.cpp">
+      <Filter>core\variant</Filter>
+    </ClCompile>
     <ClCompile Include="core\variant\variant.cpp">
+      <Filter>core\variant</Filter>
+    </ClCompile>
+    <ClCompile Include="core\variant\variant_internal.cpp">
       <Filter>core\variant</Filter>
     </ClCompile>
     <ClCompile Include="function\display\window_system.cpp">
@@ -555,13 +582,11 @@
     <ClCompile Include="platform\io\os_windows.cpp">
       <Filter>platform\io</Filter>
     </ClCompile>
-    <ClCompile Include="render\render_system.cpp">
+    <ClCompile Include="render\rendering_system.cpp">
       <Filter>render</Filter>
     </ClCompile>
     <ClCompile Include="resource\component\transform_component.cpp">
       <Filter>resource\component</Filter>
     </ClCompile>
-    <ClCompile Include="core\variant\dictionary.cpp" />
-    <ClCompile Include="core\variant\variant_header.h" />
   </ItemGroup>
 </Project>
