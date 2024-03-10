@@ -12,6 +12,9 @@ namespace lain{
         L_INLINE static RenderingSystem* GetSingleton() {
             return p_singleton;
         }
+        bool IsLoopEnabled() {
+            return m_is_loopenabled;
+        }
         /*****************/
          /**** TEXTURE ****/
          /*****************/
@@ -26,6 +29,7 @@ namespace lain{
         */
     private:
         static RenderingSystem* p_singleton;
+        bool m_is_loopenabled = false;
     };
 }
 #endif // !__RENDER_SYSTEM_H__

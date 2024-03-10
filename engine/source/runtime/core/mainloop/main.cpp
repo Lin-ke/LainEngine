@@ -2,7 +2,7 @@
 #include "core/os/os.h"
 #include "core/engine/engine.h"
 #include "function/display/window_system.h"
-#include "render/render_system.h"
+#include "render/rendering_system.h"
 #include "core/config/project_settings.h"
 #include "core/meta/reflection/reflection_register.h"
 

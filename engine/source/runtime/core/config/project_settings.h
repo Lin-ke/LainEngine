@@ -9,6 +9,7 @@
 #include "core/meta/reflection/reflection.h"
 #include "core/meta/serializer/serializer.h"
 #include <regex>
+#include <fstream>
 // TODO:
 #define GLOBAL_GET(m_var) ProjectSettings::GetSingleton()->GetSetting(m_var)
 namespace lain {

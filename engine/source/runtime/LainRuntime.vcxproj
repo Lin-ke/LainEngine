@@ -198,8 +198,8 @@
     <ClInclude Include="platform\io\dir_access_windows.h" />
     <ClInclude Include="platform\io\file_access_windows.h" />
     <ClInclude Include="platform\io\os_windows.h" />
-    <ClInclude Include="render\rendering_system.h" />
     <ClInclude Include="render\render_system_globals.h" />
+    <ClInclude Include="render\rendering_system.h" />
     <ClInclude Include="render\viewport.h" />
     <ClInclude Include="resource\common\world.h" />
     <ClInclude Include="resource\component\camera.h" />
@@ -269,8 +269,8 @@
     <ProjectReference Include="..\..\thirdparty\spdlog\spdlog.vcxproj">
       <Project>{8EAD431C-7A4F-6EF2-630A-82464F4BF542}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\thirdparty\glfw\glfw.vcxproj">
-      <Project>{9563977C-819A-980D-2A87-7E10169D140F}</Project>
+    <ProjectReference Include="..\..\thirdparty\glfw\GLFW.vcxproj">
+      <Project>{154B857C-0182-860D-AA6E-6C109684020F}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\thirdparty\json11\json11.vcxproj">
       <Project>{E1918107-CD33-ACDD-B6EE-BF31A22F332E}</Project>

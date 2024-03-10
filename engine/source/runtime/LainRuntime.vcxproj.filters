@@ -394,10 +394,10 @@
     <ClInclude Include="platform\io\os_windows.h">
       <Filter>platform\io</Filter>
     </ClInclude>
-    <ClInclude Include="render\rendering_system.h">
+    <ClInclude Include="render\render_system_globals.h">
       <Filter>render</Filter>
     </ClInclude>
-    <ClInclude Include="render\render_system_globals.h">
+    <ClInclude Include="render\rendering_system.h">
       <Filter>render</Filter>
     </ClInclude>
     <ClInclude Include="render\viewport.h">
