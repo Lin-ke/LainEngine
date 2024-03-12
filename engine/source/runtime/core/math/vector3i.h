@@ -274,7 +274,7 @@ namespace lain
         A float representing the dot product value.
         */
 
-        i32 dotProduct(const Vector3i & vec) const { return x * vec.x + y * vec.y + z * vec.z; }
+        i32 dot(const Vector3i & vec) const { return x * vec.x + y * vec.y + z * vec.z; }
 
         /** Normalizes the vector.
         @remarks

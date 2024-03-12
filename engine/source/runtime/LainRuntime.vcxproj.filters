@@ -421,6 +421,8 @@
     <ClInclude Include="resource\manager\resource_manager.h">
       <Filter>resource\manager</Filter>
     </ClInclude>
+    <ClInclude Include="core\math\aabb.h" />
+    <ClInclude Include="core\math\plane.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\config\project_settings.cpp">
@@ -588,5 +590,6 @@
     <ClCompile Include="resource\component\transform_component.cpp">
       <Filter>resource\component</Filter>
     </ClCompile>
+    <ClCompile Include="core\math\AABB.cpp" />
   </ItemGroup>
 </Project>

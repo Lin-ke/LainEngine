@@ -18,8 +18,9 @@ using namespace lain;
 int YminusA(int a, Vector2& obj);
 void TryERR_FAIL_INDEX();
 
+
 int main(int argc, char** argv) {
-	std::cout << VERSION_BRANCH << std::endl;
+	
 	// main function
 	OSWin os = OSWin();
 
@@ -27,9 +28,7 @@ int main(int argc, char** argv) {
 	
 }
 
-void TryERR_FAIL_INDEX() {
-	ERR_FAIL_INDEX(-1, 3);
-}
+
 int YminusA(int a, Vector2& obj) {
 	auto meta = Reflection::TypeMeta::newMetaFromName("Vector2");
 	if (!meta.isValid()) {

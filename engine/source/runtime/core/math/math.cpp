@@ -125,15 +125,15 @@ namespace lain
         view_mat[0][0] = s.x;
         view_mat[0][1] = s.y;
         view_mat[0][2] = s.z;
-        view_mat[0][3] = -s.dotProduct(eye_position);
+        view_mat[0][3] = -s.dot(eye_position);
         view_mat[1][0] = u.x;
         view_mat[1][1] = u.y;
         view_mat[1][2] = u.z;
-        view_mat[1][3] = -u.dotProduct(eye_position);
+        view_mat[1][3] = -u.dot(eye_position);
         view_mat[2][0] = -f.x;
         view_mat[2][1] = -f.y;
         view_mat[2][2] = -f.z;
-        view_mat[2][3] = f.dotProduct(eye_position);
+        view_mat[2][3] = f.dot(eye_position);
         return view_mat;
     }
 

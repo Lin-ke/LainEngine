@@ -213,7 +213,7 @@ namespace lain
         @returns
         A int representing the dot product value.
         */
-        int dotProduct(const Vector2i & vec) const { return x * vec.x + y * vec.y; }
+        int dot(const Vector2i & vec) const { return x * vec.x + y * vec.y; }
 
         /** Normalizes the vector.
         @remarks
@@ -299,7 +299,7 @@ namespace lain
         */
         Vector2i reflect(const Vector2i & normal) const
         {
-            return Vector2i(*this - (2 * this->dotProduct(normal) * normal));
+            return Vector2i(*this - (2 * this->dot(normal) * normal));
         }
 
 

@@ -15,31 +15,31 @@ namespace lain
         REFLECTION_BODY(Vector3);
         friend class Vector3i;
     public:
-        float x {0.f};
-        float y {0.f};
-        float z {0.f};
+        real_t x {0.f};
+        real_t y {0.f};
+        real_t z {0.f};
 
     public:
         Vector3() = default;
-        Vector3(float x_, float y_, float z_) : x {x_}, y {y_}, z {z_} {}
+        Vector3(real_t x_, real_t y_, real_t z_) : x {x_}, y {y_}, z {z_} {}
         Vector3(const Vector3i& p_v);
-        explicit Vector3(const float coords[3]) : x {coords[0]}, y {coords[1]}, z {coords[2]} {}
+        explicit Vector3(const real_t coords[3]) : x {coords[0]}, y {coords[1]}, z {coords[2]} {}
 
-        float operator[](size_t i) const
+        real_t operator[](size_t i) const
         {
             assert(i < 3);
             return *(&x + i);
         }
 
-        float& operator[](size_t i)
+        real_t& operator[](size_t i)
         {
             assert(i < 3);
             return *(&x + i);
         }
         /// Pointer accessor for direct copying
-        float* ptr() { return &x; }
+        real_t* ptr() { return &x; }
         /// Pointer accessor for direct copying
-        const float* ptr() const { return &x; }
+        const real_t* ptr() const { return &x; }
 
         bool operator==(const Vector3& rhs) const { return (x == rhs.x && y == rhs.y && z == rhs.z); }
 
@@ -50,11 +50,11 @@ namespace lain
 
         Vector3 operator-(const Vector3& rhs) const { return Vector3(x - rhs.x, y - rhs.y, z - rhs.z); }
 
-        Vector3 operator*(float scalar) const { return Vector3(x * scalar, y * scalar, z * scalar); }
+        Vector3 operator*(real_t scalar) const { return Vector3(x * scalar, y * scalar, z * scalar); }
 
         Vector3 operator*(const Vector3& rhs) const { return Vector3(x * rhs.x, y * rhs.y, z * rhs.z); }
 
-        Vector3 operator/(float scalar) const
+        Vector3 operator/(real_t scalar) const
         {
             assert(scalar != 0.0);
             return Vector3(x / scalar, y / scalar, z / scalar);
@@ -71,33 +71,33 @@ namespace lain
         Vector3 operator-() const { return Vector3(-x, -y, -z); }
 
         // overloaded operators to help Vector3
-        friend Vector3 operator*(float scalar, const Vector3& rhs)
+        friend Vector3 operator*(real_t scalar, const Vector3& rhs)
         {
             return Vector3(scalar * rhs.x, scalar * rhs.y, scalar * rhs.z);
         }
 
-        friend Vector3 operator/(float scalar, const Vector3& rhs)
+        friend Vector3 operator/(real_t scalar, const Vector3& rhs)
         {
             assert(rhs.x != 0 && rhs.y != 0 && rhs.z != 0);
             return Vector3(scalar / rhs.x, scalar / rhs.y, scalar / rhs.z);
         }
 
-        friend Vector3 operator+(const Vector3& lhs, float rhs)
+        friend Vector3 operator+(const Vector3& lhs, real_t rhs)
         {
             return Vector3(lhs.x + rhs, lhs.y + rhs, lhs.z + rhs);
         }
 
-        friend Vector3 operator+(float lhs, const Vector3& rhs)
+        friend Vector3 operator+(real_t lhs, const Vector3& rhs)
         {
             return Vector3(lhs + rhs.x, lhs + rhs.y, lhs + rhs.z);
         }
 
-        friend Vector3 operator-(const Vector3& lhs, float rhs)
+        friend Vector3 operator-(const Vector3& lhs, real_t rhs)
         {
             return Vector3(lhs.x - rhs, lhs.y - rhs, lhs.z - rhs);
         }
 
-        friend Vector3 operator-(float lhs, const Vector3& rhs)
+        friend Vector3 operator-(real_t lhs, const Vector3& rhs)
         {
             return Vector3(lhs - rhs.x, lhs - rhs.y, lhs - rhs.z);
         }
@@ -111,7 +111,7 @@ namespace lain
             return *this;
         }
 
-        Vector3& operator+=(float scalar)
+        Vector3& operator+=(real_t scalar)
         {
             x += scalar;
             y += scalar;
@@ -127,7 +127,7 @@ namespace lain
             return *this;
         }
 
-        Vector3& operator-=(float scalar)
+        Vector3& operator-=(real_t scalar)
         {
             x -= scalar;
             y -= scalar;
@@ -135,7 +135,7 @@ namespace lain
             return *this;
         }
 
-        Vector3& operator*=(float scalar)
+        Vector3& operator*=(real_t scalar)
         {
             x *= scalar;
             y *= scalar;
@@ -151,7 +151,7 @@ namespace lain
             return *this;
         }
 
-        Vector3& operator/=(float scalar)
+        Vector3& operator/=(real_t scalar)
         {
             assert(scalar != 0.0);
             x /= scalar;
@@ -177,7 +177,7 @@ namespace lain
         instead.
         */
 
-        float length() const { return std::hypot(x, y, z); }
+        real_t length() const { return std::hypot(x, y, z); }
 
         /** Returns the square of the length(magnitude) of the vector.
         @remarks
@@ -189,7 +189,7 @@ namespace lain
         want to find the longest / shortest vector without incurring
         the square root.
         */
-        float squaredLength() const { return x * x + y * y + z * z; }
+        real_t squaredLength() const { return x * x + y * y + z * z; }
 
         /** Returns the distance to another vector.
         @warning
@@ -199,7 +199,7 @@ namespace lain
         instead.
         */
 
-        float distance(const Vector3& rhs) const { return (*this - rhs).length(); }
+        real_t distance(const Vector3& rhs) const { return (*this - rhs).length(); }
 
         /** Returns the square of the distance to another vector.
         @remarks
@@ -212,7 +212,7 @@ namespace lain
         without incurring the square root.
         */
 
-        float squaredDistance(const Vector3& rhs) const { return (*this - rhs).squaredLength(); }
+        real_t squaredDistance(const Vector3& rhs) const { return (*this - rhs).squaredLength(); }
 
         /** Calculates the dot (scalar) product of this vector with another.
         @remarks
@@ -226,10 +226,13 @@ namespace lain
         vec Vector with which to calculate the dot product (together
         with this one).
         @returns
-        A float representing the dot product value.
+        A real_t representing the dot product value.
         */
 
-        float dotProduct(const Vector3& vec) const { return x * vec.x + y * vec.y + z * vec.z; }
+
+        real_t dot(const Vector3& p_with) const {
+            return x * p_with.x + y * p_with.y + z * p_with.z;
+        }
 
         /** Normalizes the vector.
         @remarks
@@ -243,11 +246,11 @@ namespace lain
 
         void normalise()
         {
-            float length = std::hypot(x, y, z);
+            real_t length = std::hypot(x, y, z);
             if (length == 0.f)
                 return;
 
-            float inv_lengh = 1.0f / length;
+            real_t inv_lengh = 1.0f / length;
             x *= inv_lengh;
             y *= inv_lengh;
             z *= inv_lengh;
@@ -328,15 +331,15 @@ namespace lain
 
         Radian angleBetween(const Vector3& dest) const
         {
-            float len_product = length() * dest.length();
+            real_t len_product = length() * dest.length();
 
             // Divide by zero check
             if (len_product < 1e-6f)
                 len_product = 1e-6f;
 
-            float f = dotProduct(dest) / len_product;
+            real_t f = dot(dest) / len_product;
 
-            f = Math::clamp(f, (float)-1.0, (float)1.0);
+            f = Math::clamp(f, (real_t)-1.0, (real_t)1.0);
             return Math::acos(f);
         }
         /** Gets the shortest arc quaternion to rotate this vector to the destination
@@ -358,7 +361,7 @@ namespace lain
             v0.normalise();
             v1.normalise();
 
-            float d = v0.dotProduct(v1);
+            real_t d = v0.dot(v1);
             // If dot == 1, vectors are the same
             if (d >= 1.0f)
             {
@@ -383,8 +386,8 @@ namespace lain
             }
             else
             {
-                float s    = Math::sqrt((1 + d) * 2);
-                float invs = 1 / s;
+                real_t s    = Math::sqrt((1 + d) * 2);
+                real_t invs = 1 / s;
 
                 Vector3 c = v0.crossProduct(v1);
 
@@ -400,7 +403,7 @@ namespace lain
         /** Returns true if this vector is zero length. */
         bool isZeroLength(void) const
         {
-            float sqlen = (x * x) + (y * y) + (z * z);
+            real_t sqlen = (x * x) + (y * y) + (z * z);
             return (sqlen < (1e-06 * 1e-06));
         }
 
@@ -421,17 +424,17 @@ namespace lain
         */
         Vector3 reflect(const Vector3& normal) const
         {
-            return Vector3(*this - (2 * this->dotProduct(normal) * normal));
+            return Vector3(*this - (2 * this->dot(normal) * normal));
         }
 
         /** Calculates projection to a plane with the given normal
         @param normal The normal of given plane
         */
-        Vector3 project(const Vector3& normal) const { return Vector3(*this - (this->dotProduct(normal) * normal)); }
+        Vector3 project(const Vector3& normal) const { return Vector3(*this - (this->dot(normal) * normal)); }
 
         Vector3 absoluteCopy() const { return Vector3(fabsf(x), fabsf(y), fabsf(z)); }
 
-        static Vector3 lerp(const Vector3& lhs, const Vector3& rhs, float alpha) { return lhs + alpha * (rhs - lhs); }
+        static Vector3 lerp(const Vector3& lhs, const Vector3& rhs, real_t alpha) { return lhs + alpha * (rhs - lhs); }
 
         static Vector3 clamp(const Vector3& v, const Vector3& min, const Vector3& max)
         {
@@ -439,7 +442,7 @@ namespace lain
                 Math::clamp(v.x, min.x, max.x), Math::clamp(v.y, min.y, max.y), Math::clamp(v.z, min.z, max.z));
         }
 
-        static float getMaxElement(const Vector3& v) { return Math::getMaxElement(v.x, v.y, v.z); }
+        static real_t getMaxElement(const Vector3& v) { return Math::getMaxElement(v.x, v.y, v.z); }
         bool         isNaN() const { return Math::isNan(x) || Math::isNan(y) || Math::isNan(z); }
         // special points
         static const Vector3 ZERO;

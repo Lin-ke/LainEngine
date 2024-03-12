@@ -212,7 +212,7 @@ namespace lain
         @returns
         A float representing the dot product value.
         */
-        float dotProduct(const Vector2& vec) const { return x * vec.x + y * vec.y; }
+        float dot(const Vector2& vec) const { return x * vec.x + y * vec.y; }
 
         /** Normalizes the vector.
         @remarks
@@ -322,7 +322,7 @@ namespace lain
         */
         Vector2 reflect(const Vector2& normal) const
         {
-            return Vector2(*this - (2 * this->dotProduct(normal) * normal));
+            return Vector2(*this - (2 * this->dot(normal) * normal));
         }
 
         /// Check whether this vector contains valid values

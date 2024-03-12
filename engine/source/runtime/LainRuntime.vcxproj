@@ -108,6 +108,7 @@
     <ClInclude Include="core\input\mouse_input.h" />
     <ClInclude Include="core\log\log.h" />
     <ClInclude Include="core\mainloop\main.h" />
+    <ClInclude Include="core\math\aabb.h" />
     <ClInclude Include="core\math\axis_aligned.h" />
     <ClInclude Include="core\math\color.h" />
     <ClInclude Include="core\math\hashfuncs.h" />
@@ -195,6 +196,7 @@
     <ClInclude Include="function\ui\window_ui.h" />
     <ClInclude Include="io\resource.h" />
     <ClInclude Include="io\resource_load.h" />
+    <ClInclude Include="core\math\plane.h" />
     <ClInclude Include="platform\io\dir_access_windows.h" />
     <ClInclude Include="platform\io\file_access_windows.h" />
     <ClInclude Include="platform\io\os_windows.h" />
@@ -215,6 +217,7 @@
     <ClCompile Include="core\input\input.cpp" />
     <ClCompile Include="core\log\log.cpp" />
     <ClCompile Include="core\mainloop\main.cpp" />
+    <ClCompile Include="core\math\AABB.cpp" />
     <ClCompile Include="core\math\axis_aligned.cpp" />
     <ClCompile Include="core\math\color.cpp" />
     <ClCompile Include="core\math\math.cpp" />

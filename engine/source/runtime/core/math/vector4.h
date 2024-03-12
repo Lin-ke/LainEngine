@@ -184,7 +184,7 @@ namespace lain
         @returns
         A float representing the dot product value.
         */
-        float dotProduct(const Vector4& vec) const { return x * vec.x + y * vec.y + z * vec.z + w * vec.w; }
+        float dot(const Vector4& vec) const { return x * vec.x + y * vec.y + z * vec.z + w * vec.w; }
 
         /// Check whether this vector contains valid values
         bool isNaN() const { return Math::isNan(x) || Math::isNan(y) || Math::isNan(z) || Math::isNan(w); }
