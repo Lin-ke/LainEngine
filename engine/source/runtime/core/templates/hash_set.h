@@ -1,4 +1,4 @@
-#pragma once****************************************/
+#pragma once
 
 #ifndef HASH_SET_H
 #define HASH_SET_H

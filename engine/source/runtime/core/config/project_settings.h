@@ -71,7 +71,7 @@ private:
                 else if (IsKeyValue(line)) {
                     
                     inValue = true;
-                    int delimiterPos = line.find("=", 0);
+                    int delimiterPos = static_cast<int>(line.find("=", 0));
                     String key = line.substr(0, delimiterPos).c_str(); key = key.trim();
                     String value = line.substr(delimiterPos+1, line.length()).c_str();
                     while (std::getline(file, line)) {
@@ -94,7 +94,7 @@ private:
     private:
          
 
-         bool IsField(const std::string& line) {
+         bool IsField(const String& line) {
             return line.size() > 2 && line.front() == '[' && line.back() == ']';
         }
 
@@ -103,10 +103,10 @@ private:
         }
          // 不允许一个字符串占多行
          // 不允许名中带有引号
-         bool IsKeyValue(const std::string& line) {
-            int equalpos =  line.find('=');
+         bool IsKeyValue(const String& line) {
+            int equalpos =  line.find_char('=');
             if (equalpos == std::string::npos) return false;
-            int firstquote = line.find('"');
+            int firstquote = line.find_char('"');
             if (firstquote < equalpos) return false;
             return true;
             
@@ -142,16 +142,16 @@ private:
              if (p_str == "") 
                  return Variant();
              if (p_str.begins_with("Packed")) {
-                 std::string p_stdstring = p_str.trim().utf8().get_data();
-                 int brankpos = p_stdstring.find("[");
-                 int rbrankpos = p_stdstring.rfind("]");
+                
+                 i32 brankpos = p_str.find("[");
+                 i32 rbrankpos = p_str.rfind("]");
                  if (brankpos != std::string::npos && rbrankpos != std::string::npos && brankpos == rbrankpos) {
                      error = "not valid PackedString";
                      L_CORE_ERROR(error);
                      return Variant();
                  }
                  std::string error;
-                 auto&& json = Json::parse(p_stdstring.substr(brankpos, rbrankpos - brankpos +1), error);
+                 auto&& json = Json::parse(p_str.substr(brankpos, rbrankpos - brankpos +1).utf8().get_data(), error);
                  if (!error.empty())
                  {
                      L_CORE_ERROR("parse json file {} failed!", p_str);

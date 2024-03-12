@@ -19,7 +19,7 @@ namespace lain {
 	 class VectorWriteProxy {
 	 public:
 		 _FORCE_INLINE_ T& operator[](int p_index) {
-			 CRASH_BAD_INDEX(p_index, ((Vector<T> *)(this))->_cowdata.Size());
+			 CRASH_BAD_INDEX(p_index, ((Vector<T> *)(this))->_cowdata.size());
 
 			 return ((Vector<T> *)(this))->_cowdata.ptrw()[p_index];
 		 }
@@ -48,7 +48,7 @@ namespace lain {
 		 _FORCE_INLINE_ bool append(const T& p_elem) { return push_back(p_elem); } //alias
 		 void fill(T p_elem);
 
-		 void remove_at(int p_index) { _cowdata.Remove_at(p_index); }
+		 void remove_at(int p_index) { _cowdata.remove_at(p_index); }
 		 _FORCE_INLINE_ bool erase(const T& p_val) {
 			 int idx = find(p_val);
 			 if (idx >= 0) {
@@ -60,8 +60,8 @@ namespace lain {
 
 		 void reverse();
 #ifdef L_DEBUG
-		 L_INLINE u32 _refcount() {
-			 s_u32* rc = _cowdata._GetCount();
+		 L_INLINE ui32 _refcount() {
+			 s_ui32* rc = _cowdata._get_count();
 			 return (rc->get());
 		 }
 #endif // L_DEBUG
@@ -69,19 +69,19 @@ namespace lain {
 		 _FORCE_INLINE_ T* ptrw() { return _cowdata._ptrw(); }
 		 _FORCE_INLINE_ const T* ptr() const { return _cowdata._ptr(); }
 		 _FORCE_INLINE_ void clear() { resize(0); }
-		 _FORCE_INLINE_ bool is_empty() const { return _cowdata.IsEmpty(); }
+		 _FORCE_INLINE_ bool is_empty() const { return _cowdata.is_empty(); }
 
-		 _FORCE_INLINE_ T get(int p_index) { return _cowdata.Get(p_index); }
-		 _FORCE_INLINE_ const T& get(int p_index) const { return _cowdata.Get(p_index); }
-		 _FORCE_INLINE_ void set(int p_index, const T& p_elem) { _cowdata.Set(p_index, p_elem); }
-		 _FORCE_INLINE_ int size() const { return _cowdata.Size(); }
-		 Error resize(int p_size) { return _cowdata.template Resize<false>(p_size); }
-		 Error resize_zeroed(int p_size) { return _cowdata.template Resize<true>(p_size); }
-		 _FORCE_INLINE_ const T& operator[](int p_index) const { return _cowdata.Get(p_index); }
-		 Error insert(int p_pos, T p_val) { return _cowdata.Insert_at(p_pos, p_val); }
+		 _FORCE_INLINE_ T get(int p_index) { return _cowdata.get(p_index); }
+		 _FORCE_INLINE_ const T& get(int p_index) const { return _cowdata.get(p_index); }
+		 _FORCE_INLINE_ void set(int p_index, const T& p_elem) { _cowdata.set(p_index, p_elem); }
+		 _FORCE_INLINE_ int size() const { return _cowdata.size(); }
+		 Error resize(int p_size) { return _cowdata.template resize<false>(p_size); }
+		 Error resize_zeroed(int p_size) { return _cowdata.template resize<true>(p_size); }
+		 _FORCE_INLINE_ const T& operator[](int p_index) const { return _cowdata.get(p_index); }
+		 Error insert(int p_pos, T p_val) { return _cowdata.insert_at(p_pos, p_val); }
 		 int find(const T& p_val, int p_from = 0) const { return _cowdata.Find(p_val, p_from); }
 		 int rfind(const T& p_val, int p_from = -1) const { return _cowdata.Rfind(p_val, p_from); }
-		 int count(const T& p_val) const { return _cowdata.Count(p_val); }
+		 int count(const T& p_val) const { return _cowdata.count(p_val); }
 
 		 void append_array(Vector<T> p_other);
 
@@ -93,7 +93,7 @@ namespace lain {
 
 		 template <class Comparator, bool Validate = SORT_ARRAY_VALIDATE_ENABLED, class... Args>
 		 void sort_custom(Args &&...args) {
-			 int len = _cowdata.Size();
+			 int len = _cowdata.size();
 			 if (len == 0) {
 				 return;
 			 }
@@ -119,7 +119,7 @@ namespace lain {
 
 		 void ordered_insert(const T& p_val) {
 			 int i;
-			 for (i = 0; i < _cowdata.Size(); i++) {
+			 for (i = 0; i < _cowdata.size(); i++) {
 				 if (p_val < operator[](i)) {
 					 break;
 				 }
@@ -128,7 +128,7 @@ namespace lain {
 		 }
 
 		 inline void operator=(const Vector& p_from) {
-			 _cowdata._Ref(p_from._cowdata);
+			 _cowdata._ref(p_from._cowdata);
 		 }
 
 		 Vector<uint8_t> to_byte_array() const {
@@ -261,15 +261,15 @@ namespace lain {
 		 // do nothing
 		 _FORCE_INLINE_ Vector() {}
 		 _FORCE_INLINE_ Vector(std::initializer_list<T> p_init) {
-			 Error err = _cowdata.Resize(p_init.size());
+			 Error err = _cowdata.resize(static_cast<int>(p_init.size()));
 			 ERR_FAIL_COND(err);
 
 			 int i = 0;
 			 for (const T& element : p_init) {
-				 _cowdata.Set(i++, element);
+				 _cowdata.set(i++, element);
 			 }
 		 }
-		 _FORCE_INLINE_ Vector(const Vector& p_from) { _cowdata._Ref(p_from._cowdata); }
+		 _FORCE_INLINE_ Vector(const Vector& p_from) { _cowdata._ref(p_from._cowdata); }
 
 		 _FORCE_INLINE_ ~Vector() {}
 	 };

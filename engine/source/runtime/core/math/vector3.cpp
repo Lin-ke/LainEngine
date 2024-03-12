@@ -3,9 +3,9 @@
 namespace lain
 {
     Vector3::Vector3(const Vector3i& p_v) {
-        x = p_v.x;
-        y = p_v.y;
-        z = p_v.z;
+        x = static_cast<float> (p_v.x);
+        y = static_cast<float> (p_v.y);
+        z = static_cast<float> (p_v.z);
     }
     const Vector3 Vector3::ZERO(0, 0, 0);
     const Vector3 Vector3::UNIT_X(1, 0, 0);

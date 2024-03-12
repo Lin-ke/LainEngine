@@ -129,7 +129,7 @@ namespace lain
         bool               ShouldClose() const;
         void               setTitle(const char* title) {};
         GLFWwindow* getWindow() const {};
-        std::array<int, 2> getWindowSize() const {};
+        std::array<int, 2> getWindowsize() const {};
 
 
 

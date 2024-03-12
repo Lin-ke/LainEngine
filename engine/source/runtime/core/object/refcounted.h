@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __REFCOUNT_H__
-#define __REFCOUNT_H__
+#ifndef __refCOUNT_H__
+#define __refCOUNT_H__
 #include "base.h"
 #include "object.h"
 #include "core/os/memory.h"
@@ -265,4 +265,4 @@ public:
 //};
 }
 
-#endif // !__REFCOUNT_H__
+#endif // !__refCOUNT_H__

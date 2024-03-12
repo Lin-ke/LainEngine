@@ -79,12 +79,13 @@ L_INLINE void L_CORE_PRINT(const Types&... args)
 #define CONCAT3(a,b,c) CONCAT2(CONCAT2(a,b),c)
 
 
-//#define refcount(type, x) (*(reinterpret_cast<s_u32*> (const_cast<type*>(x.ptr())) - 2)).get()
+//#define refcount(type, x) (*(reinterpret_cast<s_ui32*> (const_cast<type*>(x.ptr())) - 2)).get()
 # define refcount(x) x._refcount()
 void _global_lock();
 void _global_unlock();
 typedef uint64_t u64;
-typedef uint32_t u32;
+typedef uint32_t ui32;
+typedef int32_t  i32;
 // godot's devbranch mark;
 # define DEV_ENABLED
 #endif // __BASE__

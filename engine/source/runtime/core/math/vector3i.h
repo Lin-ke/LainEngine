@@ -1,5 +1,6 @@
 #pragma once
-
+#ifndef __VECTOR3I_H__
+#define __VECTOR3I_H__
 #include "runtime/core/math/math.h"
 #include "runtime/core/math/quaternion.h"
 #include "runtime/core/meta/reflection/reflection.h"
@@ -50,14 +51,18 @@ namespace lain
 
         Vector3i operator-(const Vector3i & rhs) const { return Vector3i(x - rhs.x, y - rhs.y, z - rhs.z); }
 
-        Vector3i operator*(float scalar) const { return Vector3i(x * scalar, y * scalar, z * scalar); }
+        Vector3i operator*(float scalar) const { return Vector3i(static_cast<i32>(x * scalar), static_cast<i32>(y * scalar), static_cast<i32>(z * scalar)); }
 
         Vector3i operator*(const Vector3i & rhs) const { return Vector3i(x * rhs.x, y * rhs.y, z * rhs.z); }
+        
+        Vector3i Vector3i::operator*(const i32 p_scalar) const {
+            return Vector3i(x * p_scalar, y * p_scalar, z * p_scalar);
+        }
 
         Vector3i operator/(float scalar) const
         {
             assert(scalar != 0.0);
-            return Vector3i(x / scalar, y / scalar, z / scalar);
+            return Vector3i(static_cast<i32>(x / scalar), static_cast<i32>(y / scalar), static_cast<i32>(z / scalar));
         }
 
         Vector3i operator/(const Vector3i & rhs) const
@@ -65,39 +70,33 @@ namespace lain
             assert((rhs.x != 0 && rhs.y != 0 && rhs.z != 0));
             return Vector3i(x / rhs.x, y / rhs.y, z / rhs.z);
         }
+        Vector3i Vector3i::operator/(const int32_t p_scalar) const {
+            return Vector3i(x / p_scalar, y / p_scalar, z / p_scalar);
+        }
 
         const Vector3i& operator+() const { return *this; }
 
         Vector3i operator-() const { return Vector3i(-x, -y, -z); }
 
         // overloaded operators to help Vector3i
-        friend Vector3i operator*(float scalar, const Vector3i & rhs)
+        // friend function to change location
+        friend Vector3i operator*(i32 scalar, const Vector3i & rhs)
         {
             return Vector3i(scalar * rhs.x, scalar * rhs.y, scalar * rhs.z);
         }
 
-        friend Vector3i operator/(float scalar, const Vector3i & rhs)
+        friend Vector3i operator/(i32 scalar, const Vector3i & rhs)
         {
             assert(rhs.x != 0 && rhs.y != 0 && rhs.z != 0);
             return Vector3i(scalar / rhs.x, scalar / rhs.y, scalar / rhs.z);
         }
 
-        friend Vector3i operator+(const Vector3i & lhs, float rhs)
-        {
-            return Vector3i(lhs.x + rhs, lhs.y + rhs, lhs.z + rhs);
-        }
-
-        friend Vector3i operator+(float lhs, const Vector3i & rhs)
+        friend Vector3i operator+(i32 lhs, const Vector3i & rhs)
         {
             return Vector3i(lhs + rhs.x, lhs + rhs.y, lhs + rhs.z);
         }
 
-        friend Vector3i operator-(const Vector3i & lhs, float rhs)
-        {
-            return Vector3i(lhs.x - rhs, lhs.y - rhs, lhs.z - rhs);
-        }
-
-        friend Vector3i operator-(float lhs, const Vector3i & rhs)
+        friend Vector3i operator-(i32 lhs, const Vector3i & rhs)
         {
             return Vector3i(lhs - rhs.x, lhs - rhs.y, lhs - rhs.z);
         }
@@ -113,11 +112,29 @@ namespace lain
 
         Vector3i& operator+=(float scalar)
         {
+            x = static_cast<i32> (x + scalar);
+            y = static_cast<i32> (y + scalar);
+            z = static_cast<i32> (z + scalar);
+            return *this;
+        }
+
+        Vector3i& operator+=(i32 scalar)
+        {
             x += scalar;
             y += scalar;
             z += scalar;
             return *this;
         }
+
+        Vector3i& operator-=(float scalar)
+        {
+            x = static_cast<i32> (x - scalar);
+            y = static_cast<i32> (y - scalar);
+            z = static_cast<i32> (z - scalar);
+            return *this;
+        }
+
+
 
         Vector3i& operator-=(const Vector3i & rhs)
         {
@@ -127,19 +144,20 @@ namespace lain
             return *this;
         }
 
-        Vector3i& operator-=(float scalar)
+        Vector3i& operator-=(i32 scalar)
         {
             x -= scalar;
             y -= scalar;
             z -= scalar;
             return *this;
         }
-
+        
         Vector3i& operator*=(float scalar)
         {
-            x *= scalar;
-            y *= scalar;
-            z *= scalar;
+            x = static_cast<i32>(x * scalar);
+            y = static_cast<i32>(y * scalar);
+            z = static_cast<i32>(z * scalar);
+
             return *this;
         }
 
@@ -151,15 +169,23 @@ namespace lain
             return *this;
         }
 
-        Vector3i& operator/=(float scalar)
+        Vector3i& operator*=(const i32 rhs)
         {
-            assert(scalar != 0.0);
-            x /= scalar;
-            y /= scalar;
-            z /= scalar;
+            x *= rhs;
+            y *= rhs;
+            z *= rhs;
             return *this;
         }
 
+        Vector3i& operator/=(float scalar)
+        {
+            assert(scalar != 0.0);
+            x = static_cast<i32>(x / scalar);
+            y = static_cast<i32>(y / scalar);
+            z = static_cast<i32>(z / scalar);
+            return *this;
+        }
+        // int/int是整数除法
         Vector3i& operator/=(const Vector3i & rhs)
         {
             assert(rhs.x != 0 && rhs.y != 0 && rhs.z != 0);
@@ -168,6 +194,25 @@ namespace lain
             z /= rhs.z;
             return *this;
         }
+        Vector3i& operator/=(int rhs)
+        {
+            x /= rhs;
+            y /= rhs;
+            z /= rhs;
+            return *this;
+        }
+
+        Vector3i& Vector3i::operator%=(const i32 p_scalar) {
+            x %= p_scalar;
+            y %= p_scalar;
+            z %= p_scalar;
+            return *this;
+        }
+
+        Vector3i Vector3i::operator%(const i32 p_scalar) const {
+            return Vector3i(x % p_scalar, y % p_scalar, z % p_scalar);
+        }
+
 
         /** Returns the length (magnitude) of the vector.
         @warning
@@ -177,7 +222,7 @@ namespace lain
         instead.
         */
 
-        float length() const { return std::hypot(x, y, z); }
+        float length() const { return static_cast<float>(std::hypot(x, y, z)); }
 
         /** Returns the square of the length(magnitude) of the vector.
         @remarks
@@ -189,7 +234,7 @@ namespace lain
         want to find the longest / shortest vector without incurring
         the square root.
         */
-        float squaredLength() const { return x * x + y * y + z * z; }
+        float squaredLength() const { return static_cast<float>(x * x + y * y + z * z); }
 
         /** Returns the distance to another vector.
         @warning
@@ -229,7 +274,7 @@ namespace lain
         A float representing the dot product value.
         */
 
-        float dotProduct(const Vector3i & vec) const { return x * vec.x + y * vec.y + z * vec.z; }
+        i32 dotProduct(const Vector3i & vec) const { return x * vec.x + y * vec.y + z * vec.z; }
 
         /** Normalizes the vector.
         @remarks
@@ -278,23 +323,20 @@ namespace lain
         /** Returns true if this vector is zero length. */
         bool isZeroLength(void) const
         {
-            float sqlen = (x * x) + (y * y) + (z * z);
-            return (sqlen < (1e-06 * 1e-06));
+            return (x * x) + (y * y) + (z * z) == 0;
         }
 
         bool isZero() const { return x == 0.f && y == 0.f && z == 0.f; }
 
 
-        static Vector3i lerp(const Vector3i & lhs, const Vector3i & rhs, float alpha) { return lhs + alpha * (rhs - lhs); }
 
         static Vector3i clamp(const Vector3i & v, const Vector3i & min, const Vector3i & max)
         {
             return Vector3i(
-                Math::clamp(v.x, min.x, max.x), Math::clamp(v.y, min.y, max.y), Math::clamp(v.z, min.z, max.z));
+                Math::clamp(v.x, min.x, max.x),Math::clamp(v.y, min.y, max.y), Math::clamp(v.z, min.z, max.z));
         }
 
-        static int32_t getMaxElement(const Vector3i & v) { return Math::getMaxElement(v.x, v.y, v.z); }
-        bool         isNaN() const { return Math::isNan(x) || Math::isNan(y) || Math::isNan(z); }
+        static int32_t getMaxElement(const Vector3i & v) { Math::getMaxElement(v.x, v.y, v.z); }
         // special points
         static const Vector3i ZERO;
         static const Vector3i UNIT_X;
@@ -306,3 +348,4 @@ namespace lain
         static const Vector3i UNIT_SCALE;
     };
 } // namespace lain
+#endif // !__VECTOR3I_H__

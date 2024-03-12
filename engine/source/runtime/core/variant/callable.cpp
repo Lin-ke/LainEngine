@@ -1,7 +1,7 @@
 #include "callable.h"
 #include "core/math/hashfuncs.h"
 namespace lain {
-	u32 Callable::hash() const {
+	ui32 Callable::hash() const {
 		if (is_custom()) {
 			return custom->hash();
 		}

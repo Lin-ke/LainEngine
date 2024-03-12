@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __SAFE_REFCOUNT_H__
-#define __SAFE_REFCOUNT_H__
+#ifndef __SAFE_refCOUNT_H__
+#define __SAFE_refCOUNT_H__
 #include "base.h"
 // 引用计数
 //#include <memory>
@@ -13,7 +13,7 @@
 
 
 class SafeRefCount {
-	s_u32 count;
+	s_ui32 count;
 
 #ifdef DEV_ENABLED
 
@@ -58,4 +58,4 @@ public:
 	}
 };
 
-#endif // SAFE_REFCOUNT_H
+#endif // SAFE_refCOUNT_H

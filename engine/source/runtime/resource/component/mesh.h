@@ -1,7 +1,10 @@
 #pragma once
+#ifndef __MESH_H__
+#define __MESH_H__
+
 #include "runtime/core/math/transform.h"
 #include "runtime/core/meta/reflection/reflection.h"
-
+#include "core/templates/vector.h"
 namespace lain
 {
     REFLECTION_TYPE(SubMeshRes)
@@ -21,6 +24,7 @@ namespace lain
         REFLECTION_BODY(MeshComponentRes);
 
     public:
-        std::vector<SubMeshRes> m_sub_meshes;
+        Vector<SubMeshRes> m_sub_meshes;
     };
 } // namespace Piccolo
+#endif // !__MESH_H__

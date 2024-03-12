@@ -246,11 +246,11 @@
 //static _FORCE_INLINE_ uint32_t hash_make_uint32_t(T p_in) {
 //	union {
 //		T t;
-//		uint32_t _u32;
+//		uint32_t _ui32;
 //	} _u;
-//	_u._u32 = 0;
+//	_u._ui32 = 0;
 //	_u.t = p_in;
-//	return _u._u32;
+//	return _u._ui32;
 //}
 //
 //static _FORCE_INLINE_ uint64_t hash_djb2_one_float_64(double p_in, uint64_t p_prev = 5381) {

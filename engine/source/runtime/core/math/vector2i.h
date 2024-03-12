@@ -63,8 +63,8 @@ namespace lain
         {
             assert(scale != 0.0);
 
-            int inv = 1.0f / scale;
-            return Vector2i(x * inv, y * inv);
+            float inv = 1.0f / scale;
+            return Vector2i(static_cast<int>(x * inv), static_cast<int>( y * inv));
         }
 
         Vector2i operator/(const Vector2i & rhs) const { return Vector2i(x / rhs.x, y / rhs.y); }
@@ -142,12 +142,9 @@ namespace lain
 
         Vector2i& operator/=(int scalar)
         {
-            assert(scalar != 0.0);
-
-            int inv = 1.0f / scalar;
-
-            x *= inv;
-            y *= inv;
+            assert(scalar != 0);
+            x /= scalar;
+            y /= scalar;
 
             return *this;
         }
@@ -167,7 +164,7 @@ namespace lain
         length (e.g. for just comparing lengths) use squaredLength()
         instead.
         */
-        int length() const { return std::hypot(x, y); }
+        float length() const { return static_cast<float>(std::hypot(x, y)); }
 
         /** Returns the square of the length(magnitude) of the vector.
         @remarks
@@ -188,7 +185,7 @@ namespace lain
         distance (e.g. for just comparing distances) use squaredDistance()
         instead.
         */
-        int distance(const Vector2i & rhs) const { return (*this - rhs).length(); }
+        float distance(const Vector2i & rhs) const { return (*this - rhs).length(); }
 
         /** Returns the square of the distance to another vector.
         @remarks
@@ -228,27 +225,11 @@ namespace lain
         @returns The previous length of the vector.
         */
 
-        int normalise()
-        {
-            int lengh = std::hypot(x, y);
-
-            if (lengh > 0.0f)
-            {
-                int inv_length = 1.0f / lengh;
-                x *= inv_length;
-                y *= inv_length;
-            }
-
-            return lengh;
-        }
 
         int getX() const { return x; }
         int getY() const { return y; }
 
-        /** Returns a vector at a point half way between this and the passed
-        in vector.
-        */
-        Vector2i midPoint(const Vector2i & vec) const { return Vector2i((x + vec.x) * 0.5f, (y + vec.y) * 0.5f); }
+        Vector2i midPoint(const Vector2i & vec) const { return Vector2i(static_cast<int>((x + vec.x) * 0.5f), static_cast<int>((y + vec.y) * 0.5f)); }
 
         /** Returns true if the vector's scalar components are all greater
         that the ones of the vector it is compared against.
@@ -312,14 +293,6 @@ namespace lain
             return (sqlen < (Float_EPSILON * Float_EPSILON));
         }
 
-        /** As normalise, except that this vector is unaffected and the
-        normalised vector is returned as a copy. */
-        Vector2i normalisedCopy(void) const
-        {
-            Vector2i ret = *this;
-            ret.normalise();
-            return ret;
-        }
 
         /** Calculates a reflection vector to the plane with the given normal .
         @remarks NB assumes 'this' is pointing AWAY FROM the plane, invert if it is not.
@@ -329,8 +302,6 @@ namespace lain
             return Vector2i(*this - (2 * this->dotProduct(normal) * normal));
         }
 
-        /// Check whether this vector contains valid values
-        bool isNaN() const { return Math::isNan(x) || Math::isNan(y); }
 
         static Vector2i lerp(const Vector2i & lhs, const Vector2i & rhs, int alpha) { return lhs + alpha * (rhs - lhs); }
 
@@ -344,16 +315,6 @@ namespace lain
 
     };
 
-    _FORCE_INLINE_ Vector2i operator*(const int64_t p_scalar, const Vector2i& p_vector) {
-        return p_vector * p_scalar;
-    }
 
-    _FORCE_INLINE_ Vector2i operator*(const float p_scalar, const Vector2i& p_vector) {
-        return p_vector * p_scalar;
-    }
-
-    _FORCE_INLINE_ Vector2i operator*(const double p_scalar, const Vector2i& p_vector) {
-        return p_vector * p_scalar;
-    }
 
 } // namespace lain

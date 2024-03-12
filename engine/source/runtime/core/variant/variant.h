@@ -182,7 +182,7 @@ namespace lain {
 		typedef void (*ObjectConstruct)(const String& p_text, void* ud, Variant& r_value);
 		static void construct_from_string(const String& p_string, Variant& r_value, ObjectConstruct p_obj_construct = nullptr, void* p_construct_ud = nullptr);
 		
-		u32 recursive_hash(int recursion_count) const;
+		ui32 recursive_hash(int recursion_count) const;
 		bool hash_compare(const Variant& p_variant, int recursion_count = 0) const;
 		uint32_t Variant::hash() const {
 			return recursive_hash(0);

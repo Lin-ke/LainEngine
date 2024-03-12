@@ -92,13 +92,15 @@ void _err_flush_stdout();
    * Ensures an integer index `m_index` is less than `m_size` and greater than or equal to 0.
    * If not, the current function returns.
    */
+#pragma warning(push)
+#pragma warning(disable: 4018)
 #define ERR_FAIL_INDEX(m_index, m_size)                                                                         \
-	if (unlikely((m_index) < 0 || (m_index) >= (m_size))) {                                                     \
+	if (unlikely((m_index) < 0 || (m_index) >= static_cast<decltype(m_index)>(m_size))) {                                                     \
 		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size)); \
 		return;                                                                                                 \
 	} else                                                                                                      \
 		((void)0)
-
+#pragma warning(pop)
    /**
 	* Ensures an integer index `m_index` is less than `m_size` and greater than or equal to 0.
 	* If not, prints `m_msg` and the current function returns.
@@ -163,14 +165,14 @@ void _err_flush_stdout();
 		 * Ensures an integer index `m_index` is less than `m_size` and greater than or equal to 0.
 		 * If not, the application crashes.
 		 */
+
 #define CRASH_BAD_INDEX(m_index, m_size)                                                                                         \
-	if (unlikely((m_index) < 0 || (m_index) >= (m_size))) {                                                                      \
+	if (unlikely((m_index) < 0 || (m_index) >= static_cast<decltype(m_index)>(m_size))) {                                                                      \
 		_err_print_index_error(FUNCTION_STR, __FILE__, __LINE__, m_index, m_size, _STR(m_index), _STR(m_size), "", false, true); \
 		_err_flush_stdout();                                                                                                     \
 		GENERATE_TRAP();                                                                                                         \
 	} else                                                                                                                       \
 		((void)0)
-
 		 /**
 		  * Try using `ERR_FAIL_INDEX_MSG` or `ERR_FAIL_INDEX_V_MSG`.
 		  * Only use this macro if there is no sensible fallback i.e. the error is unrecoverable.

@@ -104,7 +104,7 @@ namespace lain
                 return instance;
             }
             Json::array json_array = json_context.array_items();
-            instance.resize(json_array.size());
+            instance.resize(static_cast<int>(json_array.size()));
             for (int i = 0; i < json_array.size(); i++) {
                 T newT;
                 Serializer::read(json_array[i], instance.write[i]);

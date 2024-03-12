@@ -112,6 +112,7 @@ inline void __swap_tmpl(T& x, T& y) {
 /* Functions to handle powers of 2 and shifting. */
 
 // Function to find the next power of 2 to an integer.
+
 static _FORCE_INLINE_ unsigned int next_power_of_2(unsigned int x) {
 	if (x == 0) {
 		return 0;

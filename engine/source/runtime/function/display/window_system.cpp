@@ -35,7 +35,7 @@ namespace lain {
     bool WindowSystem::ShouldClose() const {
         bool should_close = true;
         for (const KeyValue<WindowID, WindowData>& E : m_windows) {
-            should_close&=glfwWindowShouldClose(E.value.p_window);
+            should_close&=static_cast<bool>(glfwWindowShouldClose(E.value.p_window));
         }
         return should_close;
     }
@@ -95,8 +95,8 @@ namespace lain {
     WindowSystem::WindowID WindowSystem::GetWindowAtPos(const Point2& p_position) const {
         POINT p;
         Point2 offset(0, 0);
-        p.x = p_position.x + offset.x;
-        p.y = p_position.y + offset.y;
+        p.x = static_cast<LONG>(p_position.x + offset.x);
+        p.y = static_cast<LONG>(p_position.y + offset.y);
         HWND hwnd = WindowFromPoint(p);
         for (const KeyValue<WindowID, WindowData>& E : m_windows) {
             if (E.value.hWnd == hwnd) {

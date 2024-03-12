@@ -1,4 +1,7 @@
 #pragma once
+#ifndef __MATH_H__
+#define __MATH_H__
+
 #include "base.h"
 #include "core/error/error_macros.h"
 #include "core/typedefs.h"
@@ -14,11 +17,12 @@ namespace lain
 {
     static const float Math_POS_INFINITY = std::numeric_limits<float>::infinity();
     static const float Math_NEG_INFINITY = -std::numeric_limits<float>::infinity();
-    static const float Math_ONE_OVER_PI  = 1.0f / Math_PI;
-    static const float Math_TWO_PI       = 2.0f * Math_PI;
-    static const float Math_HALF_PI      = 0.5f * Math_PI;
-    static const float Math_fDeg2Rad     = Math_PI / 180.0f;
-    static const float Math_fRad2Deg     = 180.0f / Math_PI;
+	static const float Math_PIF = 3.1415927f;
+    static const float Math_ONE_OVER_PI  = 1.0f / Math_PIF;
+    static const float Math_TWO_PI       = 2.0f * Math_PIF;
+    static const float Math_HALF_PI      = 0.5f * Math_PIF;
+    static const float Math_fDeg2Rad     = Math_PIF / 180.0f;
+    static const float Math_fRad2Deg     = 180.0f / Math_PIF;
     static const float Math_LOG2         = log(2.0f);
     static const float Math_EPSILON      = 1e-6f;
 
@@ -214,13 +218,15 @@ namespace lain
 		static float sqr(float value) { return value * value; }
 		static float sqrt(float fValue) { return std::sqrt(fValue); }
 
-		static _ALWAYS_INLINE_ double sqrt(double p_x) { return ::sqrtf(p_x); }
+		static _ALWAYS_INLINE_ double sqrt(double p_x) { return static_cast<double>(::sqrtf(static_cast<float>(p_x))); }
 
 		static float invSqrt(float value) { return 1.f / sqrt(value); }
 		static bool  realEqual(float a, float b, float tolerance = std::numeric_limits<float>::epsilon());
+		
 		static float clamp(float v, float min, float max) { return std::clamp(v, min, max); }
+		static int clamp(int v, int min, int max) { return std::clamp(v, min, max); }
 		static float getMaxElement(float x, float y, float z) { return std::max({ x, y, z }); }
-
+		static int getMaxElement(int x, int y, int z) { return std::max({ x, y, z }); }
 		static float degreesToRadians(float degrees);
 		static float radiansToDegrees(float radians);
 		static float angleUnitsToRadians(float units);
@@ -250,7 +256,7 @@ namespace lain
 		static _ALWAYS_INLINE_ float sinc(float p_x) { return p_x == 0 ? 1 : ::sin(p_x) / p_x; }
 		static _ALWAYS_INLINE_ double sinc(double p_x) { return p_x == 0 ? 1 : ::sin(p_x) / p_x; }
 
-		static _ALWAYS_INLINE_ float sincn(float p_x) { return sinc((float)Math_PI * p_x); }
+		static _ALWAYS_INLINE_ float sincn(float p_x) { return sinc(Math_PIF * p_x); }
 		static _ALWAYS_INLINE_ double sincn(double p_x) { return sinc(Math_PI * p_x); }
 
 		static _ALWAYS_INLINE_ double cosh(double p_x) { return ::cosh(p_x); }
@@ -428,10 +434,10 @@ namespace lain
 		}
 
 		static _ALWAYS_INLINE_ double deg_to_rad(double p_y) { return p_y * (Math_PI / 180.0); }
-		static _ALWAYS_INLINE_ float deg_to_rad(float p_y) { return p_y * (float)(Math_PI / 180.0); }
+		static _ALWAYS_INLINE_ float deg_to_rad(float p_y) { return p_y * (float)(Math_PIF / 180.0); }
 
 		static _ALWAYS_INLINE_ double rad_to_deg(double p_y) { return p_y * (180.0 / Math_PI); }
-		static _ALWAYS_INLINE_ float rad_to_deg(float p_y) { return p_y * (float)(180.0 / Math_PI); }
+		static _ALWAYS_INLINE_ float rad_to_deg(float p_y) { return p_y * (float)(180.0 / Math_PIF); }
 
 		static _ALWAYS_INLINE_ double lerp(double p_from, double p_to, double p_weight) { return p_from + (p_to - p_from) * p_weight; }
 		static _ALWAYS_INLINE_ float lerp(float p_from, float p_to, float p_weight) { return p_from + (p_to - p_from) * p_weight; }
@@ -814,11 +820,11 @@ namespace lain
 
 		static _ALWAYS_INLINE_ float halfptr_to_float(const uint16_t* h) {
 			union {
-				uint32_t u32;
+				uint32_t ui32;
 				float f32;
 			} u;
 
-			u.u32 = halfbits_to_floatbits(*h);
+			u.ui32 = halfbits_to_floatbits(*h);
 			return u.f32;
 		}
 
@@ -877,12 +883,12 @@ namespace lain
 		}
 
 		static _ALWAYS_INLINE_ float snap_scalar(float p_offset, float p_step, float p_target) {
-			return p_step != 0 ? Math::snapped(p_target - p_offset, p_step) + p_offset : p_target;
+			return p_step != 0 ? static_cast<float>(Math::snapped(p_target - p_offset, p_step) + p_offset) : p_target;
 		}
 
 		static _ALWAYS_INLINE_ float snap_scalar_separation(float p_offset, float p_step, float p_target, float p_separation) {
 			if (p_step != 0) {
-				float a = Math::snapped(p_target - p_offset, p_step + p_separation) + p_offset;
+				float a = static_cast<float>(Math::snapped(p_target - p_offset, p_step + p_separation) + p_offset);
 				float b = a;
 				if (p_target >= 0) {
 					b -= p_separation;
@@ -951,3 +957,5 @@ namespace lain
 
 		inline Degree operator/(float a, const Degree& b) { return Degree(a / b.valueDegrees()); }
 } // namespace lain
+
+#endif // !__MATH_H__

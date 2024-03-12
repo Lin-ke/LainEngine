@@ -82,7 +82,7 @@ uint64_t Color::to_rgba64() const {
 }
 
 String _to_hex(float p_val) {
-	int v = Math::round(p_val * 255.0f);
+	int v = static_cast<int>(Math::round(p_val * 255.0f));
 	v = CLAMP(v, 0, 255);
 	String ret;
 
@@ -176,7 +176,7 @@ void Color::set_hsv(float p_h, float p_s, float p_v, float p_alpha) {
 
 	p_h *= 6.0f;
 	p_h = Math::fmod(p_h, 6);
-	i = Math::floor(p_h);
+	i = static_cast<int>(Math::floor(p_h));
 
 	f = p_h - i;
 	p = p_v * (1.0f - p_s);
@@ -273,7 +273,8 @@ Color Color::hex64(uint64_t p_hex) {
 }
 
 static int _parse_col4(const String& p_str, int p_ofs) {
-	char character = p_str[p_ofs];
+	char32_t character = p_str[p_ofs];
+	
 
 	if (character >= '0' && character <= '9') {
 		return character - '0';

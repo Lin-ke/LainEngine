@@ -108,13 +108,12 @@ void Char16String::copy_from(const char16_t* p_cstr) {
 	const char16_t* s = p_cstr;
 	for (; *s; s++) {
 	}
-	size_t len = s - p_cstr;
+	int len = static_cast<int>(s - p_cstr);
 
 	if (len == 0) {
 		resize(0);
 		return;
 	}
-
 	Error err = resize(++len); // include terminating null char
 
 	ERR_FAIL_COND_MSG(err != OK, "Failed to copy char16_t string.");
@@ -254,7 +253,7 @@ Error String::parse_url(String& r_scheme, String& r_host, int& r_port, String& r
 		if (!base.is_valid_int()) {
 			return ERR_INVALID_PARAMETER;
 		}
-		r_port = base.to_int();
+		r_port = static_cast<i32>  (base.to_int());
 		if (r_port < 1 || r_port > 65535) {
 			return ERR_INVALID_PARAMETER;
 		}
@@ -509,7 +508,7 @@ String& String::operator+=(const char* p_str) {
 	const int lhs_len = length();
 	const size_t rhs_len = strlen(p_str);
 
-	resize(lhs_len + rhs_len + 1);
+	resize(static_cast<int>(lhs_len + rhs_len + 1));
 
 	char32_t* dst = ptrw() + lhs_len;
 
@@ -1010,7 +1009,12 @@ const char32_t* String::get_data() const {
 	static const char32_t zero = 0;
 	return size() ? &operator[](0) : &zero;
 }
-
+const char32_t String::front() const {
+	return get_data()[0];
+}
+const char32_t String::back() const {
+	return get_data()[size() - 1];
+}
 String String::_camelcase_to_underscore() const {
 	const char32_t* cstr = get_data();
 	String new_string;
@@ -1351,7 +1355,7 @@ Vector<float> String::split_floats_mk(const Vector<String>& p_splitters, bool p_
 		}
 
 		if (p_allow_empty || (end > from)) {
-			ret.push_back(String::to_float(&get_data()[from]));
+			ret.push_back(static_cast<float>(String::to_float(&get_data()[from])));
 		}
 
 		if (end == len) {
@@ -1375,7 +1379,7 @@ Vector<int> String::split_ints(const String& p_splitter, bool p_allow_empty) con
 			end = len;
 		}
 		if (p_allow_empty || (end > from)) {
-			ret.push_back(String::to_int(&get_data()[from], end - from));
+			ret.push_back(static_cast<int>(String::to_int(&get_data()[from], end - from)));
 		}
 
 		if (end == len) {
@@ -3329,7 +3333,7 @@ int String::rfindn(const String& p_str, int p_from) const {
 int String::find_first_not_of(const char* p_pattern, int index) const {
 	if (p_pattern == nullptr || p_pattern == "") { return -1; }
 	int i = 0, j = 0;
-	int tmp_len = std::strlen(p_pattern);
+	int tmp_len = static_cast<int>(std::strlen(p_pattern));
 	const char* p_str = this->utf8().get_data();
 	for (i = index; i < length(); i++)
 	{
@@ -3345,11 +3349,10 @@ int String::find_first_not_of(const char* p_pattern, int index) const {
 		return -1;// 未找到，// 依据跳出的内层for的条件推断。找到即结束循环
 	return i;
 }
-
 int String::find_last_not_of(const char* p_pattern, int index) const {
 	if (p_pattern == nullptr || p_pattern == "") { return -1; }
 	int i = 0, j = 0;
-	int tmp_len = std::strlen(p_pattern);
+	int tmp_len = static_cast<int> (std::strlen(p_pattern));
 	const char* p_str = this->utf8().get_data();
 	if (index < 0) index += length(); // 注意可能有-很大的情况
 	for (i = index - tmp_len; i >= 0; i--)
@@ -4710,7 +4713,7 @@ bool String::is_valid_ip_address() const {
 			if (!n.is_valid_int()) {
 				return false;
 			}
-			int val = n.to_int();
+			int val = static_cast<i32>(n.to_int());
 			if (val < 0 || val > 255) {
 				return false;
 			}
@@ -5356,7 +5359,7 @@ Vector<uint8_t> String::to_utf8_buffer() const {
 	CharString charstr = s->utf8();
 
 	Vector<uint8_t> retval;
-	size_t len = charstr.length();
+	int len = charstr.length();
 	retval.resize(len);
 	uint8_t* w = retval.ptrw();
 	memcpy(w, charstr.ptr(), len);
@@ -5372,7 +5375,7 @@ Vector<uint8_t> String::to_utf16_buffer() const {
 	Char16String charstr = s->utf16();
 
 	Vector<uint8_t> retval;
-	size_t len = charstr.length() * sizeof(char16_t);
+	int len = static_cast<int>(charstr.length() * sizeof(char16_t));
 	retval.resize(len);
 	uint8_t* w = retval.ptrw();
 	memcpy(w, (const void*)charstr.ptr(), len);

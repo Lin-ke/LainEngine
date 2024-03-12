@@ -6,8 +6,6 @@
 #include "core/object/refcounted.h"
 #include <filesystem>
 namespace lain {
-
-	// 用于与文件系统进行交互的类
 	class DirAccess: public RefCounted {
 		//  CreateFunc 定义为一个函数指针类型，该函数返回一个 Ref<DirAccess> 对象
 
@@ -51,4 +49,3 @@ namespace lain {
 }
 
 #endif // !__DIR_ACCESS_H__
-/// c++ tips: 子类（B）中可以用A::访问父类的方法

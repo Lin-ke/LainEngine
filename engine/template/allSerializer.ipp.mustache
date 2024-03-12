@@ -28,9 +28,9 @@ namespace lain{
         if(!json_context["{{class_field_display_name}}"].is_null()){
             {{#class_field_is_vector}}assert(json_context["{{class_field_display_name}}"].is_array());
             Json::array array_{{class_field_name}} = json_context["{{class_field_display_name}}"].array_items();
-            instance.{{class_field_name}}.resize(array_{{class_field_name}}.size());
+            instance.{{class_field_name}}.resize(static_cast<int>(array_{{class_field_name}}.size()));
             for (size_t index=0; index < array_{{class_field_name}}.size();++index){
-                Serializer::read(array_{{class_field_name}}[index], instance.{{class_field_name}}{{#class_field_is_cow_vector}}.write{{/class_field_is_cow_vector}}[index]);
+                Serializer::read(array_{{class_field_name}}[index], instance.{{class_field_name}}{{#class_field_is_cow_vector}}.write{{/class_field_is_cow_vector}}[{{#class_field_is_cow_vector}}static_cast<int>(index){{/class_field_is_cow_vector}}{{^class_field_is_cow_vector}}index{{/class_field_is_cow_vector}}]);
             }{{/class_field_is_vector}}{{^class_field_is_vector}}Serializer::read(json_context["{{class_field_display_name}}"], instance.{{class_field_name}});{{/class_field_is_vector}}
         }{{/class_field_defines}}
         return instance;

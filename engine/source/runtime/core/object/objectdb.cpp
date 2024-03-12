@@ -42,7 +42,7 @@ namespace lain{
 		id |= uint64_t(slot);
 
 		if (p_object->is_ref_counted()) {
-			id |= OBJECTDB_REFERENCE_BIT;
+			id |= OBJECTDB_refERENCE_BIT;
 		}
 
 		slot_count++;

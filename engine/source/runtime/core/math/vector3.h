@@ -369,7 +369,7 @@ namespace lain
                 if (fallback_axis != Vector3::ZERO)
                 {
                     // rotate 180 degrees about the fall back axis
-                    q.fromAngleAxis(Radian(Math_PI), fallback_axis);
+                    q.fromAngleAxis(Radian(Math_PIF), fallback_axis);
                 }
                 else
                 {
@@ -378,7 +378,7 @@ namespace lain
                     if (axis.isZeroLength()) // pick another if collinear
                         axis = Vector3::UNIT_Y.crossProduct(*this);
                     axis.normalise();
-                    q.fromAngleAxis(Radian(Math_PI), axis);
+                    q.fromAngleAxis(Radian(Math_PIF), axis);
                 }
             }
             else

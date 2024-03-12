@@ -12,7 +12,7 @@ namespace lain
     char& Serializer::read(const Json& json_context, char& instance)
     {
         assert(json_context.is_number());
-        return instance = json_context.number_value();
+        return instance = static_cast<char>(json_context.number_value());
     }
 
     template<>
