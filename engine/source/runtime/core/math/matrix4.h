@@ -564,8 +564,8 @@ namespace lain
                 up = Vector3(0, 1, 0);
             }
 
-            Vector3 left = up.crossProduct(normal);
-            up           = normal.crossProduct(left);
+            Vector3 left = up.cross(normal);
+            up           = normal.cross(left);
 
             left.normalise();
             up.normalise();

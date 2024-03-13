@@ -14,14 +14,22 @@ if (os.ishost("linux")) then
     sysinclude = nil
 end
  -- generate precompile.json
- 
+
+if (not os.isdir("./_generated")) then
+    os.mkdir("./_generated")
+end
 project "PreCompile"
         targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
         objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
       kind "Utility"
+      files 
+      {  ("./_generated/**.h") ,
+         ("./_generated/**.cpp") 
+      }
       links {
           "Parser",
        }
+       
 
        -- may call some python to generate .json
        postbuildcommands {

@@ -15,25 +15,14 @@ namespace lain {
 		CLASS(Object, WhiteListFields)
 	{
 		REFLECTION_BODY(Object);
+		class Connection;
 	public:
 		Object() {}
 		Object(ObjectID id) { m_instance_id = id; m_type_is_reference = false; }
 		Object::Object(bool p_reference) {
 			_construct_object(p_reference);
 		}
-	struct Connection {
-		Signal signal;
-		Callable callable;
-
-		uint32_t flags = 0;
-		bool operator<(const Connection& p_conn) const;
-
-		operator Variant() const;
-
-		Connection() {}
-		Connection(const Variant& p_variant);
-
-	};
+	
 	L_INLINE bool is_ref_counted() const { return m_type_is_reference; }
 	ObjectID get_instance_id() const { return m_instance_id; }
 private:
@@ -55,7 +44,24 @@ private:
 	// for gc
 	
 	};
+	// signal mechanism
+	REFLECTION_TYPE(Connection)
+		CLASS(Connection, Fields) {
+		REFLECTION_BODY(Connection);
+	public:
+	
+	Signal signal;
+	Callable callable; // 什么类型的什么方法
 
+	uint32_t flags = 0;
+	bool operator<(const Connection & p_conn) const;
+
+	operator Variant() const;
+
+	Connection() {}
+	Connection(const Variant & p_variant);
+
+	};
 }
 // const 限定符是必要的，因为const对象拒绝调用非const方法
 

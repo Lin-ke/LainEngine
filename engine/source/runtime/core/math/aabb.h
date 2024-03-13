@@ -101,6 +101,8 @@ struct _NO_DISCARD_ AABB {
 		position(p_pos),
 		size(p_size) {
 	}
+
+
 };
 
 inline bool AABB::intersects(const AABB& p_aabb) const {
@@ -236,10 +238,10 @@ bool AABB::intersects_convex_shape(const Plane* p_planes, int p_plane_count, con
 
 	for (int k = 0; k < 3; k++) {
 		for (int i = 0; i < p_point_count; i++) {
-			if (p_points[i].coord[k] > ofs.coord[k] + half_extents.coord[k]) {
+			if (p_points[i][k] > ofs[k] + half_extents[k]) {
 				bad_point_counts_positive[k]++;
 			}
-			if (p_points[i].coord[k] < ofs.coord[k] - half_extents.coord[k]) {
+			if (p_points[i][k] < ofs[k] - half_extents[k]) {
 				bad_point_counts_negative[k]++;
 			}
 		}

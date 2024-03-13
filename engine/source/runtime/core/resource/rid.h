@@ -4,6 +4,8 @@
 
 #include "base.h"
 #include "core/templates/safe_numeric.h"
+namespace lain {
+	// thread safety allocator
 class RIDAllocator {
 public:
 	L_INLINE static u64 Alloc() {
@@ -52,5 +54,6 @@ public:
 
 	_ALWAYS_INLINE_ RID() {}
 };
+}
 
 #endif // RID_H

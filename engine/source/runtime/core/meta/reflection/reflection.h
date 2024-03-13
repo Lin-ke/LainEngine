@@ -1,4 +1,6 @@
 #pragma once
+#ifndef REFLECTION_H
+#define REFLECTION_H
 #include "runtime/core/meta/json.h"
 #include "runtime/core/templates/vector.h"
 #include "core/string/ustring.h"
@@ -380,3 +382,4 @@ namespace lain
     } // namespace Reflection
 
 } // namespace lain
+#endif

@@ -124,6 +124,9 @@
     <ClInclude Include="core\mainloop\main.h">
       <Filter>core\mainloop</Filter>
     </ClInclude>
+    <ClInclude Include="core\math\aabb.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
     <ClInclude Include="core\math\axis_aligned.h">
       <Filter>core\math</Filter>
     </ClInclude>
@@ -152,6 +155,9 @@
       <Filter>core\math</Filter>
     </ClInclude>
     <ClInclude Include="core\math\ok_color.h">
+      <Filter>core\math</Filter>
+    </ClInclude>
+    <ClInclude Include="core\math\plane.h">
       <Filter>core\math</Filter>
     </ClInclude>
     <ClInclude Include="core\math\quaternion.h">
@@ -421,8 +427,8 @@
     <ClInclude Include="resource\manager\resource_manager.h">
       <Filter>resource\manager</Filter>
     </ClInclude>
-    <ClInclude Include="core\math\aabb.h" />
-    <ClInclude Include="core\math\plane.h" />
+    <ClInclude Include="core\templates\local_vector.h" />
+    <ClInclude Include="core\meta\register_othertypes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\config\project_settings.cpp">
@@ -442,6 +448,9 @@
     </ClCompile>
     <ClCompile Include="core\mainloop\main.cpp">
       <Filter>core\mainloop</Filter>
+    </ClCompile>
+    <ClCompile Include="core\math\AABB.cpp">
+      <Filter>core\math</Filter>
     </ClCompile>
     <ClCompile Include="core\math\axis_aligned.cpp">
       <Filter>core\math</Filter>
@@ -590,6 +599,5 @@
     <ClCompile Include="resource\component\transform_component.cpp">
       <Filter>resource\component</Filter>
     </ClCompile>
-    <ClCompile Include="core\math\AABB.cpp" />
   </ItemGroup>
 </Project>

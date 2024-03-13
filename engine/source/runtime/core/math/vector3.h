@@ -8,6 +8,7 @@
 
 namespace lain
 {
+    class String;
     class Vector3i;
     REFLECTION_TYPE(Vector3)
     CLASS(Vector3, Fields)
@@ -15,15 +16,15 @@ namespace lain
         REFLECTION_BODY(Vector3);
         friend class Vector3i;
     public:
-        real_t x {0.f};
-        real_t y {0.f};
-        real_t z {0.f};
+        real_t x;
+        real_t y;
+        real_t z;
 
     public:
         Vector3() = default;
         Vector3(real_t x_, real_t y_, real_t z_) : x {x_}, y {y_}, z {z_} {}
         Vector3(const Vector3i& p_v);
-        explicit Vector3(const real_t coords[3]) : x {coords[0]}, y {coords[1]}, z {coords[2]} {}
+        operator String() const;
 
         real_t operator[](size_t i) const
         {
@@ -255,6 +256,9 @@ namespace lain
             y *= inv_lengh;
             z *= inv_lengh;
         }
+        L_INLINE void normalize() {
+            normalise();
+        }
 
         /** Calculates the cross-product of 2 vectors, i.e. the vector that
         lies perpendicular to them both.
@@ -272,8 +276,8 @@ namespace lain
         - call Vector3::normalise on the result if you wish this to
         be done. As for which side the resultant vector will be on, the
         returned vector will be on the side from which the arc from 'this'
-        to rkVector is anticlockwise, e.g. UNIT_Y.crossProduct(UNIT_Z)
-        = UNIT_X, whilst UNIT_Z.crossProduct(UNIT_Y) = -UNIT_X.
+        to rkVector is anticlockwise, e.g. UNIT_Y.cross(UNIT_Z)
+        = UNIT_X, whilst UNIT_Z.cross(UNIT_Y) = -UNIT_X.
         This is because CHAOS uses a right-handed coordinate system.
         @par
         For a clearer explanation, look a the left and the bottom edges
@@ -285,9 +289,14 @@ namespace lain
         (assuming you're using a CRT monitor, of course).
         */
 
-        Vector3 crossProduct(const Vector3& rhs) const
-        {
-            return Vector3(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x);
+
+        Vector3 Vector3::cross(const Vector3& p_with) const {
+            Vector3 ret(
+                (y * p_with.z) - (z * p_with.y),
+                (z * p_with.x) - (x * p_with.z),
+                (x * p_with.y) - (y * p_with.x));
+
+            return ret;
         }
 
         /** Sets this vector's components to the minimum of its own and the
@@ -377,9 +386,9 @@ namespace lain
                 else
                 {
                     // Generate an axis
-                    Vector3 axis = Vector3::UNIT_X.crossProduct(*this);
+                    Vector3 axis = Vector3::UNIT_X.cross(*this);
                     if (axis.isZeroLength()) // pick another if collinear
-                        axis = Vector3::UNIT_Y.crossProduct(*this);
+                        axis = Vector3::UNIT_Y.cross(*this);
                     axis.normalise();
                     q.fromAngleAxis(Radian(Math_PIF), axis);
                 }
@@ -389,7 +398,7 @@ namespace lain
                 real_t s    = Math::sqrt((1 + d) * 2);
                 real_t invs = 1 / s;
 
-                Vector3 c = v0.crossProduct(v1);
+                Vector3 c = v0.cross(v1);
 
                 q.x = c.x * invs;
                 q.y = c.y * invs;
@@ -444,6 +453,22 @@ namespace lain
 
         static real_t getMaxElement(const Vector3& v) { return Math::getMaxElement(v.x, v.y, v.z); }
         bool         isNaN() const { return Math::isNan(x) || Math::isNan(y) || Math::isNan(z); }
+
+        bool is_equal_approx(const Vector3& p_v) const {
+            return Math::is_equal_approx(x, p_v.x) && Math::is_equal_approx(y, p_v.y) && Math::is_equal_approx(z, p_v.z);
+        }
+
+        bool is_finite() const {
+            return Math::is_finite(x) && Math::is_finite(y) && Math::is_finite(z) && !is_nan();
+        }
+        bool is_nan() const {
+            return Math::isNan(x) || Math::isNan(y) || Math::isNan(z);
+        }
+
+        Vector3 abs() const {
+            return Vector3(Math::abs(x), Math::abs(y), Math::abs(z));
+        }
+        
         // special points
         static const Vector3 ZERO;
         static const Vector3 UNIT_X;

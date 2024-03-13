@@ -15,8 +15,7 @@
 #include <platform/io/os_windows.h>
 #include "core/string/ustring.h"
 using namespace lain;
-int YminusA(int a, Vector2& obj);
-void TryERR_FAIL_INDEX();
+int YminusA(float a, Vector3& obj);
 
 
 int main(int argc, char** argv) {
@@ -25,21 +24,22 @@ int main(int argc, char** argv) {
 	OSWin os = OSWin();
 
 	OSWin::GetSingleton()->Run();
+	YminusA(12, Vector3{ 12,3,4 });
+
 	
 }
 
 
-int YminusA(int a, Vector2& obj) {
-	auto meta = Reflection::TypeMeta::newMetaFromName("Vector2");
+int YminusA(float a, Vector3& obj) {
+	auto meta = Reflection::TypeMeta::newMetaFromName("Vector3");
 	if (!meta.isValid()) {
 		L_ERROR("meta is not valid");
 	}
-	auto field_accessor = meta.getFieldByName("x");
-	float b = 16;
+	auto field_accessor = meta.getFieldByName("y");
 	if (field_accessor.isValid()) {
 		L_INFO("valid");
 		// set
-		field_accessor.set((void*)&obj, (float *)&b);
+		field_accessor.set((void*)&obj, (float *)&a);
 		L_JSON(obj);
 	}
 	else {

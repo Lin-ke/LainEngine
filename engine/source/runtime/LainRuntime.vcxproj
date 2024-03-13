@@ -119,6 +119,7 @@
     <ClInclude Include="core\math\matrix3.h" />
     <ClInclude Include="core\math\matrix4.h" />
     <ClInclude Include="core\math\ok_color.h" />
+    <ClInclude Include="core\math\plane.h" />
     <ClInclude Include="core\math\quaternion.h" />
     <ClInclude Include="core\math\random.h" />
     <ClInclude Include="core\math\random_pcg.h" />
@@ -133,6 +134,7 @@
     <ClInclude Include="core\meta\reflection\reflection.h" />
     <ClInclude Include="core\meta\reflection\reflection_register.h" />
     <ClInclude Include="core\meta\reflection\type_info.h" />
+    <ClInclude Include="core\meta\register_othertypes.h" />
     <ClInclude Include="core\meta\serializer\serializer.h" />
     <ClInclude Include="core\object\gobject.h" />
     <ClInclude Include="core\object\object.h" />
@@ -170,6 +172,7 @@
     <ClInclude Include="core\templates\hash_map.h" />
     <ClInclude Include="core\templates\hash_set.h" />
     <ClInclude Include="core\templates\list.h" />
+    <ClInclude Include="core\templates\local_vector.h" />
     <ClInclude Include="core\templates\page_allocator.h" />
     <ClInclude Include="core\templates\pair.h" />
     <ClInclude Include="core\templates\rb_map.h" />
@@ -196,7 +199,6 @@
     <ClInclude Include="function\ui\window_ui.h" />
     <ClInclude Include="io\resource.h" />
     <ClInclude Include="io\resource_load.h" />
-    <ClInclude Include="core\math\plane.h" />
     <ClInclude Include="platform\io\dir_access_windows.h" />
     <ClInclude Include="platform\io\file_access_windows.h" />
     <ClInclude Include="platform\io\os_windows.h" />

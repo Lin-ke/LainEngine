@@ -284,7 +284,7 @@ namespace lain
         in a single inting point value which is 2 times the area of the triangle.
         */
 
-        int crossProduct(const Vector2i & rhs) const { return x * rhs.y - y * rhs.x; }
+        int cross(const Vector2i & rhs) const { return x * rhs.y - y * rhs.x; }
 
         /** Returns true if this vector is zero length. */
         bool isZeroLength(void) const

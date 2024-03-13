@@ -24,7 +24,6 @@ namespace lain
         Vector3i() = default;
         Vector3i(int32_t x_, int32_t y_, int32_t z_) : x{ x_ }, y{ y_ }, z{ z_ } {}
 
-        explicit Vector3i(const int coords[3]) : x{ coords[0] }, y{ coords[1] }, z{ coords[2] } {}
 
         int32_t operator[](size_t i) const
         {

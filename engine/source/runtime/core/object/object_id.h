@@ -3,6 +3,8 @@
 
 #include "core/typedefs.h"
 
+#include "runtime/core/meta/reflection/reflection.h"
+
 // Class to store an object ID (int64)
 // needs to be compatile with int64 because this is what Variant uses
 // Also, need to be explicitly only castable to 64 bits integer types
@@ -10,8 +12,10 @@
 
 // ²»ÓÃs_u64Âð
 namespace lain {
-
-class ObjectID {
+	REFLECTION_TYPE(ObjectID)
+	CLASS(ObjectID, Fields)
+	{
+		REFLECTION_BODY(ObjectID);
 	uint64_t id = 0;
 
 public:

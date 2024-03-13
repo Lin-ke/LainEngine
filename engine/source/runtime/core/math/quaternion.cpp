@@ -145,7 +145,7 @@ namespace lain
         forward_direction.z       = 0.0f;
         forward_direction.normalise();
 
-        Vector3 left_direction = up_direction.crossProduct(forward_direction);
+        Vector3 left_direction = up_direction.cross(forward_direction);
 
         fromAxes(left_direction, -forward_direction, up_direction);
         normalise();
@@ -271,8 +271,8 @@ namespace lain
         // nVidia SDK implementation
         Vector3 uv, uuv;
         Vector3 qvec(x, y, z);
-        uv  = qvec.crossProduct(v);
-        uuv = qvec.crossProduct(uv);
+        uv  = qvec.cross(v);
+        uuv = qvec.cross(uv);
         uv *= (2.0f * w);
         uuv *= 2.0f;
 

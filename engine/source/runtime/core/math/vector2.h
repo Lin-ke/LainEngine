@@ -299,7 +299,7 @@ namespace lain
         in a single floating point value which is 2 times the area of the triangle.
         */
 
-        float crossProduct(const Vector2& rhs) const { return x * rhs.y - y * rhs.x; }
+        float cross(const Vector2& rhs) const { return x * rhs.y - y * rhs.x; }
 
         /** Returns true if this vector is zero length. */
         bool isZeroLength(void) const

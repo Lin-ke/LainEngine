@@ -48,7 +48,7 @@ bool AABB::is_equal_approx(const AABB& p_aabb) const {
 }
 
 bool AABB::is_finite() const {
-	return position.is_finite() && size.is_finite();
+	return !(position.isNaN()) && !size.isNaN() && position.is_finite() && size.is_finite();
 }
 
 AABB AABB::intersection(const AABB& p_aabb) const {
@@ -96,6 +96,10 @@ bool AABB::intersects_ray(const Vector3& p_from, const Vector3& p_dir, Vector3* 
 	if (unlikely(size.x < 0 || size.y < 0 || size.z < 0)) {
 		ERR_PRINT("AABB size is negative, this is not supported. Use AABB.abs() to get an AABB with a positive size.");
 	}
+#endif
+#ifdef _MINWINDEF_
+#undef near
+#undef far
 #endif
 	Vector3 c1, c2;
 	Vector3 end = position + size;

@@ -117,8 +117,8 @@ namespace lain
         const Vector3& up = up_dir.normalisedCopy();
 
         Vector3 f = (target_position - eye_position).normalisedCopy();
-        Vector3 s = f.crossProduct(up).normalisedCopy();
-        Vector3 u = s.crossProduct(f);
+        Vector3 s = f.cross(up).normalisedCopy();
+        Vector3 u = s.cross(f);
 
         Matrix4x4 view_mat = Matrix4x4::IDENTITY;
 

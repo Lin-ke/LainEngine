@@ -5,7 +5,8 @@
 namespace lain{
 	class Object;
 	class Variant;
-class Signal {
+	REFLECTION_TYPE(Signal)
+CLASS(Signal, Fields)  {
 	alignas(8) StringName name;
 	ObjectID object;
 	
