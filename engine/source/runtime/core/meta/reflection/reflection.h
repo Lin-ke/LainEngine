@@ -12,6 +12,9 @@
 namespace lain
 {
 
+#define REFLECTABLE_TYPE(class_name)\
+    friend class Serializer;
+
 #if defined(__REFLECTION_PARSER__)
 #define META(...) __attribute__((annotate(#__VA_ARGS__)))
 #define CLASS(class_name, ...) class __attribute__((annotate(#__VA_ARGS__))) class_name

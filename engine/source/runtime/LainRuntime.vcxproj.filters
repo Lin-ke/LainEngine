@@ -202,6 +202,9 @@
     <ClInclude Include="core\meta\reflection\type_info.h">
       <Filter>core\meta\reflection</Filter>
     </ClInclude>
+    <ClInclude Include="core\meta\register_othertypes.h">
+      <Filter>core\meta</Filter>
+    </ClInclude>
     <ClInclude Include="core\meta\serializer\serializer.h">
       <Filter>core\meta\serializer</Filter>
     </ClInclude>
@@ -311,6 +314,9 @@
       <Filter>core\templates</Filter>
     </ClInclude>
     <ClInclude Include="core\templates\list.h">
+      <Filter>core\templates</Filter>
+    </ClInclude>
+    <ClInclude Include="core\templates\local_vector.h">
       <Filter>core\templates</Filter>
     </ClInclude>
     <ClInclude Include="core\templates\page_allocator.h">
@@ -427,8 +433,6 @@
     <ClInclude Include="resource\manager\resource_manager.h">
       <Filter>resource\manager</Filter>
     </ClInclude>
-    <ClInclude Include="core\templates\local_vector.h" />
-    <ClInclude Include="core\meta\register_othertypes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\config\project_settings.cpp">

@@ -5,6 +5,7 @@
 #include "core/templates/safe_numeric.h"
 #include "core/object/safe_refcount.h"
 #include "core/string/ustring.h"
+#include "core/meta/reflection/reflection.h"
 #define UNIQUE_NODE_PREFIX "%"
 //https://docs.godotengine.org/en/stable/classes/class_stringname.html
 // For compare speed
@@ -21,8 +22,8 @@ namespace lain {
 		STRING_TABLE_LEN = 1 << STRING_TABLE_BITS,
 		STRING_TABLE_MASK = STRING_TABLE_LEN - 1
 	};
-
 	class StringName {
+		REFLECTABLE_TYPE(StringName);
 		struct _Data
 		{
 			SafeRefCount refcount;
