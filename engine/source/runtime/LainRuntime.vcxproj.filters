@@ -31,6 +31,9 @@
     <Filter Include="core\meta">
       <UniqueIdentifier>{04A35FA5-700D-141C-B94B-C5C125F5F170}</UniqueIdentifier>
     </Filter>
+    <Filter Include="core\meta\others">
+      <UniqueIdentifier>{683A5DCD-5433-7C1F-7D65-61A469BD5B2B}</UniqueIdentifier>
+    </Filter>
     <Filter Include="core\meta\reflection">
       <UniqueIdentifier>{5E13BAB0-4AA2-437A-F3C0-5775DF2E5420}</UniqueIdentifier>
     </Filter>
@@ -193,6 +196,18 @@
     <ClInclude Include="core\meta\meta_example.h">
       <Filter>core\meta</Filter>
     </ClInclude>
+    <ClInclude Include="core\meta\others\manual_reflection.h">
+      <Filter>core\meta\others</Filter>
+    </ClInclude>
+    <ClInclude Include="core\meta\others\manual_serializer.h">
+      <Filter>core\meta\others</Filter>
+    </ClInclude>
+    <ClInclude Include="core\meta\others\stringname.reflection.h">
+      <Filter>core\meta\others</Filter>
+    </ClInclude>
+    <ClInclude Include="core\meta\others\stringname.serializer.h">
+      <Filter>core\meta\others</Filter>
+    </ClInclude>
     <ClInclude Include="core\meta\reflection\reflection.h">
       <Filter>core\meta\reflection</Filter>
     </ClInclude>
@@ -202,7 +217,7 @@
     <ClInclude Include="core\meta\reflection\type_info.h">
       <Filter>core\meta\reflection</Filter>
     </ClInclude>
-    <ClInclude Include="core\meta\register_othertypes.h">
+    <ClInclude Include="core\meta\reflection\reflection_register_others.h">
       <Filter>core\meta</Filter>
     </ClInclude>
     <ClInclude Include="core\meta\serializer\serializer.h">
@@ -261,6 +276,9 @@
     </ClInclude>
     <ClInclude Include="core\os\time_enums.h">
       <Filter>core\os</Filter>
+    </ClInclude>
+    <ClInclude Include="core\register_core_types.h">
+      <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="core\resource\res_importer.h">
       <Filter>core\resource</Filter>
@@ -533,6 +551,9 @@
     </ClCompile>
     <ClCompile Include="core\os\pool_allocator.cpp">
       <Filter>core\os</Filter>
+    </ClCompile>
+    <ClCompile Include="core\register_core_types.cpp">
+      <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="core\resource\res_manager.cpp">
       <Filter>core\resource</Filter>

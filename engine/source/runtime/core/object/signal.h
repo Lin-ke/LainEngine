@@ -5,15 +5,16 @@
 namespace lain{
 	class Object;
 	class Variant;
+	class StringName;
 	REFLECTION_TYPE(Signal)
-CLASS(Signal, Fields)  {
-	alignas(8) StringName name;
+	CLASS(Signal, Fields)  {
+		REFLECTION_BODY(Signal)
+	alignas(8)
+	StringName name;
 	ObjectID object;
 	
 	public:
-		_FORCE_INLINE_ bool is_null() const {
-			return object.is_null() && name == StringName();
-		}
+		_FORCE_INLINE_ bool is_null() const;
 		Object* get_object() const;
 		_FORCE_INLINE_ ObjectID get_object_id() const { return object; }
 		_FORCE_INLINE_ StringName get_name() const { return name; }

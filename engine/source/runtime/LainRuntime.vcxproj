@@ -131,10 +131,14 @@
     <ClInclude Include="core\math\vector4.h" />
     <ClInclude Include="core\meta\json.h" />
     <ClInclude Include="core\meta\meta_example.h" />
+    <ClInclude Include="core\meta\others\manual_reflection.h" />
+    <ClInclude Include="core\meta\others\manual_serializer.h" />
+    <ClInclude Include="core\meta\others\stringname.reflection.h" />
+    <ClInclude Include="core\meta\others\stringname.serializer.h" />
     <ClInclude Include="core\meta\reflection\reflection.h" />
     <ClInclude Include="core\meta\reflection\reflection_register.h" />
     <ClInclude Include="core\meta\reflection\type_info.h" />
-    <ClInclude Include="core\meta\register_othertypes.h" />
+    <ClInclude Include="core\meta\reflection\reflection_register_others.h" />
     <ClInclude Include="core\meta\serializer\serializer.h" />
     <ClInclude Include="core\object\gobject.h" />
     <ClInclude Include="core\object\object.h" />
@@ -154,6 +158,7 @@
     <ClInclude Include="core\os\spin_lock.h" />
     <ClInclude Include="core\os\thread_safe.h" />
     <ClInclude Include="core\os\time_enums.h" />
+    <ClInclude Include="core\register_core_types.h" />
     <ClInclude Include="core\resource\res_importer.h" />
     <ClInclude Include="core\resource\resource.h" />
     <ClInclude Include="core\resource\resource_uid.h" />
@@ -246,6 +251,7 @@
     <ClCompile Include="core\os\mutex.cpp" />
     <ClCompile Include="core\os\os.cpp" />
     <ClCompile Include="core\os\pool_allocator.cpp" />
+    <ClCompile Include="core\register_core_types.cpp" />
     <ClCompile Include="core\resource\res_manager.cpp" />
     <ClCompile Include="core\resource\resource.cpp" />
     <ClCompile Include="core\resource\resource_uid.cpp" />

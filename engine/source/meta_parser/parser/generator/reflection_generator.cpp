@@ -1,6 +1,5 @@
 #include "common/precompiled.h"
 #include "generator/reflection_generator.h"
-
 #include "language_types/class.h"
 #include "template_manager/template_manager.h"
 

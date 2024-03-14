@@ -5,6 +5,7 @@
 #include "runtime/core/math/transform.h"
 #include "runtime/core/meta/reflection/reflection.h"
 #include "core/templates/vector.h"
+#include "core/string/ustring.h"
 namespace lain
 {
     REFLECTION_TYPE(SubMeshRes)
@@ -13,9 +14,9 @@ namespace lain
         REFLECTION_BODY(SubMeshRes);
 
     public:
-        std::string m_obj_file_ref;
+        String m_obj_file_ref;
         Transform   m_transform;
-        std::string m_material;
+        String m_material;
     };
 
     REFLECTION_TYPE(MeshComponentRes)

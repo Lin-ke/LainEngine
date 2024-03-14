@@ -1,5 +1,10 @@
 #pragma once
+#ifndef ALL_SERIALIZER_H
+#define ALL_SERIALIZER_H
 #include "runtime/core/meta/serializer/serializer.h"
 {{#include_headfiles}}
 #include "{{headfile_name}}"
 {{/include_headfiles}}
+#include "core/meta/others/manual_serializer.h"
+
+#endif

@@ -9,13 +9,31 @@
 #include "core/templates/hash_map.h"
 #include "core/math/hashfuncs.h"
 #include "core/meta/reflection/reflection.h"
+#include "core/object/object_id.h"
 // base class of all object
 namespace lain {
+	// signal mechanism
+	REFLECTION_TYPE(Connection)
+		CLASS(Connection, WhiteListFields) {
+		REFLECTION_BODY(Connection);
+public:
+	META(Enable)
+		Signal signal;
+	Callable callable; // 什么类型的什么方法
+
+	uint32_t flags = 0;
+	bool operator<(const Connection & p_conn) const;
+
+	operator Variant() const;
+
+	Connection() {}
+	Connection(const Variant & p_variant);
+
+	};
 	REFLECTION_TYPE(Object)
 		CLASS(Object, WhiteListFields)
 	{
 		REFLECTION_BODY(Object);
-		class Connection;
 	public:
 		Object() {}
 		Object(ObjectID id) { m_instance_id = id; m_type_is_reference = false; }
@@ -44,25 +62,8 @@ private:
 	// for gc
 	
 	};
-	// signal mechanism
-	REFLECTION_TYPE(Connection)
-		CLASS(Connection, Fields) {
-		REFLECTION_BODY(Connection);
-	public:
-	
-	Signal signal;
-	Callable callable; // 什么类型的什么方法
-
-	uint32_t flags = 0;
-	bool operator<(const Connection & p_conn) const;
-
-	operator Variant() const;
-
-	Connection() {}
-	Connection(const Variant & p_variant);
-
-	};
 }
+
 // const 限定符是必要的，因为const对象拒绝调用非const方法
 
 #endif // !__CORE_OBJECT_H__

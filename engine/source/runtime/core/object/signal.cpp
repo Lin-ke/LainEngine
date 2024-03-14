@@ -1,5 +1,10 @@
 #include "signal.h"
+#include "core/string/string_name.h"
 namespace lain {
+	_FORCE_INLINE_ bool Signal::is_null() const {
+		return object.is_null() && name == StringName();
+	}
+
 	Signal::operator String() const {
 		/*Object* base = get_object();
 		if (base) {

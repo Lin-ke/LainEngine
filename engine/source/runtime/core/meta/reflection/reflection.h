@@ -4,6 +4,7 @@
 #include "runtime/core/meta/json.h"
 #include "runtime/core/templates/vector.h"
 #include "core/string/ustring.h"
+#include "core/os/memory.h"
 #include <functional>
 #include <string>
 #include <unordered_map>
@@ -62,8 +63,8 @@ namespace lain
                                             (class_name*)ptr)
 
 #define TypeMetaDefPtr(class_name, ptr) \
-    new lain::Reflection::ReflectionInstance(lain::Reflection::TypeMeta::newMetaFromName(#class_name), \
-                                                (class_name*)ptr)
+    memnew(lain::Reflection::ReflectionInstance(lain::Reflection::TypeMeta::newMetaFromName(#class_name), \
+                                                (class_name*)ptr))
 
     template<typename T, typename U, typename = void>
     struct is_safely_castable : std::false_type

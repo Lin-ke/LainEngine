@@ -7,7 +7,6 @@
 #include "core/string/ustring.h"
 #include "core/meta/reflection/reflection.h"
 #define UNIQUE_NODE_PREFIX "%"
-//https://docs.godotengine.org/en/stable/classes/class_stringname.html
 // For compare speed
 
 

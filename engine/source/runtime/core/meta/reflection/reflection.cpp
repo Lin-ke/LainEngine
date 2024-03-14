@@ -1,4 +1,5 @@
 #include "reflection.h"
+#include "core/os/memory.h"
 #include <cstring>
 #include <map>
 
@@ -30,7 +31,7 @@ namespace lain
             }
             else
             {
-                delete value;
+                memdelete(value);
             }
         }
 
@@ -42,7 +43,7 @@ namespace lain
             }
             else
             {
-                delete value;
+                memdelete(value);
             }
         }
 
@@ -50,17 +51,17 @@ namespace lain
         {
             for (const auto& itr : m_field_map)
             {
-                delete itr.second;
+                memdelete(itr.second);
             }
             m_field_map.clear();
             for (const auto& itr : m_class_map)
             {
-                delete itr.second;
+                memdelete(itr.second);
             }
             m_class_map.clear();
             for (const auto& itr : m_array_map)
             {
-                delete itr.second;
+                memdelete(itr.second);
             }
             m_array_map.clear();
         }
@@ -140,7 +141,7 @@ namespace lain
         int TypeMeta::getFieldsList(FieldAccessor*& out_list)
         {
             int count = m_fields.size();
-            out_list  = new FieldAccessor[count];
+            out_list  = memnew(FieldAccessor[count]);
             for (int i = 0; i < count; ++i)
             {
                 out_list[i] = m_fields[i];
@@ -151,7 +152,7 @@ namespace lain
         int TypeMeta::getMethodsList(MethodAccessor*& out_list)
         {
             int count = m_methods.size();
-            out_list  = new MethodAccessor[count];
+            out_list  = memnew(MethodAccessor[count]);
             for (int i = 0; i < count; ++i)
             {
                 out_list[i] = m_methods[i];

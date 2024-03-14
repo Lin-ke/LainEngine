@@ -2,9 +2,10 @@
 #include "base.h"
 #include "runtime/core/meta/json.h"
 #include "runtime/core/meta/reflection/reflection.h"
-#include <vector>
 #include "runtime/core/templates/vector.h"
 #include "runtime/core/string/ustring.h"
+#include "core/os/memory.h"
+#include <vector>
 #include <cassert>
 #include <string>
 namespace lain
@@ -29,7 +30,7 @@ namespace lain
             assert(!type_name.empty());
             if ('*' == type_name[0])
             {
-                instance = new T;
+                instance = memnew(T);
                 read(json_context["$context"], *instance);
             }
             else
@@ -56,7 +57,7 @@ namespace lain
             instance.setTypeName(type_name);
             return readPointer(json_context, instance.getPtrReference());
         }
-
+        // pointer T*
         template<typename T>
         static Json write(const T& instance)
         {

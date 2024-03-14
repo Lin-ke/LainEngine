@@ -307,7 +307,7 @@ namespace lain {
 				return hash_fmix32(h);
 			} break;
 			case RID: {
-				return hash_one_uint64(reinterpret_cast<const ::RID*>(_data._mem)->get_id());
+				return hash_one_uint64(reinterpret_cast<const lain::RID*>(_data._mem)->get_id());
 			} break;
 			case OBJECT: {
 				return hash_one_uint64(hash_make_uint64_t(_get_obj().obj));
@@ -594,7 +594,7 @@ namespace lain {
 			return s;
 		}*/
 		case RID: {
-			const ::RID& s = *reinterpret_cast<const ::RID*>(_data._mem);
+			const lain::RID& s = *reinterpret_cast<const lain::RID*>(_data._mem);
 			return "RID(" + itos(s.get_id()) + ")";
 		}
 		default: {
@@ -716,7 +716,7 @@ namespace lain {
 			memnew_placement(_data._mem, Color(*reinterpret_cast<const Color*>(p_variant._data._mem)));
 		} break;
 		case RID: {
-			memnew_placement(_data._mem, ::RID(*reinterpret_cast<const ::RID*>(p_variant._data._mem)));
+			memnew_placement(_data._mem, lain::RID(*reinterpret_cast<const lain::RID*>(p_variant._data._mem)));
 		} break;
 		case OBJECT: {
 			memnew_placement(_data._mem, ObjData);
@@ -894,7 +894,7 @@ namespace lain {
 		//	*reinterpret_cast<Color*>(_data._mem) = *reinterpret_cast<const Color*>(p_variant._data._mem);
 		//} break;
 		//case RID: {
-		//	*reinterpret_cast<::RID*>(_data._mem) = *reinterpret_cast<const ::RID*>(p_variant._data._mem);
+		//	*reinterpret_cast<lain::RID*>(_data._mem) = *reinterpret_cast<const lain::RID*>(p_variant._data._mem);
 		//} break;
 		/*case OBJECT: {
 			if (_get_obj().id.is_ref_counted()) {

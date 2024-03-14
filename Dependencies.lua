@@ -1,7 +1,7 @@
 -- vulkan
 
 VULKAN_SDK = os.getenv("VULKAN_SDK")
-PREMAKE_PATH = "D:\\Lain\\setup\\premake\\premake5.exe"
+PREMAKE_PATH = "%{wks.location}/setup/premake/premake5.exe"
 
 IncludeDir = {}
 prjprefix = "%{wks.location}/engine/source"

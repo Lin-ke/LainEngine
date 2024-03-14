@@ -7,7 +7,7 @@
 
 #include "_generated/reflection/all_reflection.h"
 #include "_generated/serializer/all_serializer.ipp"
-
+#include "core/meta/others/serializer.ipp"
 namespace lain
 {
     namespace Reflection

@@ -86,6 +86,7 @@ namespace lain {
 		}
 		template <bool p_ensure_zero = false>
 		Error resize(int size);
+
 		L_INLINE void clear() { resize(0) };
 		L_INLINE bool is_empty()const { return (m_ptr == nullptr); }
 		int Find(const T& p_val, int p_from = 0) const;
@@ -224,6 +225,7 @@ namespace lain {
 	{
 		_unref((void*)m_ptr);
 	}
+
 
 	template <class T>
 	template <bool p_ensure_zero>

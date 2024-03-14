@@ -1,16 +1,22 @@
 #pragma once
+#ifndef __ALL_REFLECTION_H__
+#define __ALL_REFLECTION_H__
 #include "runtime/core/meta/reflection/reflection.h"
-#include "runtime/core/meta/register_othertypes.h"
 #include "_generated/serializer/all_serializer.h"
 {{#include_headfiles}}
 #include "{{headfile_name}}"
 {{/include_headfiles}}
+#include "core/meta/others/manual_reflection.h"
+#include "runtime/core/meta/reflection/reflection_register_others.h"
+
 
 namespace lain{
 namespace Reflection{
     void TypeMetaRegister::metaRegister(){
         {{#sourefile_names}}TypeWrappersRegister::{{sourefile_name_upper_camel_case}}();
         {{/sourefile_names}}
+	register_other_meta();
     }
 }
 }
+#endif

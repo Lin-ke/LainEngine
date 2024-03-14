@@ -1,7 +1,13 @@
 #pragma once
+{{#class_defines}}
+#ifndef SERIALIZER_{{class_name}}_H
+#define SERIALIZER_{{class_name}}_H
+{{/class_defines}}
+#include "runtime/core/meta/serializer/serializer.h"
 {{#include_headfiles}}
 #include "{{headfile_name}}"
 {{/include_headfiles}}
+
 
 namespace lain{
     {{#class_defines}}template<>
@@ -10,3 +16,6 @@ namespace lain{
     {{class_name}}& Serializer::read(const Json& json_context, {{class_name}}& instance);
     {{/class_defines}}
 }//namespace
+{{#class_defines}}
+#endif
+{{/class_defines}}

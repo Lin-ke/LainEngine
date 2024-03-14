@@ -176,7 +176,7 @@ void CharString::copy_from(const char* p_cstr) {
 		return;
 	}
 
-	size_t len = strlen(p_cstr);
+	int len = static_cast<int>(strlen(p_cstr));
 
 	if (len == 0) {
 		resize(0);
@@ -275,7 +275,7 @@ void String::copy_from(const char* p_cstr) {
 		return;
 	}
 
-	resize(len + 1); // include 0
+	resize(static_cast<int>(len + 1)); // include 0
 
 	char32_t* dst = this->ptrw();
 
@@ -866,8 +866,8 @@ static _FORCE_INLINE_ signed char natural_cmp_common(const char32_t*& r_this_str
 	while (*that_substr == '0') {
 		that_substr++;
 	}
-	int this_len = r_this_str - this_substr;
-	int that_len = r_that_str - that_substr;
+	int this_len = static_cast<int>(r_this_str - this_substr);
+	int that_len = static_cast<int>(r_that_str - that_substr);
 
 	if (this_len < that_len) {
 		return -1;
@@ -5344,7 +5344,7 @@ Vector<uint8_t> String::to_ascii_buffer() const {
 
 	Vector<uint8_t> retval;
 	size_t len = charstr.length();
-	retval.resize(len);
+	retval.resize(static_cast<int>(len));
 	uint8_t* w = retval.ptrw();
 	memcpy(w, charstr.ptr(), len);
 
@@ -5391,7 +5391,7 @@ Vector<uint8_t> String::to_utf32_buffer() const {
 
 	Vector<uint8_t> retval;
 	size_t len = s->length() * sizeof(char32_t);
-	retval.resize(len);
+	retval.resize(static_cast<int>(len));
 	uint8_t* w = retval.ptrw();
 	memcpy(w, (const void*)s->ptr(), len);
 

@@ -24,7 +24,9 @@ project "PreCompile"
       kind "Utility"
       files 
       {  ("./_generated/**.h") ,
-         ("./_generated/**.cpp") 
+         ("./_generated/**.cpp"),
+         ("./_generated/**.ipp") 
+
       }
       links {
           "Parser",
@@ -33,6 +35,6 @@ project "PreCompile"
 
        -- may call some python to generate .json
        postbuildcommands {
-          (PREMAKE_PATH .. " --file=\"./precompile.lua\""),
+          (PREMAKE_PATH .. " --file=\"%{prj.location}precompile.lua\""),
           (parser_obj .. " ".. precompile_params_path .. " " .. parser_input .." " ..  (p .. "/engine/source ")..  sysinclude .." " .. "lain " ..  "0"),
        }

@@ -5,7 +5,7 @@
 #include "render/rendering_system.h"
 #include "core/config/project_settings.h"
 #include "core/meta/reflection/reflection_register.h"
-
+#include "core/register_core_types.h"
 //  initialization part
 namespace lain {
 
@@ -28,6 +28,9 @@ static lain::ProjectSettings* globals = nullptr;
 	 OS::GetSingleton()->Initialize();
 	
 	 Reflection::TypeMetaRegister::metaRegister();
+	 register_core_types();
+
+	 
 	 engine = memnew(Engine); // 
 	 window_system = memnew(lain::WindowSystem);
 	 render_system = memnew(lain::RenderingSystem);
