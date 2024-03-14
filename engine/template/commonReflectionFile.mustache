@@ -1,6 +1,7 @@
 #pragma once
 {{#include_headfiles}}
 #include "{{headfile_name}}"
+#include "core/os/memory"
 {{/include_headfiles}}
 
 namespace lain{
@@ -12,7 +13,7 @@ namespace Reflection{
     public:
         static const char* getClassName(){ return "{{class_name}}";}
         static void* constructorWithJson(const Json& json_context){
-            {{class_name}}* ret_instance= new {{class_name}};
+            {{class_name}}* ret_instance= memnew({{class_name}});
             Serializer::read(json_context, *ret_instance);
             return ret_instance;
         }

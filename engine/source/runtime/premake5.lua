@@ -9,7 +9,9 @@ project "LainRuntime"
       --  * will match against a single directory, ** will recurse into subdirectories as well
       files 
       {  ("**.h") ,
-         ("**.cpp") 
+         ("**.cpp"),
+         ("../_generated/*.h"),
+         ("../_generated/*.cpp")
       }
       defines{
          "_CRT_SECURE_NO_WARNINGS",
@@ -22,7 +24,7 @@ project "LainRuntime"
           "%{IncludeDir.spdlog}",
           "%{IncludeDir.glfw}",
           "%{IncludeDir.json11}",
-         "%{IncludeDir.VulkanSDK}"
+         "%{IncludeDir.VulkanSDK}",
 
       }
       -- the links aligns with the project names in premakes.lua

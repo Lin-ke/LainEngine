@@ -22,8 +22,9 @@ namespace lain {
 		STRING_TABLE_LEN = 1 << STRING_TABLE_BITS,
 		STRING_TABLE_MASK = STRING_TABLE_LEN - 1
 	};
+	REFLECTION_TYPE(StringName)
 	class StringName {
-		REFLECTABLE_TYPE(StringName);
+		REFLECTION_BODY(StringName)
 		struct _Data
 		{
 			SafeRefCount refcount;
