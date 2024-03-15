@@ -202,7 +202,7 @@
 //
 //	// If task is unused, await it here, locally, now the token data is consistent.
 //	if (task_to_await) {
-//		WorkerThreadPool::get_singleton()->wait_for_task_completion(task_to_await);
+//		WorkerThreadPool::GetSingleton()->wait_for_task_completion(task_to_await);
 //	}
 //}
 //
@@ -338,15 +338,15 @@
 //}
 //
 //static String _validate_local_path(const String& p_path) {
-//	ResourceUID::ID uid = ResourceUID::get_singleton()->text_to_id(p_path);
+//	ResourceUID::ID uid = ResourceUID::GetSingleton()->text_to_id(p_path);
 //	if (uid != ResourceUID::INVALID_ID) {
-//		return ResourceUID::get_singleton()->get_id_path(uid);
+//		return ResourceUID::GetSingleton()->get_id_path(uid);
 //	}
 //	else if (p_path.is_relative_path()) {
 //		return "res://" + p_path;
 //	}
 //	else {
-//		return ProjectSettings::get_singleton()->localize_path(p_path);
+//		return ProjectSettings::GetSingleton()->localize_path(p_path);
 //	}
 //}
 //
@@ -462,7 +462,7 @@
 //			load_task_ptr->thread_id = Thread::get_caller_id();
 //		}
 //		else {
-//			load_task_ptr->task_id = WorkerThreadPool::get_singleton()->add_native_task(&ResourceLoader::_thread_load_function, load_task_ptr);
+//			load_task_ptr->task_id = WorkerThreadPool::GetSingleton()->add_native_task(&ResourceLoader::_thread_load_function, load_task_ptr);
 //		}
 //	}
 //
@@ -604,7 +604,7 @@
 //				// Loading thread is in the worker pool.
 //				load_task.awaited = true;
 //				thread_load_mutex.unlock();
-//				Error err = WorkerThreadPool::get_singleton()->wait_for_task_completion(load_task.task_id);
+//				Error err = WorkerThreadPool::GetSingleton()->wait_for_task_completion(load_task.task_id);
 //				if (err == ERR_BUSY) {
 //					// The WorkerThreadPool has scheduled tasks in a way that the current load depends on
 //					// another one in a lower stack frame. Restart such load here. When the stack is eventually
@@ -869,7 +869,7 @@
 //
 //		// An extra remap may still be necessary afterwards due to the text -> binary converter on export.
 //
-//		String locale = TranslationServer::get_singleton()->get_locale();
+//		String locale = TranslationServer::GetSingleton()->get_locale();
 //		ERR_FAIL_COND_V_MSG(locale.length() < 2, p_path, "Could not remap path '" + p_path + "' for translation as configured locale '" + locale + "' is invalid.");
 //
 //		Vector<String>& res_remaps = *translation_remaps.getptr(new_path);
@@ -881,7 +881,7 @@
 //				continue;
 //			}
 //			String l = res_remaps[i].substr(split + 1).strip_edges();
-//			int score = TranslationServer::get_singleton()->compare_locales(locale, l);
+//			int score = TranslationServer::GetSingleton()->compare_locales(locale, l);
 //			if (score > 0 && score >= best_score) {
 //				new_path = res_remaps[i].left(split);
 //				best_score = score;
@@ -948,8 +948,8 @@
 //}
 //
 //String ResourceLoader::import_remap(const String& p_path) {
-//	if (ResourceFormatImporter::get_singleton()->recognize_path(p_path)) {
-//		return ResourceFormatImporter::get_singleton()->get_internal_resource_path(p_path);
+//	if (ResourceFormatImporter::GetSingleton()->recognize_path(p_path)) {
+//		return ResourceFormatImporter::GetSingleton()->get_internal_resource_path(p_path);
 //	}
 //
 //	return p_path;
@@ -980,7 +980,7 @@
 //}
 //
 //void ResourceLoader::load_translation_remaps() {
-//	if (!ProjectSettings::get_singleton()->has_setting("internationalization/locale/translation_remaps")) {
+//	if (!ProjectSettings::GetSingleton()->has_setting("internationalization/locale/translation_remaps")) {
 //		return;
 //	}
 //
@@ -1030,7 +1030,7 @@
 //			break;
 //		}
 //		thread_load_mutex.unlock();
-//		OS::get_singleton()->delay_usec(1000);
+//		OS::GetSingleton()->delay_usec(1000);
 //		thread_load_mutex.lock();
 //	}
 //
@@ -1046,7 +1046,7 @@
 //}
 //
 //void ResourceLoader::load_path_remaps() {
-//	if (!ProjectSettings::get_singleton()->has_setting("path_remap/remapped_paths")) {
+//	if (!ProjectSettings::GetSingleton()->has_setting("path_remap/remapped_paths")) {
 //		return;
 //	}
 //

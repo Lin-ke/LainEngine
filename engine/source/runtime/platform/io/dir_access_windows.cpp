@@ -1,6 +1,6 @@
 #include "dir_access_windows.h"
 namespace lain {
-	bool DirAccessWin::file_exists(String p_file) {
+	bool DirAccessWindows::file_exists(String p_file) {
 
 			if (!p_file.is_absolute_path()) {
 				p_file = get_current_dir().path_join(p_file);
@@ -17,7 +17,7 @@ namespace lain {
 
 		return !(fileAttr & FILE_ATTRIBUTE_DIRECTORY);
 	}
-	Error DirAccessWin::make_dir(String p_dir) {
+	Error DirAccessWindows::make_dir(String p_dir) {
 
 			p_dir = fix_path(p_dir);
 		if (p_dir.is_relative_path()) {
@@ -43,7 +43,7 @@ namespace lain {
 
 		return ERR_CANT_CREATE;
 	}
-	String DirAccessWin::get_current_dir(bool p_include_drive) const {
+	String DirAccessWindows::get_current_dir(bool p_include_drive) const {
 		String base = _get_root_path();
 		if (!base.is_empty()) {
 			String bd = current_dir.replace("\\", "/").replace_first(base, "");

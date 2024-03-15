@@ -39,15 +39,15 @@
 //			data_path = OS::GetSingleton()->GetDataPath();
 //			data_dir = data_path.path_join("datapath");
 //			// Can be different from data_path e.g. on Linux or macOS.
-//			config_path = OS::get_singleton()->get_config_path();
-//			config_dir = config_path.path_join(OS::get_singleton()->get_godot_dir_name());
+//			config_path = OS::GetSingleton()->get_config_path();
+//			config_dir = config_path.path_join(OS::GetSingleton()->get_godot_dir_name());
 //			// Can be different from above paths, otherwise a subfolder of data_dir.
-//			cache_path = OS::get_singleton()->get_cache_path();
+//			cache_path = OS::GetSingleton()->get_cache_path();
 //			if (cache_path == data_path) {
 //				cache_dir = data_dir.path_join("cache");
 //			}
 //			else {
-//				cache_dir = cache_path.path_join(OS::get_singleton()->get_godot_dir_name());
+//				cache_dir = cache_path.path_join(OS::GetSingleton()->get_godot_dir_name());
 //			}
 //		}
 //
@@ -107,9 +107,9 @@
 //
 //		// Validate or create project-specific editor data dir,
 //		// including shader cache subdir.
-//		if (Engine::get_singleton()->is_project_manager_hint() || (Main::is_cmdline_tool() && !ProjectSettings::get_singleton()->is_project_loaded())) {
+//		if (Engine::GetSingleton()->is_project_manager_hint() || (Main::is_cmdline_tool() && !ProjectSettings::GetSingleton()->is_project_loaded())) {
 //			// Nothing to create, use shared editor data dir for shader cache.
-//			Engine::get_singleton()->set_shader_cache_path(data_dir);
+//			Engine::GetSingleton()->set_shader_cache_path(data_dir);
 //		}
 //		else {
 //			Ref<DirAccess> dir_res = DirAccess::create(DirAccess::ACCESS_RESOURCES);
@@ -134,14 +134,14 @@
 //				}
 //			}
 //
-//			Engine::get_singleton()->set_shader_cache_path(project_data_dir);
+//			Engine::GetSingleton()->set_shader_cache_path(project_data_dir);
 //
 //			// Editor metadata dir.
 //			if (!dir_res->dir_exists("editor")) {
 //				dir_res->make_dir("editor");
 //			}
 //			// Imported assets dir.
-//			String imported_files_path = ProjectSettings::get_singleton()->get_imported_files_path();
+//			String imported_files_path = ProjectSettings::GetSingleton()->get_imported_files_path();
 //			if (!dir_res->dir_exists(imported_files_path)) {
 //				dir_res->make_dir(imported_files_path);
 //			}

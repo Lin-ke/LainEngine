@@ -52,6 +52,9 @@
     <Filter Include="core\scene">
       <UniqueIdentifier>{0B40BF51-F7F7-009F-60FF-D9FA4CD69B8F}</UniqueIdentifier>
     </Filter>
+    <Filter Include="core\scene\object">
+      <UniqueIdentifier>{5167F2CC-BD7D-F062-06F5-7B84724AC1EA}</UniqueIdentifier>
+    </Filter>
     <Filter Include="core\string">
       <UniqueIdentifier>{34EFE18A-A0A4-5A80-2999-5457954D5184}</UniqueIdentifier>
     </Filter>
@@ -70,20 +73,17 @@
     <Filter Include="function\project">
       <UniqueIdentifier>{B18FE230-9D88-0183-C6BA-E607B212E18E}</UniqueIdentifier>
     </Filter>
+    <Filter Include="function\render">
+      <UniqueIdentifier>{7A88BD14-E613-2BD9-EF24-AECD5B2F87D9}</UniqueIdentifier>
+    </Filter>
     <Filter Include="function\ui">
       <UniqueIdentifier>{D82F8330-44E5-FB25-CDD9-F5FC398EF229}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="io">
-      <UniqueIdentifier>{3D785900-2904-880B-92B2-880B7E5D880B}</UniqueIdentifier>
     </Filter>
     <Filter Include="platform">
       <UniqueIdentifier>{4A63C33C-3630-1E48-5F49-0CF04B7553D6}</UniqueIdentifier>
     </Filter>
     <Filter Include="platform\io">
       <UniqueIdentifier>{F1EC55E0-5DA2-CED5-E696-C8AC524BC5D9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="render">
-      <UniqueIdentifier>{E5CF2C19-D171-57EF-BA2C-6B43A66DDE3F}</UniqueIdentifier>
     </Filter>
     <Filter Include="resource">
       <UniqueIdentifier>{0D091A24-F9D5-742F-22EF-62D70E1BAABD}</UniqueIdentifier>
@@ -94,8 +94,14 @@
     <Filter Include="resource\component">
       <UniqueIdentifier>{CF752EA3-BB59-EFF8-24BA-E94B10BDD97A}</UniqueIdentifier>
     </Filter>
+    <Filter Include="resource\io">
+      <UniqueIdentifier>{D45FD1EA-4015-4AE0-C909-44B735BE40E4}</UniqueIdentifier>
+    </Filter>
     <Filter Include="resource\manager">
       <UniqueIdentifier>{579A48F9-4393-674B-6CC5-4CD0581D4757}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene">
+      <UniqueIdentifier>{D3075810-3F1C-80C1-089E-232174717CF2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -214,17 +220,14 @@
     <ClInclude Include="core\meta\reflection\reflection_register.h">
       <Filter>core\meta\reflection</Filter>
     </ClInclude>
+    <ClInclude Include="core\meta\reflection\reflection_register_others.h">
+      <Filter>core\meta\reflection</Filter>
+    </ClInclude>
     <ClInclude Include="core\meta\reflection\type_info.h">
       <Filter>core\meta\reflection</Filter>
     </ClInclude>
-    <ClInclude Include="core\meta\reflection\reflection_register_others.h">
-      <Filter>core\meta</Filter>
-    </ClInclude>
     <ClInclude Include="core\meta\serializer\serializer.h">
       <Filter>core\meta\serializer</Filter>
-    </ClInclude>
-    <ClInclude Include="core\object\gobject.h">
-      <Filter>core\object</Filter>
     </ClInclude>
     <ClInclude Include="core\object\object.h">
       <Filter>core\object</Filter>
@@ -250,10 +253,10 @@
     <ClInclude Include="core\os\condition_variable.h">
       <Filter>core\os</Filter>
     </ClInclude>
-    <ClInclude Include="core\os\dir_access.h">
+    <ClInclude Include="core\io\dir_access.h">
       <Filter>core\os</Filter>
     </ClInclude>
-    <ClInclude Include="core\os\file_access.h">
+    <ClInclude Include="core\io\file_access.h">
       <Filter>core\os</Filter>
     </ClInclude>
     <ClInclude Include="core\os\memory.h">
@@ -300,6 +303,9 @@
     </ClInclude>
     <ClInclude Include="core\scene\node_res.h">
       <Filter>core\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="core\scene\object\gobject.h">
+      <Filter>core\scene\object</Filter>
     </ClInclude>
     <ClInclude Include="core\scene\scene_tree.h">
       <Filter>core\scene</Filter>
@@ -403,17 +409,20 @@
     <ClInclude Include="function\project\project_manager.h">
       <Filter>function\project</Filter>
     </ClInclude>
+    <ClInclude Include="function\render\render_system_globals.h">
+      <Filter>function\render</Filter>
+    </ClInclude>
+    <ClInclude Include="function\render\rendering_system.h">
+      <Filter>function\render</Filter>
+    </ClInclude>
+    <ClInclude Include="function\render\viewport.h">
+      <Filter>function\render</Filter>
+    </ClInclude>
     <ClInclude Include="function\script.h">
       <Filter>function</Filter>
     </ClInclude>
     <ClInclude Include="function\ui\window_ui.h">
       <Filter>function\ui</Filter>
-    </ClInclude>
-    <ClInclude Include="io\resource.h">
-      <Filter>io</Filter>
-    </ClInclude>
-    <ClInclude Include="io\resource_load.h">
-      <Filter>io</Filter>
     </ClInclude>
     <ClInclude Include="platform\io\dir_access_windows.h">
       <Filter>platform\io</Filter>
@@ -423,15 +432,6 @@
     </ClInclude>
     <ClInclude Include="platform\io\os_windows.h">
       <Filter>platform\io</Filter>
-    </ClInclude>
-    <ClInclude Include="render\render_system_globals.h">
-      <Filter>render</Filter>
-    </ClInclude>
-    <ClInclude Include="render\rendering_system.h">
-      <Filter>render</Filter>
-    </ClInclude>
-    <ClInclude Include="render\viewport.h">
-      <Filter>render</Filter>
     </ClInclude>
     <ClInclude Include="resource\common\world.h">
       <Filter>resource\common</Filter>
@@ -448,9 +448,20 @@
     <ClInclude Include="resource\component\mesh.h">
       <Filter>resource\component</Filter>
     </ClInclude>
+    <ClInclude Include="resource\io\resource.h">
+      <Filter>resource\io</Filter>
+    </ClInclude>
+    <ClInclude Include="resource\io\resource_load.h">
+      <Filter>resource\io</Filter>
+    </ClInclude>
     <ClInclude Include="resource\manager\resource_manager.h">
       <Filter>resource\manager</Filter>
     </ClInclude>
+    <ClInclude Include="scene\viewport.h">
+      <Filter>scene</Filter>
+    </ClInclude>
+    <ClInclude Include="resource\common\texture.h" />
+    <ClInclude Include="core\io\compress.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\config\project_settings.cpp">
@@ -534,10 +545,10 @@
     <ClCompile Include="core\object\signal.cpp">
       <Filter>core\object</Filter>
     </ClCompile>
-    <ClCompile Include="core\os\dir_access.cpp">
+    <ClCompile Include="core\io\dir_access.cpp">
       <Filter>core\os</Filter>
     </ClCompile>
-    <ClCompile Include="core\os\file_access.cpp">
+    <ClCompile Include="core\io\file_access.cpp">
       <Filter>core\os</Filter>
     </ClCompile>
     <ClCompile Include="core\os\memory.cpp">
@@ -606,8 +617,8 @@
     <ClCompile Include="function\project\project_mananger.cpp">
       <Filter>function\project</Filter>
     </ClCompile>
-    <ClCompile Include="io\resource_load.cpp">
-      <Filter>io</Filter>
+    <ClCompile Include="function\render\rendering_system.cpp">
+      <Filter>function\render</Filter>
     </ClCompile>
     <ClCompile Include="platform\io\dir_access_windows.cpp">
       <Filter>platform\io</Filter>
@@ -618,11 +629,11 @@
     <ClCompile Include="platform\io\os_windows.cpp">
       <Filter>platform\io</Filter>
     </ClCompile>
-    <ClCompile Include="render\rendering_system.cpp">
-      <Filter>render</Filter>
-    </ClCompile>
     <ClCompile Include="resource\component\transform_component.cpp">
       <Filter>resource\component</Filter>
+    </ClCompile>
+    <ClCompile Include="resource\io\resource_load.cpp">
+      <Filter>resource\io</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

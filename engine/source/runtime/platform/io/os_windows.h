@@ -4,7 +4,7 @@
 #include "core/os/os.h"
 namespace lain {
 
-class OSWin :public OS {
+class OSWindows :public OS {
 	u64 ticks_start = 0;
 	u64 ticks_per_second = 0;
 public:
@@ -14,6 +14,7 @@ public:
 	virtual void Initialize();
 	virtual void Finialize() {}
 	virtual void Run();
+	
 
 	virtual String GetConfigPath() const {
 		static String _configpath = HasEnv("APPDATA") ? GetEnv("APPDATA") : ".";
@@ -24,7 +25,7 @@ public:
 	}
 	virtual String GetCachePath() const;
 	virtual String GetUserDataDir() const;
-	OSWin() {
+	OSWindows() {
 		Log::Init();
 	}
 	// env

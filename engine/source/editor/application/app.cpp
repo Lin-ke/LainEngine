@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
 	// main function
 	OSWin os = OSWin();
 
-	OSWin::GetSingleton()->Run();
+	OSWindows::GetSingleton()->Run();
 	test::test_Vector3_reflect();
 	test::test_StringName_reflect();
 

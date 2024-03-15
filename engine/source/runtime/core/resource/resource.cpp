@@ -1,16 +1,16 @@
-//#include "resource.h"
-//
-////#include "core/io/file_access.h"
-////#include "core/io/resource_loader.h"
-//#include "core/math/math.h"
-//#include "core/os/os.h"
-//#include "core/scene/node.h" //only so casting works
+#include "resource.h"
+
+//#include "core/io/file_access.h"
+//#include "core/io/resource_loader.h"
+#include "core/math/math.h"
+#include "core/os/os.h"
+#include "core/scene/node.h" //only so casting works
 //
 //#include <stdio.h>
 //namespace lain {
 //
 ////void Resource::emit_changed() {
-////	emit_signal(CoreStringNames::get_singleton()->changed);
+////	emit_signal(CoreStringNames::GetSingleton()->changed);
 ////}
 //
 //void Resource::_resource_path_changed() {
@@ -463,7 +463,7 @@
 //void ResourceCache::clear() {
 //	if (resources.size()) {
 //		ERR_PRINT("Resources still in use at exit (run with --verbose for details).");
-//		if (OS::get_singleton()->is_stdout_verbose()) {
+//		if (OS::GetSingleton()->is_stdout_verbose()) {
 //			for (const KeyValue<String, Resource*>& E : resources) {
 //				print_line(vformat("Resource still in use: %s (%s)", E.key, E.value->get_class()));
 //			}

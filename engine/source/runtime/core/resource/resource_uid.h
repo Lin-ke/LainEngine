@@ -50,7 +50,7 @@ public:
 
 	void clear();
 
-	static ResourceUID* get_singleton() { return singleton; }
+	static ResourceUID* GetSingleton() { return singleton; }
 
 	ResourceUID();
 	~ResourceUID();

@@ -1,6 +1,7 @@
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
 #include "file_access.h"
+#include <filesystem>
 
 namespace lain {
 	FileAccess::CreateFunc FileAccess::create_func[ACCESS_MAX] = { nullptr, nullptr, nullptr };
@@ -9,8 +10,8 @@ namespace lain {
 		//try packed data first
 
 		Ref<FileAccess> ret;
-		/*if (!(p_mode_flags & WRITE) && PackedData::get_singleton() && !PackedData::get_singleton()->is_disabled()) {
-			ret = PackedData::get_singleton()->try_open_path(p_path);
+		/*if (!(p_mode_flags & WRITE) && PackedData::GetSingleton() && !PackedData::GetSingleton()->is_disabled()) {
+			ret = PackedData::GetSingleton()->try_open_path(p_path);
 			if (ret.is_valid()) {
 				if (r_error) {
 					*r_error = OK;
@@ -104,6 +105,17 @@ namespace lain {
 		}
 
 		return r_path;
+	}
+
+	bool FileAccess::exists(const String& p_name) {
+		/*if (PackedData::GetSingleton() && !PackedData::GetSingleton()->is_disabled() && PackedData::GetSingleton()->has_path(p_name)) {
+			return true;
+		}*/
+		Ref<FileAccess> f = open(p_name, READ);
+		if (f.is_null()) {
+			return false;
+		}
+		return true;
 	}
 
 }

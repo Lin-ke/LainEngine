@@ -6,7 +6,7 @@
 
 
 namespace lain {
-	bool OSWin::HasEnv(const String& p_var) const {
+	bool OSWindows::HasEnv(const String& p_var) const {
 #ifdef MINGW_ENABLED
 		return _wgetenv((LPCWSTR)(p_var.utf16().get_data())) != nullptr;
 #else
@@ -18,7 +18,7 @@ namespace lain {
 		return has_env;
 #endif
 	}
-	String OSWin::GetEnv(const String& p_var) const {
+	String OSWindows::GetEnv(const String& p_var) const {
 		WCHAR wval[0x7fff]; // MSDN says 32767 char is the maximum
 		int wlen = GetEnvironmentVariableW((LPCWSTR)(p_var.utf16().get_data()), wval, 0x7fff);
 		if (wlen > 0) {
@@ -27,7 +27,7 @@ namespace lain {
 		return "";
 	}
 
-	String OSWin::GetCachePath() const {
+	String OSWindows::GetCachePath() const {
 		static String cache_path_cache;
 		if (cache_path_cache.is_empty()) {
 			if (HasEnv("LOCALAPPDATA")) {
@@ -42,7 +42,7 @@ namespace lain {
 		}
 		return cache_path_cache;
 	}
-	String OSWin::GetUserDataDir() const {
+	String OSWindows::GetUserDataDir() const {
 		String appname = GetSafeDirName(GLOBAL_GET("application/config/name"), true);
 		if (!appname.is_empty()) {
 			return GetDataPath().path_join("lain").path_join("app_userdata").path_join(appname).replace("\\", "/");
@@ -51,7 +51,7 @@ namespace lain {
 	}
 
 
-	void OSWin::Run() {
+	void OSWindows::Run() {
 		// init
 		Main::Init();
 		while (true) {
@@ -69,7 +69,7 @@ namespace lain {
 		L_PRINT("Exiting. Have a nice day.");
 
 	}
-	void OSWin::Initialize() {
+	void OSWindows::Initialize() {
 
 		QueryPerformanceFrequency((LARGE_INTEGER*)&ticks_per_second);
 		QueryPerformanceCounter((LARGE_INTEGER*)&ticks_start);
@@ -78,7 +78,7 @@ namespace lain {
 	}
 
 
-	uint64_t OSWin::GetTimeUsec() const {
+	uint64_t OSWindows::GetTimeUsec() const {
 		uint64_t ticks;
 
 		// This is the number of clock ticks since start
@@ -107,7 +107,7 @@ namespace lain {
 
 		return time;
 	}
-	OS::DateTime OSWin::GetDateTime(bool p_utc) const {
+	OS::DateTime OSWindows::GetDateTime(bool p_utc) const {
 		SYSTEMTIME systemtime;
 		if (p_utc) {
 			GetSystemTime(&systemtime);

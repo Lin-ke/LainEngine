@@ -43,6 +43,17 @@ public:
 	
 	L_INLINE bool is_ref_counted() const { return m_type_is_reference; }
 	ObjectID get_instance_id() const { return m_instance_id; }
+	/// static method
+	template <class T>
+	static T* cast_to(Object* p_object) {
+		return dynamic_cast<T*>(p_object);
+	}
+
+	template <class T>
+	static const T* cast_to(const Object* p_object) {
+		return dynamic_cast<const T*>(p_object);
+	}
+
 private:
 	ObjectID m_instance_id;
 	bool m_type_is_reference = false;
