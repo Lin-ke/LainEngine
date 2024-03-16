@@ -208,7 +208,7 @@
     <ClInclude Include="function\ui\window_ui.h" />
     <ClInclude Include="platform\io\dir_access_windows.h" />
     <ClInclude Include="platform\io\file_access_windows.h" />
-    <ClInclude Include="platform\io\os_windows.h" />
+    <ClInclude Include="platform\os\os_windows.h" />
     <ClInclude Include="resource\common\texture.h" />
     <ClInclude Include="resource\common\world.h" />
     <ClInclude Include="resource\component\camera.h" />
@@ -275,7 +275,7 @@
     <ClCompile Include="function\render\rendering_system.cpp" />
     <ClCompile Include="platform\io\dir_access_windows.cpp" />
     <ClCompile Include="platform\io\file_access_windows.cpp" />
-    <ClCompile Include="platform\io\os_windows.cpp" />
+    <ClCompile Include="platform\os\os_windows.cpp" />
     <ClCompile Include="resource\component\transform_component.cpp" />
     <ClCompile Include="resource\io\resource_load.cpp" />
   </ItemGroup>

@@ -15,9 +15,9 @@ class FileAccessWindows :public FileAccess {
 	void check_errors() const;
 	mutable int prev_op = 0;
 	mutable Error last_error = OK;
-	String path;
-	String path_src;
-	String save_path;
+	String path;	  // 绝对路径
+	String path_src;  // 资源路径
+	String save_path; // 保存路径
 
 	void _close();
 

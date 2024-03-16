@@ -32,7 +32,8 @@ public:
 	bool HasEnv(const String &name) const;
 	String GetEnv(const String &name) const ;
 
-
+	// sleep
+	virtual void DelayUsec(ui32 p_usec) const override;
 
 };
 }

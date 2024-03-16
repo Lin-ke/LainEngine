@@ -159,7 +159,7 @@ namespace lain {
 				}
 				if (rename_error) {
 					attempts--;
-					OS::GetSingleton()->delay_usec(100000); // wait 100msec and try again
+					OS::GetSingleton()->DelayUsec(100000); // wait 100msec and try again
 				}
 				}
 
@@ -174,4 +174,7 @@ namespace lain {
 			ERR_FAIL_COND_MSG(rename_error, "Safe save failed. This may be a permissions problem, but also may happen because you are running a paranoid antivirus. If this is the case, please switch to Windows Defender or disable the 'safe save' option in editor settings. This makes it work, but increases the risk of file corruption in a crash.");
 			}
 		}
+	ui32 FileAccessWindows::get_8() const {
+
+	}
 }

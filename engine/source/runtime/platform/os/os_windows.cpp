@@ -134,4 +134,13 @@ namespace lain {
 		dt.dst = is_daylight;
 		return dt;
 	}
+	void OSWindows::DelayUsec(ui32 p_usec) const{
+		if (p_usec < 1000) {
+				Sleep(1);
+		}
+		else {
+			Sleep(p_usec / 1000);
+		}
+	}
+
 }

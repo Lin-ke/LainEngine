@@ -430,7 +430,7 @@
     <ClInclude Include="platform\io\file_access_windows.h">
       <Filter>platform\io</Filter>
     </ClInclude>
-    <ClInclude Include="platform\io\os_windows.h">
+    <ClInclude Include="platform\os\os_windows.h">
       <Filter>platform\io</Filter>
     </ClInclude>
     <ClInclude Include="resource\common\world.h">
@@ -626,7 +626,7 @@
     <ClCompile Include="platform\io\file_access_windows.cpp">
       <Filter>platform\io</Filter>
     </ClCompile>
-    <ClCompile Include="platform\io\os_windows.cpp">
+    <ClCompile Include="platform\os\os_windows.cpp">
       <Filter>platform\io</Filter>
     </ClCompile>
     <ClCompile Include="resource\component\transform_component.cpp">
