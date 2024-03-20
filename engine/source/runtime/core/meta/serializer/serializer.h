@@ -186,9 +186,9 @@ namespace lain
     // vector
     
     template<>
-    Json Serializer::write(const u64& instance);
+    Json Serializer::write(const ui64& instance);
     template<>
-    u64& Serializer::read(const Json& json_context, u64& instance);
+    ui64& Serializer::read(const Json& json_context, ui64& instance);
 
     // template<>
     // Json Serializer::write(const Reflection::object& instance);

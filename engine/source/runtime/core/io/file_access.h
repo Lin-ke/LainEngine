@@ -7,6 +7,7 @@
 #include "core/string/ustring.h"
 #include "core/typedefs.h"
 #include "compress.h"
+#include "core/variant/variant.h"
 
 /**
  * Multi-Platform abstraction for accessing to files.
@@ -25,8 +26,8 @@ public:
 	enum ModeFlags {
 		READ = 1,
 		WRITE = 2,
-		READ_WRITE = 3,
-		WRITE_READ = 7,
+		READ_WRITE = 3, // 打开文件进行读写操作。不截断文件。光标位于文件的开头。
+		WRITE_READ = 7, // 打开文件进行读写操作。如果文件不存在则创建该文件，如果存在则截断该文件。光标位于文件的开头。
 	};
 
 	enum CompressionMode {
@@ -47,7 +48,6 @@ public:
 	virtual Error _set_unix_permissions(const String& p_file, uint32_t p_permissions) = 0;
 
 protected:
-	static void _bind_methods();
 
 	AccessType get_access_type() const;
 	virtual String fix_path(const String& p_path) const;
@@ -78,7 +78,7 @@ public:
 	virtual String get_path() const { return ""; } /// returns the path for the current open file
 	virtual String get_path_absolute() const { return ""; } /// returns the absolute path for the current open file
 
-	virtual void seek(uint64_t p_position) = 0; ///< seek to a given position
+	virtual void seek(int64_t p_position) = 0; ///< seek to a given position
 	virtual void seek_end(int64_t p_position = 0) = 0; ///< seek from the end of file with negative offset
 	virtual uint64_t get_position() const = 0; ///< get position in the file
 	virtual uint64_t get_length() const = 0; ///< get size of the file
@@ -144,18 +144,12 @@ public:
 
 	static Ref<FileAccess> create(AccessType p_access); /// Create a file access (for the current platform) this is the only portable way of accessing files.
 	static Ref<FileAccess> create_for_path(const String& p_path);
-	static Ref<FileAccess> open(const String& p_path, int p_mode_flags, Error* r_error = nullptr); /// Create a file access (for the current platform) this is the only portable way of accessing files.
 
-	static Ref<FileAccess> open_encrypted(const String& p_path, ModeFlags p_mode_flags, const Vector<uint8_t>& p_key);
-	static Ref<FileAccess> open_encrypted_pass(const String& p_path, ModeFlags p_mode_flags, const String& p_pass);
-	static Ref<FileAccess> open_compressed(const String& p_path, ModeFlags p_mode_flags, CompressionMode p_compress_mode = COMPRESSION_FASTLZ);
-	static Error get_open_error();
+	static Ref<FileAccess> open(const String& p_path, int p_mode_flags, Error* r_error = nullptr); /// Create a file access (for the current platform) this is the only portable way of accessing files.
 
 	static CreateFunc get_create_func(AccessType p_access);
 	static bool exists(const String& p_name); ///< return true if a file exists
 	static uint64_t get_modified_time(const String& p_file);
-	static uint32_t get_unix_permissions(const String& p_file);
-	static Error set_unix_permissions(const String& p_file, uint32_t p_permissions);
 
 	static void set_backup_save(bool p_enable) { backup_save = p_enable; };
 	static bool is_backup_save_enabled() { return backup_save; };
@@ -167,8 +161,9 @@ public:
 	static Vector<uint8_t> get_file_as_bytes(const String& p_path, Error* r_error = nullptr);
 	static String get_file_as_string(const String& p_path, Error* r_error = nullptr);
 
-	static PackedByteArray _get_file_as_bytes(const String& p_path) { return get_file_as_bytes(p_path); }
-	static String _get_file_as_string(const String& p_path) { return get_file_as_string(p_path); };
+	static Vector<uint8_t> _get_file_as_bytes(const String& p_path);
+	static String _get_file_as_string(const String& p_path);
+
 
 	template <class T>
 	static void make_default(AccessType p_access) {

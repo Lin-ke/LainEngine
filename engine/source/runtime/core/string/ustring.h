@@ -109,7 +109,6 @@ namespace lain {
 		_FORCE_INLINE_ const char* ptr() const { return _cowdata.ptr(); }
 		_FORCE_INLINE_ int size() const { return _cowdata.size(); }
 		Error resize(int p_size) { return _cowdata.resize(p_size); }
-		Error resize(size_t p_size) { return _cowdata.resize(static_cast<int>(p_size)); }
 
 
 		_FORCE_INLINE_ char get(int p_index) const { return _cowdata.get(p_index); }

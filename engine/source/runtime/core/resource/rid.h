@@ -8,11 +8,11 @@ namespace lain {
 	// thread safety allocator
 class RIDAllocator {
 public:
-	L_INLINE static u64 Alloc() {
+	L_INLINE static ui64 Alloc() {
 		return m_next_id.conditional_increment();
 	}
 private:
-	static s_u64 m_next_id;
+	static s_ui64 m_next_id;
 };
 //A handle for a Resource's unique identifier.
 //Description

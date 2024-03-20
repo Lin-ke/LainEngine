@@ -1,5 +1,19 @@
 #include "dir_access_windows.h"
+#include "file_access_windows.h"
+
+#include "core/os/memory.h"
+#include <stdio.h>
+#include <wchar.h>
+#include <minwinbase.h>
+#include <winnt.h>
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 namespace lain {
+	struct DirAccessWindowsPrivate {
+		HANDLE h; // handle for FindFirstFile.
+		WIN32_FIND_DATA f;
+		WIN32_FIND_DATAW fu; // Unicode version.
+	};
 	bool DirAccessWindows::file_exists(String p_file) {
 
 			if (!p_file.is_absolute_path()) {
@@ -69,5 +83,65 @@ namespace lain {
 		}
 	}
 
+	DirAccessWindows::DirAccessWindows() {
+		p = memnew(DirAccessWindowsPrivate);
+		p->h = INVALID_HANDLE_VALUE;
+		current_dir = ".";
 
+		DWORD mask = GetLogicalDrives();
+
+		for (int i = 0; i < MAX_DRIVES; i++) {
+			if (mask & (1 << i)) { //DRIVE EXISTS
+
+				drives[drive_count] = 'A' + i;
+				drive_count++;
+			}
+		}
+
+		change_dir(".");
+	}
+
+	DirAccessWindows::~DirAccessWindows() {
+		list_dir_end();
+
+		memdelete(p);
+	}
+	void DirAccessWindows::list_dir_end() {
+		if (p->h != INVALID_HANDLE_VALUE) {
+			FindClose(p->h);
+			p->h = INVALID_HANDLE_VALUE;
+		}
+	}
+
+	Error DirAccessWindows::change_dir(String p_dir) {
+		//GLOBAL_LOCK_FUNCTION
+
+			p_dir = fix_path(p_dir);
+
+		WCHAR real_current_dir_name[2048];
+		GetCurrentDirectoryW(2048, real_current_dir_name);
+		String prev_dir = String::utf16((const char16_t*)real_current_dir_name);
+
+		SetCurrentDirectoryW((LPCWSTR)(current_dir.utf16().get_data()));
+		bool worked = (SetCurrentDirectoryW((LPCWSTR)(p_dir.utf16().get_data())) != 0);
+
+		String base = _get_root_path();
+		if (!base.is_empty()) {
+			GetCurrentDirectoryW(2048, real_current_dir_name);
+			String new_dir = String::utf16((const char16_t*)real_current_dir_name).replace("\\", "/");
+			if (!new_dir.begins_with(base)) {
+				worked = false;
+			}
+		}
+
+		if (worked) {
+			GetCurrentDirectoryW(2048, real_current_dir_name);
+			current_dir = String::utf16((const char16_t*)real_current_dir_name);
+			current_dir = current_dir.replace("\\", "/");
+		}
+
+		SetCurrentDirectoryW((LPCWSTR)(prev_dir.utf16().get_data()));
+
+		return worked ? OK : ERR_INVALID_PARAMETER;
+	}
 }

@@ -258,12 +258,12 @@ template <class T>
 static _FORCE_INLINE_ uint64_t hash_make_uint64_t(T p_in) {
 	union {
 		T t;
-		uint64_t _u64;
+		uint64_t _ui64;
 	} _u;
-	_u._u64 = 0; // in case p_in is smaller
+	_u._ui64 = 0; // in case p_in is smaller
 
 	_u.t = p_in;
-	return _u._u64;
+	return _u._ui64;
 }
 template <class T>
 class Ref;

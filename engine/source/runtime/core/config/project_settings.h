@@ -5,6 +5,7 @@
 #include "core/variant/variant.h"
 #include "core/templates/hash_map.h"
 #include "core/string/string_name.h"
+#include "core/templates/hash_set.h"
 #include "core/io/file_access.h"
 #include "core/meta/reflection/reflection.h"
 #include "core/meta/serializer/serializer.h"

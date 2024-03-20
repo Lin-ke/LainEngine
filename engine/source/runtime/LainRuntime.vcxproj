@@ -107,6 +107,7 @@
     <ClInclude Include="core\input\key_input.h" />
     <ClInclude Include="core\input\mouse_input.h" />
     <ClInclude Include="core\io\compress.h" />
+    <ClInclude Include="core\io\marshalls.h" />
     <ClInclude Include="core\log\log.h" />
     <ClInclude Include="core\mainloop\main.h" />
     <ClInclude Include="core\math\aabb.h" />
@@ -225,6 +226,7 @@
     <ClCompile Include="core\engine\engine.cpp" />
     <ClCompile Include="core\error\error_macros.cpp" />
     <ClCompile Include="core\input\input.cpp" />
+    <ClCompile Include="core\io\marshalls.cpp" />
     <ClCompile Include="core\log\log.cpp" />
     <ClCompile Include="core\mainloop\main.cpp" />
     <ClCompile Include="core\math\AABB.cpp" />

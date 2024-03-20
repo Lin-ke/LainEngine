@@ -10,7 +10,7 @@
 // Also, need to be explicitly only castable to 64 bits integer types
 // to avoid bugs due to loss of precision
 
-// 不用s_u64吗
+// 不用s_ui64吗
 namespace lain {
 	REFLECTION_TYPE(ObjectID)
 	CLASS(ObjectID, Fields)

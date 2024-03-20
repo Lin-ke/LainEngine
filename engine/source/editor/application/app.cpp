@@ -3,7 +3,7 @@
 
 #endif
 #include <base.h>
-#include <platform/io/os_windows.h>
+#include <platform/os/os_windows.h>
 #include "test/test_reflect.h"
 
 using namespace lain;
@@ -12,7 +12,7 @@ using namespace lain;
 int main(int argc, char** argv) {
 	
 	// main function
-	OSWin os = OSWin();
+	OSWindows os = OSWindows();
 
 	OSWindows::GetSingleton()->Run();
 	test::test_Vector3_reflect();

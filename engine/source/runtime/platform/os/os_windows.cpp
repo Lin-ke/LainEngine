@@ -3,6 +3,8 @@
 #include "core/mainloop/main.h"
 #include "function/display/window_system.h"
 #include "core/config/project_settings.h"
+#include "platform/io/file_access_windows.h"
+#include "platform/io/dir_access_windows.h"
 
 
 namespace lain {
@@ -70,11 +72,20 @@ namespace lain {
 
 	}
 	void OSWindows::Initialize() {
-
+		// 在这里初始化，将FileAccess类的create_function函数数组放入make_default(memnew)<T> 工厂
+		// 对于不同类型的数据访问会用到不同的FileAccess子类。
+		// 这之后，出来的应该是T类型啊，怎么就成了？
+		FileAccess::make_default<FileAccessWindows>(FileAccess::ACCESS_RESOURCES);
+		FileAccess::make_default<FileAccessWindows>(FileAccess::ACCESS_USERDATA);
+		FileAccess::make_default<FileAccessWindows>(FileAccess::ACCESS_FILESYSTEM);
+		DirAccess::make_default<DirAccessWindows>(DirAccess::ACCESS_RESOURCES);
+		DirAccess::make_default<DirAccessWindows>(DirAccess::ACCESS_USERDATA);
+		DirAccess::make_default<DirAccessWindows>(DirAccess::ACCESS_FILESYSTEM);
 		QueryPerformanceFrequency((LARGE_INTEGER*)&ticks_per_second);
 		QueryPerformanceCounter((LARGE_INTEGER*)&ticks_start);
 		//L_PRINT(ticks_per_second, ticks_start);
 		timeBeginPeriod(1);
+		
 	}
 
 

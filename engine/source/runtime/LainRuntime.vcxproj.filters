@@ -462,6 +462,7 @@
     </ClInclude>
     <ClInclude Include="resource\common\texture.h" />
     <ClInclude Include="core\io\compress.h" />
+    <ClInclude Include="core\io\marshalls.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\config\project_settings.cpp">
@@ -635,5 +636,6 @@
     <ClCompile Include="resource\io\resource_load.cpp">
       <Filter>resource\io</Filter>
     </ClCompile>
+    <ClCompile Include="core\io\marshalls.cpp" />
   </ItemGroup>
 </Project>

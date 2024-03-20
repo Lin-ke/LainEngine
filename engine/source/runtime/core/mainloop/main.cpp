@@ -2,7 +2,7 @@
 #include "core/os/os.h"
 #include "core/engine/engine.h"
 #include "function/display/window_system.h"
-#include "render/rendering_system.h"
+#include "function/render/rendering_system.h"
 #include "core/config/project_settings.h"
 #include "core/meta/reflection/reflection_register.h"
 #include "core/register_core_types.h"
@@ -48,9 +48,9 @@ static lain::ProjectSettings* globals = nullptr;
 /// 
 bool Main::Loop() {
 	// gettime
-	u64 time = OS::GetSingleton()->GetTimeUsec();
+	ui64 time = OS::GetSingleton()->GetTimeUsec();
 	// update engine
-	u64 delta_time_usec = time - last_ticks;
+	ui64 delta_time_usec = time - last_ticks;
 	last_ticks = time;
 	// start time
 	Engine::GetSingleton()->m_frame_ticks = time;

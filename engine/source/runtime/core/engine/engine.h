@@ -14,8 +14,8 @@ class Engine {
 public:
 
 	static Engine* singleton;
-	u64 m_frame_ticks = 0;
-	u64 m_frame_fps = 0;
+	ui64 m_frame_ticks = 0;
+	ui64 m_frame_fps = 0;
 	double m_fps = 1;
 
 

@@ -50,7 +50,7 @@ String DirAccess::_get_root_path() const {
 }
 
 
-String DirAccess::fix_path(String p_path) const {
+String DirAccess::fix_path(const String&p_path) const {
 	switch (m_access_type) {
 	case ACCESS_RESOURCES: {
 		if (ProjectSettings::GetSingleton()) {
@@ -83,4 +83,27 @@ String DirAccess::fix_path(String p_path) const {
 
 	return p_path;
 }
+Ref<DirAccess> DirAccess::_open(const String& p_path) {
+	Error err = OK;
+	Ref<DirAccess> da = open(p_path, &err);
+	last_dir_open_error = err;
+	if (err) {
+		return Ref<DirAccess>();
+	}
+	return da;
+}
+Ref<DirAccess> DirAccess::open(const String& p_path, Error* r_error) {
+	Ref<DirAccess> da = create_for_path(p_path);
+	ERR_FAIL_COND_V_MSG(da.is_null(), nullptr, "Cannot create DirAccess for path '" + p_path + "'.");
+	Error err = da->change_dir(p_path);
+	if (r_error) {
+		*r_error = err;
+	}
+	if (err != OK) {
+		return nullptr;
+	}
+
+	return da;
+}
+
 }

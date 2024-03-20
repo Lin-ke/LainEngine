@@ -10,7 +10,7 @@ namespace lain {
 			const String p_description,
 			const String p_path,
 			const String p_main_scene,
-			const u64    p_last_edited) {
+			const ui64    p_last_edited) {
 			m_project_name = p_name;
 			m_description = p_description;
 			m_path = p_path;
@@ -23,7 +23,7 @@ namespace lain {
 		String m_description;
 		String m_path;
 		String m_main_scene;
-		u64 m_last_edited = 0; 
+		ui64 m_last_edited = 0; 
 		
 
 	};

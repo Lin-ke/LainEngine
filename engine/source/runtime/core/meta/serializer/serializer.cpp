@@ -33,14 +33,14 @@ namespace lain
         return Json(static_cast<int>(instance));
     }
     template<>
-    Json Serializer::write(const u64& instance)
+    Json Serializer::write(const ui64& instance)
     {
         return Json(static_cast<double>(instance));
     }
     template<>
-    u64& Serializer::read(const Json& json_context, u64& instance) {
+    ui64& Serializer::read(const Json& json_context, ui64& instance) {
         assert(json_context.is_number());
-        return instance = static_cast<u64>(json_context.number_value());
+        return instance = static_cast<ui64>(json_context.number_value());
     }
     template<>
     unsigned int& Serializer::read(const Json& json_context, unsigned int& instance)

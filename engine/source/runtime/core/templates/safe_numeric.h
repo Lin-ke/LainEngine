@@ -114,5 +114,5 @@ public :
 	
 };
 typedef SafeNumeric<uint32_t> s_ui32;
-typedef SafeNumeric<uint64_t> s_u64;
+typedef SafeNumeric<uint64_t> s_ui64;
 #endif // __safe_numeric__

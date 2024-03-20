@@ -5,10 +5,10 @@
 namespace lain {
 
 class OSWindows :public OS {
-	u64 ticks_start = 0;
-	u64 ticks_per_second = 0;
+	ui64 ticks_start = 0;
+	ui64 ticks_per_second = 0;
 public:
-	virtual	u64 GetTimeUsec() const;
+	virtual	ui64 GetTimeUsec() const;
 	virtual	DateTime GetDateTime(bool p_utc) const;
 
 	virtual void Initialize();
