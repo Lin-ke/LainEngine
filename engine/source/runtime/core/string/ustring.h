@@ -89,7 +89,7 @@ namespace lain {
 		bool operator<(const Char16String& p_right) const;
 		Char16String& operator+=(char16_t p_char);
 		int length() const { return size() ? size() - 1 : 0; }
-		const char16_t* get_data() const;
+		const char16_t* get_data() const; //³£ÓÃ
 		operator const char16_t* () const { return get_data(); };
 
 	protected:

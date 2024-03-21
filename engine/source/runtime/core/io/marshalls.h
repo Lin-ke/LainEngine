@@ -30,8 +30,8 @@ union MarshallReal {
 	uintr_t i;
 	real_t r;
 };
-Error decode_variant(Variant& r_variant, const uint8_t* p_buffer, int p_len, int* r_len = nullptr, bool p_allow_objects = false, int p_depth = 0);
-Error encode_variant(const Variant& p_variant, uint8_t* r_buffer, int& r_len, bool p_full_objects = false, int p_depth = 0);
+Error decode_variant(Variant& r_variant, const uint8_t* p_buffer, int p_len, int* r_len = nullptr, bool p_allow_objects = false, int p_depth = 0) { return OK; }
+Error encode_variant(const Variant& p_variant, uint8_t* r_buffer, int& r_len, bool p_full_objects = false, int p_depth = 0) { return OK; }
 }
 
 #endif

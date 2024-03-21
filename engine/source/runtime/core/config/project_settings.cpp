@@ -42,6 +42,7 @@ namespace lain {
 		return p_path;
 	}
 
+
 	/// private
 	Error ProjectSettings::_initialize(const String p_path, bool p_ignore_override) {
 		//if (!OSRESDIR.is_empty()) {

@@ -19,7 +19,7 @@ namespace lain {
 			ACCESS_MAX
 		};
 	private:
-		AccessType m_access_type = ACCESS_FILESYSTEM;
+		AccessType _access_type = ACCESS_FILESYSTEM;
 		static CreateFunc create_func[ACCESS_MAX]; ///< set this to instance a filesystem object
 		static Ref<DirAccess> _open(const String& p_path);
 
@@ -28,13 +28,13 @@ namespace lain {
 
 		thread_local static Error last_dir_open_error;
 		bool include_navigational = false;
-		bool include_hidden = false;
+		bool include_hidden = false; // If true, hidden files are included when navigating the directory.
 	protected:
 
 		String _get_root_path() const;
 		virtual String _get_root_string() const;
 
-		AccessType get_access_type() const;
+		AccessType get_access_type() const { return _access_type; }
 		virtual String fix_path(const String& p_path) const;
 
 		template <class T>
@@ -51,8 +51,7 @@ namespace lain {
 
 		virtual int get_drive_count() = 0;
 		virtual String get_drive(int p_drive) = 0;
-		virtual int get_current_drive();
-		virtual bool drives_are_shortcuts();
+		virtual bool drives_are_shortcuts() { return false; }
 
 		virtual Error change_dir(String p_dir) = 0; ///< can be relative or absolute, return false on success
 		virtual String get_current_dir(bool p_include_drive = true) const = 0; ///< return current dir location
@@ -126,7 +125,7 @@ namespace lain {
 		void set_include_hidden(bool p_enable);
 		bool get_include_hidden() const;
 
-		virtual bool is_case_sensitive(const String& p_path) const;
+		//virtual bool is_case_sensitive(const String& p_path) const;
 
 		DirAccess() {}
 		virtual ~DirAccess() {}

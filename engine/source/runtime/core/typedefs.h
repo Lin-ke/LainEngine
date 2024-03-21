@@ -236,7 +236,9 @@ struct Comparator {
 //	~_GlobalLock() { _global_unlock(); }
 //};
 
-#define GLOBAL_LOCK_FUNCTION _GlobalLock _global_lock_;
+//#define GLOBAL_LOCK_FUNCTION _GlobalLock _global_lock_;
+#define GLOBAL_LOCK_FUNCTION ;
+
 
 #if defined(__GNUC__)
 #define likely(x) __builtin_expect(!!(x), 1)

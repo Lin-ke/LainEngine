@@ -14,6 +14,49 @@
 #define S_ISREG(m) ((m) & _S_IFREG)
 #endif
 namespace lain {
+	void FileAccessWindows::_close() {
+		if (!f) {
+			return;
+		}
+
+		fclose(f);
+		f = nullptr;
+
+		if (!save_path.is_empty()) {
+			bool rename_error = true;
+			const Char16String& path_utf16 = path.utf16();
+			const Char16String& save_path_utf16 = save_path.utf16();
+
+			int attempts = 4;
+			for (int i = 0; i < 1000; i++) {
+				if (ReplaceFileW((LPCWSTR)(save_path_utf16.get_data()), (LPCWSTR)(path_utf16.get_data()), nullptr, REPLACEFILE_IGNORE_MERGE_ERRORS | REPLACEFILE_IGNORE_ACL_ERRORS, nullptr, nullptr)) {
+					rename_error = false;
+				}
+				else {
+					// Either the target exists and is locked (temporarily, hopefully)
+					// or it doesn't exist; let's assume the latter before re-trying.
+					rename_error = _wrename((LPCWSTR)(path_utf16.get_data()), (LPCWSTR)(save_path_utf16.get_data())) != 0;
+				}
+
+				if (!rename_error) {
+					break;
+				}
+
+				OS::GetSingleton()->DelayUsec(1000);
+			}
+
+
+			if (rename_error) {
+				if (close_fail_notify) {
+					close_fail_notify(save_path);
+				}
+			}
+
+			save_path = "";
+
+			ERR_FAIL_COND_MSG(rename_error, "Safe save failed. This may be a permissions problem, but also may happen because you are running a paranoid antivirus. If this is the case, please switch to Windows Defender or disable the 'safe save' option in editor settings. This makes it work, but increases the risk of file corruption in a crash.");
+		}
+	}
 
 	String FileAccessWindows::fix_path(const String& p_path) const {
 		String r_path = FileAccess::fix_path(p_path);
@@ -122,55 +165,7 @@ namespace lain {
 		invalid_files.clear();
 	}
 
-	void FileAccessWindows::_close() {
-		if (!f) {
-			return;
-		}
-
-		fclose(f);
-		f = nullptr;
-
-		if (!save_path.is_empty()) {
-			bool rename_error = true;
-			int attempts = 4;
-			while (rename_error && attempts) {
-				// This workaround of trying multiple times is added to deal with paranoid Windows
-				// antiviruses that love reading just written files even if they are not executable, thus
-				// locking the file and preventing renaming from happening. XD
-
-#ifdef UWP_ENABLED
-			// UWP has no PathFileExists, so we check attributes instead
-				DWORD fileAttr;
-
-				fileAttr = GetFileAttributesW((LPCWSTR)(save_path.utf16().get_data()));
-				if (INVALID_FILE_ATTRIBUTES == fileAttr) {
-#else
-				if (!PathFileExistsW((LPCWSTR)(save_path.utf16().get_data()))) {
-#endif
-					// Creating new file
-					rename_error = _wrename((LPCWSTR)(path.utf16().get_data()), (LPCWSTR)(save_path.utf16().get_data())) != 0;
-				}
-				else {
-					// Atomic replace for existing file
-					rename_error = !ReplaceFileW((LPCWSTR)(save_path.utf16().get_data()), (LPCWSTR)(path.utf16().get_data()), nullptr, 2 | 4, nullptr, nullptr);
-				}
-				if (rename_error) {
-					attempts--;
-					OS::GetSingleton()->DelayUsec(100000); // wait 100msec and try again
-				}
-				}
-
-			if (rename_error) {
-				if (close_fail_notify) {
-					close_fail_notify(save_path);
-				}
-			}
-
-			save_path = "";
-
-			ERR_FAIL_COND_MSG(rename_error, "Safe save failed. This may be a permissions problem, but also may happen because you are running a paranoid antivirus. If this is the case, please switch to Windows Defender or disable the 'safe save' option in editor settings. This makes it work, but increases the risk of file corruption in a crash.");
-			}
-		}
+	
 	// ≤È «∑Òeof
 	void FileAccessWindows::check_errors() const {
 		ERR_FAIL_COND(!f);

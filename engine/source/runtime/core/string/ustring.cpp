@@ -1801,7 +1801,7 @@ Error String::parse_utf8(const char* p_utf8, int p_len, bool p_skip_cr) {
 	int cstr_size = 0;
 	int str_size = 0;
 
-	/* HANDLE BOM (Byte Order Mark) */
+	/* HANDLE BOM (Byte Order Mark) *///  used to signal the endianness of an encoding,
 	if (p_len < 0 || p_len >= 3) {
 		bool has_bom = uint8_t(p_utf8[0]) == 0xef && uint8_t(p_utf8[1]) == 0xbb && uint8_t(p_utf8[2]) == 0xbf;
 		if (has_bom) {
@@ -1891,28 +1891,31 @@ Error String::parse_utf8(const char* p_utf8, int p_len, bool p_skip_cr) {
 	}
 
 	resize(str_size + 1);
-	char32_t* dst = ptrw();
+	char32_t* dst = ptrw(); // 获得可以写的
 	dst[str_size] = 0;
 
 	int skip = 0;
 	uint32_t unichar = 0;
 	while (cstr_size) {
-		uint8_t c = *p_utf8 >= 0 ? *p_utf8 : uint8_t(256 + *p_utf8);
+		uint8_t c = *p_utf8 >= 0 ? *p_utf8 : uint8_t(256 + *p_utf8); // 避免强转
 
 		if (skip == 0) {
-			if (p_skip_cr && c == '\r') {
+			if (p_skip_cr && c == '\r') { // jumps at \r
 				p_utf8++;
 				continue;
 			}
 			/* Determine the number of characters in sequence */
-			if ((c & 0x80) == 0) {
+			if ((c & 0x80) == 0) { // 单字节
 				*(dst++) = c;
 				unichar = 0;
 				skip = 0;
 			}
-			else if ((c & 0xe0) == 0xc0) {
+			else if ((c & 0xe0) == 0xc0) { //0x110开头，2字节编码
+				// 获得后面5位(&00011111)，存储到unichar
+				// unichar是从右边开始的
+
 				unichar = (0xff >> 3) & c;
-				skip = 1;
+				skip = 1; //下一个字节也是这个
 			}
 			else if ((c & 0xf0) == 0xe0) {
 				unichar = (0xff >> 4) & c;
@@ -1936,12 +1939,12 @@ Error String::parse_utf8(const char* p_utf8, int p_len, bool p_skip_cr) {
 				skip = 0;
 			}
 		}
-		else {
-			if (c < 0x80 || c > 0xbf) {
+		else { 
+			if (c < 0x80 || c > 0xbf) {// 非标准utf连续字节
 				*(dst++) = 0x20;
 				skip = 0;
 			}
-			else {
+			else { // 取后6个字节
 				unichar = (unichar << 6) | (c & 0x3f);
 				--skip;
 				if (skip == 0) {
@@ -1958,7 +1961,7 @@ Error String::parse_utf8(const char* p_utf8, int p_len, bool p_skip_cr) {
 						print_unicode_error(vformat("Invalid unicode codepoint (%x)", unichar));
 						decode_error = true;
 					}
-					*(dst++) = unichar;
+					*(dst++) = unichar; // 一个utf8写入到char32中，但是上面的skip=5,skip=4都是没用到的
 				}
 			}
 		}
@@ -1967,7 +1970,7 @@ Error String::parse_utf8(const char* p_utf8, int p_len, bool p_skip_cr) {
 		p_utf8++;
 	}
 	if (skip) {
-		*(dst++) = 0x20;
+		*(dst++) = 0x20; //0x20（十进制的 32）（表示空格字符）
 	}
 
 	if (decode_failed) {

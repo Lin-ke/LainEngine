@@ -14,6 +14,7 @@ class DirAccessWindows :public DirAccess {
 	DirAccessWindowsPrivate* p = nullptr;
 
 	/* Windows stuff */
+	// drive£ºÇý¶¯ÅÌ
 
 	char drives[MAX_DRIVES] = { 0 }; // a-z:
 	int drive_count = 0;
@@ -53,7 +54,7 @@ public:
 	uint64_t get_space_left() override;
 
 	virtual String get_filesystem_type() const override;
-	virtual bool is_case_sensitive(const String& p_path) const override;
+	//virtual bool is_case_sensitive(const String& p_path) const override;
 
 	DirAccessWindows();
 	~DirAccessWindows();

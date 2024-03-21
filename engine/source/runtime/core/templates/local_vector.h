@@ -9,6 +9,7 @@
 namespace lain {
 	// do as std::vector( if not tight)
 	/// force_trivial: no need to call destructor
+	// not cow
 template <class T, class U = uint32_t, bool force_trivial = false, bool tight = false>
 class LocalVector{
 private:

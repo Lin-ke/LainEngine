@@ -85,7 +85,7 @@ namespace lain {
 	}
 	Ref<FileAccess> FileAccess::create(AccessType p_access) {
 		ERR_FAIL_INDEX_V(p_access, ACCESS_MAX, nullptr);
-
+		// operator=
 		Ref<FileAccess> ret = create_func[p_access]();
 		ret->_set_access_type(p_access);
 		return ret;
@@ -107,13 +107,7 @@ namespace lain {
 		return ret;
 	}
 
-	Ref<FileAccess> FileAccess::create(AccessType p_access) {
-		ERR_FAIL_INDEX_V(p_access, ACCESS_MAX, nullptr);
 
-		Ref<FileAccess> ret = create_func[p_access]();
-		ret->_set_access_type(p_access);
-		return ret;
-	}
 	FileAccess::CreateFunc FileAccess::get_create_func(AccessType p_access) {
 		return create_func[p_access];
 	}
@@ -509,6 +503,9 @@ namespace lain {
 	void FileAccess::store_line(const String& p_line) {
 		store_string(p_line);
 		store_8('\n');
+	}
+	Error FileAccess::reopen(const String& p_path, int p_mode_flags) {
+		return open_internal(p_path, p_mode_flags);
 	}
 	void FileAccess::store_csv_line(const Vector<String>& p_values, const String& p_delim) {
 		ERR_FAIL_COND(p_delim.length() != 1);

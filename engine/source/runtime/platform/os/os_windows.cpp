@@ -73,8 +73,9 @@ namespace lain {
 	}
 	void OSWindows::Initialize() {
 		// 在这里初始化，将FileAccess类的create_function函数数组放入make_default(memnew)<T> 工厂
-		// 对于不同类型的数据访问会用到不同的FileAccess子类。
-		// 这之后，出来的应该是T类型啊，怎么就成了？
+		// 这样以后在fileaccess里执行create()得到的就是对应的子类
+		// 而Ref<> = 
+
 		FileAccess::make_default<FileAccessWindows>(FileAccess::ACCESS_RESOURCES);
 		FileAccess::make_default<FileAccessWindows>(FileAccess::ACCESS_USERDATA);
 		FileAccess::make_default<FileAccessWindows>(FileAccess::ACCESS_FILESYSTEM);

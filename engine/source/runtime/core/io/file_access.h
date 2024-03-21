@@ -44,8 +44,8 @@ public:
 	bool big_endian = false;
 	bool real_is_double = false;
 
-	virtual uint32_t _get_unix_permissions(const String& p_file) = 0;
-	virtual Error _set_unix_permissions(const String& p_file, uint32_t p_permissions) = 0;
+	//virtual uint32_t _get_unix_permissions(const String& p_file) = 0;
+	//virtual Error _set_unix_permissions(const String& p_file, uint32_t p_permissions) = 0;
 
 protected:
 
