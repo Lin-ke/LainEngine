@@ -63,6 +63,13 @@ void  L_PERROR(const Types&... args)
 	L_CORE_ERROR(ss.str());
 }
 
+template <typename ... Types>
+void  L_PWARNING(const Types&... args)
+{
+	std::ostringstream  ss;
+	std::initializer_list <int> { ([&args, &ss] {ss << (args) << " "; }(), 0)...};
+	L_CORE_WARN(ss.str());
+}
 
 template <typename ... Types>
 L_INLINE void L_CORE_PRINT(const Types&... args)

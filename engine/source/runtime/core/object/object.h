@@ -10,6 +10,25 @@
 #include "core/math/hashfuncs.h"
 #include "core/meta/reflection/reflection.h"
 #include "core/object/object_id.h"
+#include "core/string/string_name.h"
+// Macros
+#define LCLASS(m_class, m_inherits)		\
+private:								\
+	void operator=(const m_class &p_rval) {} \
+									\
+public:\
+		\
+	virtual String get_class()	const override 	\
+		{return String(#m_class);}	\
+									\
+	virtual StringName *_get_class_namev() const override{\
+		static StringName _class_name_static;\
+		if (unlikely(!_class_name_static)){ \
+			StringName::assign_static_unique_class_name(&_class_name_static, #m_class); 		\
+		} return &_class_name_static; \
+	}	\
+
+
 // base class of all object
 namespace lain {
 	// signal mechanism
@@ -52,6 +71,14 @@ public:
 	template <class T>
 	static const T* cast_to(const Object* p_object) {
 		return dynamic_cast<const T*>(p_object);
+	}
+	virtual String get_class() const { return "Object"; }
+	virtual const StringName* _get_class_namev() const {
+		static StringName _class_name_static;
+		if (unlikely(!_class_name_static)) {
+			StringName::assign_static_unique_class_name(&_class_name_static, "Object");
+		}
+		return &_class_name_static;
 	}
 
 private:

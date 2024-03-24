@@ -4,7 +4,7 @@
 #include "core/object/object.h"
 #include "core/templates/vset.h"
 #include "core/variant/typed_array.h"
-#include "core/resource/resource.h"
+#include "core/io/resource.h"
 #include "core/string/string_name.h"
 #include "node_res.h"
 #include "node_path.h"

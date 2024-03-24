@@ -2319,10 +2319,10 @@ int64_t String::hex_to_int() const {
 		char32_t c = lower_case(*s);
 		int64_t n;
 		if (is_digit(c)) {
-			n = c - '0';
-		}
+			n = static_cast<int64_t>(c) - '0';
+		} 
 		else if (c >= 'a' && c <= 'f') {
-			n = (c - 'a') + 10;
+			n = (static_cast<int64_t>(c) - 'a') + 10;
 		}
 		else {
 			ERR_FAIL_V_MSG(0, vformat(R"(Invalid hexadecimal notation character "%c" (U+%04X) in string "%s".)", *s, static_cast<int32_t>(*s), *this));

@@ -286,9 +286,6 @@
     <ClInclude Include="core\resource\res_importer.h">
       <Filter>core\resource</Filter>
     </ClInclude>
-    <ClInclude Include="core\resource\resource.h">
-      <Filter>core\resource</Filter>
-    </ClInclude>
     <ClInclude Include="core\resource\resource_uid.h">
       <Filter>core\resource</Filter>
     </ClInclude>
@@ -448,9 +445,6 @@
     <ClInclude Include="resource\component\mesh.h">
       <Filter>resource\component</Filter>
     </ClInclude>
-    <ClInclude Include="resource\io\resource.h">
-      <Filter>resource\io</Filter>
-    </ClInclude>
     <ClInclude Include="resource\io\resource_load.h">
       <Filter>resource\io</Filter>
     </ClInclude>
@@ -463,6 +457,13 @@
     <ClInclude Include="resource\common\texture.h" />
     <ClInclude Include="core\io\compress.h" />
     <ClInclude Include="core\io\marshalls.h" />
+    <ClInclude Include="resource\asset\texture.h" />
+    <ClInclude Include="function\render\vulkan\vulkan_header.h" />
+    <ClInclude Include="function\render\common\texture.h" />
+    <ClInclude Include="core\io\resource.h" />
+    <ClInclude Include="core\io\resource_loader.h" />
+    <ClInclude Include="core\thread\worker_thread_pool.h" />
+    <ClInclude Include="core\os\thread.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\config\project_settings.cpp">
@@ -637,5 +638,8 @@
       <Filter>resource\io</Filter>
     </ClCompile>
     <ClCompile Include="core\io\marshalls.cpp" />
+    <ClCompile Include="core\io\resource.cpp" />
+    <ClCompile Include="core\io\resource_loader.cpp" />
+    <ClCompile Include="core\os\thread.cpp" />
   </ItemGroup>
 </Project>

@@ -351,7 +351,7 @@ Error DirAccess::copy(const String& p_from, const String& p_to, int p_chmod_flag
 				err = FAILED;
 				break;
 			}
-			fdst->store_buffer(buffer.ptr(), bytes_read);
+			fdst->store_buffer(buffer.ptr(), static_cast<ui32>(bytes_read));
 
 			size -= bytes_read;
 		}

@@ -4,7 +4,7 @@ namespace lain {
 bool RefCounted::init_ref() {
 	if (reference()) {
 		if (!is_referenced() && refcount_init.unref()) {
-			unreference();
+			unreference();  // first referencing is already 1, so compensate for the ref above
 		}
 		return true;
 	}
@@ -28,5 +28,7 @@ int RefCounted::get_reference_count() const {
 }
 
 RefCounted::RefCounted() :Object(true){
+	refcount.init();
+	refcount_init.init();
 }
 }
