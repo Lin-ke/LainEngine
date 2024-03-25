@@ -4,8 +4,10 @@
 #include <thread>
 #include "core/typedefs.h"
 #include <malloc.h>
-#define THREADING_NAMESPACE std // use std
 namespace lain {
+	// 比较简单的Thread的包装
+	// 注意关于Platformfunction的抽象
+	// 以及利用函数指针实现鸭子类型（运行时）
 	class String;
 	class Thread {
 	public:
