@@ -40,9 +40,9 @@ namespace lain {
 				instance._data->static_count.increment();
 			}
 #ifdef DEBUG_ENABLED
-			if (unlikely(debug_stringname)) {
+			/*if (unlikely(debug_stringname)) {
 				instance._data->debug_references++;
-			}
+			}*/
 #endif
 			return instance;
 		}
@@ -57,11 +57,11 @@ namespace lain {
 		instance._data->next = instance._table[idx];
 		instance._data->prev = nullptr;
 #ifdef DEBUG_ENABLED
-		if (unlikely(debug_stringname)) {
-			// Keep in memory, force static.
-			instance._data->refcount.ref();
-			instance._data->static_count.increment();
-		}
+		//if (unlikely(debug_stringname)) {
+		//	// Keep in memory, force static.
+		//	instance._data->refcount.ref();
+		//	instance._data->static_count.increment();
+		//}
 #endif
 
 		if (instance._table[idx]) {

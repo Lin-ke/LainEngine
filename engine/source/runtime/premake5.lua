@@ -24,6 +24,7 @@ project "LainRuntime"
           "%{IncludeDir.spdlog}",
           "%{IncludeDir.glfw}",
           "%{IncludeDir.json11}",
+            "%{IncludeDir.mbedtls}",
          "%{IncludeDir.VulkanSDK}",
 
       }
@@ -33,6 +34,7 @@ project "LainRuntime"
          "spdlog",
          "glfw",
          "json11",
+         "mbedtls",
          "PreCompile"
 
 		}

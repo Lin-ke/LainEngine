@@ -7,7 +7,8 @@
 #include "core/typedefs.h"
 namespace lain {
 /// <summary>
-/// 双向链表
+/// 双向链表，同时具有对_first和_last的索引
+/// add插到前面，last插到后面
 /// </summary>
 /// <typeparam name="T"></typeparam>
 
@@ -19,6 +20,7 @@ public:
 		SelfList<T> *_last = nullptr;
 
 	public:
+		// 在first前面插入
 		void add(SelfList<T> *p_elem) {
 			ERR_FAIL_COND(p_elem->_root);
 
@@ -35,7 +37,7 @@ public:
 
 			_first = p_elem;
 		}
-
+		// 在last后面插入
 		void add_last(SelfList<T> *p_elem) {
 			ERR_FAIL_COND(p_elem->_root);
 

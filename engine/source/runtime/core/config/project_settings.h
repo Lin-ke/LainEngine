@@ -26,6 +26,7 @@ public:
 	bool _get(const StringName& p_name, Variant& r_ret) const;
 	Variant GetWithOverride(const StringName& p_name) const;
 	String GlobalizePath(const String& path) const;
+    String LocalizePath(const String& path) const;
 	/// <summary>
 	/// features
 	/// </summary>

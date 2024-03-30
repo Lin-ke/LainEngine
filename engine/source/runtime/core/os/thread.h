@@ -3,6 +3,7 @@
 #define THREAD_H
 #include <thread>
 #include "core/typedefs.h"
+#include "core/templates/safe_numeric.h"
 #include <malloc.h>
 namespace lain {
 	// 比较简单的Thread的包装
@@ -44,7 +45,7 @@ namespace lain {
 
 		ID id = UNASSIGNED_ID;
 		static SafeNumeric<uint64_t> id_counter;
-		static thread_local ID caller_id;
+		static thread_local ID caller_id; // 调用者id
 		THREADING_NAMESPACE::thread thread;
 
 		static void callback(ID p_caller_id, const Settings& p_settings, Thread::Callback p_callback, void* p_userdata);

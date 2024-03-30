@@ -19,6 +19,9 @@
     <Filter Include="core\input">
       <UniqueIdentifier>{ED821051-D93A-529E-4242-2BFA2E19ED8E}</UniqueIdentifier>
     </Filter>
+    <Filter Include="core\io">
+      <UniqueIdentifier>{75DBB8D3-E1BA-376F-EAD2-C24556319ED0}</UniqueIdentifier>
+    </Filter>
     <Filter Include="core\log">
       <UniqueIdentifier>{3F57D44A-2B24-2F56-543D-1DFE406964E4}</UniqueIdentifier>
     </Filter>
@@ -46,9 +49,6 @@
     <Filter Include="core\os">
       <UniqueIdentifier>{3FDCB8D3-ABBB-376F-B4D3-C24520329ED0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="core\resource">
-      <UniqueIdentifier>{45F6F45E-B1B6-7095-7AF1-B912E670B571}</UniqueIdentifier>
-    </Filter>
     <Filter Include="core\scene">
       <UniqueIdentifier>{0B40BF51-F7F7-009F-60FF-D9FA4CD69B8F}</UniqueIdentifier>
     </Filter>
@@ -60,6 +60,9 @@
     </Filter>
     <Filter Include="core\templates">
       <UniqueIdentifier>{CC76585A-B844-4C60-A1D8-BC868D4528C5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core\thread">
+      <UniqueIdentifier>{15DF5D8C-8194-D681-0A89-D058763DCD85}</UniqueIdentifier>
     </Filter>
     <Filter Include="core\variant">
       <UniqueIdentifier>{1252BCA1-FEB4-4B46-A73A-84FC937C17C9}</UniqueIdentifier>
@@ -76,6 +79,12 @@
     <Filter Include="function\render">
       <UniqueIdentifier>{7A88BD14-E613-2BD9-EF24-AECD5B2F87D9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="function\render\common">
+      <UniqueIdentifier>{921C8A5F-7E16-B3B1-6783-49C2531C191E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="function\render\vulkan">
+      <UniqueIdentifier>{DA1C488C-C616-71DE-AF83-07EF9B1CD74A}</UniqueIdentifier>
+    </Filter>
     <Filter Include="function\ui">
       <UniqueIdentifier>{D82F8330-44E5-FB25-CDD9-F5FC398EF229}</UniqueIdentifier>
     </Filter>
@@ -85,8 +94,14 @@
     <Filter Include="platform\io">
       <UniqueIdentifier>{F1EC55E0-5DA2-CED5-E696-C8AC524BC5D9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="platform\os">
+      <UniqueIdentifier>{BBED55E0-27A3-CED5-B097-C8AC1C4CC5D9}</UniqueIdentifier>
+    </Filter>
     <Filter Include="resource">
       <UniqueIdentifier>{0D091A24-F9D5-742F-22EF-62D70E1BAABD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resource\asset">
+      <UniqueIdentifier>{7CA33079-6871-247F-5105-95A53D7200E4}</UniqueIdentifier>
     </Filter>
     <Filter Include="resource\common">
       <UniqueIdentifier>{C5D9A3A3-3165-1168-3A76-945CA6806D68}</UniqueIdentifier>
@@ -126,6 +141,30 @@
     </ClInclude>
     <ClInclude Include="core\input\mouse_input.h">
       <Filter>core\input</Filter>
+    </ClInclude>
+    <ClInclude Include="core\io\compress.h">
+      <Filter>core\io</Filter>
+    </ClInclude>
+    <ClInclude Include="core\io\dir_access.h">
+      <Filter>core\io</Filter>
+    </ClInclude>
+    <ClInclude Include="core\io\file_access.h">
+      <Filter>core\io</Filter>
+    </ClInclude>
+    <ClInclude Include="core\io\marshalls.h">
+      <Filter>core\io</Filter>
+    </ClInclude>
+    <ClInclude Include="core\io\resource.h">
+      <Filter>core\io</Filter>
+    </ClInclude>
+    <ClInclude Include="core\io\resource_loader.h">
+      <Filter>core\io</Filter>
+    </ClInclude>
+    <ClInclude Include="core\io\resource_uid.h">
+      <Filter>core\io</Filter>
+    </ClInclude>
+    <ClInclude Include="core\io\rid.h">
+      <Filter>core\io</Filter>
     </ClInclude>
     <ClInclude Include="core\log\log.h">
       <Filter>core\log</Filter>
@@ -253,12 +292,6 @@
     <ClInclude Include="core\os\condition_variable.h">
       <Filter>core\os</Filter>
     </ClInclude>
-    <ClInclude Include="core\io\dir_access.h">
-      <Filter>core\os</Filter>
-    </ClInclude>
-    <ClInclude Include="core\io\file_access.h">
-      <Filter>core\os</Filter>
-    </ClInclude>
     <ClInclude Include="core\os\memory.h">
       <Filter>core\os</Filter>
     </ClInclude>
@@ -271,7 +304,13 @@
     <ClInclude Include="core\os\pool_allocator.h">
       <Filter>core\os</Filter>
     </ClInclude>
+    <ClInclude Include="core\os\semaphore.h">
+      <Filter>core\os</Filter>
+    </ClInclude>
     <ClInclude Include="core\os\spin_lock.h">
+      <Filter>core\os</Filter>
+    </ClInclude>
+    <ClInclude Include="core\os\thread.h">
       <Filter>core\os</Filter>
     </ClInclude>
     <ClInclude Include="core\os\thread_safe.h">
@@ -282,15 +321,6 @@
     </ClInclude>
     <ClInclude Include="core\register_core_types.h">
       <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="core\resource\res_importer.h">
-      <Filter>core\resource</Filter>
-    </ClInclude>
-    <ClInclude Include="core\resource\resource_uid.h">
-      <Filter>core\resource</Filter>
-    </ClInclude>
-    <ClInclude Include="core\resource\rid.h">
-      <Filter>core\resource</Filter>
     </ClInclude>
     <ClInclude Include="core\scene\node.h">
       <Filter>core\scene</Filter>
@@ -322,6 +352,9 @@
     <ClInclude Include="core\string\ustring.h">
       <Filter>core\string</Filter>
     </ClInclude>
+    <ClInclude Include="core\templates\command_queue_mt.h">
+      <Filter>core\templates</Filter>
+    </ClInclude>
     <ClInclude Include="core\templates\cowdata.h">
       <Filter>core\templates</Filter>
     </ClInclude>
@@ -340,7 +373,7 @@
     <ClInclude Include="core\templates\local_vector.h">
       <Filter>core\templates</Filter>
     </ClInclude>
-    <ClInclude Include="core\templates\page_allocator.h">
+    <ClInclude Include="core\templates\paged_allocator.h">
       <Filter>core\templates</Filter>
     </ClInclude>
     <ClInclude Include="core\templates\pair.h">
@@ -355,6 +388,9 @@
     <ClInclude Include="core\templates\self_list.h">
       <Filter>core\templates</Filter>
     </ClInclude>
+    <ClInclude Include="core\templates\simple_type.h">
+      <Filter>core\templates</Filter>
+    </ClInclude>
     <ClInclude Include="core\templates\singleton.h">
       <Filter>core\templates</Filter>
     </ClInclude>
@@ -366,6 +402,9 @@
     </ClInclude>
     <ClInclude Include="core\templates\vset.h">
       <Filter>core\templates</Filter>
+    </ClInclude>
+    <ClInclude Include="core\thread\worker_thread_pool.h">
+      <Filter>core\thread</Filter>
     </ClInclude>
     <ClInclude Include="core\typedefs.h">
       <Filter>core</Filter>
@@ -406,6 +445,12 @@
     <ClInclude Include="function\project\project_manager.h">
       <Filter>function\project</Filter>
     </ClInclude>
+    <ClInclude Include="function\render\common\render_state.h">
+      <Filter>function\render\common</Filter>
+    </ClInclude>
+    <ClInclude Include="function\render\common\texture.h">
+      <Filter>function\render\common</Filter>
+    </ClInclude>
     <ClInclude Include="function\render\render_system_globals.h">
       <Filter>function\render</Filter>
     </ClInclude>
@@ -414,6 +459,9 @@
     </ClInclude>
     <ClInclude Include="function\render\viewport.h">
       <Filter>function\render</Filter>
+    </ClInclude>
+    <ClInclude Include="function\render\vulkan\vulkan_header.h">
+      <Filter>function\render\vulkan</Filter>
     </ClInclude>
     <ClInclude Include="function\script.h">
       <Filter>function</Filter>
@@ -428,7 +476,13 @@
       <Filter>platform\io</Filter>
     </ClInclude>
     <ClInclude Include="platform\os\os_windows.h">
-      <Filter>platform\io</Filter>
+      <Filter>platform\os</Filter>
+    </ClInclude>
+    <ClInclude Include="resource\asset\texture.h">
+      <Filter>resource\asset</Filter>
+    </ClInclude>
+    <ClInclude Include="resource\common\texture.h">
+      <Filter>resource\common</Filter>
     </ClInclude>
     <ClInclude Include="resource\common\world.h">
       <Filter>resource\common</Filter>
@@ -445,6 +499,9 @@
     <ClInclude Include="resource\component\mesh.h">
       <Filter>resource\component</Filter>
     </ClInclude>
+    <ClInclude Include="resource\io\resource.h">
+      <Filter>resource\io</Filter>
+    </ClInclude>
     <ClInclude Include="resource\io\resource_load.h">
       <Filter>resource\io</Filter>
     </ClInclude>
@@ -454,20 +511,16 @@
     <ClInclude Include="scene\viewport.h">
       <Filter>scene</Filter>
     </ClInclude>
-    <ClInclude Include="resource\common\texture.h" />
-    <ClInclude Include="core\io\compress.h" />
-    <ClInclude Include="core\io\marshalls.h" />
-    <ClInclude Include="resource\asset\texture.h" />
-    <ClInclude Include="function\render\vulkan\vulkan_header.h" />
-    <ClInclude Include="function\render\common\texture.h" />
-    <ClInclude Include="core\io\resource.h" />
-    <ClInclude Include="core\io\resource_loader.h" />
-    <ClInclude Include="core\thread\worker_thread_pool.h" />
-    <ClInclude Include="core\os\thread.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\config\project_settings.cpp">
       <Filter>core\config</Filter>
+    </ClCompile>
+    <ClCompile Include="core\cropto\cropto_core.cpp">
+      <Filter>core\cropto</Filter>
+    </ClCompile>
+    <ClCompile Include="core\cropto\crypto_core.cpp">
+      <Filter>core\cropto</Filter>
     </ClCompile>
     <ClCompile Include="core\engine\engine.cpp">
       <Filter>core\engine</Filter>
@@ -477,6 +530,24 @@
     </ClCompile>
     <ClCompile Include="core\input\input.cpp">
       <Filter>core\input</Filter>
+    </ClCompile>
+    <ClCompile Include="core\io\dir_access.cpp">
+      <Filter>core\io</Filter>
+    </ClCompile>
+    <ClCompile Include="core\io\file_access.cpp">
+      <Filter>core\io</Filter>
+    </ClCompile>
+    <ClCompile Include="core\io\marshalls.cpp">
+      <Filter>core\io</Filter>
+    </ClCompile>
+    <ClCompile Include="core\io\resource.cpp">
+      <Filter>core\io</Filter>
+    </ClCompile>
+    <ClCompile Include="core\io\resource_loader.cpp">
+      <Filter>core\io</Filter>
+    </ClCompile>
+    <ClCompile Include="core\io\resource_uid.cpp">
+      <Filter>core\io</Filter>
     </ClCompile>
     <ClCompile Include="core\log\log.cpp">
       <Filter>core\log</Filter>
@@ -547,12 +618,6 @@
     <ClCompile Include="core\object\signal.cpp">
       <Filter>core\object</Filter>
     </ClCompile>
-    <ClCompile Include="core\io\dir_access.cpp">
-      <Filter>core\os</Filter>
-    </ClCompile>
-    <ClCompile Include="core\io\file_access.cpp">
-      <Filter>core\os</Filter>
-    </ClCompile>
     <ClCompile Include="core\os\memory.cpp">
       <Filter>core\os</Filter>
     </ClCompile>
@@ -565,17 +630,11 @@
     <ClCompile Include="core\os\pool_allocator.cpp">
       <Filter>core\os</Filter>
     </ClCompile>
+    <ClCompile Include="core\os\thread.cpp">
+      <Filter>core\os</Filter>
+    </ClCompile>
     <ClCompile Include="core\register_core_types.cpp">
       <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="core\resource\res_manager.cpp">
-      <Filter>core\resource</Filter>
-    </ClCompile>
-    <ClCompile Include="core\resource\resource.cpp">
-      <Filter>core\resource</Filter>
-    </ClCompile>
-    <ClCompile Include="core\resource\resource_uid.cpp">
-      <Filter>core\resource</Filter>
     </ClCompile>
     <ClCompile Include="core\scene\node.cpp">
       <Filter>core\scene</Filter>
@@ -597,6 +656,9 @@
     </ClCompile>
     <ClCompile Include="core\string\ustringutils.cpp">
       <Filter>core\string</Filter>
+    </ClCompile>
+    <ClCompile Include="core\thread\worker_thread_pool.cpp">
+      <Filter>core\thread</Filter>
     </ClCompile>
     <ClCompile Include="core\variant\array.cpp">
       <Filter>core\variant</Filter>
@@ -629,7 +691,7 @@
       <Filter>platform\io</Filter>
     </ClCompile>
     <ClCompile Include="platform\os\os_windows.cpp">
-      <Filter>platform\io</Filter>
+      <Filter>platform\os</Filter>
     </ClCompile>
     <ClCompile Include="resource\component\transform_component.cpp">
       <Filter>resource\component</Filter>
@@ -637,9 +699,5 @@
     <ClCompile Include="resource\io\resource_load.cpp">
       <Filter>resource\io</Filter>
     </ClCompile>
-    <ClCompile Include="core\io\marshalls.cpp" />
-    <ClCompile Include="core\io\resource.cpp" />
-    <ClCompile Include="core\io\resource_loader.cpp" />
-    <ClCompile Include="core\os\thread.cpp" />
   </ItemGroup>
 </Project>

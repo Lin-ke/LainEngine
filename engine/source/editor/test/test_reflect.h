@@ -8,6 +8,9 @@ namespace lain {
 	namespace test {
 		int test_StringName_reflect();
 		int test_Vector3_reflect();
+		int test_assign_using_serializer();
+
+		int test_accessor();
 
 		template<typename T>
 		void test_meta(T& instance, const char* tname, const char* fieldname, void* value) {

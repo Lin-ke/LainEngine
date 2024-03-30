@@ -1,10 +1,8 @@
 #include "thread.h"
-#include "core/templates/safe_numeric.h"
 #include "core/string/ustring.h"
 namespace lain {
 	SafeNumeric<uint64_t> Thread::id_counter(1); // The first value after .increment() is 2, hence by default the main thread ID should be 1.
 	thread_local Thread::ID Thread::caller_id = Thread::UNASSIGNED_ID;
-	// 也是一种鸭子的方法
 	void Thread::callback(ID p_caller_id, const Settings& p_settings, Thread::Callback p_callback, void* p_userdata) {
 		Thread::caller_id = p_caller_id;
 		if (platform_functions.set_priority) {
@@ -27,7 +25,7 @@ namespace lain {
 	Thread::ID Thread::start(Thread::Callback p_callback, void* p_user, const Settings& p_settings) {
 		ERR_FAIL_COND_V_MSG(id != UNASSIGNED_ID, UNASSIGNED_ID, "A Thread object has been re-started without wait_to_finish() having been called on it.");
 		id = id_counter.increment();
-		// std::thread(&function, parameters, ...)
+		// std::thread(&function, parameters, ...) 创建了就开始运行
 		thread = THREADING_NAMESPACE::thread(&Thread::callback, id, p_settings, p_callback, p_user);
 		return id;
 	}

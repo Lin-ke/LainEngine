@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "core/math/math_defs.h"
 #include "core/object/object_id.h"
-#include "core/resource/rid.h"
+#include "core/io/rid.h"
 #include "core/string/ustring.h"
 #include "core/templates/vector.h"
 #include "core/math/color.h"

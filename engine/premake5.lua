@@ -18,7 +18,8 @@ project "ZERO_CHECK"
             "glfw",
             "json11",
             "glad",
-            "imgui"
+            "imgui",
+            "mbedtls"
       }
 project "INSTALL"
       kind "StaticLib"

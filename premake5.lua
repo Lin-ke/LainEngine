@@ -22,6 +22,7 @@ group "Dependencies"
    include "engine/thirdparty/glfw"
    include "engine/thirdparty/imgui"
    include "engine/thirdparty/json11"
+   include "engine/thirdparty/mbedtls"
 group ""
 
 group "Tools"

@@ -17,7 +17,8 @@ int main(int argc, char** argv) {
 	OSWindows::GetSingleton()->Run();
 	test::test_Vector3_reflect();
 	test::test_StringName_reflect();
-
+	test::test_accessor();
+	test::test_assign_using_serializer();
 	
 }
 

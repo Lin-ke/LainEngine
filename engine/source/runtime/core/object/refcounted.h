@@ -183,7 +183,7 @@ public:
 		}
 		reference = nullptr;
 	}
-
+	// 新建的变量通过这个
 	void instantiate() {
 		ref(memnew(T));
 	}

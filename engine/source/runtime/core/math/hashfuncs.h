@@ -11,7 +11,7 @@
 #include "core/string/string_name.h"
 #include "core/string/ustring.h"
 #include "core/typedefs.h"
-#include "core/resource/rid.h"
+#include "core/io/rid.h"
 namespace lain {
 
 /**

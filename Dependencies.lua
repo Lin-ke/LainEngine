@@ -13,6 +13,9 @@ IncludeDir["imgui"]     =   (vdrprefix .. "/imgui")
 IncludeDir["llvm"]      =   (vdrprefix .. "/LLVM/include")
 IncludeDir["mustache"]  =   (vdrprefix .. "/mustache")
 IncludeDir["json11"]  =   (vdrprefix .. "/json11")
+IncludeDir["mbedtls"] = (vdrprefix .. "/mbedtls/include")
+
+
 IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/Include"
 
 

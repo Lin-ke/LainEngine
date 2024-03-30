@@ -141,7 +141,7 @@ namespace lain
         int TypeMeta::getFieldsList(FieldAccessor*& out_list)
         {
             int count = m_fields.size();
-            out_list  = memnew(FieldAccessor[count]);
+            out_list  = memnew_arr(FieldAccessor,count);
             for (int i = 0; i < count; ++i)
             {
                 out_list[i] = m_fields[i];
@@ -152,7 +152,7 @@ namespace lain
         int TypeMeta::getMethodsList(MethodAccessor*& out_list)
         {
             int count = m_methods.size();
-            out_list  = memnew(MethodAccessor[count]);
+            out_list  = memnew_arr(MethodAccessor, count);
             for (int i = 0; i < count; ++i)
             {
                 out_list[i] = m_methods[i];

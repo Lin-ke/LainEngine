@@ -3,6 +3,7 @@
 #include "core/typedefs.h"
 #include "core/templates/local_vector.h"
 #include "resource_loader.h"
+#include "core/meta/reflection/reflection.h"
 namespace lain {
 	// resource
 	void Resource::SetName(const String& p_name) {
@@ -68,17 +69,53 @@ namespace lain {
 			return;
 		}
 
-		copy_from(s);
+		CopyFrom(s);
 	}
 
-	Error copy_from(const Ref<Resource>& p_resource) {
+	Error Resource::CopyFrom(const Ref<Resource>& p_resource) {
 		ERR_FAIL_COND_V(p_resource.is_null(), ERR_INVALID_PARAMETER);
 		if (get_class() != p_resource->get_class()) {
 			return ERR_INVALID_PARAMETER;
 		}
+		ResetState(); // May want to reset state.
+		// 是的反射就是这么用的
+		// 有了variant，PropertyInfo的实现简单直接
+		{
+			// using piccolo's reflection
+			using Reflection::TypeMeta;
+			TypeMeta meta = TypeMeta::newMetaFromName(p_resource->get_class().utf8().get_data());
+			Reflection::FieldAccessor* fields;
+			int fields_count = meta.getFieldsList(fields);
+			Reflection::FieldAccessor field_accessor;
+
+			for (int i = 0; i < fields_count; i++) {
+				Reflection::FieldAccessor facc = fields[i];
+				if (facc.getFieldName() == "resource_path") {
+					continue;
+				}
+				facc.set(this, facc.get(*p_resource)); // 这么写，真没问题吗。。
+				// 然而这里并不知道填什么
+
+			}
+
+		}
+		// Variant标类型，StringName标名字，hint加点信息
+		//List<PropertyInfo> pi;
+		//p_resource->get_property_list(&pi);
+
+		//for (const PropertyInfo& E : pi) {
+		//	if (!(E.usage & PROPERTY_USAGE_STORAGE)) {
+		//		continue;
+		//	}
+		//	if (E.name == "resource_path") {
+		//		continue; //do not change path
+		//	}
+
+		//	set(E.name, p_resource->get(E.name));
+		//}
 		return OK;
 	}
-
+	void Resource::ResetState(){}
 	// resourceCache static:
 	void ResourceCache::clear() {
 		if (!resources.is_empty()) {

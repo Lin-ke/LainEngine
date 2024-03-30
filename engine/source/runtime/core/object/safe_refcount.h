@@ -57,5 +57,32 @@ public:
 		count.set(p_value);
 	}
 };
+class SafeFlag {
+	std::atomic_bool flag;
+
+	static_assert(std::atomic_bool::is_always_lock_free);
+
+public:
+	_ALWAYS_INLINE_ bool is_set() const {
+		return flag.load(std::memory_order_acquire);
+	}
+
+	_ALWAYS_INLINE_ void set() {
+		flag.store(true, std::memory_order_release);
+	}
+
+	_ALWAYS_INLINE_ void clear() {
+		flag.store(false, std::memory_order_release);
+	}
+
+	_ALWAYS_INLINE_ void set_to(bool p_value) {
+		flag.store(p_value, std::memory_order_release);
+	}
+
+	_ALWAYS_INLINE_ explicit SafeFlag(bool p_value = false) {
+		set_to(p_value);
+	}
+};
+
 
 #endif // SAFE_refCOUNT_H

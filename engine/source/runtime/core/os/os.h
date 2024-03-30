@@ -59,6 +59,9 @@ public:
 	virtual String GetConfigPath() const { return "."; }
 	
 	String GetSafeDirName(const String& p_dir_name, bool p_allow_paths) const;
+	int GetProcessorCount() const;
+	int GetDefaultThreadPoolSize() const { return GetProcessorCount(); }
+
 };
 
 

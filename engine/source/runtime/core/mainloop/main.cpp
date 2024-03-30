@@ -37,7 +37,7 @@ static lain::ProjectSettings* globals = nullptr;
 	 globals = memnew(lain::ProjectSettings);
 	 window_system->Initialize();
 	 window_system->NewWindow(lain::WindowCreateInfo());
-	 globals->Initialize("D:\\Lain\\proj");
+	 globals->Initialize("D:\\LainEngine\\proj");
 	 // reflection
 
  }

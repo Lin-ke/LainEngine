@@ -57,7 +57,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLFW_INCLUDE_NONE;L_PLATFORM_WINDOWS;L_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..;.;..\..\thirdparty\spdlog\include;..\..\thirdparty\glfw\include;..\..\thirdparty\json11;C:\VulkanSDK1\1.3.216.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;.;..\..\thirdparty\spdlog\include;..\..\thirdparty\glfw\include;..\..\thirdparty\json11;..\..\thirdparty\mbedtls\include;C:\VulkanSDK1\1.3.216.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
@@ -78,7 +78,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;GLFW_INCLUDE_NONE;L_PLATFORM_WINDOWS;L_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..;.;..\..\thirdparty\spdlog\include;..\..\thirdparty\glfw\include;..\..\thirdparty\json11;C:\VulkanSDK1\1.3.216.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;.;..\..\thirdparty\spdlog\include;..\..\thirdparty\glfw\include;..\..\thirdparty\json11;..\..\thirdparty\mbedtls\include;C:\VulkanSDK1\1.3.216.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -107,9 +107,13 @@
     <ClInclude Include="core\input\key_input.h" />
     <ClInclude Include="core\input\mouse_input.h" />
     <ClInclude Include="core\io\compress.h" />
+    <ClInclude Include="core\io\dir_access.h" />
+    <ClInclude Include="core\io\file_access.h" />
     <ClInclude Include="core\io\marshalls.h" />
     <ClInclude Include="core\io\resource.h" />
     <ClInclude Include="core\io\resource_loader.h" />
+    <ClInclude Include="core\io\resource_uid.h" />
+    <ClInclude Include="core\io\rid.h" />
     <ClInclude Include="core\log\log.h" />
     <ClInclude Include="core\mainloop\main.h" />
     <ClInclude Include="core\math\aabb.h" />
@@ -152,20 +156,16 @@
     <ClInclude Include="core\object\signal.h" />
     <ClInclude Include="core\object\signal_system.h" />
     <ClInclude Include="core\os\condition_variable.h" />
-    <ClInclude Include="core\io\dir_access.h" />
-    <ClInclude Include="core\io\file_access.h" />
     <ClInclude Include="core\os\memory.h" />
     <ClInclude Include="core\os\mutex.h" />
     <ClInclude Include="core\os\os.h" />
     <ClInclude Include="core\os\pool_allocator.h" />
+    <ClInclude Include="core\os\semaphore.h" />
     <ClInclude Include="core\os\spin_lock.h" />
     <ClInclude Include="core\os\thread.h" />
     <ClInclude Include="core\os\thread_safe.h" />
     <ClInclude Include="core\os\time_enums.h" />
     <ClInclude Include="core\register_core_types.h" />
-    <ClInclude Include="core\resource\res_importer.h" />
-    <ClInclude Include="core\resource\resource_uid.h" />
-    <ClInclude Include="core\resource\rid.h" />
     <ClInclude Include="core\scene\node.h" />
     <ClInclude Include="core\scene\node_path.h" />
     <ClInclude Include="core\scene\node_res.h" />
@@ -176,17 +176,19 @@
     <ClInclude Include="core\string\string_name.h" />
     <ClInclude Include="core\string\ucaps.h" />
     <ClInclude Include="core\string\ustring.h" />
+    <ClInclude Include="core\templates\command_queue_mt.h" />
     <ClInclude Include="core\templates\cowdata.h" />
     <ClInclude Include="core\templates\hash_funcs.h" />
     <ClInclude Include="core\templates\hash_map.h" />
     <ClInclude Include="core\templates\hash_set.h" />
     <ClInclude Include="core\templates\list.h" />
     <ClInclude Include="core\templates\local_vector.h" />
-    <ClInclude Include="core\templates\page_allocator.h" />
+    <ClInclude Include="core\templates\paged_allocator.h" />
     <ClInclude Include="core\templates\pair.h" />
     <ClInclude Include="core\templates\rb_map.h" />
     <ClInclude Include="core\templates\safe_numeric.h" />
     <ClInclude Include="core\templates\self_list.h" />
+    <ClInclude Include="core\templates\simple_type.h" />
     <ClInclude Include="core\templates\singleton.h" />
     <ClInclude Include="core\templates\sort_array.h" />
     <ClInclude Include="core\templates\vector.h" />
@@ -205,6 +207,7 @@
     <ClInclude Include="function\display\window.h" />
     <ClInclude Include="function\display\window_system.h" />
     <ClInclude Include="function\project\project_manager.h" />
+    <ClInclude Include="function\render\common\render_state.h" />
     <ClInclude Include="function\render\common\texture.h" />
     <ClInclude Include="function\render\render_system_globals.h" />
     <ClInclude Include="function\render\rendering_system.h" />
@@ -222,18 +225,24 @@
     <ClInclude Include="resource\component\camera_conf.h" />
     <ClInclude Include="resource\component\component.h" />
     <ClInclude Include="resource\component\mesh.h" />
+    <ClInclude Include="resource\io\resource.h" />
     <ClInclude Include="resource\io\resource_load.h" />
     <ClInclude Include="resource\manager\resource_manager.h" />
     <ClInclude Include="scene\viewport.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\config\project_settings.cpp" />
+    <ClCompile Include="core\cropto\cropto_core.cpp" />
+    <ClCompile Include="core\cropto\crypto_core.cpp" />
     <ClCompile Include="core\engine\engine.cpp" />
     <ClCompile Include="core\error\error_macros.cpp" />
     <ClCompile Include="core\input\input.cpp" />
+    <ClCompile Include="core\io\dir_access.cpp" />
+    <ClCompile Include="core\io\file_access.cpp" />
     <ClCompile Include="core\io\marshalls.cpp" />
     <ClCompile Include="core\io\resource.cpp" />
     <ClCompile Include="core\io\resource_loader.cpp" />
+    <ClCompile Include="core\io\resource_uid.cpp" />
     <ClCompile Include="core\log\log.cpp" />
     <ClCompile Include="core\mainloop\main.cpp" />
     <ClCompile Include="core\math\AABB.cpp" />
@@ -257,17 +266,12 @@
     <ClCompile Include="core\object\objectdb.cpp" />
     <ClCompile Include="core\object\refcounted.cpp" />
     <ClCompile Include="core\object\signal.cpp" />
-    <ClCompile Include="core\io\dir_access.cpp" />
-    <ClCompile Include="core\io\file_access.cpp" />
     <ClCompile Include="core\os\memory.cpp" />
     <ClCompile Include="core\os\mutex.cpp" />
     <ClCompile Include="core\os\os.cpp" />
     <ClCompile Include="core\os\pool_allocator.cpp" />
     <ClCompile Include="core\os\thread.cpp" />
     <ClCompile Include="core\register_core_types.cpp" />
-    <ClCompile Include="core\resource\res_manager.cpp" />
-    <ClCompile Include="core\resource\resource.cpp" />
-    <ClCompile Include="core\resource\resource_uid.cpp" />
     <ClCompile Include="core\scene\node.cpp" />
     <ClCompile Include="core\scene\node_path.cpp" />
     <ClCompile Include="core\scene\scene_tree.cpp" />
@@ -275,6 +279,7 @@
     <ClCompile Include="core\string\string_name.cpp" />
     <ClCompile Include="core\string\ustring.cpp" />
     <ClCompile Include="core\string\ustringutils.cpp" />
+    <ClCompile Include="core\thread\worker_thread_pool.cpp" />
     <ClCompile Include="core\variant\array.cpp" />
     <ClCompile Include="core\variant\callable.cpp" />
     <ClCompile Include="core\variant\dictionary.cpp" />
@@ -298,6 +303,9 @@
     </ProjectReference>
     <ProjectReference Include="..\..\thirdparty\json11\json11.vcxproj">
       <Project>{E1918107-CD33-ACDD-B6EE-BF31A22F332E}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\thirdparty\mbedtls\mbedtls.vcxproj">
+      <Project>{D08541B6-3C65-C051-457D-4B28B1DB26B3}</Project>
     </ProjectReference>
     <ProjectReference Include="..\PreCompile.vcxproj">
       <Project>{75B3BCBE-616B-FE0B-CA72-D767B64999FC}</Project>

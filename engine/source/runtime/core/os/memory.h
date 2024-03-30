@@ -166,7 +166,7 @@ struct _GlobalNil {
 struct _GlobalNilClass {
 	static _GlobalNil _nil;
 };
-
+// allocator需要实现的接口
 template <class T>
 class DefaultTypedAllocator {
 public:

@@ -146,6 +146,7 @@ static _FORCE_INLINE_ unsigned int closest_power_of_2(unsigned int x) {
 }
 
 // Get a shift value from a power of 2.
+// log 2 (p_bits), pbits is a power of 2
 static inline int get_shift_from_power_of_2(unsigned int p_bits) {
 	for (unsigned int i = 0; i < 32; i++) {
 		if (p_bits == (unsigned int)(1 << i)) {
@@ -159,10 +160,11 @@ static inline int get_shift_from_power_of_2(unsigned int p_bits) {
 template <class T>
 static _FORCE_INLINE_ T nearest_power_of_2_templated(T x) {
 	--x;
+	// 防止超过x（如果x正好是1后面0），
 
 	// The number of operations on x is the base two logarithm
 	// of the number of bits in the type. Add three to account
-	// for sizeof(T) being in bytes.
+	// for sizeof(T) being in bytes. （+3相当于*8，log2）
 	size_t num = get_shift_from_power_of_2(sizeof(T)) + 3;
 
 	// If the compiler is smart, it unrolls this loop.
@@ -170,6 +172,8 @@ static _FORCE_INLINE_ T nearest_power_of_2_templated(T x) {
 	for (size_t i = 0; i < num; i++) {
 		x |= x >> (1 << i);
 	}
+	// 这样循环log次，否则是o(n)次
+	// 这不考虑大小端的问题吗
 
 	return ++x;
 }
@@ -289,5 +293,6 @@ struct BuildIndexSequence<0, Is...> : IndexSequence<Is...> {};
 #ifdef L_DEBUG
 #define DEBUG_ENABLED
 #endif // L_DEBUG
+
 
 #endif // TYPEDEFS_H

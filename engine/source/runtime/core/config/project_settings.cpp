@@ -42,6 +42,72 @@ namespace lain {
 		return p_path;
 	}
 
+	String ProjectSettings::LocalizePath(const String& p_path) const {
+		String path = p_path.simplify_path();
+
+		if (resource_path.is_empty() || (path.is_absolute_path() && !path.begins_with(resource_path))) {
+			return path;
+		}
+
+		// Check if we have a special path (like res://) or a protocol identifier.
+		int p = path.find("://");
+		bool found = false;
+		if (p > 0) {
+			found = true;
+			for (int i = 0; i < p; i++) {
+				if (!is_ascii_alphanumeric_char(path[i])) {
+					found = false;
+					break;
+				}
+			}
+		}
+		if (found) {
+			return path;
+		}
+
+		Ref<DirAccess> dir = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
+
+		if (dir->change_dir(path) == OK) {
+			String cwd = dir->get_current_dir();
+			cwd = cwd.replace("\\", "/");
+
+			// Ensure that we end with a '/'.
+			// This is important to ensure that we do not wrongly localize the resource path
+			// in an absolute path that just happens to contain this string but points to a
+			// different folder (e.g. "/my/project" as resource_path would be contained in
+			// "/my/project_data", even though the latter is not part of res://.
+			// `path_join("")` is an easy way to ensure we have a trailing '/'.
+			const String res_path = resource_path.path_join("");
+
+			// DirAccess::get_current_dir() is not guaranteed to return a path that with a trailing '/',
+			// so we must make sure we have it as well in order to compare with 'res_path'.
+			cwd = cwd.path_join("");
+
+			if (!cwd.begins_with(res_path)) {
+				return path;
+			}
+
+			return cwd.replace_first(res_path, "res://");
+		}
+		else {
+			int sep = path.rfind("/");
+			if (sep == -1) {
+				return "res://" + path;
+			}
+
+			String parent = path.substr(0, sep);
+
+			String plocal = LocalizePath(parent);
+			if (plocal.is_empty()) {
+				return "";
+			}
+			// Only strip the starting '/' from 'path' if its parent ('plocal') ends with '/'
+			if (plocal[plocal.length() - 1] == '/') {
+				sep += 1;
+			}
+			return plocal + path.substr(sep, path.size() - sep);
+		}
+	}
 
 	/// private
 	Error ProjectSettings::_initialize(const String p_path, bool p_ignore_override) {

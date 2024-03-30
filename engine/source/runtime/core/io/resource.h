@@ -27,12 +27,12 @@ namespace lain {
 		void SetPathCache(const String& p_path) { path_cache = p_path; }
 		void set_scene_unique_id(const String& p_id);
 		String get_scene_unique_id() const;
-		virtual Error copy_from(const Ref<Resource>& p_resource);
+		virtual Error CopyFrom(const Ref<Resource>& p_resource);
 
 
 		virtual Ref<Resource> duplicate(bool p_subresources = false) const;
 		virtual void reload_from_file();
-		
+		virtual void ResetState();
 		virtual void _resource_path_changed();
 
 	protected:
