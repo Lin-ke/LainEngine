@@ -13,7 +13,7 @@ namespace lain {
         static std::shared_ptr<spdlog::logger> s_ClientLogger;
 
     public:
-        static void Init();
+        static void Initialize();
 
         static std::shared_ptr<spdlog::logger>& GetCoreLogger();
         static std::shared_ptr<spdlog::logger>& GetClientLogger();

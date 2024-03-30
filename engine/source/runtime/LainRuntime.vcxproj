@@ -99,6 +99,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="base.h" />
+    <ClInclude Include="core\config\config_parser.h" />
     <ClInclude Include="core\config\project_settings.h" />
     <ClInclude Include="core\cropto\crypto_core.h" />
     <ClInclude Include="core\engine\engine.h" />
@@ -231,6 +232,7 @@
     <ClInclude Include="scene\viewport.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="core\config\config_parser.cpp" />
     <ClCompile Include="core\config\project_settings.cpp" />
     <ClCompile Include="core\cropto\cropto_core.cpp" />
     <ClCompile Include="core\cropto\crypto_core.cpp" />

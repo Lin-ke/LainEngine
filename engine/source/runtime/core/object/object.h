@@ -11,6 +11,8 @@
 #include "core/meta/reflection/reflection.h"
 #include "core/object/object_id.h"
 #include "core/string/string_name.h"
+#include "core/variant/variant.h"
+
 // Macros
 #define LCLASS(m_class, m_inherits)		\
 private:								\
@@ -59,7 +61,9 @@ public:
 		Object::Object(bool p_reference) {
 			_construct_object(p_reference);
 		}
-	
+		// META
+		HashMap<StringName, Variant> metadata;
+		HashMap<StringName, Variant*> metadata_properties;
 	L_INLINE bool is_ref_counted() const { return m_type_is_reference; }
 	ObjectID get_instance_id() const { return m_instance_id; }
 	/// static method

@@ -12,7 +12,7 @@ class Main {
 
 public:
 	static bool Loop();
-	static void Init();
+	static void Initialize();
 	L_INLINE bool IsInloop() { return (iterating > 0); }
 };
 }

@@ -55,7 +55,7 @@ namespace lain {
 
 	void OSWindows::Run() {
 		// init
-		Main::Init();
+		Main::Initialize();
 		while (true) {
 			//人机交互
 			// display.send_events;
@@ -71,7 +71,9 @@ namespace lain {
 		L_PRINT("Exiting. Have a nice day.");
 
 	}
+	// 填必要的环境变量、文件操作
 	void OSWindows::Initialize() {
+		
 		// 在这里初始化，将FileAccess类的create_function函数数组放入make_default(memnew)<T> 工厂
 		// 这样以后在fileaccess里执行create()得到的就是对应的子类
 		// 而Ref<> = 
@@ -153,6 +155,14 @@ namespace lain {
 		else {
 			Sleep(p_usec / 1000);
 		}
+	}
+
+	Error OSWindows::SetCwd(const String& p_cwd) {
+		if (_wchdir((LPCWSTR)(p_cwd.utf16().get_data())) != 0) {
+			return ERR_CANT_OPEN;
+		}
+
+		return OK;
 	}
 
 }

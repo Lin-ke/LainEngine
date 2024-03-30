@@ -26,7 +26,7 @@ public:
 	virtual String GetCachePath() const;
 	virtual String GetUserDataDir() const;
 	OSWindows() {
-		Log::Init();
+		Log::Initialize();
 	}
 	// env
 	bool HasEnv(const String &name) const;
@@ -34,7 +34,7 @@ public:
 
 	// sleep
 	virtual void DelayUsec(ui32 p_usec) const override;
-
+	virtual Error SetCwd(const String& p_path) override;
 };
 }
 

@@ -7,19 +7,21 @@
 #include "core/string/string_name.h"
 #include "core/templates/hash_set.h"
 #include "core/io/file_access.h"
-#include "core/meta/reflection/reflection.h"
-#include "core/meta/serializer/serializer.h"
-#include <regex>
-#include <fstream>
+
 // TODO:
 #define GLOBAL_GET(m_var) ProjectSettings::GetSingleton()->GetSetting(m_var)
+
 namespace lain {
+	// config manager
 	class ProjectSettings {
 public:
 	HashSet<String> custom_features;
 	HashMap<StringName, std::vector<Pair<StringName, StringName>>> feature_overrides;
 	static ProjectSettings* p_singleton;
 	Error Initialize(const String p_path);
+    static const String PROJECT_DATA_DIR_NAME_SUFFIX;
+    static const String PROJECT_FILE_NAME;
+
 	String project_data_dir_name;
 	String resource_path = "";
 	bool _set(const StringName& p_name, const Variant& p_value);
@@ -43,8 +45,8 @@ public:
 	}
     String GetSetting(const StringName& p_name) const;
 	String GetResourcePath() const { return resource_path; }
-	 String GetProjectDataName() const { return project_data_dir_name; }
-	 String GetProjectDataPath() const { return "res://" + project_data_dir_name; }
+    String GetProjectDataName() const { return project_data_dir_name; }
+	String GetProjectDataPath() const { return "res://" + project_data_dir_name; }
 private:
 	Error _initialize(const String p_path, bool p_ignore_override = true);
 	// load settings
@@ -54,188 +56,7 @@ private:
 	
 	};
 
-    class ConfigParser {
-    public:
-         Ref<FileAccess> f;
-         void ParseFile(const String& filename) {
-            std::ifstream file(CSTR(filename));
-            std::string line;
-
-            String currentField;
-            bool inValue;
-            std::getline(file, line);
-            while (!file.eof()) {
-                if (IsField(line)) {
-                    currentField = GetField(line);
-                    inValue = false;
-                    std::getline(file, line);
-                }
-                else if (IsKeyValue(line)) {
-                    
-                    inValue = true;
-                    int delimiterPos = static_cast<int>(line.find("=", 0));
-                    String key = line.substr(0, delimiterPos).c_str(); key = key.trim();
-                    String value = line.substr(delimiterPos+1, line.length()).c_str();
-                    while (std::getline(file, line)) {
-                        if (IsKeyValue(line) || IsField(line) ||  line == "") break;
-                        value += line.c_str();
-                    }
-                    Variant variant_value = ConstructFromString(value);
-                    if (variant_value.get_type() == Variant::Type::NIL) {
-                        L_CORE_WARN("NIL config meet: " + currentField + "/" + key);
-                    }
-                    m_hashmap[currentField + "/" + key] =  variant_value;
-                    
-                }
-
-            }
-        }
-         HashMap<String, Variant> m_hashmap;
-        
-
-    private:
-         
-
-         bool IsField(const String& line) {
-            return line.size() > 2 && line.front() == '[' && line.back() == ']';
-        }
-
-         String GetField(const String& line) {
-            return line.substr(1, line.size() - 2);
-        }
-         // 不允许一个字符串占多行
-         // 不允许名中带有引号
-         bool IsKeyValue(const String& line) {
-            int equalpos =  line.find_char('=');
-            if (equalpos == std::string::npos) return false;
-            int firstquote = line.find_char('"');
-            if (firstquote < equalpos) return false;
-            return true;
-            
-        }
-         template< typename T>
-         Variant load(Json json) {
-             T v;
-             Serializer::read(json, v);
-             return Variant(v);
-         }
-         template<typename T>
-         Variant load(T& v, Json json) {
-             std::string error;
-             Serializer::read(json, v);
-             return Variant(v);
-         }
-        Reflection::ReflectionInstance* JsonToObj(Json json, const std::string& p_stdstring, std::string& error) {
-             Reflection::ReflectionInstance meta_instance = Reflection::TypeMeta::newFromNameAndJson(json["$typeName"].string_value(), Json::parse(p_stdstring, error));
-             if (!error.empty()) {
-                 return nullptr;
-             }
-             Reflection::ReflectionInstance* instance_ptr = nullptr;
-             memnew_placement(instance_ptr, Reflection::ReflectionInstance(meta_instance));
-             return instance_ptr;
-         }
-         // 基本类包括：Vector<Variant>，即[]；double ； String
-         Variant ConstructFromString(const String& p_str, int recursize_depth =0 ) {
-             std::string error;
-             if (recursize_depth > 128) {
-                 L_CORE_ERROR("than max recursize depth");
-                 return Variant();
-             }
-             if (p_str == "") 
-                 return Variant();
-             if (p_str.begins_with("Packed")) {
-                
-                 i32 brankpos = p_str.find("[");
-                 i32 rbrankpos = p_str.rfind("]");
-                 if (brankpos != std::string::npos && rbrankpos != std::string::npos && brankpos == rbrankpos) {
-                     error = "not valid PackedString";
-                     L_CORE_ERROR(error);
-                     return Variant();
-                 }
-                 std::string error;
-                 auto&& json = Json::parse(p_str.substr(brankpos, rbrankpos - brankpos +1).utf8().get_data(), error);
-                 if (!error.empty())
-                 {
-                     L_CORE_ERROR("parse json file {} failed!", p_str);
-                     return Variant();
-                 }
-                 if (p_str.begins_with("PackedString")) {
-                     return load<Vector<String>>(json);
-                 }
-                 else if (p_str.begins_with("PackedFloat")) {
-                     return load<Vector<double>>(json);
-                 }
-                 else if (p_str.begins_with("PackedInt")) {
-                     return load<Vector<int32_t>>(json);
-                 }
-             }
-             
-             else if (p_str.begins_with("\"")) {
-                 String p_str_ = p_str.trim();
-                 if (p_str_.length() < 2 && p_str_.rfind("\"") != p_str_.length() - 1) {
-                     L_CORE_ERROR("not valid String");
-                     return Variant();
-                 }
-                 return Variant(p_str_.substr(1, p_str_.length() - 2));
-             }
-             else { // Other class?
-                 std::string p_stdstring = p_str.trim().utf8().get_data();
-                 if (p_str.begins_with("{")) {
-                     auto&& json = Json::parse(p_stdstring, error);
-                     if(json["$typeName"].is_string()){
-                         auto instance_ptr = JsonToObj(json, p_stdstring, error);
-                         if (!error.empty()) {
-                             L_CORE_ERROR("Meta not valid. Reflection to " + json["$typeName"].string_value() + " failed." + error);
-                             return Variant();
-                         }
-                         return Variant(instance_ptr);
-                     }
-                     else {
-                         // dictionary
-                     }
-                 }
-                
-                 else if (IsNumericExpression   (p_stdstring)) {
-                     double string_double_value = std::stod(p_stdstring);
-                     if ((int)(string_double_value) == string_double_value) {
-                         return Variant((int64_t)string_double_value);
-                     }
-                     return Variant(string_double_value);
-                 }
-
-
-                
-             }
-             if (!error.empty())
-             {
-                 L_CORE_WARN("parse json file {} failed!", p_str);
-                 return Variant();
-             }
-         }
-
-         std::string trim(const std::string& str) {
-             size_t begin = str.find_first_not_of(" ");
-             if (begin == std::string::npos) {
-                 return "";
-             }
-
-             size_t end = str.find_last_not_of(" ");
-             if (end == std::string::npos) {
-                 return "";
-             }
-
-             return str.substr(begin, end - begin + 1);
-         }
-
-         bool IsNumericExpression(const std::string& expression) {
-             // 正则表达式模式，用于匹配数字类型的表达式
-             std::regex pattern("^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$");
-
-             // 使用 std::regex_match() 函数进行匹配
-             return std::regex_match(expression, pattern);
-         }
-
-    };
+   
 
 }
 

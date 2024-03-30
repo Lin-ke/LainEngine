@@ -23,7 +23,7 @@ static lain::ProjectSettings* globals = nullptr;
  /// <summary>
  /// Main initialization.
  /// </summary>
- void Main::Init() {
+ void Main::Initialize() {
 	 // logger
 	 OS::GetSingleton()->Initialize();
 	
@@ -38,6 +38,14 @@ static lain::ProjectSettings* globals = nullptr;
 	 window_system->Initialize();
 	 window_system->NewWindow(lain::WindowCreateInfo());
 	 globals->Initialize("D:\\LainEngine\\proj");
+	 // 更改工作目录
+	 if (OS::GetSingleton()->SetCwd(path) == OK) {
+		 // path already specified, don't override
+	 }
+	 else {
+		 project_path = path;
+	 }
+
 	 // reflection
 
  }

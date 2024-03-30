@@ -61,7 +61,7 @@ public:
 	String GetSafeDirName(const String& p_dir_name, bool p_allow_paths) const;
 	int GetProcessorCount() const;
 	int GetDefaultThreadPoolSize() const { return GetProcessorCount(); }
-
+	virtual Error SetCwd(const String& path) { return ERR_CANT_OPEN; }
 };
 
 

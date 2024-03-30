@@ -4,9 +4,8 @@
 #endif
 #include <base.h>
 #include <platform/os/os_windows.h>
-#include "test/test_reflect.h"
-
 using namespace lain;
+#include "test/test_headers.h"
 
 
 int main(int argc, char** argv) {
@@ -15,11 +14,11 @@ int main(int argc, char** argv) {
 	OSWindows os = OSWindows();
 
 	OSWindows::GetSingleton()->Run();
-	test::test_Vector3_reflect();
+	/*test::test_Vector3_reflect();
 	test::test_StringName_reflect();
 	test::test_accessor();
-	test::test_assign_using_serializer();
-	
+	test::test_assign_using_serializer();*/
+	test::test_fileio();
 }
 
 

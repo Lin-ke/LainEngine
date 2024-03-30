@@ -3,20 +3,26 @@
 #define RESOURCE_H
 #include "core/object/refcounted.h"
 #include "core/object/object.h"
-
+#include "core/meta/reflection/reflection.h"
 #include "core/string/ustring.h"
 #include "core/templates/self_list.h"
 
 namespace lain {
-	class Resource : public RefCounted {
+	REFLECTION_TYPE(Resource)
+	CLASS(Resource: public RefCounted, WhiteList) {
+		REFLECTION_BODY(Resource);
+
 		friend class ResourceCache;
 
 		LCLASS(Resource, RefCounted)
 	private:
+		META(Enable);
 		String name;
+		META(Enable);
 		String path_cache;
+		META(Enable);
 		String scene_id;
-		SelfList<Resource> remapped_list;
+		//SelfList<Resource> remapped_list;
 	public:
 		void SetName(const String& p_name);
 		String GetName() const;

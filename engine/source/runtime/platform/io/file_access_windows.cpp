@@ -77,7 +77,7 @@ namespace lain {
 		return invalid_files.has(fname);
 	}
 	Error FileAccessWindows::open_internal(const String& p_path, int p_mode_flags) {
-		if (is_path_invalid(p_path)) {
+		if (is_path_invalid(p_path)) { 
 #ifdef L_DEBUG
 			if (p_mode_flags != READ) {
 				WARN_PRINT("The path :" + p_path + " is a reserved Windows system pipe, so it can't be used for creating files.");
