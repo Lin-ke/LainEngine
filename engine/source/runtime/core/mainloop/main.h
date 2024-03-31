@@ -12,7 +12,7 @@ class Main {
 
 public:
 	static bool Loop();
-	static void Initialize();
+	static Error Initialize(int argc, char* argv[]);
 	L_INLINE bool IsInloop() { return (iterating > 0); }
 };
 }

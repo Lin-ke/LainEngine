@@ -3,6 +3,7 @@
 # define __BASE__
 
 #define VERSION_BRANCH "0.1"
+#define LAINDIRNAME "Lain"
 #ifdef L_DEBUG
 	#if defined(L_PLATFORM_WINDOWS)
 		#define L_DEBUGBREAK() __debugbreak()

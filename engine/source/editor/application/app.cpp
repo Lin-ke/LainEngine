@@ -6,14 +6,17 @@
 #include <platform/os/os_windows.h>
 using namespace lain;
 #include "test/test_headers.h"
-
-
+#include "core/mainloop/main.h"
 int main(int argc, char** argv) {
 	
 	// main function
 	OSWindows os = OSWindows();
 
-	OSWindows::GetSingleton()->Run();
+	Error err = Main::Initialize(0, nullptr);
+	if (err != OK) {
+		// 
+	}
+	os.Run();
 	/*test::test_Vector3_reflect();
 	test::test_StringName_reflect();
 	test::test_accessor();

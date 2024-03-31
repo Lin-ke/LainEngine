@@ -13,6 +13,7 @@ namespace lain {
 	private:
 
 	};
+	
 }
 
 #endif // !VARIANT_INTERNAL_H

@@ -23,31 +23,32 @@ static lain::ProjectSettings* globals = nullptr;
  /// <summary>
  /// Main initialization.
  /// </summary>
- void Main::Initialize() {
+ Error Main::Initialize(int argc, char* argv[]) {
+	 String project_path = "";
 	 // logger
 	 OS::GetSingleton()->Initialize();
 	
 	 Reflection::TypeMetaRegister::metaRegister();
 	 register_core_types();
-
-	 
 	 engine = memnew(Engine); // 
 	 window_system = memnew(lain::WindowSystem);
 	 render_system = memnew(lain::RenderingSystem);
 	 globals = memnew(lain::ProjectSettings);
-	 window_system->Initialize();
-	 window_system->NewWindow(lain::WindowCreateInfo());
-	 globals->Initialize("D:\\LainEngine\\proj");
+	 
 	 // 更改工作目录
+	 String path = "D:/LainEngine/game";
+
 	 if (OS::GetSingleton()->SetCwd(path) == OK) {
 		 // path already specified, don't override
 	 }
 	 else {
 		 project_path = path;
 	 }
+	 globals->Initialize(project_path); // ""
 
 	 // reflection
-
+	 window_system->Initialize();
+	 window_system->NewWindow(lain::WindowCreateInfo());
  }
 /// <summary>
 /// Main iteration.

@@ -7,8 +7,6 @@ namespace lain {
     {
         ERR_FAIL_COND(f.is_null());
 
-        std::string line;
-
         String currentField;
         bool inValue;
         while (!f->eof_reached()) {
@@ -34,7 +32,7 @@ namespace lain {
                 if (variant_value.get_type() == Variant::Type::NIL) {
                     L_CORE_WARN("NIL config meet: " + currentField + "/" + key);
                 }
-                m_hashmap[currentField + "/" + key] = variant_value;
+                values[currentField][key] = variant_value;
 
             }
 
@@ -136,5 +134,51 @@ namespace lain {
 
         // 使用 std::regex_match() 函数进行匹配
         return std::regex_match(expression, pattern);
+    }
+
+    Error ConfigParser::Save(const String& p_path) {
+        Error err;
+        Ref<FileAccess> file = FileAccess::open(p_path, FileAccess::WRITE, &err);
+
+        if (err) {
+            return err;
+        }
+
+        return _internalSave(file);
+    }
+
+    Error ConfigParser::_internalSave(Ref<FileAccess> file) {
+        bool first = true;
+        for (const KeyValue<String, HashMap<String, Variant>>& E : values) {
+            if (first) {
+                first = false;
+            }
+            else {
+                file->store_string("\n");
+            }
+            if (!E.key.is_empty()) {
+                file->store_string("[" + E.key.replace("]", "\\]") + "]\n\n");
+            }
+
+            for (const KeyValue<String, Variant>& F : E.value) {
+                String vstr = ConfigParser::WriteConfigVariant(F.value);
+                file->store_string(F.key.property_name_encode() + "=" + vstr + "\n");
+            }
+        }
+
+        return OK;
+    }
+    String ConfigParser::WriteConfigVariant(const Variant& p_var) {
+        switch (p_var.get_type()) {
+            switch (p_var.get_type())
+            {
+            
+            case Variant::STRING: {
+                auto&& var = static_cast<String>(p_var);
+            }
+            default:
+                break;
+            }
+        }
     }
 }

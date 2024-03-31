@@ -47,15 +47,14 @@ namespace lain {
 	String OSWindows::GetUserDataDir() const {
 		String appname = GetSafeDirName(GLOBAL_GET("application/config/name"), true);
 		if (!appname.is_empty()) {
-			return GetDataPath().path_join("lain").path_join("app_userdata").path_join(appname).replace("\\", "/");
+			return GetDataPath().path_join("Lain").path_join("app_userdata").path_join(appname).replace("\\", "/");
 		}
-		return GetDataPath().path_join("lain").path_join("app_userdata").path_join("[unnamed project]");
+		return GetDataPath().path_join("Lain").path_join("app_userdata").path_join("[unnamed project]");
 	}
 
 
 	void OSWindows::Run() {
 		// init
-		Main::Initialize();
 		while (true) {
 			//ÈË»ú½»»¥
 			// display.send_events;

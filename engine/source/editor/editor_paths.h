@@ -20,11 +20,11 @@ namespace lain {
 		String feature_profiles_folder = "feature_profiles";
 	public:
 		static EditorPaths* GetSingleton() { return p_singleton; }
-		bool are_paths_valid() const;
-		String get_data_dir() const;
-		String get_config_dir() const;
-		String get_cache_dir() const;
-		String get_project_data_dir() const;
+		bool ArePathsVaild() const;
+		String GetDataDir() const;
+		String GetConfigDir() const;
+		String GetCacheDir() const;
+		String GetProjectDataDir() const;
 		String get_export_templates_dir() const;
 		String get_project_settings_dir() const;
 		String get_text_editor_themes_dir() const;

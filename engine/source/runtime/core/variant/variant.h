@@ -193,6 +193,7 @@ namespace lain {
 		Variant recursive_duplicate(bool p_deep, int recursion_count) const;
 
 		///constructors
+		// ×°Ïä
 		Variant(const Vector<String>& p_string_array);
 		Variant(const Vector<float>& p_float_array);
 		Variant(const Vector<int64_t>& p_int64_array);
@@ -211,6 +212,79 @@ namespace lain {
 		Variant(float p_float);
 		Variant(double p_double);
 		Variant() { type = NIL; }
+
+		// ²ðÏä
+		operator bool() const;
+		operator signed int() const;
+		operator unsigned int() const; // this is the real one
+		operator signed short() const;
+		operator unsigned short() const;
+		operator signed char() const;
+		operator unsigned char() const;
+		//operator long unsigned int() const;
+		operator int64_t() const;
+		operator uint64_t() const;
+#ifdef NEED_LONG_INT
+		operator signed long() const;
+		operator unsigned long() const;
+#endif
+
+		operator ObjectID() const;
+
+		operator char32_t() const;
+		operator float() const;
+		operator double() const;
+		operator String() const;
+		operator StringName() const;
+		operator Vector2() const;
+		/*operator Vector2i() const;
+		operator Rect2() const;
+		operator Rect2i() const;*/
+		operator Vector3() const;
+		operator Vector3i() const;
+		operator Vector4() const;
+		/*operator Vector4i() const;
+		operator Plane() const;
+		operator ::AABB() const;*/
+		operator Quaternion() const;
+		/*operator Basis() const;
+		operator Transform2D() const;
+		operator Transform3D() const;
+		operator Projection() const;*/
+
+		operator Color() const;
+		/*operator NodePath() const;
+		operator ::RID() const;*/
+
+		operator Object* () const;
+
+		operator Callable() const;
+		operator Signal() const;
+
+		//operator Dictionary() const;
+		operator Array() const;
+
+		operator PackedByteArray() const;
+		operator PackedInt32Array() const;
+		operator PackedInt64Array() const;
+		operator PackedFloat32Array() const;
+		operator PackedFloat64Array() const;
+		operator PackedStringArray() const;
+		operator PackedVector3Array() const;
+		operator PackedVector2Array() const;
+		operator PackedColorArray() const;
+
+		/*operator Vector<::RID>() const;
+		operator Vector<Plane>() const;
+		operator Vector<Face3>() const;*/
+		operator Vector<Variant>() const;
+		operator Vector<StringName>() const;
+
+		// some core type enums to convert to
+		operator Side() const;
+		operator Orientation() const;
+
+		//operator IPAddress() const;
 	};
 
 	template <typename... VarArgs>

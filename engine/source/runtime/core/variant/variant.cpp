@@ -969,10 +969,272 @@ namespace lain {
 		default: {
 		}
 		}
+
 	}
 	/*
 	* transfer to other types
 	*/
 
+	Variant::operator signed int() const {
+		switch (type) {
+		case NIL:
+			return 0;
+		case BOOL:
+			return _data._bool ? 1 : 0;
+		case INT:
+			return _data._int;
+		case FLOAT:
+			return _data._float;
+		case STRING:
+			return operator String().to_int();
+		default: {
+			return 0;
+		}
+		}
+	}
+
+	Variant::operator unsigned int() const {
+		switch (type) {
+		case NIL:
+			return 0;
+		case BOOL:
+			return _data._bool ? 1 : 0;
+		case INT:
+			return _data._int;
+		case FLOAT:
+			return _data._float;
+		case STRING:
+			return operator String().to_int();
+		default: {
+			return 0;
+		}
+		}
+	}
+
+	Variant::operator int64_t() const {
+		switch (type) {
+		case NIL:
+			return 0;
+		case BOOL:
+			return _data._bool ? 1 : 0;
+		case INT:
+			return _data._int;
+		case FLOAT:
+			return _data._float;
+		case STRING:
+			return operator String().to_int();
+		default: {
+			return 0;
+		}
+		}
+	}
+
+	Variant::operator uint64_t() const {
+		switch (type) {
+		case NIL:
+			return 0;
+		case BOOL:
+			return _data._bool ? 1 : 0;
+		case INT:
+			return _data._int;
+		case FLOAT:
+			return _data._float;
+		case STRING:
+			return operator String().to_int();
+		default: {
+			return 0;
+		}
+		}
+	}
+
+	Variant::operator ObjectID() const {
+		if (type == INT) {
+			return ObjectID(_data._int);
+		}
+		else if (type == OBJECT) {
+			return _get_obj().id;
+		}
+		else {
+			return ObjectID();
+		}
+	}
+
+#ifdef NEED_LONG_INT
+	Variant::operator signed long() const {
+		switch (type) {
+		case NIL:
+			return 0;
+		case BOOL:
+			return _data._bool ? 1 : 0;
+		case INT:
+			return _data._int;
+		case FLOAT:
+			return _data._float;
+		case STRING:
+			return operator String().to_int();
+		default: {
+			return 0;
+		}
+		}
+
+		return 0;
+	}
+
+	Variant::operator unsigned long() const {
+		switch (type) {
+		case NIL:
+			return 0;
+		case BOOL:
+			return _data._bool ? 1 : 0;
+		case INT:
+			return _data._int;
+		case FLOAT:
+			return _data._float;
+		case STRING:
+			return operator String().to_int();
+		default: {
+			return 0;
+		}
+		}
+
+		return 0;
+		}
+#endif
+
+	Variant::operator signed short() const {
+		switch (type) {
+		case NIL:
+			return 0;
+		case BOOL:
+			return _data._bool ? 1 : 0;
+		case INT:
+			return _data._int;
+		case FLOAT:
+			return _data._float;
+		case STRING:
+			return operator String().to_int();
+		default: {
+			return 0;
+		}
+		}
+	}
+
+	Variant::operator unsigned short() const {
+		switch (type) {
+		case NIL:
+			return 0;
+		case BOOL:
+			return _data._bool ? 1 : 0;
+		case INT:
+			return _data._int;
+		case FLOAT:
+			return _data._float;
+		case STRING:
+			return operator String().to_int();
+		default: {
+			return 0;
+		}
+		}
+	}
+
+	Variant::operator signed char() const {
+		switch (type) {
+		case NIL:
+			return 0;
+		case BOOL:
+			return _data._bool ? 1 : 0;
+		case INT:
+			return _data._int;
+		case FLOAT:
+			return _data._float;
+		case STRING:
+			return operator String().to_int();
+		default: {
+			return 0;
+		}
+		}
+	}
+
+	Variant::operator unsigned char() const {
+		switch (type) {
+		case NIL:
+			return 0;
+		case BOOL:
+			return _data._bool ? 1 : 0;
+		case INT:
+			return _data._int;
+		case FLOAT:
+			return _data._float;
+		case STRING:
+			return operator String().to_int();
+		default: {
+			return 0;
+		}
+		}
+	}
+
+	Variant::operator char32_t() const {
+		return operator unsigned int();
+	}
+
+	Variant::operator float() const {
+		switch (type) {
+		case NIL:
+			return 0;
+		case BOOL:
+			return _data._bool ? 1.0 : 0.0;
+		case INT:
+			return (float)_data._int;
+		case FLOAT:
+			return _data._float;
+		case STRING:
+			return operator String().to_float();
+		default: {
+			return 0;
+		}
+		}
+	}
+
+	Variant::operator double() const {
+		switch (type) {
+		case NIL:
+			return 0;
+		case BOOL:
+			return _data._bool ? 1.0 : 0.0;
+		case INT:
+			return (double)_data._int;
+		case FLOAT:
+			return _data._float;
+		case STRING:
+			return operator String().to_float();
+		default: {
+			return 0;
+		}
+		}
+	}
+
+	Variant::operator StringName() const {
+		if (type == STRING_NAME) {
+			return *reinterpret_cast<const StringName*>(_data._mem);
+		}
+		else if (type == STRING) {
+			return *reinterpret_cast<const String*>(_data._mem);
+		}
+
+		return StringName();
+	}
+
+	struct _VariantStrPair {
+		String key;
+		String value;
+
+		bool operator<(const _VariantStrPair& p) const {
+			return key < p.key;
+		}
+	};
+
+	Variant::operator String() const {
+		return stringify(0);
+	}
 
 }

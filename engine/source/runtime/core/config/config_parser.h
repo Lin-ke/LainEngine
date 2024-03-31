@@ -4,17 +4,20 @@
 
 #include "project_settings.h"
 namespace lain {
-
+    
     class ConfigParser {
     public:
         Ref<FileAccess> f;
         void ParseFile();
         HashMap<String, Variant> m_hashmap;
+        HashMap<String, HashMap<String, Variant>> values;
         ConfigParser(Ref<FileAccess> p_f) {
             f = p_f;
         }
+        String WriteConfigVariant(const Variant& var);
+        Error Save(const String& p_path);
     private:
-
+        Error _internalSave(Ref<FileAccess> file);
 
         bool IsField(const String& line) {
             return line.size() > 2 && line.front() == '[' && line.back() == ']';

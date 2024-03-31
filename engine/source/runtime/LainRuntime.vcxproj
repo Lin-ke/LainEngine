@@ -203,6 +203,7 @@
     <ClInclude Include="core\variant\variant.h" />
     <ClInclude Include="core\variant\variant_header.h" />
     <ClInclude Include="core\variant\variant_internal.h" />
+    <ClInclude Include="core\variant\variant_parser.h" />
     <ClInclude Include="function\display\display_event.h" />
     <ClInclude Include="function\display\viewport.h" />
     <ClInclude Include="function\display\window.h" />
