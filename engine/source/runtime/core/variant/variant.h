@@ -1,15 +1,38 @@
 #pragma once
 #ifndef __VARIANT_H__
 #define __VARIANT_H__
-#include <stdint.h>
 #include "core/math/math_defs.h"
-#include "core/object/object_id.h"
-#include "core/io/rid.h"
-#include "core/string/ustring.h"
-#include "core/templates/vector.h"
+//#include "core/input/input_enums.h"
+//#include "core/io/ip_address.h"
+#include "core/math/aabb.h"
+//#include "core/math/basis.h"
 #include "core/math/color.h"
-#include "core/object/safe_refcount.h"
-#include "core/meta/reflection/reflection.h"
+//#include "core/math/face3.h"
+#include "core/math/plane.h"
+//#include "core/math/projection.h"
+#include "core/math/quaternion.h"
+//#include "core/math/rect2.h"
+//#include "core/math/rect2i.h"
+//#include "core/math/transform_2d.h"
+//#include "core/math/transform_3d.h"
+#include "core/math/vector2.h"
+#include "core/math/vector2i.h"
+#include "core/math/vector3.h"
+#include "core/math/vector3i.h"
+#include "core/math/vector4.h"
+#include "core/math/vector4i.h"
+#include "core/object/object_id.h"
+//#include "core/os/keyboard.h"
+//#include "core/string/node_path.h"
+#include "core/string/ustring.h"
+#include "core/templates/paged_allocator.h"
+//#include "core/templates/rid.h"
+#include "core/variant/array.h"
+#include "core/variant/callable.h"
+#include "core/variant/dictionary.h"
+#include "core/object/signal.h"
+#include "core/io/rid.h"
+
 namespace lain {
 	typedef Vector<uint8_t> PackedByteArray;
 	typedef Vector<int32_t> PackedInt32Array;
@@ -21,8 +44,9 @@ namespace lain {
 	typedef Vector<Vector3> PackedVector3Array;
 	typedef Vector<Color> PackedColorArray;
 	class Object;
-	class ConfigParser;
+	class ConfigFile;
 	class VariantInternal;
+	class RID;
 	class Variant {
 		friend class VariantInternal;
 	public:
@@ -207,10 +231,24 @@ namespace lain {
 		Variant(const String& p_string);
 		Variant(const StringName& p_string);
 		Variant(const char* const p_cstring);
+		
+		// basics
 		Variant(int64_t p_int); // real one
 		Variant(uint64_t p_int);
 		Variant(float p_float);
 		Variant(double p_double);
+		Variant(bool p_bool);
+		Variant(signed int p_int); // real one
+		Variant(unsigned int p_int);
+
+		//other class
+		Variant(const Vector2& p_vector2);
+		Variant(const Vector3& p_vector3);
+
+		//
+		Variant(const Variant& p_variant);
+
+
 		Variant() { type = NIL; }
 
 		// ²ðÏä
@@ -253,8 +291,8 @@ namespace lain {
 		operator Projection() const;*/
 
 		operator Color() const;
-		/*operator NodePath() const;
-		operator ::RID() const;*/
+		/*operator NodePath() const;*/
+		operator lain::RID() const;
 
 		operator Object* () const;
 
@@ -285,7 +323,64 @@ namespace lain {
 		operator Orientation() const;
 
 		//operator IPAddress() const;
+
+		_FORCE_INLINE_ void clear() {
+			static const bool needs_deinit[Variant::VARIANT_MAX] = {
+				false, //NIL,
+				false, //BOOL,
+				false, //INT,
+				false, //FLOAT,
+				true, //STRING,
+				false, //VECTOR2,
+				false, //VECTOR2I,
+				false, //RECT2,
+				false, //RECT2I,
+				false, //VECTOR3,
+				false, //VECTOR3I,
+				true, //TRANSFORM2D,
+				false, //VECTOR4,
+				false, //VECTOR4I,
+				false, //PLANE,
+				false, //QUATERNION,
+				true, //AABB,
+				true, //BASIS,
+				true, //TRANSFORM,
+				true, //PROJECTION,
+
+				// misc types
+				false, //COLOR,
+				true, //STRING_NAME,
+				true, //NODE_PATH,
+				false, //RID,
+				true, //OBJECT,
+				true, //CALLABLE,
+				true, //SIGNAL,
+				true, //DICTIONARY,
+				true, //ARRAY,
+
+				// typed arrays
+				true, //PACKED_BYTE_ARRAY,
+				true, //PACKED_INT32_ARRAY,
+				true, //PACKED_INT64_ARRAY,
+				true, //PACKED_FLOAT32_ARRAY,
+				true, //PACKED_FLOAT64_ARRAY,
+				true, //PACKED_STRING_ARRAY,
+				true, //PACKED_VECTOR2_ARRAY,
+				true, //PACKED_VECTOR3_ARRAY,
+				true, //PACKED_COLOR_ARRAY,
+			};
+
+			if (unlikely(needs_deinit[type])) { // Make it fast for types that don't need deinit.
+				_clear_internal();
+			}
+			type = NIL;
+		}
+
+		void _clear_internal();
+		static bool can_convert_strict(Type from, Type to);
+
 	};
+
 
 	template <typename... VarArgs>
 	String vformat(const String& p_text, const VarArgs... p_args) {

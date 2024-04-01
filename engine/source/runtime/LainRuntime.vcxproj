@@ -138,10 +138,12 @@
     <ClInclude Include="core\math\vector3.h" />
     <ClInclude Include="core\math\vector3i.h" />
     <ClInclude Include="core\math\vector4.h" />
+    <ClInclude Include="core\math\vector4i.h" />
     <ClInclude Include="core\meta\json.h" />
     <ClInclude Include="core\meta\meta_example.h" />
     <ClInclude Include="core\meta\others\manual_reflection.h" />
     <ClInclude Include="core\meta\others\manual_serializer.h" />
+    <ClInclude Include="core\meta\others\serializer_helper.h" />
     <ClInclude Include="core\meta\others\stringname.reflection.h" />
     <ClInclude Include="core\meta\others\stringname.serializer.h" />
     <ClInclude Include="core\meta\reflection\reflection.h" />
@@ -172,6 +174,7 @@
     <ClInclude Include="core\scene\node_res.h" />
     <ClInclude Include="core\scene\object\gobject.h" />
     <ClInclude Include="core\scene\scene_tree.h" />
+    <ClInclude Include="core\script\script.h" />
     <ClInclude Include="core\string\char_utils.h" />
     <ClInclude Include="core\string\print_string.h" />
     <ClInclude Include="core\string\string_name.h" />
@@ -198,6 +201,7 @@
     <ClInclude Include="core\typedefs.h" />
     <ClInclude Include="core\variant\array.h" />
     <ClInclude Include="core\variant\callable.h" />
+    <ClInclude Include="core\variant\container_type_validate.h" />
     <ClInclude Include="core\variant\dictionary.h" />
     <ClInclude Include="core\variant\typed_array.h" />
     <ClInclude Include="core\variant\variant.h" />
@@ -313,6 +317,9 @@
     <ProjectReference Include="..\PreCompile.vcxproj">
       <Project>{75B3BCBE-616B-FE0B-CA72-D767B64999FC}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="core\variant\variant_parser.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

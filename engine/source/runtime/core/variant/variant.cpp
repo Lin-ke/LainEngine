@@ -107,6 +107,20 @@ namespace lain {
 		_data._float = p_double;
 	}
 
+	Variant::Variant(bool p_bool) {
+		type = BOOL;
+		_data._bool = p_bool;
+	}
+	Variant::Variant(signed int p_int) {
+		type = INT;
+		_data._int = p_int;
+	}
+
+	Variant::Variant(unsigned int p_int) {
+		type = INT;
+		_data._int = p_int;
+	}
+
 	Variant::Variant(const String& p_string) {
 		type = STRING;
 		memnew_placement(_data._mem, String(p_string));
@@ -138,6 +152,17 @@ namespace lain {
 		memnew_placement(_data._ptr,void*);
 		_data._ptr = const_cast<Reflection::ReflectionInstance*>(p_instance);
 	}
+
+	Variant::Variant(const Vector3& p_vector3) {
+		type = VECTOR3;
+		memnew_placement(_data._mem, Vector3(p_vector3));
+	}
+
+	Variant::Variant(const Vector2& p_vector2) {
+		type = VECTOR2;
+		memnew_placement(_data._mem, Vector2(p_vector2));
+	}
+
 	const Variant::ObjData& Variant::_get_obj() const {
 		return *reinterpret_cast<const ObjData*>(&_data._mem[0]);
 	}
@@ -167,7 +192,9 @@ namespace lain {
 			_get_obj().id = ObjectID();
 		}
 	}
-
+	Variant::Variant(const Variant& p_variant) {
+		reference(p_variant);
+	}
 	uint32_t Variant::recursive_hash(int recursion_count) const {
 			switch (type) {
 			case NIL: {
@@ -613,7 +640,11 @@ namespace lain {
 	}
 
 	bool Variant::hash_compare(const Variant& p_variant, int recursion_count) const {
-		return true;
+		if (type != p_variant.type) {
+			return false;
+		}
+		// switch type
+		return false;
 	}
 
 	/*
@@ -1224,6 +1255,70 @@ namespace lain {
 		return StringName();
 	}
 
+	Variant::operator Vector2() const {
+		if (type == VECTOR2) {
+			return *reinterpret_cast<const Vector2*>(_data._mem);
+		}
+		else if (type == VECTOR2I) {
+			return *reinterpret_cast<const Vector2i*>(_data._mem);
+		}
+		else if (type == VECTOR3) {
+			return Vector2(reinterpret_cast<const Vector3*>(_data._mem)->x, reinterpret_cast<const Vector3*>(_data._mem)->y);
+		}
+		else if (type == VECTOR3I) {
+			return Vector2(reinterpret_cast<const Vector3i*>(_data._mem)->x, reinterpret_cast<const Vector3i*>(_data._mem)->y);
+		}
+		else if (type == VECTOR4) {
+			return Vector2(reinterpret_cast<const Vector4*>(_data._mem)->x, reinterpret_cast<const Vector4*>(_data._mem)->y);
+		}
+		else if (type == VECTOR4I) {
+			return Vector2(reinterpret_cast<const Vector4i*>(_data._mem)->x, reinterpret_cast<const Vector4i*>(_data._mem)->y);
+		}
+		else {
+			return Vector2();
+		}
+	}
+
+	Variant::operator Vector3() const {
+		if (type == VECTOR3) {
+			return *reinterpret_cast<const Vector3*>(_data._mem);
+		}
+		else if (type == VECTOR3I) {
+			return *reinterpret_cast<const Vector3i*>(_data._mem);
+		}
+		else if (type == VECTOR2) {
+			return Vector3(reinterpret_cast<const Vector2*>(_data._mem)->x, reinterpret_cast<const Vector2*>(_data._mem)->y, 0.0);
+		}
+		else if (type == VECTOR2I) {
+			return Vector3(reinterpret_cast<const Vector2i*>(_data._mem)->x, reinterpret_cast<const Vector2i*>(_data._mem)->y, 0.0);
+		}
+		else if (type == VECTOR4) {
+			return Vector3(reinterpret_cast<const Vector4*>(_data._mem)->x, reinterpret_cast<const Vector4*>(_data._mem)->y, reinterpret_cast<const Vector4*>(_data._mem)->z);
+		}
+		else if (type == VECTOR4I) {
+			return Vector3(reinterpret_cast<const Vector4i*>(_data._mem)->x, reinterpret_cast<const Vector4i*>(_data._mem)->y, reinterpret_cast<const Vector4i*>(_data._mem)->z);
+		}
+		else {
+			return Vector3();
+		}
+	}
+
+	Variant::operator Color() const {
+		if (type == COLOR) {
+			return *reinterpret_cast<const Color*>(_data._mem);
+		}
+		else if (type == STRING) {
+			return Color(operator String());
+		}
+		else if (type == INT) {
+			return Color::hex(operator int());
+		}
+		else {
+			return Color();
+		}
+	}
+
+
 	struct _VariantStrPair {
 		String key;
 		String value;
@@ -1235,6 +1330,593 @@ namespace lain {
 
 	Variant::operator String() const {
 		return stringify(0);
+	}
+	/// <summary>
+	/// ¥¶¿ÌArray
+	/// </summary>
+	/// <typeparam name="DA"></typeparam>
+	/// <typeparam name="SA"></typeparam>
+	/// <param name="p_array"></param>
+	/// <returns></returns>
+	template <class DA, class SA>
+	inline DA _convert_array(const SA& p_array) {
+		DA da;
+		da.resize(p_array.size());
+
+		for (int i = 0; i < p_array.size(); i++) {
+			da.set(i, Variant(p_array.get(i)));
+		}
+
+		return da;
+	}
+
+	template <class DA>
+	inline DA _convert_array_from_variant(const Variant& p_variant) {
+		switch (p_variant.get_type()) {
+		case Variant::ARRAY: {
+			return _convert_array<DA, Array>(p_variant.operator Array());
+		}
+		case Variant::PACKED_BYTE_ARRAY: {
+			return _convert_array<DA, PackedByteArray>(p_variant.operator PackedByteArray());
+		}
+		case Variant::PACKED_INT32_ARRAY: {
+			return _convert_array<DA, PackedInt32Array>(p_variant.operator PackedInt32Array());
+		}
+		case Variant::PACKED_INT64_ARRAY: {
+			return _convert_array<DA, PackedInt64Array>(p_variant.operator PackedInt64Array());
+		}
+		case Variant::PACKED_FLOAT32_ARRAY: {
+			return _convert_array<DA, PackedFloat32Array>(p_variant.operator PackedFloat32Array());
+		}
+		case Variant::PACKED_FLOAT64_ARRAY: {
+			return _convert_array<DA, PackedFloat64Array>(p_variant.operator PackedFloat64Array());
+		}
+		case Variant::PACKED_STRING_ARRAY: {
+			return _convert_array<DA, PackedStringArray>(p_variant.operator PackedStringArray());
+		}
+		case Variant::PACKED_VECTOR2_ARRAY: {
+			return _convert_array<DA, PackedVector2Array>(p_variant.operator PackedVector2Array());
+		}
+		case Variant::PACKED_VECTOR3_ARRAY: {
+			return _convert_array<DA, PackedVector3Array>(p_variant.operator PackedVector3Array());
+		}
+		case Variant::PACKED_COLOR_ARRAY: {
+			return _convert_array<DA, PackedColorArray>(p_variant.operator PackedColorArray());
+		}
+		default: {
+			return DA();
+		}
+		}
+	}
+
+
+
+	Variant::operator Array() const {
+		if (type == ARRAY) {
+			return *reinterpret_cast<const Array*>(_data._mem);
+		}
+		else {
+			return _convert_array_from_variant<Array>(*this);
+		}
+	}
+
+	Variant::operator PackedByteArray() const {
+		if (type == PACKED_BYTE_ARRAY) {
+			return static_cast<PackedArrayRef<uint8_t> *>(_data.packed_array)->array;
+		}
+		else {
+			return _convert_array_from_variant<PackedByteArray>(*this);
+		}
+	}
+
+	Variant::operator PackedInt32Array() const {
+		if (type == PACKED_INT32_ARRAY) {
+			return static_cast<PackedArrayRef<int32_t> *>(_data.packed_array)->array;
+		}
+		else {
+			return _convert_array_from_variant<PackedInt32Array>(*this);
+		}
+	}
+
+	Variant::operator PackedInt64Array() const {
+		if (type == PACKED_INT64_ARRAY) {
+			return static_cast<PackedArrayRef<int64_t> *>(_data.packed_array)->array;
+		}
+		else {
+			return _convert_array_from_variant<PackedInt64Array>(*this);
+		}
+	}
+
+	Variant::operator PackedFloat32Array() const {
+		if (type == PACKED_FLOAT32_ARRAY) {
+			return static_cast<PackedArrayRef<float> *>(_data.packed_array)->array;
+		}
+		else {
+			return _convert_array_from_variant<PackedFloat32Array>(*this);
+		}
+	}
+
+	Variant::operator PackedFloat64Array() const {
+		if (type == PACKED_FLOAT64_ARRAY) {
+			return static_cast<PackedArrayRef<double> *>(_data.packed_array)->array;
+		}
+		else {
+			return _convert_array_from_variant<PackedFloat64Array>(*this);
+		}
+	}
+
+	Variant::operator PackedStringArray() const {
+		if (type == PACKED_STRING_ARRAY) {
+			return static_cast<PackedArrayRef<String> *>(_data.packed_array)->array;
+		}
+		else {
+			return _convert_array_from_variant<PackedStringArray>(*this);
+		}
+	}
+
+	Variant::operator PackedVector2Array() const {
+		if (type == PACKED_VECTOR2_ARRAY) {
+			return static_cast<PackedArrayRef<Vector2> *>(_data.packed_array)->array;
+		}
+		else {
+			return _convert_array_from_variant<PackedVector2Array>(*this);
+		}
+	}
+
+	Variant::operator PackedVector3Array() const {
+		if (type == PACKED_VECTOR3_ARRAY) {
+			return static_cast<PackedArrayRef<Vector3> *>(_data.packed_array)->array;
+		}
+		else {
+			return _convert_array_from_variant<PackedVector3Array>(*this);
+		}
+	}
+
+	Variant::operator PackedColorArray() const {
+		if (type == PACKED_COLOR_ARRAY) {
+			return static_cast<PackedArrayRef<Color> *>(_data.packed_array)->array;
+		}
+		else {
+			return _convert_array_from_variant<PackedColorArray>(*this);
+		}
+	}
+
+
+	void Variant::_clear_internal() {
+		switch (type) {
+		case STRING: {
+			reinterpret_cast<String*>(_data._mem)->~String();
+		} break;
+
+			// Math types.
+		/*case TRANSFORM2D: {
+			if (_data._transform2d) {
+				_data._transform2d->~Transform2D();
+				Pools::_bucket_small.free((Pools::BucketSmall*)_data._transform2d);
+				_data._transform2d = nullptr;
+			}
+		} break;
+		case AABB: {
+			if (_data._aabb) {
+				_data._aabb->~AABB();
+				Pools::_bucket_small.free((Pools::BucketSmall*)_data._aabb);
+				_data._aabb = nullptr;
+			}
+		} break;
+		case BASIS: {
+			if (_data._basis) {
+				_data._basis->~Basis();
+				Pools::_bucket_medium.free((Pools::BucketMedium*)_data._basis);
+				_data._basis = nullptr;
+			}
+		} break;
+		case TRANSFORM3D: {
+			if (_data._transform3d) {
+				_data._transform3d->~Transform3D();
+				Pools::_bucket_medium.free((Pools::BucketMedium*)_data._transform3d);
+				_data._transform3d = nullptr;
+			}
+		} break;
+		case PROJECTION: {
+			if (_data._projection) {
+				_data._projection->~Projection();
+				Pools::_bucket_large.free((Pools::BucketLarge*)_data._projection);
+				_data._projection = nullptr;
+			}
+		} break;*/
+
+			// Miscellaneous types.
+		case STRING_NAME: {
+			reinterpret_cast<StringName*>(_data._mem)->~StringName();
+		} break;
+	/*	case NODE_PATH: {
+			reinterpret_cast<NodePath*>(_data._mem)->~NodePath();
+		} break;*/
+		case OBJECT: {
+			if (_get_obj().id.is_ref_counted()) {
+				// We are safe that there is a reference here.
+				RefCounted* ref_counted = static_cast<RefCounted*>(_get_obj().obj);
+				if (ref_counted->unreference()) {
+					memdelete(ref_counted);
+				}
+			}
+			_get_obj().obj = nullptr;
+			_get_obj().id = ObjectID();
+		} break;
+		case RID: {
+			// Not much need probably.
+			// HACK: Can't seem to use destructor + scoping operator, so hack.
+			typedef lain::RID RID_Class;
+			reinterpret_cast<RID_Class*>(_data._mem)->~RID_Class();
+		} break;
+		case CALLABLE: {
+			reinterpret_cast<Callable*>(_data._mem)->~Callable();
+		} break;
+		case SIGNAL: {
+			reinterpret_cast<Signal*>(_data._mem)->~Signal();
+		} break;
+		/*case DICTIONARY: {
+			reinterpret_cast<Dictionary*>(_data._mem)->~Dictionary();
+		} break;*/
+		case ARRAY: {
+			reinterpret_cast<Array*>(_data._mem)->~Array();
+		} break;
+
+			// Arrays.
+		case PACKED_BYTE_ARRAY: {
+			PackedArrayRefBase::destroy(_data.packed_array);
+		} break;
+		case PACKED_INT32_ARRAY: {
+			PackedArrayRefBase::destroy(_data.packed_array);
+		} break;
+		case PACKED_INT64_ARRAY: {
+			PackedArrayRefBase::destroy(_data.packed_array);
+		} break;
+		case PACKED_FLOAT32_ARRAY: {
+			PackedArrayRefBase::destroy(_data.packed_array);
+		} break;
+		case PACKED_FLOAT64_ARRAY: {
+			PackedArrayRefBase::destroy(_data.packed_array);
+		} break;
+		case PACKED_STRING_ARRAY: {
+			PackedArrayRefBase::destroy(_data.packed_array);
+		} break;
+		case PACKED_VECTOR2_ARRAY: {
+			PackedArrayRefBase::destroy(_data.packed_array);
+		} break;
+		case PACKED_VECTOR3_ARRAY: {
+			PackedArrayRefBase::destroy(_data.packed_array);
+		} break;
+		case PACKED_COLOR_ARRAY: {
+			PackedArrayRefBase::destroy(_data.packed_array);
+		} break;
+		default: {
+			// Not needed, there is no point. The following do not allocate memory:
+			// VECTOR2, VECTOR3, RECT2, PLANE, QUATERNION, COLOR.
+		}
+		}
+	}
+	bool Variant::can_convert_strict(Variant::Type p_type_from, Variant::Type p_type_to) {
+		if (p_type_from == p_type_to) {
+			return true;
+		}
+		if (p_type_to == NIL) { //nil can convert to anything
+			return true;
+		}
+
+		if (p_type_from == NIL) {
+			return (p_type_to == OBJECT);
+		}
+
+		const Type* valid_types = nullptr;
+
+		switch (p_type_to) {
+		case BOOL: {
+			static const Type valid[] = {
+				INT,
+				FLOAT,
+				//STRING,
+				NIL,
+			};
+
+			valid_types = valid;
+		} break;
+		case INT: {
+			static const Type valid[] = {
+				BOOL,
+				FLOAT,
+				//STRING,
+				NIL,
+			};
+
+			valid_types = valid;
+
+		} break;
+		case FLOAT: {
+			static const Type valid[] = {
+				BOOL,
+				INT,
+				//STRING,
+				NIL,
+			};
+
+			valid_types = valid;
+
+		} break;
+		case STRING: {
+			static const Type valid[] = {
+				NODE_PATH,
+				STRING_NAME,
+				NIL
+			};
+
+			valid_types = valid;
+		} break;
+		case VECTOR2: {
+			static const Type valid[] = {
+				VECTOR2I,
+				NIL,
+			};
+
+			valid_types = valid;
+
+		} break;
+		case VECTOR2I: {
+			static const Type valid[] = {
+				VECTOR2,
+				NIL,
+			};
+
+			valid_types = valid;
+
+		} break;
+		case RECT2: {
+			static const Type valid[] = {
+				RECT2I,
+				NIL,
+			};
+
+			valid_types = valid;
+
+		} break;
+		case RECT2I: {
+			static const Type valid[] = {
+				RECT2,
+				NIL,
+			};
+
+			valid_types = valid;
+
+		} break;
+		case TRANSFORM2D: {
+			static const Type valid[] = {
+				TRANSFORM3D,
+				NIL
+			};
+
+			valid_types = valid;
+		} break;
+		case VECTOR3: {
+			static const Type valid[] = {
+				VECTOR3I,
+				NIL,
+			};
+
+			valid_types = valid;
+
+		} break;
+		case VECTOR3I: {
+			static const Type valid[] = {
+				VECTOR3,
+				NIL,
+			};
+
+			valid_types = valid;
+
+		} break;
+		case VECTOR4: {
+			static const Type valid[] = {
+				VECTOR4I,
+				NIL,
+			};
+
+			valid_types = valid;
+
+		} break;
+		case VECTOR4I: {
+			static const Type valid[] = {
+				VECTOR4,
+				NIL,
+			};
+
+			valid_types = valid;
+
+		} break;
+
+		case QUATERNION: {
+			static const Type valid[] = {
+				BASIS,
+				NIL
+			};
+
+			valid_types = valid;
+
+		} break;
+		case BASIS: {
+			static const Type valid[] = {
+				QUATERNION,
+				NIL
+			};
+
+			valid_types = valid;
+
+		} break;
+		case TRANSFORM3D: {
+			static const Type valid[] = {
+				TRANSFORM2D,
+				QUATERNION,
+				BASIS,
+				PROJECTION,
+				NIL
+			};
+
+			valid_types = valid;
+
+		} break;
+		case PROJECTION: {
+			static const Type valid[] = {
+				TRANSFORM3D,
+				NIL
+			};
+
+			valid_types = valid;
+
+		} break;
+
+		case COLOR: {
+			static const Type valid[] = {
+				STRING,
+				INT,
+				NIL,
+			};
+
+			valid_types = valid;
+
+		} break;
+
+		case RID: {
+			static const Type valid[] = {
+				OBJECT,
+				NIL
+			};
+
+			valid_types = valid;
+		} break;
+		case OBJECT: {
+			static const Type valid[] = {
+				NIL
+			};
+
+			valid_types = valid;
+		} break;
+		case STRING_NAME: {
+			static const Type valid[] = {
+				STRING,
+				NIL
+			};
+
+			valid_types = valid;
+		} break;
+		case NODE_PATH: {
+			static const Type valid[] = {
+				STRING,
+				NIL
+			};
+
+			valid_types = valid;
+		} break;
+		case ARRAY: {
+			static const Type valid[] = {
+				PACKED_BYTE_ARRAY,
+				PACKED_INT32_ARRAY,
+				PACKED_INT64_ARRAY,
+				PACKED_FLOAT32_ARRAY,
+				PACKED_FLOAT64_ARRAY,
+				PACKED_STRING_ARRAY,
+				PACKED_COLOR_ARRAY,
+				PACKED_VECTOR2_ARRAY,
+				PACKED_VECTOR3_ARRAY,
+				NIL
+			};
+
+			valid_types = valid;
+		} break;
+			// arrays
+		case PACKED_BYTE_ARRAY: {
+			static const Type valid[] = {
+				ARRAY,
+				NIL
+			};
+
+			valid_types = valid;
+		} break;
+		case PACKED_INT32_ARRAY: {
+			static const Type valid[] = {
+				ARRAY,
+				NIL
+			};
+			valid_types = valid;
+		} break;
+		case PACKED_INT64_ARRAY: {
+			static const Type valid[] = {
+				ARRAY,
+				NIL
+			};
+			valid_types = valid;
+		} break;
+		case PACKED_FLOAT32_ARRAY: {
+			static const Type valid[] = {
+				ARRAY,
+				NIL
+			};
+
+			valid_types = valid;
+		} break;
+		case PACKED_FLOAT64_ARRAY: {
+			static const Type valid[] = {
+				ARRAY,
+				NIL
+			};
+
+			valid_types = valid;
+		} break;
+		case PACKED_STRING_ARRAY: {
+			static const Type valid[] = {
+				ARRAY,
+				NIL
+			};
+			valid_types = valid;
+		} break;
+		case PACKED_VECTOR2_ARRAY: {
+			static const Type valid[] = {
+				ARRAY,
+				NIL
+			};
+			valid_types = valid;
+
+		} break;
+		case PACKED_VECTOR3_ARRAY: {
+			static const Type valid[] = {
+				ARRAY,
+				NIL
+			};
+			valid_types = valid;
+
+		} break;
+		case PACKED_COLOR_ARRAY: {
+			static const Type valid[] = {
+				ARRAY,
+				NIL
+			};
+
+			valid_types = valid;
+
+		} break;
+		default: {
+		}
+		}
+
+		if (valid_types) {
+			int i = 0;
+			while (valid_types[i] != NIL) {
+				if (p_type_from == valid_types[i]) {
+					return true;
+				}
+				i++;
+			}
+		}
+
+		return false;
 	}
 
 }

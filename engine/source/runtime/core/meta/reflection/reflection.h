@@ -29,14 +29,14 @@ namespace lain
 #endif // __REFLECTION_PARSER__
 
 #define REFLECTION_BODY(class_name) \
-    friend class Reflection::TypeFieldReflectionOparator::Type##class_name##Operator; \
+    friend class Reflection::TypeFieldReflectionOperator::Type##class_name##Operator; \
     friend class Serializer;
     // public: virtual std::string getTypeName() override {return #class_name;}
 
 #define REFLECTION_TYPE(class_name) \
     namespace Reflection \
     { \
-        namespace TypeFieldReflectionOparator \
+        namespace TypeFieldReflectionOperator \
         { \
             class Type##class_name##Operator; \
         } \

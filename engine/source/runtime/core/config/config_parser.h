@@ -1,21 +1,52 @@
 #pragma once
 #ifndef CONFIG_PARSER_H
 #define CONFIG_PARSER_H
+#include "core/io/file_access.h"
+#include "core/io/dir_access.h"
 
-#include "project_settings.h"
 namespace lain {
     
-    class ConfigParser {
+    class ConfigFile: public RefCounted {
     public:
-        Ref<FileAccess> f;
-        void ParseFile();
-        HashMap<String, Variant> m_hashmap;
+        Error ParseFile(Ref<FileAccess> f);
         HashMap<String, HashMap<String, Variant>> values;
-        ConfigParser(Ref<FileAccess> p_f) {
-            f = p_f;
-        }
+        ConfigFile() {}
         String WriteConfigVariant(const Variant& var);
         Error Save(const String& p_path);
+        Error Load(const String& p_path);
+        bool has_section(const String& p_section) const {
+            return values.has(p_section);
+        }
+
+        Variant get_value(const String& p_section, const String& p_key, const Variant& p_default) const {
+            if (!values.has(p_section) || !values[p_section].has(p_key)) {
+                ERR_FAIL_COND_V_MSG(p_default.get_type() == Variant::NIL, Variant(),
+                    vformat("Couldn't find the given section \"%s\" and key \"%s\", and no default was given.", p_section, p_key));
+                return p_default;
+            }
+
+            return values[p_section][p_key];
+        }
+        void set_value(const String& p_section, const String& p_key, const Variant& p_value) {
+            if (p_value.get_type() == Variant::NIL) { // Erase key.
+                if (!values.has(p_section)) {
+                    return;
+                }
+
+                values[p_section].erase(p_key);
+                if (values[p_section].is_empty()) {
+                    values.erase(p_section);
+                }
+            }
+            else {
+                if (!values.has(p_section)) {
+                    // Insert section-less keys at the beginning.
+                    values.insert(p_section, HashMap<String, Variant>(), p_section.is_empty());
+                }
+
+                values[p_section][p_key] = p_value;
+            }
+        }
     private:
         Error _internalSave(Ref<FileAccess> file);
 

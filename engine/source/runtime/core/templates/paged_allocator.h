@@ -10,7 +10,6 @@
 #include <type_traits>
 #include <typeinfo>
 namespace lain {
-	bool leak_reporting_enabled = true;
 	// 一页一页的分配内存，每页pagesize大小。
 	// 每次分配一个available指向可用的
 template <class T, bool thread_safe = false, uint32_t DEFAULT_PAGE_SIZE = 4096>
@@ -26,7 +25,7 @@ class PagedAllocator {
 	uint32_t page_mask = 0;
 	uint32_t page_size = 0;
 	SpinLock spin_lock;
-
+	
 public:
 	enum {
 		DEFAULT_PAGE_SIZE = 4096
@@ -149,9 +148,9 @@ public:
 		}
 		bool leaked = allocs_available < pages_allocated * page_size;
 		if (leaked) {
-			if (leak_reporting_enabled) {
-				ERR_PRINT(String("Pages in use exist at exit in PagedAllocator: ") + String(typeid(T).name()));
-			}
+			//if (leak_reporting_enabled) {
+				L_CORE_WARN(String("Pages in use exist at exit in PagedAllocator: ") + String(typeid(T).name()));
+			//}
 		}
 		else {
 			_reset(false);

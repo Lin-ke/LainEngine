@@ -154,13 +154,13 @@ namespace lain {
 	};
 	namespace Reflection 
 	{ 
-			namespace TypeFieldReflectionOparator 
+			namespace TypeFieldReflectionOperator 
 		{ 
 			class TypeStringOperator; 
 		} 
 	};
 	class String {
-		friend class Reflection::TypeFieldReflectionOparator::TypeStringOperator; 
+		friend class Reflection::TypeFieldReflectionOperator::TypeStringOperator; 
 		friend class Serializer;
 		CowData<char32_t> _cowdata;
 		static const char32_t _null;

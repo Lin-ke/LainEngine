@@ -3,6 +3,7 @@
 #define PROJECT_MANAGER_H
 #include "core/io/file_access.h"
 #include "core/io/dir_access.h"
+#include "core/config/config_parser.h"
 
 namespace lain {
 	class ProjectList {
@@ -66,12 +67,16 @@ namespace lain {
 				return path == l.path;
 			}
 		};
-
+		void add_project(const String& dir_path, bool favorite);
+		void set_project_version(const String& p_project_path, int version);
+		
 	private:
 		String _config_path;
+		ConfigFile _config;
 		Vector<Item> _projects;
 		void _migrate_config();
 		static Item load_project_data(const String& p_property_key, bool p_favorite);
+		void save_config();
 	};
 }
 #endif // !PROJECT_MANAGER_H

@@ -27,7 +27,7 @@ namespace lain {
 		static SpinLock spin_lock;
 		static void cleanup();
 		// INLINE
-		L_INLINE static Object* get_instance(ObjectID p_instance_id);
+		static Object* get_instance(ObjectID p_instance_id);
 
 		static ObjectID add_instance(Object* p_object);
 		static void remove_instance(Object* p_object);

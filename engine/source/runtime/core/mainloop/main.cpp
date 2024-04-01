@@ -49,6 +49,7 @@ static lain::ProjectSettings* globals = nullptr;
 	 // reflection
 	 window_system->Initialize();
 	 window_system->NewWindow(lain::WindowCreateInfo());
+	 return OK;
  }
 /// <summary>
 /// Main iteration.

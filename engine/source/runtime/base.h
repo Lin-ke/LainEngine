@@ -4,6 +4,8 @@
 
 #define VERSION_BRANCH "0.1"
 #define LAINDIRNAME "Lain"
+//#define PROJECT_FILE_NAME "prj.txt"
+//#define PROJECT_DATA_DIR_NAME_SUFFIX "prjdata"
 #ifdef L_DEBUG
 	#if defined(L_PLATFORM_WINDOWS)
 		#define L_DEBUGBREAK() __debugbreak()

@@ -42,6 +42,7 @@ public:
 		Signal signal;
 	Callable callable; // 什么类型的什么方法
 
+
 	uint32_t flags = 0;
 	bool operator<(const Connection & p_conn) const;
 
@@ -51,6 +52,10 @@ public:
 	Connection(const Variant & p_variant);
 
 	};
+
+	/// object
+
+
 	REFLECTION_TYPE(Object)
 		CLASS(Object, WhiteListFields)
 	{
@@ -64,6 +69,8 @@ public:
 		// META
 		HashMap<StringName, Variant> metadata;
 		HashMap<StringName, Variant*> metadata_properties;
+		mutable const StringName* _class_name_ptr = nullptr;
+
 	L_INLINE bool is_ref_counted() const { return m_type_is_reference; }
 	ObjectID get_instance_id() const { return m_instance_id; }
 	/// static method
@@ -83,6 +90,19 @@ public:
 			StringName::assign_static_unique_class_name(&_class_name_static, "Object");
 		}
 		return &_class_name_static;
+	}
+	_FORCE_INLINE_ const StringName& get_class_name() const {
+		//if (_extension) {
+		//	// Can't put inside the unlikely as constructor can run it
+		//	return _extension->class_name;
+		//}
+
+		if (unlikely(!_class_name_ptr)) {
+			// While class is initializing / deinitializing, constructors and destructurs
+			// need access to the proper class at the proper stage.
+			return *_get_class_namev();
+		}
+		return *_class_name_ptr;
 	}
 
 private:

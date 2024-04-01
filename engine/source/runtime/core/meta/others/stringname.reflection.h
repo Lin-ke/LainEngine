@@ -10,7 +10,7 @@ namespace lain {
 	/// reflection and register
 	/// </summary>
 	namespace Reflection {
-		namespace TypeFieldReflectionOparator {
+		namespace TypeFieldReflectionOperator {
 			class TypeStringNameOperator {
 			public:
 				static const char* getClassName() { return "StringName"; }
@@ -90,22 +90,22 @@ namespace lain {
 			}; // class TypeStringNameOperator
 		} // namespace Typefield
 			void TypeWrapperRegister_StringName() {
-				FieldFunctionTuple* field_function_tuple_name_ref = new FieldFunctionTuple(
-					&TypeFieldReflectionOparator::TypeStringNameOperator::set_m_name,
-					&TypeFieldReflectionOparator::TypeStringNameOperator::get_m_name,
-					&TypeFieldReflectionOparator::TypeStringNameOperator::getClassName,
-					&TypeFieldReflectionOparator::TypeStringNameOperator::getFieldName_m_name,
-					&TypeFieldReflectionOparator::TypeStringNameOperator::getFieldName_m_name,
-					&TypeFieldReflectionOparator::TypeStringNameOperator::isArray_m_name);
-				REGISTER_FIELD_TO_MAP("StringName", field_function_tuple_name_ref);
+				FieldFunctionTuple* field_function_tuple_m_name = memnew(FieldFunctionTuple(
+					&TypeFieldReflectionOperator::TypeStringNameOperator::set_m_name,
+					&TypeFieldReflectionOperator::TypeStringNameOperator::get_m_name,
+					&TypeFieldReflectionOperator::TypeStringNameOperator::getClassName,
+					&TypeFieldReflectionOperator::TypeStringNameOperator::getFieldName_m_name,
+					&TypeFieldReflectionOperator::TypeStringNameOperator::getFieldName_m_name,
+					&TypeFieldReflectionOperator::TypeStringNameOperator::isArray_m_name));
+				REGISTER_FIELD_TO_MAP("StringName", field_function_tuple_m_name);
+				
 
 
 
-
-				ClassFunctionTuple* class_function_tuple_SubMeshRes = new ClassFunctionTuple(
-					&TypeFieldReflectionOparator::TypeStringNameOperator::getStringNameBaseClassReflectionInstanceList,
-					&TypeFieldReflectionOparator::TypeStringNameOperator::constructorWithJson,
-					&TypeFieldReflectionOparator::TypeStringNameOperator::writeByName);
+				ClassFunctionTuple* class_function_tuple_SubMeshRes = memnew(ClassFunctionTuple(
+					&TypeFieldReflectionOperator::TypeStringNameOperator::getStringNameBaseClassReflectionInstanceList,
+					&TypeFieldReflectionOperator::TypeStringNameOperator::constructorWithJson,
+					&TypeFieldReflectionOperator::TypeStringNameOperator::writeByName));
 				REGISTER_BASE_CLASS_TO_MAP("StringName", class_function_tuple_SubMeshRes);
 			}
 

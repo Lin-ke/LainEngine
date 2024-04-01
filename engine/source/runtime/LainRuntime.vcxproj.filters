@@ -513,6 +513,10 @@
     </ClInclude>
     <ClInclude Include="core\config\config_parser.h" />
     <ClInclude Include="core\variant\variant_parser.h" />
+    <ClInclude Include="core\meta\others\serializer_helper.h" />
+    <ClInclude Include="core\variant\container_type_validate.h" />
+    <ClInclude Include="core\script\script.h" />
+    <ClInclude Include="core\math\vector4i.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\config\project_settings.cpp">
@@ -702,5 +706,10 @@
       <Filter>resource\io</Filter>
     </ClCompile>
     <ClCompile Include="core\config\config_parser.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="core\variant\variant_parser.cpp">
+      <Filter>core\variant</Filter>
+    </None>
   </ItemGroup>
 </Project>

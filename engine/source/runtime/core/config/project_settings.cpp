@@ -205,7 +205,7 @@ namespace lain {
 	Error ProjectSettings::_load_settings_text(const String& p_path) { 
 		Error err;
 		Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ, &err);
-		auto cp = ConfigParser(f);
+		auto cp = ConfigFile();
 
 		if (f.is_null()) {
 			// FIXME: Above 'err' error code is ERR_FILE_CANT_OPEN if the file is missing
@@ -213,7 +213,7 @@ namespace lain {
 			return ERR_FILE_NOT_FOUND;
 		}
 
-		cp.ParseFile();
+		cp.ParseFile(f);
 
 	}
 	Error ProjectSettings::_load_settings_binary(const String& text_path) { return OK; }

@@ -1,14 +1,14 @@
 #include "config_parser.h"
 #include "core/meta/reflection/reflection.h"
 #include "core/meta/serializer/serializer.h"
+#include "core/variant/variant_parser.h"
 #include <regex>
 namespace lain {
-    void ConfigParser::ParseFile()
+    Error ConfigFile::ParseFile(Ref<FileAccess> f)
     {
-        ERR_FAIL_COND(f.is_null());
-
         String currentField;
         bool inValue;
+        Error err = OK;
         while (!f->eof_reached()) {
             String line = f->get_line();
             if (line == "" || line.begins_with("//") ){
@@ -29,16 +29,24 @@ namespace lain {
                 key = key.trim();
                 String value = line.substr(delimiterPos + 1, line.length()); 
                 Variant variant_value = ConstructFromString(value);
+                if (variant_value.get_type() == Variant::NIL) {
+                    err = ERR_PARSE_ERROR;
+                }
                 if (variant_value.get_type() == Variant::Type::NIL) {
                     L_CORE_WARN("NIL config meet: " + currentField + "/" + key);
                 }
                 values[currentField][key] = variant_value;
-
+                
+            }
+            else {
+                // Parsing error
+                err =  ERR_PARSE_ERROR;
             }
 
         }
+        return err;
     }
-    Variant ConfigParser::ConstructFromString(const String& p_str, int recursize_depth, bool error_print)
+    Variant ConfigFile::ConstructFromString(const String& p_str, int recursize_depth, bool error_print)
     {
         std::string error;
         if (unlikely(recursize_depth > 128)) {
@@ -127,7 +135,7 @@ namespace lain {
         }
     }
 
-    bool ConfigParser::IsNumericExpression(const std::string& expression)
+    bool ConfigFile::IsNumericExpression(const std::string& expression)
     {
         // 正则表达式模式，用于匹配数字类型的表达式
         std::regex pattern("^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$");
@@ -136,7 +144,7 @@ namespace lain {
         return std::regex_match(expression, pattern);
     }
 
-    Error ConfigParser::Save(const String& p_path) {
+    Error ConfigFile::Save(const String& p_path) {
         Error err;
         Ref<FileAccess> file = FileAccess::open(p_path, FileAccess::WRITE, &err);
 
@@ -146,8 +154,18 @@ namespace lain {
 
         return _internalSave(file);
     }
+    Error ConfigFile::Load(const String& p_path) {
+        Error err;
+        Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ, &err);
 
-    Error ConfigParser::_internalSave(Ref<FileAccess> file) {
+        if (f.is_null()) {
+            return err;
+        }
+
+        return ParseFile(f);
+    }
+
+    Error ConfigFile::_internalSave(Ref<FileAccess> file) {
         bool first = true;
         for (const KeyValue<String, HashMap<String, Variant>>& E : values) {
             if (first) {
@@ -161,24 +179,19 @@ namespace lain {
             }
 
             for (const KeyValue<String, Variant>& F : E.value) {
-                String vstr = ConfigParser::WriteConfigVariant(F.value);
+                String vstr = ConfigFile::WriteConfigVariant(F.value);
                 file->store_string(F.key.property_name_encode() + "=" + vstr + "\n");
             }
         }
 
         return OK;
     }
-    String ConfigParser::WriteConfigVariant(const Variant& p_var) {
-        switch (p_var.get_type()) {
-            switch (p_var.get_type())
-            {
-            
-            case Variant::STRING: {
-                auto&& var = static_cast<String>(p_var);
-            }
-            default:
-                break;
-            }
+    String ConfigFile::WriteConfigVariant(const Variant& p_var) {
+        String r_str = "";
+        if (VariantWriter::write_to_string(p_var, r_str) == OK) {
+            return r_str;
         }
+        L_CORE_ERROR("error converting variant to String");
+        return "";
     }
 }

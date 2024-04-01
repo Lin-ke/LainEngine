@@ -7,7 +7,6 @@
 #include "core/object/object.h"
 #include "core/variant/variant_internal.h"
 //#include "core/variant/type_info.h"
-//#include "core/variant/variant_internal.h"
 namespace lain {
 	struct DictionaryPrivate {
 		SafeRefCount refcount;
