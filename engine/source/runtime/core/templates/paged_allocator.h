@@ -31,7 +31,8 @@ public:
 		DEFAULT_PAGE_SIZE = 4096
 	};
 	template <class... Args>
-	T* alloc(const Args &&...p_args) {
+	// alloc≤ª”√const
+	T* alloc(Args &&...p_args) {
 		if (thread_safe) {
 			spin_lock.lock();
 		}

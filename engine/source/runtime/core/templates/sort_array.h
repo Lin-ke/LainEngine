@@ -9,6 +9,7 @@
 		ERR_PRINT("bad comparison function; sorting will be broken"); \
 		break;                                                        \
 	}
+namespace lain {
 
 template <class T>
 struct _DefaultComparator {
@@ -329,5 +330,6 @@ public:
 	}
 };
 
+}
 
 #endif // SORT_ARRAY_H

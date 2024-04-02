@@ -190,7 +190,7 @@ private:
 				ERR_FAIL_COND_V_MSG(capacity_index + 1 == HASH_TABLE_SIZE_MAX, nullptr, "Hash table maximum capacity reached, aborting insertion.");
 				_resize_and_rehash(capacity_index + 1);
 			}
-
+			// Allocator 需要实现new_alloc
 			HashMapElement<TKey, TValue>* elem = element_alloc.new_allocation(HashMapElement<TKey, TValue>(p_key, p_value));
 
 			if (tail_element == nullptr) {

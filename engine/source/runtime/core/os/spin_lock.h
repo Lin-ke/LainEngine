@@ -5,6 +5,8 @@
 #include "core/typedefs.h"
 
 #include <atomic>
+namespace lain {
+
 
 class SpinLock {
 	mutable std::atomic_flag locked = ATOMIC_FLAG_INIT;
@@ -19,5 +21,6 @@ public:
 		locked.clear(std::memory_order_release);
 	}
 };
+}
 
 #endif // SPIN_LOCK_H

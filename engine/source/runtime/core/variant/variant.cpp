@@ -1005,6 +1005,23 @@ namespace lain {
 	/*
 	* transfer to other types
 	*/
+	Variant::operator bool() const {
+		switch (type) {
+		case NIL:
+			return false;
+		case BOOL:
+			return _data._bool;
+		case INT:
+			return _data._int == 0;
+		case FLOAT:
+			return _data._float == 0;
+		case STRING:
+			return operator String().to_int() == 0;
+		default: {
+			return false;
+		}
+		}
+	}
 
 	Variant::operator signed int() const {
 		switch (type) {
@@ -1303,6 +1320,32 @@ namespace lain {
 		}
 	}
 
+
+	Variant::operator Vector4() const {
+		if (type == VECTOR4) {
+			return *reinterpret_cast<const Vector4*>(_data._mem);
+		}
+		else if (type == VECTOR4I) {
+			return *reinterpret_cast<const Vector4i*>(_data._mem);
+		}
+		else if (type == VECTOR2) {
+			return Vector4(reinterpret_cast<const Vector2*>(_data._mem)->x, reinterpret_cast<const Vector2*>(_data._mem)->y, 0.0, 0.0);
+		}
+		else if (type == VECTOR2I) {
+			return Vector4(reinterpret_cast<const Vector2i*>(_data._mem)->x, reinterpret_cast<const Vector2i*>(_data._mem)->y, 0.0, 0.0);
+		}
+		else if (type == VECTOR3) {
+			return Vector4(reinterpret_cast<const Vector3*>(_data._mem)->x, reinterpret_cast<const Vector3*>(_data._mem)->y, reinterpret_cast<const Vector3*>(_data._mem)->z, 0.0);
+		}
+		else if (type == VECTOR3I) {
+			return Vector4(reinterpret_cast<const Vector3i*>(_data._mem)->x, reinterpret_cast<const Vector3i*>(_data._mem)->y, reinterpret_cast<const Vector3i*>(_data._mem)->z, 0.0);
+		}
+		else {
+			return Vector4();
+		}
+	}
+
+
 	Variant::operator Color() const {
 		if (type == COLOR) {
 			return *reinterpret_cast<const Color*>(_data._mem);
@@ -1317,6 +1360,32 @@ namespace lain {
 			return Color();
 		}
 	}
+
+	Variant::operator Quaternion() const {
+		if (type == QUATERNION) {
+			return *reinterpret_cast<const Quaternion*>(_data._mem);
+		}
+		/*else if (type == BASIS) {
+			return *_data._basis;
+		}
+		else if (type == TRANSFORM3D) {
+			return _data._transform3d->basis;
+		}*/
+		else {
+			return Quaternion();
+		}
+	}
+
+	
+	Variant::operator lain::RID() const {
+		if (type == RID) {
+			return *reinterpret_cast<const lain::RID*>(_data._mem);
+		}
+		else {
+			return lain::RID();
+		}
+	}
+
 
 
 	struct _VariantStrPair {

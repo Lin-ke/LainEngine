@@ -1,5 +1,8 @@
 #include "worker_thread_pool.h"
 namespace lain {
+
+	WorkerThreadPool* WorkerThreadPool::singleton = nullptr;
+
 	WorkerThreadPool::WorkerThreadPool() {
 		singleton = this;
 	}
@@ -7,6 +10,68 @@ namespace lain {
 	WorkerThreadPool::~WorkerThreadPool() {
 		finish();
 	}
+	WorkerThreadPool::TaskID WorkerThreadPool::add_native_task(void (*p_func)(void*), void* p_userdata, bool p_high_priority, const String& p_description) {
+		return _add_task(Callable(), p_func, p_userdata, nullptr, p_high_priority, p_description);
+	}
+
+	WorkerThreadPool::TaskID WorkerThreadPool::_add_task(const Callable& p_callable, void (*p_func)(void*), void* p_userdata, BaseTemplateUserdata* p_template_userdata, bool p_high_priority, const String& p_description) {
+		task_mutex.lock();
+		// Get a free task
+		Task* task = task_allocator.alloc();
+		TaskID id = last_task++;
+		task->self = id;
+		//task->callable = p_callable;
+		task->native_func = p_func;
+		task->native_func_userdata = p_userdata;
+		task->description = p_description;
+		task->template_userdata = p_template_userdata;
+		tasks.insert(id, task);
+
+		_post_tasks_and_unlock(&task, 1, p_high_priority);
+
+		return id;
+	}
+
+
+	void WorkerThreadPool::_post_tasks_and_unlock(Task** p_tasks, uint32_t p_count, bool p_high_priority) {
+		// Fall back to processing on the calling thread if there are no worker threads.
+		// Separated into its own variable to make it easier to extend this logic
+		// in custom builds.
+		bool process_on_calling_thread = threads.size() == 0;
+		if (process_on_calling_thread) {
+			task_mutex.unlock();
+			for (uint32_t i = 0; i < p_count; i++) {
+				_process_task(p_tasks[i]);
+			}
+			return;
+		}
+
+		uint32_t to_process = 0;
+		uint32_t to_promote = 0;
+
+		ThreadData* caller_pool_thread = thread_ids.has(Thread::get_caller_id()) ? &threads[thread_ids[Thread::get_caller_id()]] : nullptr;
+
+		for (uint32_t i = 0; i < p_count; i++) {
+			p_tasks[i]->low_priority = !p_high_priority;
+			if (p_high_priority || low_priority_threads_used < max_low_priority_threads) {
+				task_queue.add_last(&p_tasks[i]->task_elem);
+				if (!p_high_priority) {
+					low_priority_threads_used++;
+				}
+				to_process++;
+			}
+			else {
+				// Too many threads using low priority, must go to queue.
+				low_priority_task_queue.add_last(&p_tasks[i]->task_elem);
+				to_promote++;
+			}
+		}
+
+		_notify_threads(caller_pool_thread, to_process, to_promote);
+
+		task_mutex.unlock();
+	}
+
 
 	void WorkerThreadPool::init(int p_thread_count, float p_low_priority_task_ratio) {
 		ERR_FAIL_COND(threads.size() > 0);

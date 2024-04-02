@@ -5,6 +5,7 @@
 #include "core/typedefs.h"
 #include "base.h"
 #include <mutex>
+namespace lain {
 
 template <class MutexT>
 class MutexLock;
@@ -47,9 +48,9 @@ template <int Tag>
 class SafeBinaryMutex {
 	friend class MutexLock<SafeBinaryMutex>;
 
-	using StdMutexType = std::mutex;
+	using StdMutexType = THREADING_NAMESPACE::mutex;
 
-	mutable std::mutex mutex;
+	mutable THREADING_NAMESPACE::mutex mutex;
 	static thread_local uint32_t count; 
 
 public:
@@ -127,5 +128,6 @@ extern template class MutexImpl<std::recursive_mutex>;
 extern template class MutexImpl<std::mutex>;
 extern template class MutexLock<MutexImpl<std::recursive_mutex>>;
 extern template class MutexLock<MutexImpl<std::mutex>>;
+} // namespace lain
 
 #endif // MUTEX_H

@@ -5,6 +5,8 @@
 #include "resource_loader.h"
 #include "core/meta/reflection/reflection.h"
 namespace lain {
+
+
 	// resource
 	void Resource::SetName(const String& p_name) {
 		name = p_name;
@@ -200,4 +202,7 @@ namespace lain {
 
 		return rc;
 	}
+
+	HashMap<String, Resource*> ResourceCache::resources;
+	Mutex ResourceCache::lock;
 }

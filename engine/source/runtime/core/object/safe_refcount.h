@@ -11,6 +11,7 @@
 #include "core/error/error_macros.h"
 #endif
 
+namespace lain {
 
 class SafeRefCount {
 	s_ui32 count;
@@ -84,5 +85,6 @@ public:
 	}
 };
 
+}
 
 #endif // SAFE_refCOUNT_H

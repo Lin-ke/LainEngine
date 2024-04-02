@@ -5,7 +5,7 @@
 #include "core/config/project_settings.h"
 #include "platform/io/file_access_windows.h"
 #include "platform/io/dir_access_windows.h"
-
+#include <bcrypt.h>
 
 namespace lain {
 	bool OSWindows::HasEnv(const String& p_var) const {
@@ -163,5 +163,9 @@ namespace lain {
 
 		return OK;
 	}
-
+	Error OSWindows::GetEntropy(uint8_t* r_buffer, int p_bytes) const  {
+		NTSTATUS status = BCryptGenRandom(nullptr, r_buffer, p_bytes, BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+		ERR_FAIL_COND_V(status, FAILED);
+		return OK;
+	}
 }

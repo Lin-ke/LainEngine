@@ -706,6 +706,7 @@
       <Filter>resource\io</Filter>
     </ClCompile>
     <ClCompile Include="core\config\config_parser.cpp" />
+    <ClCompile Include="core\math\vector4i.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="core\variant\variant_parser.cpp">

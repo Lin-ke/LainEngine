@@ -3,15 +3,22 @@
 #define CONFIG_PARSER_H
 #include "core/io/file_access.h"
 #include "core/io/dir_access.h"
+#include "core/io/resource.h"
 
 namespace lain {
-    
+    class VariantWriter {
+    public:
+        typedef Error(*StoreStringFunc)(void* ud, const String& p_string);
+        typedef String(*EncodeResourceFunc)(void* ud, const Ref<Resource>& p_resource);
+
+        static Error write(const Variant& p_variant, StoreStringFunc p_store_string_func, void* p_store_string_ud, EncodeResourceFunc p_encode_res_func, void* p_encode_res_ud, int p_recursion_count = 0);
+        static Error write_to_string(const Variant& p_variant, String& r_string, EncodeResourceFunc p_encode_res_func = nullptr, void* p_encode_res_ud = nullptr);
+    };
     class ConfigFile: public RefCounted {
     public:
         Error ParseFile(Ref<FileAccess> f);
         HashMap<String, HashMap<String, Variant>> values;
         ConfigFile() {}
-        String WriteConfigVariant(const Variant& var);
         Error Save(const String& p_path);
         Error Load(const String& p_path);
         bool has_section(const String& p_section) const {
@@ -91,20 +98,7 @@ namespace lain {
         // 基本类包括：Vector<Variant>，即[]；double ； String
         Variant ConstructFromString(const String& p_str, int recursize_depth = 0, bool error_print = true);
 
-        std::string trim(const std::string& str) {
-            size_t begin = str.find_first_not_of(" ");
-            if (begin == std::string::npos) {
-                return "";
-            }
-
-            size_t end = str.find_last_not_of(" ");
-            if (end == std::string::npos) {
-                return "";
-            }
-
-            return str.substr(begin, end - begin + 1);
-        }
-
+        
         bool IsNumericExpression(const std::string& expression);
     };
 }

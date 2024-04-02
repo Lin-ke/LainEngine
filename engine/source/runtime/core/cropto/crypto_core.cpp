@@ -8,7 +8,7 @@
 #include <mbedtls/sha1.h>
 #include <mbedtls/sha256.h>
 #include "core/os/memory.h"
-
+#include "core/os/os.h"
 namespace lain {
 	Error CryptoCore::RandomGenerator::get_random_bytes(uint8_t* r_buffer, size_t p_bytes) {
 		ERR_FAIL_NULL_V(ctx, ERR_UNCONFIGURED);
@@ -38,5 +38,14 @@ namespace lain {
 		}
 		return OK;
 	}
+	// 根据获取的熵？值加密
+	int CryptoCore::RandomGenerator::_entropy_poll(void* p_data, unsigned char* r_buffer, size_t p_len, size_t* r_len) {
+		*r_len = 0;
+		Error err = OS::GetSingleton()->GetEntropy(r_buffer, p_len);
+		ERR_FAIL_COND_V(err, MBEDTLS_ERR_ENTROPY_SOURCE_FAILED);
+		*r_len = p_len;
+		return 0;
+	}
+
 
 }

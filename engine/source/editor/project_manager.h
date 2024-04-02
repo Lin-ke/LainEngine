@@ -4,12 +4,14 @@
 #include "core/io/file_access.h"
 #include "core/io/dir_access.h"
 #include "core/config/config_parser.h"
+#include "core/templates/hash_map.h"
 
 namespace lain {
+	class ProjectManager;
 	class ProjectList {
+		friend class ProjectManager;
 	public:
 		ProjectList();
-		~ProjectList();
 		void update_project_list();
 
 		struct Item {
@@ -69,6 +71,7 @@ namespace lain {
 		};
 		void add_project(const String& dir_path, bool favorite);
 		void set_project_version(const String& p_project_path, int version);
+		void save_config();
 		
 	private:
 		String _config_path;
@@ -76,7 +79,24 @@ namespace lain {
 		Vector<Item> _projects;
 		void _migrate_config();
 		static Item load_project_data(const String& p_property_key, bool p_favorite);
-		void save_config();
+		static Error write_to_project(const String& p_dir, const HashMap<String, HashMap<String, Variant>>& config);
+
+	};
+	//class ProjectListController {
+
+	//};
+	class ProjectManager {
+	public:
+
+		ProjectList* project_list = nullptr;
+		ProjectManager();
+		~ProjectManager();
+
+		ProjectManager* GetSingleton();
+
+		Error CreateProject(const String& dir, const HashMap<String, HashMap<String, Variant>>& config);
+	private:
+		static ProjectManager* singleton;
 	};
 }
 #endif // !PROJECT_MANAGER_H

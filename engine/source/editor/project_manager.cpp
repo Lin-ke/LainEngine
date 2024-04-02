@@ -4,10 +4,10 @@
 #include "core/config/project_settings.h"
 namespace lain {
 	void ProjectList::update_project_list() {
-
+		// free _project and reload _config_path
 	}
 	ProjectList::ProjectList() {
-		_config_path = EditorPaths::GetSingleton()->GetDataDir().path_join("projects.cfg");
+		_config_path = EditorPaths::GetSingleton()->GetDataDir().path_join(ProjectSettings::ALL_PROJECTS_FILE_NAME);
 		_migrate_config();
 
 
@@ -19,6 +19,7 @@ namespace lain {
 		save_config();
 
 	}
+	// if not exists, make
 	void ProjectList::save_config() {
 		
 		_config.Save(_config_path);
@@ -37,7 +38,7 @@ namespace lain {
 			}
 		}
 	}
-
+	
 	ProjectList::Item ProjectList::load_project_data(const String& p_path, bool p_favorite) {
 		String conf = p_path.path_join(ProjectSettings::PROJECT_FILE_NAME);
 		bool grayed = false;
@@ -98,4 +99,45 @@ namespace lain {
 
 		return Item(project_name, description, tags, p_path, icon, main_scene, unsupported_features, last_edited, p_favorite, grayed, missing, config_version);
 	}
+
+	Error ProjectList::write_to_project(const String& p_dir, const HashMap<String, HashMap<String, Variant>>& config) {
+		String conf = p_dir.path_join(ProjectSettings::PROJECT_FILE_NAME);
+
+		Ref<ConfigFile> cf = memnew(ConfigFile); // Ref RAII
+		cf->values = config;
+		Error err = cf->Save(conf);
+		//Error cf_err = cf->Load(conf);
+		//if (cf_err != OK) return cf_err;
+
+		/*cf->set_value("application", "config/name", p_project.project_name);
+		cf->set_value("application", "config/description", p_project.description);
+		cf->set_value("application", "run/main_scene", p_project.main_scene);*/
+
+		//cf->set_value("application", "config/features", p_project.);
+
+		return err;
+	}
+
+	/// project manager
+	ProjectManager::ProjectManager() {
+		singleton = this;
+		project_list = memnew(ProjectList);
+	}
+
+	ProjectManager::~ProjectManager() {
+		singleton = nullptr;
+	}
+	ProjectManager* ProjectManager::singleton = nullptr;
+	ProjectManager* ProjectManager::GetSingleton() {
+		return singleton;
+	}
+
+	Error ProjectManager::CreateProject(const String& dir, const HashMap<String, HashMap<String, Variant>>& config) {
+		project_list->add_project(dir, false);
+		project_list->save_config();
+		return ProjectList::write_to_project(dir, config);
+
+	}
+
+
 }

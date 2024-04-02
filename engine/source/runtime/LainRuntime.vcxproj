@@ -264,6 +264,7 @@
     <ClCompile Include="core\math\vector3.cpp" />
     <ClCompile Include="core\math\vector3i.cpp" />
     <ClCompile Include="core\math\vector4.cpp" />
+    <ClCompile Include="core\math\vector4i.cpp" />
     <ClCompile Include="core\meta\meta_example.cpp" />
     <ClCompile Include="core\meta\reflection\reflection.cpp" />
     <ClCompile Include="core\meta\reflection\reflection_register.cpp" />

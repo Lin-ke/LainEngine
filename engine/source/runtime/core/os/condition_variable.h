@@ -5,6 +5,8 @@
 #include <condition_variable>
 #include "base.h"
 #include "mutex.h"
+namespace lain {
+
 // An object one or multiple threads can wait on a be notified by some other.
 // Normally, you want to use a semaphore for such scenarios, but when the
 // condition is something different than a count being greater than zero
@@ -27,5 +29,7 @@ public:
 		condition.notify_all();
 	}
 };
+}
 
 #endif // CONDITION_VARIABLE_H
+

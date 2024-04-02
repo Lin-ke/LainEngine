@@ -7,21 +7,24 @@
 using namespace lain;
 #include "test/test_headers.h"
 #include "core/mainloop/main.h"
-int main(int argc, char** argv) {
+#include "core/templates/pair.h"
+#include "editor/project_manager.h"
+
+int main() {
 	
 	// main function
 	OSWindows os = OSWindows();
-
-	Error err = Main::Initialize(0, nullptr);
+	char* argv[] = {"D:/LainEngine/game"}; //³¡¾°1
+	Error err = Main::Initialize(1, argv);
 	if (err != OK) {
-		// 
+		// LPRINT
 	}
 	os.Run();
 	/*test::test_Vector3_reflect();
 	test::test_StringName_reflect();
 	test::test_accessor();
 	test::test_assign_using_serializer();*/
-	test::test_fileio();
+	//test::test_fileio();
 }
 
 

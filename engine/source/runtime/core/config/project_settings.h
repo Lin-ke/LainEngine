@@ -21,8 +21,12 @@ public:
 	Error Initialize(const String p_path);
     static const String PROJECT_DATA_DIR_NAME_SUFFIX;
     static const String PROJECT_FILE_NAME;
+	static const String PROJECT_BINARY_NAME;
+	static const String ALL_PROJECTS_FILE_NAME;
 
-	String project_data_dir_name;
+
+
+	String project_data_dir_name = "";
 	String resource_path = "";
 	bool _set(const StringName& p_name, const Variant& p_value);
 	bool _get(const StringName& p_name, Variant& r_ret) const;

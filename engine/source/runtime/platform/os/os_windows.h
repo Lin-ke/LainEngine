@@ -25,6 +25,8 @@ public:
 	}
 	virtual String GetCachePath() const;
 	virtual String GetUserDataDir() const;
+	virtual Error GetEntropy(uint8_t* r_buffer, int p_bytes) const override;
+
 	OSWindows() {
 		Log::Initialize();
 	}

@@ -1,6 +1,8 @@
 #include "thread.h"
 #include "core/string/ustring.h"
 namespace lain {
+	Thread::PlatformFunctions Thread::platform_functions;
+
 	SafeNumeric<uint64_t> Thread::id_counter(1); // The first value after .increment() is 2, hence by default the main thread ID should be 1.
 	thread_local Thread::ID Thread::caller_id = Thread::UNASSIGNED_ID;
 	void Thread::callback(ID p_caller_id, const Settings& p_settings, Thread::Callback p_callback, void* p_userdata) {

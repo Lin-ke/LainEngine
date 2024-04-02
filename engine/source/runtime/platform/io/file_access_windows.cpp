@@ -465,4 +465,5 @@ namespace lain {
 		return b;
 	}
 
+
 }

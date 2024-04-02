@@ -12,6 +12,10 @@ namespace lain {
 	ProjectSettings* ProjectSettings::p_singleton = nullptr;
 	const String ProjectSettings::PROJECT_DATA_DIR_NAME_SUFFIX = "prjdata";
 	const String ProjectSettings::PROJECT_FILE_NAME = "prj.txt";
+	const String ProjectSettings::PROJECT_BINARY_NAME = "prj.data";
+	const String ProjectSettings::ALL_PROJECTS_FILE_NAME = "prj.config";
+
+
 	
 
 	Error ProjectSettings::Initialize(const String p_path) {
@@ -150,7 +154,7 @@ namespace lain {
 			// Set the resource path early so things can be resolved when loading.
 			resource_path = current_dir;
 			resource_path = resource_path.replace("\\", "/"); // Windows path to Unix path just in case.
-			err = _load_settings_text_or_binary(current_dir.path_join("project.godot"), current_dir.path_join("project.binary"));
+			err = _load_settings_text_or_binary(current_dir.path_join(PROJECT_FILE_NAME), current_dir.path_join(PROJECT_BINARY_NAME));
 			if (err == OK && !p_ignore_override) {
 				// Optional, we don't mind if it fails.
 				_load_settings_text(current_dir.path_join("override.cfg"));
@@ -182,24 +186,27 @@ namespace lain {
 		return OK;
 	}
 	Error ProjectSettings::_load_settings_text_or_binary(const String& p_text_path, const String& p_bin_path) {
-		Error err_text = OK;
-		Error err_binary = OK;
-		if (p_text_path != "") {
-			err_text = _load_settings_text(p_text_path);
-			if (err_text == OK) { return OK; }
+
+
+		Error err = _load_settings_text(p_text_path);
+		if (err == OK) {
+			return OK;
+		}
+		else if (err != ERR_FILE_NOT_FOUND) {
+			ERR_PRINT("Couldn't load file '" + p_text_path + "', error code " + itos(err) + ".");
+		}
+
+		// Fallback to text-based binary file if binary was not found.
+		 err = _load_settings_binary(p_bin_path);
+		if (err == OK) {
+			return OK;
+		}
+		else if (err != ERR_FILE_NOT_FOUND) {
 			// If the file exists but can't be loaded, we want to know it.
-			else if (err_text != ERR_FILE_NOT_FOUND) {
-				ERR_PRINT(("Couldn't load file '" + p_bin_path + "', error code " + itos(err_text) + "."));
-			}
+			ERR_PRINT("Couldn't load file '" + p_bin_path + "', error code " + itos(err) + ".");
 		}
-		if (p_bin_path != "") {
-			err_binary = _load_settings_binary(p_bin_path);
-			if (err_binary == OK) { return OK; }
-			else if (err_binary != ERR_FILE_NOT_FOUND) {
-				ERR_PRINT(("Couldn't load file '" + p_bin_path + "', error code " + itos(err_binary) + "."));
-			}
-		}
-		return (err_text == OK && err_binary == OK) ? OK : ERR_FILE_NOT_FOUND;
+
+		return err;
 	}
 	
 	Error ProjectSettings::_load_settings_text(const String& p_path) { 
@@ -214,6 +221,8 @@ namespace lain {
 		}
 
 		cp.ParseFile(f);
+
+		return OK;
 
 	}
 	Error ProjectSettings::_load_settings_binary(const String& text_path) { return OK; }

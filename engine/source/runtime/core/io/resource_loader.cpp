@@ -1,12 +1,26 @@
 #include "resource_loader.h"
 #include "resource_uid.h"
+#include "core/os/mutex.h"
 namespace lain {
 	Ref<ResourceFormatLoader> ResourceLoader::loader[ResourceLoader::MAX_LOADERS];
 	int ResourceLoader::loader_count = 0;
 	thread_local int ResourceLoader::load_nesting = 0;
+	thread_local WorkerThreadPool::TaskID ResourceLoader::caller_task_id = 0;
 	thread_local  Vector<String>* ResourceLoader::load_paths_stack;
 	HashMap<String, ResourceLoader::ThreadLoadTask> ResourceLoader::thread_load_tasks;
+	HashMap<String, ResourceLoader::LoadToken*> ResourceLoader::user_load_tokens;
+	bool ResourceLoader::cleaning_tasks = false;
+	ResourceLoadedCallback ResourceLoader::_loaded_callback = nullptr; // »Øµ÷
 
+
+	template <>
+	thread_local uint32_t SafeBinaryMutex<ResourceLoader::BINARY_MUTEX_TAG>::count = 0;
+	SafeBinaryMutex<ResourceLoader::BINARY_MUTEX_TAG> ResourceLoader::thread_load_mutex;
+
+
+	void ResourceLoader::initialize() {}
+
+	void ResourceLoader::finalize() {}
 
 	Ref<Resource> ResourceLoader::load(const String& p_path, const String& p_type_hint, ResourceFormatLoader::CacheMode p_cache_mode, Error* r_error) {
 		if (r_error) {
@@ -388,4 +402,42 @@ namespace lain {
 			return resource;
 		}
 	}
+
+
+	/////////// load token
+	void ResourceLoader::LoadToken::clear() {
+		thread_load_mutex.lock();
+
+		WorkerThreadPool::TaskID task_to_await = 0;
+
+		if (!local_path.is_empty()) { // Empty is used for the special case where the load task is not registered.
+			DEV_ASSERT(thread_load_tasks.has(local_path));
+			ThreadLoadTask& load_task = thread_load_tasks[local_path];
+			if (!load_task.awaited) {
+				task_to_await = load_task.task_id;
+				load_task.awaited = true;
+			}
+			thread_load_tasks.erase(local_path);
+			local_path.clear();
+		}
+
+		if (!user_path.is_empty()) {
+			DEV_ASSERT(user_load_tokens.has(user_path));
+			user_load_tokens.erase(user_path);
+			user_path.clear();
+		}
+
+		thread_load_mutex.unlock();
+
+		// If task is unused, await it here, locally, now the token data is consistent.
+		if (task_to_await) {
+			WorkerThreadPool::get_singleton()->wait_for_task_completion(task_to_await);
+		}
+	}
+	// RAII
+	ResourceLoader::LoadToken::~LoadToken() {
+		clear();
+	}
+
+
 }

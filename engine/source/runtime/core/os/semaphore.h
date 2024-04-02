@@ -9,6 +9,7 @@
 #endif
 #include <condition_variable>
 #include <mutex>
+namespace lain {
 
 class Semaphore {
 	// 通常会将互斥锁（mutex）声明为可变（mutable），以便在 const 成员函数中对其进行加锁和解锁操作
@@ -56,4 +57,6 @@ public:
 		}
 	}
 };
+}
+
 #endif

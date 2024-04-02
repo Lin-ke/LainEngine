@@ -77,6 +77,13 @@ namespace lain {
 
 
 	}
+	void EditorPaths::create() {
+		memnew(EditorPaths);
+	}
+	void EditorPaths::free() {
+		ERR_FAIL_NULL(p_singleton);
+		memdelete(p_singleton);
+	}
 	bool EditorPaths::ArePathsVaild() const {
 		return paths_valid;
 	}

@@ -5,6 +5,7 @@
 #include "core/object/refcounted.h"
 #include "core/io/resource.h"
 #include "core/thread/worker_thread_pool.h"
+#include "core/templates/hash_map.h"
 namespace lain {
 	class ResourceFormatLoader : public RefCounted {
 		LCLASS(ResourceFormatLoader, RefCounted);
@@ -28,7 +29,7 @@ namespace lain {
 
 	class ResourceLoader {
 		friend class ResourceFormatImporter;
-
+		friend void register_core_types();
 		enum {
 			MAX_LOADERS = 64
 		};
@@ -63,6 +64,8 @@ namespace lain {
 		static Ref<Resource> load(const String& p_path, const String& p_type_hint = "", ResourceFormatLoader::CacheMode p_cache_mode = ResourceFormatLoader::CACHE_MODE_REUSE, Error* r_error = nullptr);
 		static String path_remap(const String& p_path);
 
+		static void initialize();
+		static void finalize();
 	private:
 		static Ref<Resource> _load_complete_inner(LoadToken& p_load_token, Error* r_error, MutexLock<SafeBinaryMutex<BINARY_MUTEX_TAG>>& p_thread_load_lock);
 
@@ -91,7 +94,6 @@ namespace lain {
 		};
 
 		static void _thread_load_function(void* p_userdata);
-		static bool cleaning_tasks; // ?
 		static ResourceLoadedCallback _loaded_callback; // »Øµ÷
 		static String _path_remap(const String& p_path, bool* r_translation_remapped = nullptr);
 
@@ -101,11 +103,12 @@ namespace lain {
 		static thread_local int load_nesting;
 		static thread_local WorkerThreadPool::TaskID caller_task_id;
 		static thread_local Vector<String>* load_paths_stack; // A pointer to avoid broken TLS implementations from double-running the destructor.
-		static HashMap<String, ThreadLoadTask> thread_load_tasks;
-
 		static SafeBinaryMutex<BINARY_MUTEX_TAG> thread_load_mutex;
-		static void initialize();
-		static void finalize();
+		static HashMap<String, ThreadLoadTask> thread_load_tasks;
+		static bool cleaning_tasks; // ?
+
+		static HashMap<String, ResourceLoader::LoadToken*> user_load_tokens;
+
 	};
 }
 

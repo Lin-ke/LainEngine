@@ -1,5 +1,8 @@
 #include "os.h"
 #include "core/mainloop/main.h"
+#include "core/io/file_access.h"
+#include "core/io/dir_access.h"
+
 namespace lain {
 	OS* OS::p_singleton = nullptr;
 	 String OS::GetResourceDir() const {
@@ -39,5 +42,16 @@ namespace lain {
 		 }
 		 return safe_dir_name;
 	 }
+	 // thread”Îcpu ˝¡ø
 	 int OS::GetProcessorCount() const { return THREADING_NAMESPACE::thread::hardware_concurrency(); }
+	 void OS::EnsureUserDataDir() {
+		 String dd = GetUserDataDir();
+		 if (DirAccess::exists(dd)) {
+			 return;
+		 }
+
+		 Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
+		 Error err = da->make_dir_recursive(dd);
+		 ERR_FAIL_COND_MSG(err != OK, "Error attempting to create data dir: " + dd + ".");
+	 }
 }

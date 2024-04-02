@@ -6,6 +6,9 @@
 #include "core/config/project_settings.h"
 #include "core/meta/reflection/reflection_register.h"
 #include "core/register_core_types.h"
+#include "core/thread/worker_thread_pool.h"
+#include "editor/editor_paths.h"
+#include "editor/project_manager.h"
 //  initialization part
 namespace lain {
 
@@ -13,6 +16,8 @@ static lain::Engine* engine = nullptr;
 static lain::WindowSystem* window_system = nullptr;
 static lain::RenderingSystem* render_system = nullptr;
 static lain::ProjectSettings* globals = nullptr;
+static lain::ProjectManager* pmanager = nullptr;
+
 
 // Main loop vairables
  uint64_t Main::last_ticks = 0;
@@ -24,6 +29,7 @@ static lain::ProjectSettings* globals = nullptr;
  /// Main initialization.
  /// </summary>
  Error Main::Initialize(int argc, char* argv[]) {
+
 	 String project_path = "";
 	 // logger
 	 OS::GetSingleton()->Initialize();
@@ -31,12 +37,34 @@ static lain::ProjectSettings* globals = nullptr;
 	 Reflection::TypeMetaRegister::metaRegister();
 	 register_core_types();
 	 engine = memnew(Engine); // 
-	 window_system = memnew(lain::WindowSystem);
-	 render_system = memnew(lain::RenderingSystem);
-	 globals = memnew(lain::ProjectSettings);
-	 
-	 // 更改工作目录
-	 String path = "D:/LainEngine/game";
+	 window_system = memnew(WindowSystem);
+	 render_system = memnew(RenderingSystem);
+	 globals = memnew(ProjectSettings);
+	 EditorPaths::create(); // editor需要在global之后，在ProjectManager之前
+	 L_STRPRINT(EditorPaths::GetSingleton()->GetDataDir(), EditorPaths::GetSingleton()->GetConfigDir());
+	 pmanager = memnew(ProjectManager);
+	 // parse parameter
+	 List<String> args;
+	 for (int i = 0; i < argc; i++) {
+		 args.push_back(String::utf8(argv[i]));
+	 }
+	 // initialize workerthreadpool
+	 WorkerThreadPool::get_singleton()->init(-1, 0.75);
+	 // Initialize user data dir.
+	 OS::GetSingleton()->EnsureUserDataDir();
+
+
+	 // change working dir
+	 String path = argv[0];
+	 // first time
+	 if (!FileAccess::exists(path.path_join(ProjectSettings::PROJECT_FILE_NAME))) {
+		 // mk
+		 HashMap<String, HashMap<String, Variant>> config;
+		 config["application"]["config/name"] = String("default_project");
+		 config["application"]["config/description"] = String("this is a default project");
+		 pmanager->CreateProject(path, config);
+
+	 }
 
 	 if (OS::GetSingleton()->SetCwd(path) == OK) {
 		 // path already specified, don't override
@@ -44,11 +72,12 @@ static lain::ProjectSettings* globals = nullptr;
 	 else {
 		 project_path = path;
 	 }
-	 globals->Initialize(project_path); // ""
+	 globals->Initialize(project_path); 
 
 	 // reflection
 	 window_system->Initialize();
 	 window_system->NewWindow(lain::WindowCreateInfo());
+
 	 return OK;
  }
 /// <summary>

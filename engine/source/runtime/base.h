@@ -93,6 +93,7 @@ L_INLINE void L_CORE_PRINT(const Types&... args)
 # define refcount(x) x._refcount()
 void _global_lock();
 void _global_unlock();
+
 typedef uint64_t ui64;
 typedef uint32_t ui32;
 typedef uint16_t ui16;
