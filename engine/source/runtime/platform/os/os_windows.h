@@ -16,15 +16,15 @@ public:
 	virtual void Run();
 	
 
-	virtual String GetConfigPath() const {
+	virtual String GetConfigPath() const override {
 		static String _configpath = HasEnv("APPDATA") ? GetEnv("APPDATA") : ".";
 		return _configpath;
 	}
-	virtual String GetDataPath() const {
+	virtual String GetDataPath() const override{
 		return GetConfigPath();
 	}
-	virtual String GetCachePath() const;
-	virtual String GetUserDataDir() const;
+	virtual String GetCachePath() const override;
+	virtual String GetUserDataDir() const override;
 	virtual Error GetEntropy(uint8_t* r_buffer, int p_bytes) const override;
 
 	OSWindows() {

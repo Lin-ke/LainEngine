@@ -54,7 +54,7 @@ public:
 		return p_singleton;
 	}
 	virtual void DelayUsec(ui32 p_usec) const = 0 ;
-	virtual String GetDataPath() { return "/"; }
+	virtual String GetDataPath() const { return "/"; }
 	
 	virtual String GetConfigPath() const { return "."; }
 	virtual Error SetCwd(const String& path) { return ERR_CANT_OPEN; }

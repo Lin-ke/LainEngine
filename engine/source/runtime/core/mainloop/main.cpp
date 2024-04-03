@@ -12,11 +12,11 @@
 //  initialization part
 namespace lain {
 
-static lain::Engine* engine = nullptr;
-static lain::WindowSystem* window_system = nullptr;
-static lain::RenderingSystem* render_system = nullptr;
-static lain::ProjectSettings* globals = nullptr;
-static lain::ProjectManager* pmanager = nullptr;
+static Engine* engine = nullptr;
+static WindowSystem* window_system = nullptr;
+static RenderingSystem* render_system = nullptr;
+static ProjectSettings* globals = nullptr;
+static ProjectManager* pmanager = nullptr;
 
 
 // Main loop vairables

@@ -7,8 +7,6 @@
 using namespace lain;
 #include "test/test_headers.h"
 #include "core/mainloop/main.h"
-#include "core/templates/pair.h"
-#include "editor/project_manager.h"
 
 int main() {
 	
