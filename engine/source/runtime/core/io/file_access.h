@@ -42,7 +42,7 @@ public:
 
 	typedef Ref<FileAccess>(*CreateFunc)();
 	bool big_endian = false;
-	bool real_is_double = false;
+	bool real_is_double = false; // 这个与该文件有关
 
 	//virtual uint32_t _get_unix_permissions(const String& p_file) = 0;
 	//virtual Error _set_unix_permissions(const String& p_file, uint32_t p_permissions) = 0;

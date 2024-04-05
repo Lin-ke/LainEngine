@@ -5,6 +5,7 @@
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "config_parser.h"
+#include "core/os/mutex.h"
 
 #define OSRESDIR OS::GetSingleton()->GetResourceDir()
 
@@ -221,6 +222,23 @@ namespace lain {
 		}
 
 		cp.ParseFile(f);
+		for (const KeyValue<String, HashMap<String, Variant>>& E : cp.values) {
+			String section = E.key;
+			for (const KeyValue<String, Variant>& F : E.value) {
+				if (section.is_empty() && F.key == "config_version") {
+					// config_version
+				}
+				else {
+					if (section.is_empty()) {
+						_set(F.key, F.value);
+					}
+					else {
+						_set(section + "/" + F.key, F.value);
+					}
+				}
+			}
+			
+		}
 
 		return OK;
 
@@ -230,8 +248,43 @@ namespace lain {
 	/*
 	* TODO
 	*/
-	String ProjectSettings::GetSetting(const StringName& p_name) const {
-		return "";
+	bool ProjectSettings::_set(const StringName& p_name, const Variant& p_value) {
+		_THREAD_SAFE_METHOD_
+
+		if (p_value.get_type() == Variant::NIL) {
+			props.erase(p_name);
+		}
+		else {
+			if (props.has(p_name)) {
+				props[p_name].variant = p_value;
+			}
+			else {
+				props[p_name] = VariantContainer(p_value, last_order++);
+			}
+		}
+
+		return true;
+	
+	}
+	bool ProjectSettings::_get(const StringName& p_name, Variant& r_ret) const {
+		_THREAD_SAFE_METHOD_
+
+			if (!props.has(p_name)) {
+				WARN_PRINT("Property not found: " + String(p_name));
+				return false;
+			}
+		r_ret = props[p_name].variant;
+		return true;
+	}
+
+	Variant ProjectSettings::GetSetting(const StringName& p_name) const {
+		_THREAD_SAFE_METHOD_
+		StringName name = p_name;
+		if (!props.has(name)) {
+			WARN_PRINT("Property not found: " + String(name));
+			return Variant();
+		}
+		return props[name].variant;
 	}
 
 	

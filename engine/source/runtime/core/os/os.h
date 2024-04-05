@@ -59,7 +59,7 @@ public:
 	virtual String GetConfigPath() const { return "."; }
 	virtual Error SetCwd(const String& path) { return ERR_CANT_OPEN; }
 	// º”√‹
-	virtual Error GetEntropy(uint8_t* r_buffer, int p_bytes) const = 0;
+	virtual Error GetEntropy(uint8_t* r_buffer, size_t p_bytes) const = 0;
 	
 	String GetSafeDirName(const String& p_dir_name, bool p_allow_paths) const;
 	int GetProcessorCount() const;

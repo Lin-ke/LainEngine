@@ -1,7 +1,7 @@
 
 #ifndef TYPEDEFS_H
 #define TYPEDEFS_H
-
+#pragma warning(disable: 4244)
 #include <stddef.h>
 
 /**

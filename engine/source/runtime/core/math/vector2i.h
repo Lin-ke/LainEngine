@@ -315,6 +315,7 @@ namespace lain
 
     };
 
-
+    typedef Vector2i Size2i;
+    typedef Vector2i Point2i;
 
 } // namespace lain

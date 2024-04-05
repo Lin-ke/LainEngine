@@ -1,9 +1,9 @@
-#include "node_path.h"
+#include "gobject_path.h"
 
 #include "core/string/print_string.h"
 namespace lain {
 
-void NodePath::_update_hash_cache() const {
+void GObjectPath::_update_hash_cache() const {
 	uint32_t h = data->absolute ? 1 : 0;
 	int pc = data->path.size();
 	const StringName* sn = data->path.ptr();
@@ -20,14 +20,14 @@ void NodePath::_update_hash_cache() const {
 	data->hash_cache = h;
 }
 
-void NodePath::prepend_period() {
+void GObjectPath::prepend_period() {
 	if (data->path.size() && data->path[0].operator String() != ".") {
 		data->path.insert(0, ".");
 		data->hash_cache_valid = false;
 	}
 }
 
-bool NodePath::is_absolute() const {
+bool GObjectPath::is_absolute() const {
 	if (!data) {
 		return false;
 	}
@@ -35,7 +35,7 @@ bool NodePath::is_absolute() const {
 	return data->absolute;
 }
 
-int NodePath::get_name_count() const {
+int GObjectPath::get_name_count() const {
 	if (!data) {
 		return 0;
 	}
@@ -43,13 +43,13 @@ int NodePath::get_name_count() const {
 	return data->path.size();
 }
 
-StringName NodePath::get_name(int p_idx) const {
+StringName GObjectPath::get_name(int p_idx) const {
 	ERR_FAIL_COND_V(!data, StringName());
 	ERR_FAIL_INDEX_V(p_idx, data->path.size(), StringName());
 	return data->path[p_idx];
 }
 
-int NodePath::get_subname_count() const {
+int GObjectPath::get_subname_count() const {
 	if (!data) {
 		return 0;
 	}
@@ -57,20 +57,20 @@ int NodePath::get_subname_count() const {
 	return data->subpath.size();
 }
 
-StringName NodePath::get_subname(int p_idx) const {
+StringName GObjectPath::get_subname(int p_idx) const {
 	ERR_FAIL_COND_V(!data, StringName());
 	ERR_FAIL_INDEX_V(p_idx, data->subpath.size(), StringName());
 	return data->subpath[p_idx];
 }
 
-void NodePath::unref() {
+void GObjectPath::unref() {
 	if (data && data->refcount.unref()) {
 		memdelete(data);
 	}
 	data = nullptr;
 }
 
-bool NodePath::operator==(const NodePath& p_path) const {
+bool GObjectPath::operator==(const GObjectPath& p_path) const {
 	if (data == p_path.data) {
 		return true;
 	}
@@ -116,11 +116,11 @@ bool NodePath::operator==(const NodePath& p_path) const {
 	return true;
 }
 
-bool NodePath::operator!=(const NodePath& p_path) const {
+bool GObjectPath::operator!=(const GObjectPath& p_path) const {
 	return (!(*this == p_path));
 }
 
-void NodePath::operator=(const NodePath& p_path) {
+void GObjectPath::operator=(const GObjectPath& p_path) {
 	if (this == &p_path) {
 		return;
 	}
@@ -132,7 +132,7 @@ void NodePath::operator=(const NodePath& p_path) {
 	}
 }
 
-NodePath::operator String() const {
+GObjectPath::operator String() const {
 	if (!data) {
 		return String();
 	}
@@ -156,21 +156,21 @@ NodePath::operator String() const {
 	return ret;
 }
 
-Vector<StringName> NodePath::get_names() const {
+Vector<StringName> GObjectPath::get_names() const {
 	if (data) {
 		return data->path;
 	}
 	return Vector<StringName>();
 }
 
-Vector<StringName> NodePath::get_subnames() const {
+Vector<StringName> GObjectPath::get_subnames() const {
 	if (data) {
 		return data->subpath;
 	}
 	return Vector<StringName>();
 }
 
-StringName NodePath::get_concatenated_names() const {
+StringName GObjectPath::get_concatenated_names() const {
 	ERR_FAIL_COND_V(!data, StringName());
 
 	if (!data->concatenated_path) {
@@ -185,7 +185,7 @@ StringName NodePath::get_concatenated_names() const {
 	return data->concatenated_path;
 }
 
-StringName NodePath::get_concatenated_subnames() const {
+StringName GObjectPath::get_concatenated_subnames() const {
 	ERR_FAIL_COND_V(!data, StringName());
 
 	if (!data->concatenated_subpath) {
@@ -200,9 +200,9 @@ StringName NodePath::get_concatenated_subnames() const {
 	return data->concatenated_subpath;
 }
 
-NodePath NodePath::rel_path_to(const NodePath& p_np) const {
-	ERR_FAIL_COND_V(!is_absolute(), NodePath());
-	ERR_FAIL_COND_V(!p_np.is_absolute(), NodePath());
+GObjectPath GObjectPath::rel_path_to(const GObjectPath& p_np) const {
+	ERR_FAIL_COND_V(!is_absolute(), GObjectPath());
+	ERR_FAIL_COND_V(!p_np.is_absolute(), GObjectPath());
 
 	Vector<StringName> src_dirs = get_names();
 	Vector<StringName> dst_dirs = p_np.get_names();
@@ -246,10 +246,10 @@ NodePath NodePath::rel_path_to(const NodePath& p_np) const {
 
 	relpath.resize(path_size);
 
-	return NodePath(relpath, p_np.get_subnames(), false);
+	return GObjectPath(relpath, p_np.get_subnames(), false);
 }
 
-NodePath NodePath::get_as_property_path() const {
+GObjectPath GObjectPath::get_as_property_path() const {
 	if (!data || !data->path.size()) {
 		return *this;
 	}
@@ -263,15 +263,15 @@ NodePath NodePath::get_as_property_path() const {
 		}
 		new_path.insert(0, initial_subname);
 
-		return NodePath(Vector<StringName>(), new_path, false);
+		return GObjectPath(Vector<StringName>(), new_path, false);
 	}
 }
 
-bool NodePath::is_empty() const {
+bool GObjectPath::is_empty() const {
 	return !data;
 }
 
-void NodePath::simplify() {
+void GObjectPath::simplify() {
 	if (!data) {
 		return;
 	}
@@ -297,13 +297,13 @@ void NodePath::simplify() {
 	data->hash_cache_valid = false;
 }
 
-NodePath NodePath::simplified() const {
-	NodePath np = *this;
+GObjectPath GObjectPath::simplified() const {
+	GObjectPath np = *this;
 	np.simplify();
 	return np;
 }
 
-NodePath::NodePath(const Vector<StringName>& p_path, bool p_absolute) {
+GObjectPath::GObjectPath(const Vector<StringName>& p_path, bool p_absolute) {
 	if (p_path.size() == 0) {
 		return;
 	}
@@ -315,7 +315,7 @@ NodePath::NodePath(const Vector<StringName>& p_path, bool p_absolute) {
 	data->hash_cache_valid = false;
 }
 
-NodePath::NodePath(const Vector<StringName>& p_path, const Vector<StringName>& p_subpath, bool p_absolute) {
+GObjectPath::GObjectPath(const Vector<StringName>& p_path, const Vector<StringName>& p_subpath, bool p_absolute) {
 	if (p_path.size() == 0 && p_subpath.size() == 0) {
 		return;
 	}
@@ -328,13 +328,13 @@ NodePath::NodePath(const Vector<StringName>& p_path, const Vector<StringName>& p
 	data->hash_cache_valid = false;
 }
 
-NodePath::NodePath(const NodePath& p_path) {
+GObjectPath::GObjectPath(const GObjectPath& p_path) {
 	if (p_path.data && p_path.data->refcount.ref()) {
 		data = p_path.data;
 	}
 }
 
-NodePath::NodePath(const String& p_path) {
+GObjectPath::GObjectPath(const String& p_path) {
 	if (p_path.length() == 0) {
 		return;
 	}
@@ -358,7 +358,7 @@ NodePath::NodePath(const String& p_path) {
 						continue; // Allow end-of-path :
 					}
 
-					ERR_FAIL_MSG("Invalid NodePath '" + p_path + "'.");
+					ERR_FAIL_MSG("Invalid GObjectPath '" + p_path + "'.");
 				}
 				subpath.push_back(str);
 
@@ -416,7 +416,7 @@ NodePath::NodePath(const String& p_path) {
 	}
 }
 
-NodePath::~NodePath() {
+GObjectPath::~GObjectPath() {
 	unref();
 }
 }

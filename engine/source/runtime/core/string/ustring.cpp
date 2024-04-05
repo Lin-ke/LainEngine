@@ -1012,6 +1012,9 @@ const char32_t* String::get_data() const {
 const char32_t String::front() const {
 	return get_data()[0];
 }
+const char32_t String::end() const {
+	return get_data()[size()-2];
+}
 const char32_t String::back() const {
 	return get_data()[size() - 1];
 }
@@ -3333,44 +3336,40 @@ int String::rfindn(const String& p_str, int p_from) const {
 	return -1;
 }
 
-int String::find_first_not_of(const char* p_pattern, int index) const {
-	if (p_pattern == nullptr || p_pattern == "") { return -1; }
-	int i = 0, j = 0;
-	int tmp_len = static_cast<int>(std::strlen(p_pattern));
-	const char* p_str = this->utf8().get_data();
-	for (i = index; i < length(); i++)
-	{
-		for (; j < tmp_len; j++)
-		{
-			if (p_str[i] == p_pattern[j])
-				break;
+int String::find_first_not_of(const String& p_pattern) const {
+	const int len = length();
+	const int pattern_len = p_pattern.length();
+	if (len == 0 || pattern_len== 0) { return -1; } // can't find
+	if (pattern_len > len) { return 0; }
+	const char32_t* src = get_data();
+	const char32_t* str = p_pattern.get_data();
+	for (int i = 0; i <= len; ++i) {
+		if (src[i] != str[i % pattern_len]) {
+			return i - (i%pattern_len);
 		}
-		if (j == tmp_len)
-			break;// 依据跳出的内层for的条件推断，找到即结束循环
 	}
-	if (i == length())
-		return -1;// 未找到，// 依据跳出的内层for的条件推断。找到即结束循环
-	return i;
+	if (len % pattern_len == 0) {
+		return len;
+	}
+	return len - len % pattern_len;
 }
-int String::find_last_not_of(const char* p_pattern, int index) const {
-	if (p_pattern == nullptr || p_pattern == "") { return -1; }
-	int i = 0, j = 0;
-	int tmp_len = static_cast<int> (std::strlen(p_pattern));
-	const char* p_str = this->utf8().get_data();
-	if (index < 0) index += length(); // 注意可能有-很大的情况
-	for (i = index - tmp_len; i >= 0; i--)
-	{
-		for (; j < tmp_len; j++)
-		{
-			if (p_str[i] == p_pattern[j])
-				break;
+int String::find_last_not_of(const String& p_pattern) const {
+	const int len = length();
+	const int pattern_len = p_pattern.length();
+	if (len == 0 || pattern_len == 0) { return -1; } // can't find
+	if (pattern_len > len) { return 0; }
+	const char32_t* src = get_data();
+	const char32_t* str = p_pattern.get_data();
+	int part = len / pattern_len -1 ;
+	for (; part >= 0; part--) {
+		for (int i = 0 ; i < pattern_len; ++i) {
+			if (src[part*pattern_len + i] != str[i]) {
+				return part * pattern_len + len % pattern_len;;
+			}
 		}
-		if (j == tmp_len)
-			break;// 依据跳出的内层for的条件推断，找到即结束循环
 	}
-	if (i == length())
-		return -1;// 未找到，// 依据跳出的内层for的条件推断。找到即结束循环
-	return i;
+	return len % pattern_len;
+
 }
 bool String::ends_with(const String& p_string) const {
 	int l = p_string.length();
@@ -4465,8 +4464,8 @@ String String::trim_suffix(const String& p_suffix) const {
 String String::trim() const{
 	String str = *this;
 	int first = str.find_first_not_of(" ");
-	int last = str.find_last_not_of(" ");
-	return str.substr(first, last - first + 1);
+	int last = str.find_last_not_of(" "); // last is length() + 1
+	return str.substr(first, last - first + 1); 
 }
 bool String::is_valid_int() const {
 	int len = length();

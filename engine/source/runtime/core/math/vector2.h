@@ -197,7 +197,9 @@ namespace lain
         without incurring the square root.
         */
         float squaredDistance(const Vector2& rhs) const { return (*this - rhs).squaredLength(); }
-
+        Vector2 orthogonal() const {
+            return Vector2(y, -x);
+        }
         /** Calculates the dot (scalar) product of this vector with another.
         @remarks
         The dot product can be used to calculate the angle between 2

@@ -6,7 +6,7 @@
 #include <platform/os/os_windows.h>
 using namespace lain;
 #include "test/test_headers.h"
-#include "core/mainloop/main.h"
+#include "core/main/main.h"
 
 int main() {
 	

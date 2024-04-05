@@ -1,6 +1,6 @@
 #include "os_windows.h"
 #include <timeapi.h>
-#include "core/mainloop/main.h"
+#include "core/main/main.h"
 #include "function/display/window_system.h"
 #include "core/config/project_settings.h"
 #include "platform/io/file_access_windows.h"
@@ -139,11 +139,11 @@ namespace lain {
 		DateTime dt;
 		dt.year = systemtime.wYear;
 		dt.month = Month(systemtime.wMonth);
-		dt.day = systemtime.wDay;
+		dt.day = static_cast<ui8>(systemtime.wDay);
 		dt.weekday = Weekday(systemtime.wDayOfWeek);
-		dt.hour = systemtime.wHour;
-		dt.minute = systemtime.wMinute;
-		dt.second = systemtime.wSecond;
+		dt.hour =   static_cast<ui8>(systemtime.wHour);
+		dt.minute = static_cast<ui8>(systemtime.wMinute);
+		dt.second = static_cast<ui8>(systemtime.wSecond);
 		dt.dst = is_daylight;
 		return dt;
 	}
@@ -163,7 +163,7 @@ namespace lain {
 
 		return OK;
 	}
-	Error OSWindows::GetEntropy(uint8_t* r_buffer, int p_bytes) const  {
+	Error OSWindows::GetEntropy(uint8_t* r_buffer, size_t p_bytes) const  {
 		NTSTATUS status = BCryptGenRandom(nullptr, r_buffer, p_bytes, BCRYPT_USE_SYSTEM_PREFERRED_RNG);
 		ERR_FAIL_COND_V(status, FAILED);
 		return OK;

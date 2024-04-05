@@ -1,4 +1,4 @@
-
+#pragma warning(disable: 26451)
 #ifndef HASHFUNCS_H
 #define HASHFUNCS_H
 #include "core/string/ustring.h"
@@ -284,7 +284,7 @@ struct HashMapHasherDefault {
 	static _FORCE_INLINE_ uint32_t hash(const RID& p_rid) { return hash_one_uint64(p_rid.get_id()); }
 	static _FORCE_INLINE_ uint32_t hash(const CharString& p_char_string) { return hash_djb2(p_char_string.ptr()); }
 	static _FORCE_INLINE_ uint32_t hash(const StringName& p_string_name) { return p_string_name.hash(); }
-	//static _FORCE_INLINE_ uint32_t hash(const NodePath& p_path) { return p_path.hash(); }
+	//static _FORCE_INLINE_ uint32_t hash(const GObjectPath& p_path) { return p_path.hash(); }
 	static _FORCE_INLINE_ uint32_t hash(const ObjectID& p_id) { return hash_one_uint64(p_id); }
 
 	static _FORCE_INLINE_ uint32_t hash(const uint64_t p_int) { return hash_one_uint64(p_int); }

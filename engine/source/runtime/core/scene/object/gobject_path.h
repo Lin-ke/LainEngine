@@ -7,7 +7,7 @@
 #include "core/templates/vector.h"
 namespace lain {
 
-class NodePath {
+class GObjectPath {
 	struct Data {
 		SafeRefCount refcount;
 		Vector<StringName> path;
@@ -35,8 +35,8 @@ public:
 	StringName get_concatenated_names() const;
 	StringName get_concatenated_subnames() const;
 
-	NodePath rel_path_to(const NodePath& p_np) const;
-	NodePath get_as_property_path() const;
+	GObjectPath rel_path_to(const GObjectPath& p_np) const;
+	GObjectPath get_as_property_path() const;
 
 	void prepend_period();
 
@@ -53,19 +53,19 @@ public:
 	operator String() const;
 	bool is_empty() const;
 
-	bool operator==(const NodePath& p_path) const;
-	bool operator!=(const NodePath& p_path) const;
-	void operator=(const NodePath& p_path);
+	bool operator==(const GObjectPath& p_path) const;
+	bool operator!=(const GObjectPath& p_path) const;
+	void operator=(const GObjectPath& p_path);
 
 	void simplify();
-	NodePath simplified() const;
+	GObjectPath simplified() const;
 
-	NodePath(const Vector<StringName>& p_path, bool p_absolute);
-	NodePath(const Vector<StringName>& p_path, const Vector<StringName>& p_subpath, bool p_absolute);
-	NodePath(const NodePath& p_path);
-	NodePath(const String& p_path);
-	NodePath() {}
-	~NodePath();
+	GObjectPath(const Vector<StringName>& p_path, bool p_absolute);
+	GObjectPath(const Vector<StringName>& p_path, const Vector<StringName>& p_subpath, bool p_absolute);
+	GObjectPath(const GObjectPath& p_path);
+	GObjectPath(const String& p_path);
+	GObjectPath() {}
+	~GObjectPath();
 };
 }
 

@@ -58,11 +58,11 @@ namespace lain {
         Error _internalSave(Ref<FileAccess> file);
 
         bool IsField(const String& line) {
-            return line.size() > 2 && line.front() == '[' && line.back() == ']';
+            return line.size() > 2 && line.front() == '[' && line.end() == ']';
         }
 
         String GetField(const String& line) {
-            return line.substr(1, line.size() - 2);
+            return line.substr(1, line.size() - 3);
         }
         // 不允许一个字符串占多行
         // 不允许名中带有引号

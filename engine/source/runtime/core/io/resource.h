@@ -35,6 +35,7 @@ namespace lain {
 		String get_scene_unique_id() const;
 		virtual Error CopyFrom(const Ref<Resource>& p_resource);
 
+		virtual RID GetRID() const; // some resources may offer conversion to RID
 
 		virtual Ref<Resource> duplicate(bool p_subresources = false) const;
 		virtual void reload_from_file();

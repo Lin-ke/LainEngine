@@ -117,6 +117,7 @@ namespace lain {
 		//}
 		return OK;
 	}
+	RID Resource::GetRID() const { return RID(); }
 	void Resource::ResetState(){}
 	// resourceCache static:
 	void ResourceCache::clear() {
@@ -125,6 +126,7 @@ namespace lain {
 		}
 		resources.clear();
 	}
+
 	// public:
 	// static:
 	// 这个单例比较适合lock的使用

@@ -4,6 +4,7 @@
 
 #include "runtime/core/meta/reflection/reflection.h"
 #include "runtime/core/object/object.h"
+#include "core/object/refcounted.h"
 namespace lain
 {
     class GObject;
@@ -13,10 +14,10 @@ namespace lain
     {
         REFLECTION_BODY(Component)
     protected:
-        std::weak_ptr<GObject> m_parent_object;
+        GObject*               m_parent_object;
         bool                   m_is_dirty{ false };
         bool                   m_is_scale_dirty{ false };
-
+      
     public:
         Component() = default;
         virtual ~Component() {}

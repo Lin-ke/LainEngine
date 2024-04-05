@@ -24,7 +24,7 @@ namespace lain {
             L_CORE_ERROR("glfw Vulkan not supported.");
         }
 
-        L_PRINT("window system initialized");
+        L_CORE_PRINT("window system initialized");
 
     }
 
@@ -47,8 +47,9 @@ namespace lain {
     /// <param name="create_info"></param>
     /// <returns> id </returns>
     int WindowSystem::NewWindow(WindowCreateInfo create_info) {
+        _THREAD_SAFE_METHOD_
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        GLFWwindow* window = glfwCreateWindow(create_info.width, create_info.height, create_info.title, nullptr, nullptr);
+        GLFWwindow* window = glfwCreateWindow(create_info.width, create_info.height, create_info.title.utf8().get_data(), nullptr, nullptr);
         // add
         if (!window) {
             L_ERROR(__FUNCTION__, "create window error, check glfw");
@@ -70,10 +71,15 @@ namespace lain {
 
 
         int id = WindowSystem::m_windowid;
-        WindowData& wd = m_windows[id];
+        
+        
+        
         {
+            WindowData& wd = m_windows[id];
+            HWND hwnd = glfwGetWin32Window(window);
             // get windows handle;
             wd.p_window = window;
+            wd.hWnd = hwnd;
             wd.height = create_info.height;
             wd.width = create_info.width;
             // initialization

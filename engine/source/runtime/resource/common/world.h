@@ -1,1 +1,43 @@
-#pragma once
+
+#ifndef WORLD_2D_H
+#define WORLD_2D_H
+
+#include "core/io/resource.h"
+#include "core/templates/hash_set.h"
+//#include "servers/physics_server_2d.h"
+namespace lain {
+
+//class VisibleOnScreenNotifier2D;
+class Viewport;
+//struct SpatialIndexer2D;
+
+class World2D : public Resource {
+	LCLASS(World2D, Resource);
+
+	RID canvas;
+	mutable RID space;
+	mutable RID navigation_map;
+
+	HashSet<Viewport*> viewports;
+
+protected:
+	friend class Viewport;
+
+public:
+	RID get_canvas() const;
+	RID get_space() const;
+	RID get_navigation_map() const;
+
+	//PhysicsDirectSpaceState2D* get_direct_space_state();
+
+	void register_viewport(Viewport* p_viewport);
+	void remove_viewport(Viewport* p_viewport);
+
+	_FORCE_INLINE_ const HashSet<Viewport*>& get_viewports() { return viewports; }
+
+	World2D();
+	~World2D();
+};
+}
+
+#endif // WORLD_2D_H

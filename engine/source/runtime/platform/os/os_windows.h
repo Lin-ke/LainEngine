@@ -24,8 +24,9 @@ public:
 		return GetConfigPath();
 	}
 	virtual String GetCachePath() const override;
+	// requires projectsettings.singleton
 	virtual String GetUserDataDir() const override;
-	virtual Error GetEntropy(uint8_t* r_buffer, int p_bytes) const override;
+	virtual Error GetEntropy(uint8_t* r_buffer, size_t p_bytes) const override;
 
 	OSWindows() {
 		Log::Initialize();

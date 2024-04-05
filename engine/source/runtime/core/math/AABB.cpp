@@ -121,7 +121,7 @@ bool AABB::intersects_ray(const Vector3& p_from, const Vector3& p_dir, Vector3* 
 				SWAP(c1, c2);
 			}
 			if (c1[i] > near) {
-				near = c1[i];
+				near = static_cast<real_t>(c1[i]);
 				axis = i;
 			}
 			if (c2[i] < far) {

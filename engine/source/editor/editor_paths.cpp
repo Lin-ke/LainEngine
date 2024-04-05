@@ -12,12 +12,10 @@ namespace lain {
 		String cache_path;
 		data_path = OS::GetSingleton()->GetDataPath();
 		data_dir = data_path.path_join(LAINDIRNAME);
-		L_STRPRINT(data_path);
 
 		// Can be different from data_path e.g. on Linux or macOS.
 		config_path = OS::GetSingleton()->GetConfigPath();
 		config_dir = config_path.path_join(LAINDIRNAME);
-		L_STRPRINT(config_path);
 		// Can be different from above paths, otherwise a subfolder of data_dir.
 		cache_path = OS::GetSingleton()->GetCachePath();
 		if (cache_path == data_path) {

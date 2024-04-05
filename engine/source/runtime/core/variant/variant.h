@@ -291,7 +291,7 @@ namespace lain {
 		operator Projection() const;*/
 
 		operator Color() const;
-		/*operator NodePath() const;*/
+		/*operator GObjectPath() const;*/
 		operator lain::RID() const;
 
 		operator Object* () const;

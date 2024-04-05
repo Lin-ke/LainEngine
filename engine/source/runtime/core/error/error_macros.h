@@ -1,4 +1,5 @@
-
+#pragma warning(disable: 4018)
+// signed and unsigned
 #ifndef ERROR_MACROS_H
 #define ERROR_MACROS_H
 

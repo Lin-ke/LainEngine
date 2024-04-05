@@ -85,6 +85,12 @@ class _NO_DISCARD_ Vector4i {
 	_FORCE_INLINE_ Vector4i& operator%=(int32_t p_scalar);
 	_FORCE_INLINE_ Vector4i operator%(int32_t p_scalar) const;
 
+	_FORCE_INLINE_ Vector4i& operator*=(float p_scalar); // 乘法的计算是static_cast之后再计算
+	_FORCE_INLINE_ Vector4i operator*(float p_scalar) const;
+
+	_FORCE_INLINE_ Vector4i& operator*=(double p_scalar);
+	_FORCE_INLINE_ Vector4i operator*(double p_scalar) const;
+
 	_FORCE_INLINE_ Vector4i operator-() const;
 
 	_FORCE_INLINE_ bool operator==(const Vector4i& p_v) const;
@@ -201,10 +207,31 @@ Vector4i& Vector4i::operator*=(int32_t p_scalar) {
 	return *this;
 }
 
+
+
+Vector4i& Vector4i::operator*=(float p_scalar) {
+	x = static_cast<i32>(p_scalar*x);
+	y = static_cast<i32>(p_scalar*y);
+	z = static_cast<i32>(p_scalar * z);
+	w = static_cast<i32>(p_scalar * w);
+}
+Vector4i& Vector4i::operator*=(double p_scalar) {
+	x = static_cast<i32>(p_scalar * x);
+	y = static_cast<i32>(p_scalar * y);
+	z = static_cast<i32>(p_scalar * z);
+	w = static_cast<i32>(p_scalar * w);
+}
 Vector4i Vector4i::operator*(int32_t p_scalar) const {
-	return Vector4i(x * p_scalar, y * p_scalar, z * p_scalar, w * p_scalar);
+	return Vector4i(static_cast<i32>(x * p_scalar), static_cast<i32>(y * p_scalar), static_cast<i32>(z * p_scalar), static_cast<i32>(w * p_scalar));
 }
 
+Vector4i Vector4i::operator*(float p_scalar) const {
+	return Vector4i(static_cast<i32>(x * p_scalar), static_cast<i32>(y * p_scalar), static_cast<i32>(z * p_scalar), static_cast<i32>(w * p_scalar));
+}
+
+Vector4i Vector4i::operator*(double p_scalar) const {
+	return Vector4i(static_cast<i32>(x * p_scalar), static_cast<i32>(y * p_scalar), static_cast<i32>(z * p_scalar), static_cast<i32>(w * p_scalar));
+}
 // Multiplication operators required to workaround issues with LLVM using implicit conversion.
 
 _FORCE_INLINE_ Vector4i operator*(int32_t p_scalar, const Vector4i& p_vector) {
@@ -212,7 +239,7 @@ _FORCE_INLINE_ Vector4i operator*(int32_t p_scalar, const Vector4i& p_vector) {
 }
 
 _FORCE_INLINE_ Vector4i operator*(int64_t p_scalar, const Vector4i& p_vector) {
-	return p_vector * p_scalar;
+	return p_vector * static_cast<i32>(p_scalar);
 }
 
 _FORCE_INLINE_ Vector4i operator*(float p_scalar, const Vector4i& p_vector) {

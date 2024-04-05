@@ -41,7 +41,7 @@ static ProjectManager* pmanager = nullptr;
 	 render_system = memnew(RenderingSystem);
 	 globals = memnew(ProjectSettings);
 	 EditorPaths::create(); // editor需要在global之后，在ProjectManager之前
-	 L_STRPRINT(EditorPaths::GetSingleton()->GetDataDir(), EditorPaths::GetSingleton()->GetConfigDir());
+	 //L_STRPRINT(EditorPaths::GetSingleton()->GetDataDir(), EditorPaths::GetSingleton()->GetConfigDir());
 	 pmanager = memnew(ProjectManager);
 	 // parse parameter
 	 List<String> args;
@@ -50,15 +50,17 @@ static ProjectManager* pmanager = nullptr;
 	 }
 	 // initialize workerthreadpool
 	 WorkerThreadPool::get_singleton()->init(-1, 0.75);
-	 // Initialize user data dir.
-	 OS::GetSingleton()->EnsureUserDataDir();
 
 
 	 // change working dir
 	 String path = argv[0];
 	 // first time
 	 if (!FileAccess::exists(path.path_join(ProjectSettings::PROJECT_FILE_NAME))) {
-		 // mk
+		 // mkdir
+		 if (!DirAccess::exists(path)) {
+			 Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
+			 Error err = da->make_dir_recursive(path);
+		 }
 		 HashMap<String, HashMap<String, Variant>> config;
 		 config["application"]["config/name"] = String("default_project");
 		 config["application"]["config/description"] = String("this is a default project");
@@ -73,10 +75,11 @@ static ProjectManager* pmanager = nullptr;
 		 project_path = path;
 	 }
 	 globals->Initialize(project_path); 
-
-	 // reflection
+	 // Initialize user data dir.
+	 OS::GetSingleton()->EnsureUserDataDir();
 	 window_system->Initialize();
-	 window_system->NewWindow(lain::WindowCreateInfo());
+	 window_system->NewWindow(lain::WindowCreateInfo(1280, 720, GLOBAL_GET("application/config/name"), false));
+
 
 	 return OK;
  }

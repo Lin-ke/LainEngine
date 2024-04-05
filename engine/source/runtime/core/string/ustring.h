@@ -254,6 +254,8 @@ namespace lain {
 		/* standard size stuff */
 
 		const char32_t front() const;
+		const char32_t end() const;
+
 		const char32_t back() const;
 
 
@@ -276,8 +278,8 @@ namespace lain {
 		int rfind(const String& p_str, int p_from = -1) const; ///< return <0 if failed
 		int rfindn(const String& p_str, int p_from = -1) const; ///< return <0 if failed, case insensitive
 		int findmk(const Vector<String>& p_keys, int p_from = 0, int* r_key = nullptr) const; ///< return <0 if failed
-		int find_first_not_of(const char* p_pattern, int index = 0) const;
-		int find_last_not_of(const char* p_pattern, int index = -1) const;
+		int find_first_not_of(const String& p_pattern) const;
+		int find_last_not_of(const String& p_pattern) const;
 		
 
 		bool match(const String& p_wildcard) const;

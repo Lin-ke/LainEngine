@@ -1,5 +1,5 @@
 #include "os.h"
-#include "core/mainloop/main.h"
+#include "core/main/main.h"
 #include "core/io/file_access.h"
 #include "core/io/dir_access.h"
 

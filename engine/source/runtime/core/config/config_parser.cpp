@@ -18,8 +18,6 @@ namespace lain {
             if (IsField(line)) {
                 currentField = GetField(line);
                 inValue = false;
-                f->get_line();
-
             }
             else if (IsKeyValue(line)) {
 
@@ -27,7 +25,7 @@ namespace lain {
                 int delimiterPos = line.find("=", 0);
                 String key = line.substr(0, delimiterPos); 
                 key = key.trim();
-                String value = line.substr(delimiterPos + 1, line.length()); 
+                String value = line.substr(delimiterPos + 1); 
                 Variant variant_value = ConstructFromString(value);
                 if (variant_value.get_type() == Variant::NIL) {
                     err = ERR_PARSE_ERROR;
@@ -56,49 +54,54 @@ namespace lain {
         }
         if (p_str == "")
             return Variant(String(""));
-        if (p_str.begins_with("Packed")) {
+		String str = p_str.trim();
+        if (str.begins_with("Packed")) {
 
-            i32 brankpos = p_str.rfind("[");
-            i32 rbrankpos = p_str.rfind("]");
+            i32 brankpos = str.rfind("[");
+            i32 rbrankpos = str.rfind("]");
             if (brankpos == -1 || rbrankpos == -1 ) {
                 error = "not valid PackedString";
                 if (error_print)
                 L_CORE_ERROR(error);
                 return Variant();
             }
-            auto&& json = Json::parse(p_str.substr(brankpos, rbrankpos - brankpos + 1).utf8().get_data(), error);
+            auto&& json = Json::parse(str.substr(brankpos, rbrankpos - brankpos + 1).utf8().get_data(), error);
             if (!error.empty())
             {
                 if (error_print)
-                L_CORE_ERROR("parse json file {} failed!", p_str);
+                L_CORE_ERROR("parse json file {} failed!", str);
                 return Variant();
             }
-            if (p_str.begins_with("PackedString")) {
+            if (str.begins_with("PackedString")) {
                 return load<Vector<String>>(json);
             }
-            else if (p_str.begins_with("PackedFloat32")) {
+            else if (str.begins_with("PackedFloat32")) {
                 return load<Vector<float>>(json);
             }
-            else if (p_str.begins_with("PackedFloat64")) {
+            else if (str.begins_with("PackedFloat64")) {
                 return load<Vector<double>>(json);
             }
-            else if (p_str.begins_with("PackedInt")) {
+            else if (str.begins_with("PackedInt")) {
                 return load<Vector<int32_t>>(json);
-            }
+			}
+			else {
+				if (error_print)
+				L_CORE_ERROR("unspported Packed", str);
+				return Variant();
+			}
         }
 
-        else if (p_str.begins_with("\"")) {
-            String p_str_ = p_str.trim();
-            if (p_str_.length() < 2 && p_str_.rfind("\"") != p_str_.length() - 1) {
+        else if (str.begins_with("\"")) {
+            if (str.length() < 2 && str.rfind("\"") != str.length() - 1) {
                 if(error_print)
                     L_CORE_ERROR("not valid String");
                 return Variant();
             }
-            return Variant(p_str_.substr(1, p_str_.length() - 2));
+            return Variant(str.substr(1, str.length() - 2));
         }
         else { // Other class?
-            std::string p_stdstring = p_str.trim().utf8().get_data();
-            if (p_str.begins_with("{")) {
+            std::string p_stdstring = str.utf8().get_data();
+            if (str.begins_with("{")) {
                 auto&& json = Json::parse(p_stdstring, error);
                 if (json["$typeName"].is_string()) {
                     auto instance_ptr = JsonToObj(json, p_stdstring, error);
@@ -131,9 +134,9 @@ namespace lain {
 
             if(error_print)
                 L_CORE_ERROR(error);
-            L_CORE_WARN("parse json file {} failed!", p_str);
+            L_CORE_WARN("parse json file {} failed!", str);
             return Variant();
-        }
+        } 
     }
 
     bool ConfigFile::IsNumericExpression(const std::string& expression)
@@ -360,7 +363,7 @@ namespace lain {
 		} break;
 		case Variant::NODE_PATH: {
 			String str = p_variant;
-			str = "NodePath(\"" + str.c_escape() + "\")";
+			str = "GObjectPath(\"" + str.c_escape() + "\")";
 			p_store_string_func(p_store_string_ud, str);
 		} break;
 		case Variant::RID: {

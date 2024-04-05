@@ -4,6 +4,7 @@
 
 
 #define GLFW_INCLUDE_VULKAN
+#define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 #include "window.h"
@@ -12,14 +13,19 @@
 #include "core/math/vector2.h"
 #include "core/templates/vector.h"
 #include "core/templates/rb_map.h"
+#include "core/os/thread_safe.h"
 namespace lain
 {
     struct WindowCreateInfo
     {
         int         width{ 1280 };
         int         height{ 720 };
-        const char* title{ "Window" };
+        String      title{ "Window" };
         bool        is_fullscreen{ false };
+        WindowCreateInfo(int p_width, int p_height, const String &p_title, bool p_is_fullscreen) :
+       width(p_width), height(p_height), title(p_title), is_fullscreen(p_is_fullscreen) {
+        }
+        WindowCreateInfo() {}
     };
     typedef std::function<void()>                   onResetFunc;
     typedef std::function<void(int, int, int, int)> onKeyFunc;
@@ -34,8 +40,8 @@ namespace lain
     typedef std::function<void()>                   onWindowCloseFunc;
     struct WindowData {
 
-        HWND hWnd;
-        GLFWwindow* p_window;
+        HWND hWnd = nullptr; // do not modify the window by HWND, using GLFW
+        GLFWwindow* p_window = nullptr;
 
         bool maximized = false;
         bool minimized = false;
@@ -54,14 +60,14 @@ namespace lain
         bool m_is_focus_mode = true;
 
         // Used to transfer data between events using timer.
-        WPARAM saved_wparam;
-        LPARAM saved_lparam;
+        //WPARAM saved_wparam;
+        //LPARAM saved_lparam;
 
         // Timers.
         uint32_t move_timer_id = 0U;
         uint32_t focus_timer_id = 0U;
 
-        HANDLE wtctx;
+       /* HANDLE wtctx;
         int min_pressure;
         int max_pressure;
         bool tilt_supported;
@@ -71,7 +77,7 @@ namespace lain
         int last_pressure_update;
         float last_pressure;
         Vector2 last_tilt;
-        bool last_pen_inverted = false;
+        bool last_pen_inverted = false;*/
 
         Size2 min_size;
         Size2 max_size;
@@ -82,13 +88,13 @@ namespace lain
 
 
         // IME
-        HIMC im_himc;
+      /*  HIMC im_himc;
         Vector2 im_position;
         bool ime_active = false;
         bool ime_in_progress = false;
         bool ime_suppress_next_keyup = false;
 
-        bool layered_window = false;
+        bool layered_window = false;*/
         // 把这里变成vector的可以降低耦合
         // 这样不同的函数可以承担不同的任务
         Vector<onResetFunc>       m_onResetFunc;
@@ -114,7 +120,7 @@ namespace lain
     {
         typedef int WindowID;
 
-
+        _THREAD_SAFE_CLASS_
     public:
 
         WindowSystem() {
@@ -127,7 +133,7 @@ namespace lain
         void               Initialize();
         void               PollEvents() const;
         bool               ShouldClose() const;
-        void               setTitle(const char* title) {};
+        void               SetTitle(const char* title) {};
         GLFWwindow* getWindow() const {};
         std::array<int, 2> getWindowsize() const {};
 

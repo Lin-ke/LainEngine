@@ -343,7 +343,7 @@ namespace lain {
 				return reinterpret_cast<const StringName*>(_data._mem)->hash();
 			} break;
 			/*case NODE_PATH: {
-				return reinterpret_cast<const NodePath*>(_data._mem)->hash();
+				return reinterpret_cast<const GObjectPath*>(_data._mem)->hash();
 			} break;
 			case DICTIONARY: {
 				return reinterpret_cast<const Dictionary*>(_data._mem)->recursive_hash(recursion_count);
@@ -774,7 +774,7 @@ namespace lain {
 			memnew_placement(_data._mem, StringName(*reinterpret_cast<const StringName*>(p_variant._data._mem)));
 		} break;
 		/*case NODE_PATH: {
-			memnew_placement(_data._mem, NodePath(*reinterpret_cast<const NodePath*>(p_variant._data._mem)));
+			memnew_placement(_data._mem, GObjectPath(*reinterpret_cast<const GObjectPath*>(p_variant._data._mem)));
 		} break;
 		case DICTIONARY: {
 			memnew_placement(_data._mem, Dictionary(*reinterpret_cast<const Dictionary*>(p_variant._data._mem)));
@@ -960,7 +960,7 @@ namespace lain {
 			*reinterpret_cast<StringName*>(_data._mem) = *reinterpret_cast<const StringName*>(p_variant._data._mem);
 		} break;
 		case NODE_PATH: {
-			*reinterpret_cast<NodePath*>(_data._mem) = *reinterpret_cast<const NodePath*>(p_variant._data._mem);
+			*reinterpret_cast<GObjectPath*>(_data._mem) = *reinterpret_cast<const GObjectPath*>(p_variant._data._mem);
 		} break;
 		case DICTIONARY: {
 			*reinterpret_cast<Dictionary*>(_data._mem) = *reinterpret_cast<const Dictionary*>(p_variant._data._mem);
@@ -1030,9 +1030,9 @@ namespace lain {
 		case BOOL:
 			return _data._bool ? 1 : 0;
 		case INT:
-			return _data._int;
+			return static_cast<signed int>(_data._int);
 		case FLOAT:
-			return _data._float;
+			return static_cast<signed int>(_data._float);
 		case STRING:
 			return operator String().to_int();
 		default: {
@@ -1048,9 +1048,9 @@ namespace lain {
 		case BOOL:
 			return _data._bool ? 1 : 0;
 		case INT:
-			return _data._int;
+			return static_cast<unsigned int>(_data._int);
 		case FLOAT:
-			return _data._float;
+			return static_cast<unsigned int>(_data._float);
 		case STRING:
 			return operator String().to_int();
 		default: {
@@ -1068,7 +1068,7 @@ namespace lain {
 		case INT:
 			return _data._int;
 		case FLOAT:
-			return _data._float;
+			return static_cast<int64_t>(_data._float);
 		case STRING:
 			return operator String().to_int();
 		default: {
@@ -1086,7 +1086,7 @@ namespace lain {
 		case INT:
 			return _data._int;
 		case FLOAT:
-			return _data._float;
+			return static_cast<ui64>(_data._float);
 		case STRING:
 			return operator String().to_int();
 		default: {
@@ -1156,9 +1156,9 @@ namespace lain {
 		case BOOL:
 			return _data._bool ? 1 : 0;
 		case INT:
-			return _data._int;
+			return static_cast<short>(_data._int);
 		case FLOAT:
-			return _data._float;
+			return static_cast<short>(_data._float);
 		case STRING:
 			return operator String().to_int();
 		default: {
@@ -1174,9 +1174,9 @@ namespace lain {
 		case BOOL:
 			return _data._bool ? 1 : 0;
 		case INT:
-			return _data._int;
+			return static_cast<unsigned short>(_data._int);
 		case FLOAT:
-			return _data._float;
+			return  static_cast<unsigned short>(_data._float);
 		case STRING:
 			return operator String().to_int();
 		default: {
@@ -1230,13 +1230,13 @@ namespace lain {
 		case NIL:
 			return 0;
 		case BOOL:
-			return _data._bool ? 1.0 : 0.0;
+			return _data._bool ? 1.0f : 0.0f;
 		case INT:
 			return (float)_data._int;
 		case FLOAT:
-			return _data._float;
+			return static_cast<float>(_data._float);
 		case STRING:
-			return operator String().to_float();
+			return (float) operator String().to_float();
 		default: {
 			return 0;
 		}
@@ -1599,7 +1599,7 @@ namespace lain {
 			reinterpret_cast<StringName*>(_data._mem)->~StringName();
 		} break;
 	/*	case NODE_PATH: {
-			reinterpret_cast<NodePath*>(_data._mem)->~NodePath();
+			reinterpret_cast<GObjectPath*>(_data._mem)->~GObjectPath();
 		} break;*/
 		case OBJECT: {
 			if (_get_obj().id.is_ref_counted()) {

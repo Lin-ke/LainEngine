@@ -52,7 +52,7 @@ void StringName::cleanup() {
 		int unreferenced_stringnames = 0;
 		int rarely_referenced_stringnames = 0;
 		for (int i = 0; i < data.size(); i++) {
-			L_CORE_INFO((itos(i + 1) + ": " + data[i]->get_name() + " - " + itos(data[i]->debug_references)).utf8().get_data());
+			//L_CORE_INFO((itos(i + 1) + ": " + data[i]->get_name() + " - " + itos(data[i]->debug_references)).utf8().get_data());
 			if (data[i]->debug_references == 0) {
 				unreferenced_stringnames += 1;
 			}
