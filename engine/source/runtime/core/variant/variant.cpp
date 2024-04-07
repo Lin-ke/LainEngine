@@ -130,6 +130,17 @@ namespace lain {
 		memnew_placement(_data._mem, String((const char*)p_cstring));
 	}
 
+	Variant::Variant(const Dictionary& p_dictionary) {
+		type = DICTIONARY;
+		memnew_placement(_data._mem, Dictionary(p_dictionary));
+	}
+
+	Variant::Variant(const Array& p_array) {
+		type = ARRAY;
+		memnew_placement(_data._mem, Array(p_array));
+	}
+
+
 	Variant::Variant(const Vector<String>& p_string_array) {
 		type = PACKED_STRING_ARRAY;
 		_data.packed_array = PackedArrayRef<String>::create(p_string_array);
@@ -342,7 +353,7 @@ namespace lain {
 			case STRING_NAME: {
 				return reinterpret_cast<const StringName*>(_data._mem)->hash();
 			} break;
-			/*case NODE_PATH: {
+			/*case GOBJECT_PATH: {
 				return reinterpret_cast<const GObjectPath*>(_data._mem)->hash();
 			} break;
 			case DICTIONARY: {
@@ -511,6 +522,8 @@ namespace lain {
 	}
 
 
+
+
 	String Variant::stringify(int recursion_count) const {
 		switch (type) {
 		case NIL:
@@ -530,76 +543,76 @@ namespace lain {
 		}
 
 			
-		//case DICTIONARY: {
-		//	const Dictionary& d = *reinterpret_cast<const Dictionary*>(_data._mem);
-		//	if (recursion_count > MAX_RECURSION) {
-		//		ERR_PRINT("Maximum dictionary recursion reached!");
-		//		return "{ ... }";
-		//	}
+		case DICTIONARY: {
+			const Dictionary& d = *reinterpret_cast<const Dictionary*>(_data._mem);
+			if (recursion_count > MAX_RECURSION) {
+				ERR_PRINT("Maximum dictionary recursion reached!");
+				return "{ ... }";
+			}
 
-		//	// Add leading and trailing space to Dictionary printing. This distinguishes it
-		//	// from array printing on fonts that have similar-looking {} and [] characters.
-		//	String str("{ ");
-		//	List<Variant> keys;
-		//	d.get_key_list(&keys);
+			// Add leading and trailing space to Dictionary printing. This distinguishes it
+			// from array printing on fonts that have similar-looking {} and [] characters.
+			String str("{ ");
+			List<Variant> keys;
+			d.get_key_list(&keys);
 
-		//	Vector<_VariantStrPair> pairs;
+			Vector<_VariantStrPair> pairs;
 
-		//	recursion_count++;
-		//	for (List<Variant>::Element* E = keys.front(); E; E = E->next()) {
-		//		_VariantStrPair sp;
-		//		sp.key = stringify_variant_clean(E->get(), recursion_count);
-		//		sp.value = stringify_variant_clean(d[E->get()], recursion_count);
+			recursion_count++;
+			for (List<Variant>::Element* E = keys.front(); E; E = E->next()) {
+				_VariantStrPair sp;
+				sp.key = stringify_variant_clean(E->get(), recursion_count);
+				sp.value = stringify_variant_clean(d[E->get()], recursion_count);
 
-		//		pairs.push_back(sp);
-		//	}
+				pairs.push_back(sp);
+			}
 
-		//	for (int i = 0; i < pairs.size(); i++) {
-		//		if (i > 0) {
-		//			str += ", ";
-		//		}
-		//		str += pairs[i].key + ": " + pairs[i].value;
-		//	}
-		//	str += " }";
+			for (int i = 0; i < pairs.size(); i++) {
+				if (i > 0) {
+					str += ", ";
+				}
+				str += pairs[i].key + ": " + pairs[i].value;
+			}
+			str += " }";
 
-		//	return str;
-		//}
-		//case PACKED_VECTOR2_ARRAY: {
-		//	return stringify_vector(operator Vector<Vector2>(), recursion_count);
-		//}
-		//case PACKED_VECTOR3_ARRAY: {
-		//	return stringify_vector(operator Vector<Vector3>(), recursion_count);
-		//}
-		//case PACKED_COLOR_ARRAY: {
-		//	return stringify_vector(operator Vector<Color>(), recursion_count);
-		//}
-		//case PACKED_STRING_ARRAY: {
-		//	return stringify_vector(operator Vector<String>(), recursion_count);
-		//}
-		//case PACKED_BYTE_ARRAY: {
-		//	return stringify_vector(operator Vector<uint8_t>(), recursion_count);
-		//}
-		//case PACKED_INT32_ARRAY: {
-		//	return stringify_vector(operator Vector<int32_t>(), recursion_count);
-		//}
-		//case PACKED_INT64_ARRAY: {
-		//	return stringify_vector(operator Vector<int64_t>(), recursion_count);
-		//}
-		//case PACKED_FLOAT32_ARRAY: {
-		//	return stringify_vector(operator Vector<float>(), recursion_count);
-		//}
-		//case PACKED_FLOAT64_ARRAY: {
-		//	return stringify_vector(operator Vector<double>(), recursion_count);
-		//}
-		//case ARRAY: {
-		//	Array arr = operator Array();
-		//	if (recursion_count > MAX_RECURSION) {
-		//		ERR_PRINT("Maximum array recursion reached!");
-		//		return "[...]";
-		//	}
+			return str;
+		}
+		case PACKED_VECTOR2_ARRAY: {
+			return stringify_vector(operator Vector<Vector2>(), recursion_count);
+		}
+		case PACKED_VECTOR3_ARRAY: {
+			return stringify_vector(operator Vector<Vector3>(), recursion_count);
+		}
+		case PACKED_COLOR_ARRAY: {
+			return stringify_vector(operator Vector<Color>(), recursion_count);
+		}
+		case PACKED_STRING_ARRAY: {
+			return stringify_vector(operator Vector<String>(), recursion_count);
+		}
+		case PACKED_BYTE_ARRAY: {
+			return stringify_vector(operator Vector<uint8_t>(), recursion_count);
+		}
+		case PACKED_INT32_ARRAY: {
+			return stringify_vector(operator Vector<int32_t>(), recursion_count);
+		}
+		case PACKED_INT64_ARRAY: {
+			return stringify_vector(operator Vector<int64_t>(), recursion_count);
+		}
+		case PACKED_FLOAT32_ARRAY: {
+			return stringify_vector(operator Vector<float>(), recursion_count);
+		}
+		case PACKED_FLOAT64_ARRAY: {
+			return stringify_vector(operator Vector<double>(), recursion_count);
+		}
+		case ARRAY: {
+			Array arr = operator Array();
+			if (recursion_count > MAX_RECURSION) {
+				ERR_PRINT("Maximum array recursion reached!");
+				return "[...]";
+			}
 
-		//	return stringify_vector(arr, recursion_count);
-		//}
+			return stringify_vector(arr, recursion_count);
+		}
 		//case OBJECT: {
 		//	if (_get_obj().obj) {
 		//		if (!_get_obj().id.is_ref_counted() && ObjectDB::get_instance(_get_obj().id) == nullptr) {
@@ -694,9 +707,10 @@ namespace lain {
 		case VECTOR2: {
 			memnew_placement(_data._mem, Vector2(*reinterpret_cast<const Vector2*>(p_variant._data._mem)));
 		} break;
-		/*case VECTOR2I: {
+		case VECTOR2I: {
 			memnew_placement(_data._mem, Vector2i(*reinterpret_cast<const Vector2i*>(p_variant._data._mem)));
 		} break;
+			/*
 		case RECT2: {
 			memnew_placement(_data._mem, Rect2(*reinterpret_cast<const Rect2*>(p_variant._data._mem)));
 		} break;
@@ -773,15 +787,15 @@ namespace lain {
 		case STRING_NAME: {
 			memnew_placement(_data._mem, StringName(*reinterpret_cast<const StringName*>(p_variant._data._mem)));
 		} break;
-		/*case NODE_PATH: {
-			memnew_placement(_data._mem, GObjectPath(*reinterpret_cast<const GObjectPath*>(p_variant._data._mem)));
-		} break;
 		case DICTIONARY: {
 			memnew_placement(_data._mem, Dictionary(*reinterpret_cast<const Dictionary*>(p_variant._data._mem)));
 		} break;
+		case GOBJECT_PATH: {
+			memnew_placement(_data._mem, GObjectPath(*reinterpret_cast<const GObjectPath*>(p_variant._data._mem)));
+		} break;
 		case ARRAY: {
 			memnew_placement(_data._mem, Array(*reinterpret_cast<const Array*>(p_variant._data._mem)));
-		} break;*/
+		} break;
 
 			// Arrays.
 		case PACKED_BYTE_ARRAY: {
@@ -876,37 +890,37 @@ namespace lain {
 		case VECTOR2: {
 			*reinterpret_cast<Vector2*>(_data._mem) = *reinterpret_cast<const Vector2*>(p_variant._data._mem);
 		} break;
-		//case VECTOR2I: {
-		//	*reinterpret_cast<Vector2i*>(_data._mem) = *reinterpret_cast<const Vector2i*>(p_variant._data._mem);
-		//} break;
-		//case RECT2: {
-		//	*reinterpret_cast<Rect2*>(_data._mem) = *reinterpret_cast<const Rect2*>(p_variant._data._mem);
-		//} break;
+		case VECTOR2I: {
+			*reinterpret_cast<Vector2i*>(_data._mem) = *reinterpret_cast<const Vector2i*>(p_variant._data._mem);
+		} break;
+		case RECT2: {
+			*reinterpret_cast<Rect2*>(_data._mem) = *reinterpret_cast<const Rect2*>(p_variant._data._mem);
+		} break;
 		//case RECT2I: {
 		//	*reinterpret_cast<Rect2i*>(_data._mem) = *reinterpret_cast<const Rect2i*>(p_variant._data._mem);
 		//} break;
 		//case TRANSFORM2D: {
 		//	*_data._transform2d = *(p_variant._data._transform2d);
 		//} break;
-		//case VECTOR3: {
-		//	*reinterpret_cast<Vector3*>(_data._mem) = *reinterpret_cast<const Vector3*>(p_variant._data._mem);
-		//} break;
-		//case VECTOR3I: {
-		//	*reinterpret_cast<Vector3i*>(_data._mem) = *reinterpret_cast<const Vector3i*>(p_variant._data._mem);
-		//} break;
-		//case VECTOR4: {
-		//	*reinterpret_cast<Vector4*>(_data._mem) = *reinterpret_cast<const Vector4*>(p_variant._data._mem);
-		//} break;
-		//case VECTOR4I: {
-		//	*reinterpret_cast<Vector4i*>(_data._mem) = *reinterpret_cast<const Vector4i*>(p_variant._data._mem);
-		//} break;
+		case VECTOR3: {
+			*reinterpret_cast<Vector3*>(_data._mem) = *reinterpret_cast<const Vector3*>(p_variant._data._mem);
+		} break;
+		case VECTOR3I: {
+			*reinterpret_cast<Vector3i*>(_data._mem) = *reinterpret_cast<const Vector3i*>(p_variant._data._mem);
+		} break;
+		case VECTOR4: {
+			*reinterpret_cast<Vector4*>(_data._mem) = *reinterpret_cast<const Vector4*>(p_variant._data._mem);
+		} break;
+		case VECTOR4I: {
+			*reinterpret_cast<Vector4i*>(_data._mem) = *reinterpret_cast<const Vector4i*>(p_variant._data._mem);
+		} break;
 		//case PLANE: {
 		//	*reinterpret_cast<Plane*>(_data._mem) = *reinterpret_cast<const Plane*>(p_variant._data._mem);
 		//} break;
 
-		//case AABB: {
-		//	*_data._aabb = *(p_variant._data._aabb);
-		//} break;
+		case AABB: {
+			*_data._aabb = *(p_variant._data._aabb);
+		} break;
 		//case QUATERNION: {
 		//	*reinterpret_cast<Quaternion*>(_data._mem) = *reinterpret_cast<const Quaternion*>(p_variant._data._mem);
 		//} break;
@@ -921,12 +935,12 @@ namespace lain {
 		//} break;
 
 		//	// misc types
-		//case COLOR: {
-		//	*reinterpret_cast<Color*>(_data._mem) = *reinterpret_cast<const Color*>(p_variant._data._mem);
-		//} break;
-		//case RID: {
-		//	*reinterpret_cast<lain::RID*>(_data._mem) = *reinterpret_cast<const lain::RID*>(p_variant._data._mem);
-		//} break;
+		case COLOR: {
+			*reinterpret_cast<Color*>(_data._mem) = *reinterpret_cast<const Color*>(p_variant._data._mem);
+		} break;
+		case RID: {
+			*reinterpret_cast<lain::RID*>(_data._mem) = *reinterpret_cast<const lain::RID*>(p_variant._data._mem);
+		} break;
 		/*case OBJECT: {
 			if (_get_obj().id.is_ref_counted()) {
 				//we are safe that there is a reference here
@@ -951,24 +965,24 @@ namespace lain {
 		} break;
 			case CALLABLE: {
 			*reinterpret_cast<Callable*>(_data._mem) = *reinterpret_cast<const Callable*>(p_variant._data._mem);
-		} break;
+		} break;*/
 		case SIGNAL: {
 			*reinterpret_cast<Signal*>(_data._mem) = *reinterpret_cast<const Signal*>(p_variant._data._mem);
+		} break;
+
+		case ARRAY: {
+			*reinterpret_cast<Array*>(_data._mem) = *reinterpret_cast<const Array*>(p_variant._data._mem);
 		} break;
 
 		case STRING_NAME: {
 			*reinterpret_cast<StringName*>(_data._mem) = *reinterpret_cast<const StringName*>(p_variant._data._mem);
 		} break;
-		case NODE_PATH: {
+		case GOBJECT_PATH: {
 			*reinterpret_cast<GObjectPath*>(_data._mem) = *reinterpret_cast<const GObjectPath*>(p_variant._data._mem);
 		} break;
 		case DICTIONARY: {
 			*reinterpret_cast<Dictionary*>(_data._mem) = *reinterpret_cast<const Dictionary*>(p_variant._data._mem);
 		} break;
-		case ARRAY: {
-			*reinterpret_cast<Array*>(_data._mem) = *reinterpret_cast<const Array*>(p_variant._data._mem);
-		} break;*/
-
 			// arrays
 		case PACKED_BYTE_ARRAY: {
 			_data.packed_array = PackedArrayRef<uint8_t>::reference_from(_data.packed_array, p_variant._data.packed_array);
@@ -1296,6 +1310,30 @@ namespace lain {
 		}
 	}
 
+	//Variant::operator Vector2i() const {
+	//	if (type == VECTOR2I) {
+	//		return *reinterpret_cast<const Vector2i*>(_data._mem);
+	//	}
+	//	else if (type == VECTOR2) {
+	//		return *reinterpret_cast<const Vector2*>(_data._mem);
+	//	}
+	//	else if (type == VECTOR3) {
+	//		return Vector2(reinterpret_cast<const Vector3*>(_data._mem)->x, reinterpret_cast<const Vector3*>(_data._mem)->y);
+	//	}
+	//	else if (type == VECTOR3I) {
+	//		return Vector2(reinterpret_cast<const Vector3i*>(_data._mem)->x, reinterpret_cast<const Vector3i*>(_data._mem)->y);
+	//	}
+	//	else if (type == VECTOR4) {
+	//		return Vector2(reinterpret_cast<const Vector4*>(_data._mem)->x, reinterpret_cast<const Vector4*>(_data._mem)->y);
+	//	}
+	//	else if (type == VECTOR4I) {
+	//		return Vector2(reinterpret_cast<const Vector4i*>(_data._mem)->x, reinterpret_cast<const Vector4i*>(_data._mem)->y);
+	//	}
+	//	else {
+	//		return Vector2i();
+	//	}
+	//}
+
 	Variant::operator Vector3() const {
 		if (type == VECTOR3) {
 			return *reinterpret_cast<const Vector3*>(_data._mem);
@@ -1373,6 +1411,15 @@ namespace lain {
 		}*/
 		else {
 			return Quaternion();
+		}
+	}
+
+	Variant::operator Dictionary() const {
+		if (type == DICTIONARY) {
+			return *reinterpret_cast<const Dictionary*>(_data._mem);
+		}
+		else {
+			return Dictionary();
 		}
 	}
 
@@ -1598,7 +1645,7 @@ namespace lain {
 		case STRING_NAME: {
 			reinterpret_cast<StringName*>(_data._mem)->~StringName();
 		} break;
-	/*	case NODE_PATH: {
+	/*	case GOBJECT_PATH: {
 			reinterpret_cast<GObjectPath*>(_data._mem)->~GObjectPath();
 		} break;*/
 		case OBJECT: {
@@ -1714,7 +1761,7 @@ namespace lain {
 		} break;
 		case STRING: {
 			static const Type valid[] = {
-				NODE_PATH,
+				GOBJECT_PATH,
 				STRING_NAME,
 				NIL
 			};
@@ -1876,7 +1923,7 @@ namespace lain {
 
 			valid_types = valid;
 		} break;
-		case NODE_PATH: {
+		case GOBJECT_PATH: {
 			static const Type valid[] = {
 				STRING,
 				NIL
@@ -1986,6 +2033,41 @@ namespace lain {
 		}
 
 		return false;
+	}
+
+	String Variant::stringify_variant_clean(const Variant& p_variant, int recursion_count) const {
+		String s = p_variant.stringify(recursion_count);
+
+		// Wrap strings in quotes to avoid ambiguity.
+		switch (p_variant.get_type()) {
+		case Variant::STRING: {
+			s = s.c_escape().quote();
+		} break;
+		case Variant::STRING_NAME: {
+			s = "&" + s.c_escape().quote();
+		} break;
+		case Variant::GOBJECT_PATH: {
+			s = "^" + s.c_escape().quote();
+		} break;
+		default: {
+		} break;
+		}
+
+		return s;
+	}
+
+	template <typename T>
+	String Variant::stringify_vector(const T& vec, int recursion_count) const {
+		String str("[");
+		for (int i = 0; i < vec.size(); i++) {
+			if (i > 0) {
+				str += ", ";
+			}
+
+			str += stringify_variant_clean(vec[i], recursion_count);
+		}
+		str += "]";
+		return str;
 	}
 
 }

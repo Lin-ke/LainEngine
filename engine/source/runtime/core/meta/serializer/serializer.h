@@ -8,6 +8,7 @@
 #include <vector>
 #include <cassert>
 #include <string>
+#include "core/variant/dictionary.h"
 namespace lain
 {
     template<typename...>
@@ -183,12 +184,25 @@ namespace lain
     Json Serializer::write(const String& instance);
     template<>
     String& Serializer::read(const Json& json_context, String& instance);
+    template<>
+    Json Serializer::write(const Dictionary& instance);
+    template<>
+    Dictionary& Serializer::read(const Json& json_context, Dictionary& instance);
     // vector
     
     template<>
     Json Serializer::write(const ui64& instance);
     template<>
     ui64& Serializer::read(const Json& json_context, ui64& instance);
+    template<>
+    Json Serializer::write(const Variant& instance);
+    template<>
+    Variant& Serializer::read(const Json& json_context, Variant& instance);
+    template<>
+    Json Serializer::write(const Array& instance);
+    template<>
+    Array& Serializer::read(const Json& json_context, Array& instance);
+
 
     // template<>
     // Json Serializer::write(const Reflection::object& instance);

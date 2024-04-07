@@ -6,18 +6,20 @@
 #include "gobject_path.h"
 namespace lain {
     class Component;
+    // 可以有两种方法， 一种是手写Reflection啥啥，另一种是手写DefinitionRes
     REFLECTION_TYPE(GObjectDefinitionRes)
         CLASS(GObjectDefinitionRes, Fields)
     {
         REFLECTION_BODY(GObjectDefinitionRes);
 
     public:
-        Vector<Reflection::ReflectionPtr<Component>> m_components;
+        StringName m_name;
+        StringName m_pather_name;
+        Vector<Component*> m_components;
+        Vector<StringName> m_children_name;
     };
-    REFLECTION_TYPE(GObject)
-        CLASS(GObject: public Object, WhiteListFields) {
-        REFLECTION_BODY(GObject);
 
+    class GObject: public Object{
         LCLASS(GObject, Object);
     public:
         enum InternalMode {
@@ -30,10 +32,10 @@ namespace lain {
         int depth = -1;
         // {
         StringName name;
-        String m_scene_file_path;
-        GObject* m_parent;
+        String scene_file_path;
+        GObject* parent;
         HashMap<StringName, GObject*> children;
-        Vector<Reflection::ReflectionPtr<Component>> m_components; // Reflection::ReflectionPtr<Component>
+        Vector<Component*> components; // Reflection::ReflectionPtr<Component>
 
 
         /// process bools
@@ -50,7 +52,7 @@ namespace lain {
         mutable GObjectPath* path_cache = nullptr;
         // }  data
 
-        Vector<Reflection::ReflectionPtr<Component>> GetComponents() { return m_components; }
+        Vector<Component*> GetComponents() { return components; }
         template<typename TComponent>
         TComponent* TryGetComponent(const std::string& compenent_type_name)
         {

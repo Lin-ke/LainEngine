@@ -8,6 +8,7 @@
 namespace lain {
 
 class RefCounted: public Object{
+	LCLASS(RefCounted, Object);
 private:
 	SafeRefCount refcount_init;
 	SafeRefCount refcount;

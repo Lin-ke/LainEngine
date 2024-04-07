@@ -212,4 +212,12 @@ namespace lain {
 		_p->array = array;
 	}
 
+	void Array::push_back(const Variant& p_value) {
+		ERR_FAIL_COND_MSG(_p->read_only, "Array is in read-only state.");
+		Variant value = p_value;
+		ERR_FAIL_COND(!_p->typed.validate(value, "push_back"));
+		_p->array.push_back(value);
+	}
+
+
 }

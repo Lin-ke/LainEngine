@@ -11,7 +11,7 @@
 #include "core/math/plane.h"
 //#include "core/math/projection.h"
 #include "core/math/quaternion.h"
-//#include "core/math/rect2.h"
+#include "core/math/rect2.h"
 //#include "core/math/rect2i.h"
 //#include "core/math/transform_2d.h"
 //#include "core/math/transform_3d.h"
@@ -23,7 +23,7 @@
 #include "core/math/vector4i.h"
 #include "core/object/object_id.h"
 //#include "core/os/keyboard.h"
-//#include "core/string/node_path.h"
+#include "core/scene/object/gobject_path.h"
 #include "core/string/ustring.h"
 #include "core/templates/paged_allocator.h"
 //#include "core/templates/rid.h"
@@ -80,7 +80,7 @@ namespace lain {
 			// misc types
 			COLOR,
 			STRING_NAME,
-			NODE_PATH,
+			GOBJECT_PATH,
 			RID,
 			OBJECT,
 			CALLABLE,
@@ -181,6 +181,8 @@ namespace lain {
 			int64_t _int;
 			double _float;
 			void* _ptr; //generic pointer
+			lain::AABB* _aabb;
+
 			PackedArrayRefBase* packed_array;
 			uint8_t _mem[sizeof(ObjData) > (sizeof(real_t) * 4) ? sizeof(ObjData) : (sizeof(real_t) * 4)]{ 0 };
 		} _data alignas(8);
@@ -190,6 +192,10 @@ namespace lain {
 		Variant(const Variant*);
 		Variant(const Variant**);
 		String stringify(int recursion_count) const;
+		String stringify_variant_clean(const Variant& p_variant, int recursion_count) const;
+		template <typename T>
+		String stringify_vector(const T& vec, int recursion_count) const;
+
 	public:
 		_FORCE_INLINE_ Type get_type() const {
 			return type;
@@ -215,22 +221,21 @@ namespace lain {
 		void zero();
 		Variant duplicate(bool p_deep = false) const;
 		Variant recursive_duplicate(bool p_deep, int recursion_count) const;
-
+		void set_type(Type p_type) { type = p_type; };
 		///constructors
 		// ×°Ïä
+		// containers
+		Variant(const Array& p_array);
 		Variant(const Vector<String>& p_string_array);
 		Variant(const Vector<float>& p_float_array);
 		Variant(const Vector<int64_t>& p_int64_array);
 		Variant(const Vector<int32_t>& p_int32_array);
 		Variant(const Vector<double>& p_double_array);
+		Variant(const Dictionary& p_dictionary);
 
-
+		// object
 		Variant(const Object* p_obj);
 		Variant(const Reflection::ReflectionInstance* p_instance);
-
-		Variant(const String& p_string);
-		Variant(const StringName& p_string);
-		Variant(const char* const p_cstring);
 		
 		// basics
 		Variant(int64_t p_int); // real one
@@ -240,12 +245,17 @@ namespace lain {
 		Variant(bool p_bool);
 		Variant(signed int p_int); // real one
 		Variant(unsigned int p_int);
-
+		// array
+		 
+		
 		//other class
 		Variant(const Vector2& p_vector2);
 		Variant(const Vector3& p_vector3);
+		Variant(const String& p_string);
+		Variant(const StringName& p_string);
+		Variant(const char* const p_cstring);
 
-		//
+		// copy construct
 		Variant(const Variant& p_variant);
 
 
@@ -275,9 +285,9 @@ namespace lain {
 		operator String() const;
 		operator StringName() const;
 		operator Vector2() const;
-		/*operator Vector2i() const;
+		operator Vector2i() const;
 		operator Rect2() const;
-		operator Rect2i() const;*/
+		operator Rect2i() const;
 		operator Vector3() const;
 		operator Vector3i() const;
 		operator Vector4() const;
@@ -299,7 +309,7 @@ namespace lain {
 		operator Callable() const;
 		operator Signal() const;
 
-		//operator Dictionary() const;
+		operator Dictionary() const;
 		operator Array() const;
 
 		operator PackedByteArray() const;
@@ -350,7 +360,7 @@ namespace lain {
 				// misc types
 				false, //COLOR,
 				true, //STRING_NAME,
-				true, //NODE_PATH,
+				true, //GOBJECT_PATH,
 				false, //RID,
 				true, //OBJECT,
 				true, //CALLABLE,

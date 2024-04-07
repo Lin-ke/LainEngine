@@ -15,7 +15,7 @@ namespace lain
     public:
         TransformComponent() = default;
 
-        void postLoadResource(std::weak_ptr<GObject> parent_object) override;
+        void postLoadResource(GObject* parent_object) override;
 
         Vector3    getPosition() const { return m_transform_buffer[m_current_index].m_position; }
         Vector3    getScale() const { return m_transform_buffer[m_current_index].m_scale; }

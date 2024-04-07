@@ -38,6 +38,22 @@ public:
 	World2D();
 	~World2D();
 };
+
+class World3D : public Resource{
+	LCLASS(World3D, Resource);
+
+private:
+	RID scenario;
+	mutable RID space;
+	mutable RID navigation_map;
+
+	//Ref<Environment> environment;
+	//Ref<Environment> fallback_environment;
+	//Ref<CameraAttributes> camera_attributes;
+	//Ref<Compositor> compositor;
+
+	//HashSet<Camera3D*> cameras;
+};
 }
 
 #endif // WORLD_2D_H

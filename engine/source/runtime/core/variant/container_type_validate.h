@@ -124,6 +124,37 @@ struct ContainerTypeValidate {
 
 		return true;
 	}
+	_FORCE_INLINE_ bool validate(Variant& inout_variant, const char* p_operation = "use") const {
+		if (type == Variant::NIL) {
+			return true;
+		}
+
+		if (type != inout_variant.get_type()) {
+			if (inout_variant.get_type() == Variant::NIL && type == Variant::OBJECT) {
+				return true;
+			}
+			if (type == Variant::STRING && inout_variant.get_type() == Variant::STRING_NAME) {
+				inout_variant = String(inout_variant);
+				return true;
+			}
+			else if (type == Variant::STRING_NAME && inout_variant.get_type() == Variant::STRING) {
+				inout_variant = StringName(inout_variant);
+				return true;
+			}
+			else if (type == Variant::FLOAT && inout_variant.get_type() == Variant::INT) {
+				inout_variant = (float)inout_variant;
+				return true;
+			}
+
+			ERR_FAIL_V_MSG(false, "Attempted to " + String(p_operation) + " a variable of type '" + Variant::get_type_name(inout_variant.get_type()) + "' into a " + where + " of type '" + Variant::get_type_name(type) + "'.");
+		}
+
+		if (type != Variant::OBJECT) {
+			return true;
+		}
+
+		return validate_object(inout_variant, p_operation);
+	}
 };
 }
 

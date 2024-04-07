@@ -1,5 +1,7 @@
 #include "serializer.h"
 #include <assert.h>
+#include "core/templates/hash_map.h"
+#include "core/variant/variant.h"
 namespace lain
 {
 
@@ -110,16 +112,137 @@ namespace lain
         instance = json_context.string_value().c_str();
         return instance;
     }
-    // template<>
-    // Json Serializer::write(const Reflection::object& instance)
-    //{
-    // return Json::object();
-    //}
-    // template<>
-    // Reflection::object& Serializer::read(const Json& json_context, Reflection::object& instance)
-    //{
-    //	return instance;
-    //}
+    template<>
+    Json Serializer::write(const Dictionary& instance)
+    {
+        Json::object  ret_context;
+        List<Variant> keys;
+        instance.get_key_list(&keys);
+        for (const Variant& E : keys) {
+            ret_context.insert_or_assign(CSTR(E.operator String()), Serializer::write(instance[E]));
+        }
+    }
+    template<>
+    Dictionary& Serializer::read(const Json& json_context, Dictionary& instance)
+    {
+        assert(json_context.is_object());
+        // 这里有一点左值右值的问题
+        for (const auto& pair : json_context.object_items()) {
+            Variant key(pair.first);
+            Variant value;
+            value = Serializer::read(pair.second, value);
+            instance[key] = value;
+        }
+        return instance;
+    }
+
+     template<>
+     Json Serializer::write(const Variant& instance)
+    {
+         switch (instance.get_type()) {
+             // basic types
+         case Variant::NIL:
+             return "null";
+         case Variant::BOOL:
+             return Json(instance.operator bool());
+         case Variant::INT:
+             return Json(instance.operator int());
+         case Variant::FLOAT:
+             return Json(instance.operator float());
+         case Variant::PACKED_INT32_ARRAY: // vector
+         case Variant::PACKED_INT64_ARRAY:
+         case Variant::PACKED_FLOAT32_ARRAY:
+         case Variant::PACKED_FLOAT64_ARRAY:
+         case Variant::PACKED_STRING_ARRAY:
+         case Variant::ARRAY:   // vector<variant>
+             return Serializer::write(instance.operator Array());
+         case Variant::DICTIONARY:
+             return Serializer::write(instance.operator Dictionary());
+         default:
+             return Serializer::write(String(instance));
+         }
+    }
+     template<>
+     Variant& Serializer::read(const Json& json_context, Variant& instance)
+    {
+         switch (json_context.type()) {
+         case Json::STRING:
+         {
+             instance.set_type(Variant::STRING);
+             instance = String(json_context.string_value());
+             return instance;
+         }
+         case Json::BOOL:
+         {
+             instance.set_type(Variant::BOOL);
+             instance = json_context.bool_value();
+             return instance;
+         }
+         case Json::NUMBER:
+         {
+             double num = json_context.number_value();
+             if (static_cast<int>(num) == num) {
+                 instance.set_type(Variant::INT);
+                 instance = static_cast<int>(num);
+             }
+             else {
+
+                 instance.set_type(Variant::FLOAT);
+                 instance = json_context.number_value();
+             }
+
+             return instance;
+         }
+         case Json::ARRAY:
+         {
+             Json::array json_array = json_context.array_items();
+             Array variant_arr;
+             variant_arr.resize(json_array.size());
+             for (int i = 0; i < json_array.size(); i++) {
+                 Variant newT;
+                 Serializer::read(json_array[i], newT);
+                 variant_arr[i] = newT;
+             }
+             return instance;
+         }
+
+         case Json::OBJECT:
+         {
+             Dictionary dict; // dictionary 的構造函數是在堆上的
+             dict = Serializer::read(json_context, dict);
+             instance = dict;
+             return instance;
+         }
+         default:
+             return instance;
+         }
+
+    	return instance;
+    }
+     template<>
+     Json Serializer::write(const Array& instance) {
+         Json::array array_json;
+         for (int i = 0; i < instance.size(); i++) {
+             array_json.emplace_back(write(instance[i]));
+         }
+         return array_json;
+    }
+     template<> // array 是variant<int>需要写一下
+     Array& Serializer::read(const Json& json_context, Array& instance) {
+         if (!json_context.is_array()) {
+             return instance;
+         }
+         Json::array json_array = json_context.array_items();
+         instance.resize(static_cast<int>(json_array.size()));
+         for (int i = 0; i < json_array.size(); i++) {
+             Variant newT;
+             Serializer::read(json_array[i], newT);
+             instance.push_back(newT); // 这个variant的实现
+         }
+
+         return instance;
+     }
+
 
     //////////////////////////////////
     // template of generation coder

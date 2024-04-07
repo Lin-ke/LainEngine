@@ -6,7 +6,7 @@ namespace lain {
 
 template <class T, typename = void>
 struct GetTypeInfo;
-// 类和某个属性都用这个数据结构
+// 某个属性都用这个数据结构
 struct PropertyInfo {
 public:
 	Variant::Type type;

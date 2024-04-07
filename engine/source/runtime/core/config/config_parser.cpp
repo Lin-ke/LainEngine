@@ -251,7 +251,7 @@ namespace lain {
 			Vector2 v = p_variant;
 			p_store_string_func(p_store_string_ud, "Vector2(" + rtos_fix(v.x) + ", " + rtos_fix(v.y) + ")");
 		} break;
-			/*case Variant::VECTOR2I: {
+			case Variant::VECTOR2I: {
 				Vector2i v = p_variant;
 				p_store_string_func(p_store_string_ud, "Vector2i(" + itos(v.x) + ", " + itos(v.y) + ")");
 			} break;
@@ -262,7 +262,7 @@ namespace lain {
 			case Variant::RECT2I: {
 				Rect2i aabb = p_variant;
 				p_store_string_func(p_store_string_ud, "Rect2i(" + itos(aabb.position.x) + ", " + itos(aabb.position.y) + ", " + itos(aabb.size.x) + ", " + itos(aabb.size.y) + ")");
-			} break;*/
+			} break;
 		case Variant::VECTOR3: {
 			Vector3 v = p_variant;
 			p_store_string_func(p_store_string_ud, "Vector3(" + rtos_fix(v.x) + ", " + rtos_fix(v.y) + ", " + rtos_fix(v.z) + ")");

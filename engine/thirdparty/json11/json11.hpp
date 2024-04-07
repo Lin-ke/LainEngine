@@ -55,7 +55,6 @@
 #include <map>
 #include <memory>
 #include <initializer_list>
-
 #ifdef _MSC_VER
     #if _MSC_VER <= 1800 // VS 2013
         #ifndef noexcept
@@ -165,6 +164,7 @@ public:
     static Json parse(const std::string & in,
                       std::string & err,
                       JsonParse strategy = JsonParse::STANDARD);
+    //static Json parse(const String& in, String& error, JsonParse strategy = JsonParse::STANDARD);
     static Json parse(const char * in,
                       std::string & err,
                       JsonParse strategy = JsonParse::STANDARD) {

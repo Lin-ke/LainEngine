@@ -7,6 +7,9 @@
 #include "core/thread/worker_thread_pool.h"
 #include "core/templates/hash_map.h"
 namespace lain {
+	// format loader 的 父类
+	// 使用gdvirtualcall设计以模拟c++的虚函数机制，与脚本系统有关
+	
 	class ResourceFormatLoader : public RefCounted {
 		LCLASS(ResourceFormatLoader, RefCounted);
 
@@ -18,11 +21,25 @@ namespace lain {
 			CACHE_MODE_IGNORE_DEEP,
 			CACHE_MODE_REPLACE_DEEP,
 		};
-		virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "", Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE); // load
-		virtual bool exists(const String& p_path) const;
-		virtual bool handles_type(const String& p_type) const;
+		// 目前=0
+		virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "", Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE) = 0;
+		virtual void get_recognized_extensions(List<String>* p_extensions) const;
+		/*virtual bool exists(const String& p_path) const;
+		virtual void get_recognized_extensions_for_type(const String& p_type, List<String>* p_extensions) const;*/
+		//virtual bool recognize_path(const String& p_path, const String& p_for_type = String()) const; = 0
+		//virtual bool handles_type(const String& p_type) const;
+		//virtual void get_classes_used(const String& p_path, HashSet<StringName>* r_classes);
+		//virtual String get_resource_type(const String& p_path) const;
+		//virtual String get_resource_script_class(const String& p_path) const;
+		//virtual ResourceUID::ID get_resource_uid(const String& p_path) const;
+		//virtual void get_dependencies(const String& p_path, List<String>* p_dependencies, bool p_add_types = false);
+		//virtual Error rename_dependencies(const String& p_path, const HashMap<String, String>& p_map);
+		//virtual bool is_import_valid(const String& p_path) const { return true; }
+		//virtual bool is_imported(const String& p_path) const { return false; }
+		//virtual int get_import_order(const String& p_path) const { return 0; }
+		//virtual String get_import_group_file(const String& p_path) const { return ""; } //no group
 
-
+		virtual ~ResourceFormatLoader() {}
 	};
 	typedef void (*ResourceLoadedCallback)(Ref<Resource> p_resource, const String& p_path);
 	typedef void (*ResourceLoadErrorNotify)(const String& p_text);
@@ -66,12 +83,27 @@ namespace lain {
 
 		static void initialize();
 		static void finalize();
+		
+		static void add_resource_format_loader(Ref<ResourceFormatLoader> p_format_loader, bool p_at_front = false);
+		//static void get_recognized_extensions_for_type(const String& p_type, List<String>* p_extensions);
+		void remove_resource_format_loader(Ref<ResourceFormatLoader> p_format_loader);
+
+		static HashMap<String, Vector<int>> type_to_loader_idx;
+
+		// get set functions
+		static void set_abort_on_missing_resources(bool p_abort) { abort_on_missing_resource = p_abort; }
+		static bool get_abort_on_missing_resources() { return abort_on_missing_resource; }
+
 	private:
 		static Ref<Resource> _load_complete_inner(LoadToken& p_load_token, Error* r_error, MutexLock<SafeBinaryMutex<BINARY_MUTEX_TAG>>& p_thread_load_lock);
 
 		static Ref<ResourceFormatLoader> loader[MAX_LOADERS];
 		static int loader_count;
 		static bool timestamp_on_load;
+
+		static bool abort_on_missing_resource;
+		static bool create_missing_resources_if_class_unavailable;
+
 		struct ThreadLoadTask{
 		WorkerThreadPool::TaskID task_id = 0; // Used if run on a worker thread from the pool.
 		Thread::ID thread_id = 0; // Used if running on an user thread (e.g., simple non-threaded load).

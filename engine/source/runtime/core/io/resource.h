@@ -6,21 +6,28 @@
 #include "core/meta/reflection/reflection.h"
 #include "core/string/ustring.h"
 #include "core/templates/self_list.h"
+#include "core/meta/class_db.h"
+#define RES_BASE_EXTENSION(m_ext)                                                                                   \
+public:                                                                                                             \
+	static void register_custom_data_to_otdb() { ClassDB::add_resource_base_extension(m_ext, get_class_static()); } \
+	virtual String get_base_extension() const override { return m_ext; }                                            \
+                                                                                                                    \
+private:
 
 namespace lain {
 	REFLECTION_TYPE(Resource)
-	CLASS(Resource: public RefCounted, WhiteList) {
+	CLASS(Resource: public RefCounted, Fields) {
 		REFLECTION_BODY(Resource);
 
 		friend class ResourceCache;
 
-		LCLASS(Resource, RefCounted)
+		LCLASS(Resource, RefCounted);
+	public:
+		static void register_custom_data_to_otdb() { ClassDB::add_resource_base_extension("res", get_class_static()); }
+		virtual String get_base_extension() const { return "res"; }
 	private:
-		META(Enable);
 		String name;
-		META(Enable);
 		String path_cache;
-		META(Enable);
 		String scene_id;
 		//SelfList<Resource> remapped_list;
 	public:
@@ -41,7 +48,7 @@ namespace lain {
 		virtual void reload_from_file();
 		virtual void ResetState();
 		virtual void _resource_path_changed();
-
+		
 	protected:
 		void _set_path(const String& p_path) { SetPath(p_path, false); }
 		void _take_over_path(const String& p_path) { SetPath(p_path, true); }

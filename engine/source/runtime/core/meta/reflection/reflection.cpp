@@ -5,7 +5,7 @@
 
 namespace lain
 {
-    namespace Reflection
+    namespace Reflection 
     {
         const char* k_unknown_type = "UnknownType";
         const char* k_unknown      = "Unknown";

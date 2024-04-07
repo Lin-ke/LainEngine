@@ -12,6 +12,10 @@ namespace lain {
 	bool ResourceLoader::cleaning_tasks = false;
 	ResourceLoadedCallback ResourceLoader::_loaded_callback = nullptr; // 回调
 
+	//
+	bool ResourceLoader::create_missing_resources_if_class_unavailable = false;
+	bool ResourceLoader::abort_on_missing_resource = true;
+	bool ResourceLoader::timestamp_on_load = false;
 
 	template <>
 	thread_local uint32_t SafeBinaryMutex<ResourceLoader::BINARY_MUTEX_TAG>::count = 0;
@@ -21,6 +25,61 @@ namespace lain {
 	void ResourceLoader::initialize() {}
 
 	void ResourceLoader::finalize() {}
+
+	void ResourceLoader::add_resource_format_loader(Ref<ResourceFormatLoader> p_format_loader, bool p_at_front) {
+		ERR_FAIL_COND(p_format_loader.is_null());
+		ERR_FAIL_COND(loader_count >= MAX_LOADERS);
+		int saved_idx = 0;
+		if (p_at_front) {
+			for (int i = loader_count; i > 0; i--) {
+				loader[i] = loader[i - 1];
+			}
+			loader[0] = p_format_loader;
+			loader_count++;
+		}
+		else {
+			saved_idx = loader_count;
+			loader[loader_count++] = p_format_loader;
+		}
+		List<String> exts;
+		p_format_loader->get_recognized_extensions(&exts);
+		for (const String& ext : exts) {
+			Vector<int>& idxs = type_to_loader_idx[ext];
+			idxs.append(saved_idx);
+		}
+	}
+	// 用数组存，但是和链表是一样的用，xs
+
+	void ResourceLoader::remove_resource_format_loader(Ref<ResourceFormatLoader> p_format_loader) {
+		ERR_FAIL_COND(p_format_loader.is_null());
+
+		// Find loader
+		int i = 0;
+		for (; i < loader_count; ++i) {
+			if (loader[i] == p_format_loader) {
+				break;
+			}
+		}
+
+		ERR_FAIL_COND(i >= loader_count); // Not found
+
+		List<String> exts;
+		p_format_loader->get_recognized_extensions(&exts);
+		for (const String& ext : exts) {
+			Vector<int>& idxs = type_to_loader_idx[ext];
+			idxs.erase(i);
+			if (idxs.size() == 0) {
+				ERR_FAIL_COND(!type_to_loader_idx.erase(ext)); // delete failed
+			}
+		}
+		// Shift next loaders up
+		for (; i < loader_count - 1; ++i) {
+			loader[i] = loader[i + 1];
+		}
+		loader[loader_count - 1].unref();
+		--loader_count;
+
+	}
 
 	Ref<Resource> ResourceLoader::load(const String& p_path, const String& p_type_hint, ResourceFormatLoader::CacheMode p_cache_mode, Error* r_error) {
 		if (r_error) {
@@ -84,7 +143,7 @@ namespace lain {
 				}
 			}
 
-			load_token.instantiate();
+			load_token.instantiate(); // memnew
 			load_token->local_path = local_path;
 
 			//create load task
@@ -271,19 +330,26 @@ namespace lain {
 		load_paths_stack->push_back(p_original_path);
 
 		// Try all loaders and pick the first match for the type hint
+		
 		bool found = false;
 		Ref<Resource> res;
-		for (int i = 0; i < loader_count; i++) {
-			// 其他加载类的
-			/*if (!loader[i]->recognize_path(p_path, p_type_hint)) {
-				continue;
-			}*/
+		//for (int i = 0; i < loader_count; i++) {
+		//	// 其他加载类的
+		//	if (!loader[i]->recognize_path(p_path, p_type_hint)) {
+		//		continue;
+		//	}
+		//	found = true;
+		//	res = loader[i]->load(p_path, !p_original_path.is_empty() ? p_original_path : p_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);
+		//	if (!res.is_null()) {
+		//		break;
+		//	}
+		//}
+		String extension = p_path.get_extension();
+		if (type_to_loader_idx.has(extension)) {
 			found = true;
-			res = loader[i]->load(p_path, !p_original_path.is_empty() ? p_original_path : p_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);
-			if (!res.is_null()) {
-				break;
-			}
+			res = loader[type_to_loader_idx[extension][0]]->load(p_path, !p_original_path.is_empty() ? p_original_path : p_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);
 		}
+
 
 		load_paths_stack->resize(load_paths_stack->size() - 1);
 		load_nesting--;
@@ -344,6 +410,7 @@ namespace lain {
 				if (load_task.task_id != 0) {
 					// Loading thread is in the worker pool.
 					thread_load_mutex.unlock();
+					// 工作
 					Error err = WorkerThreadPool::get_singleton()->wait_for_task_completion(load_task.task_id);
 					if (err == ERR_BUSY) {
 						// The WorkerThreadPool has reported that the current task wants to await on an older one.
@@ -439,5 +506,10 @@ namespace lain {
 		clear();
 	}
 
+	//// ResourceFormatLoader
+
+	void ResourceFormatLoader::get_recognized_extensions(List<String>* p_extensions) const {
+	}
+	
 
 }

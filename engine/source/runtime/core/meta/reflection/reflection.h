@@ -69,7 +69,7 @@ namespace lain
     template<typename T, typename U, typename = void>
     struct is_safely_castable : std::false_type
     {};
-
+    // 编译器转换，但是引擎中大量的是运行期转换
     template<typename T, typename U>
     struct is_safely_castable<T, U, std::void_t<decltype(static_cast<U>(std::declval<T>()))>> : std::true_type
     {};
