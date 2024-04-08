@@ -20,6 +20,8 @@ namespace lain {
 	template <>
 	thread_local uint32_t SafeBinaryMutex<ResourceLoader::BINARY_MUTEX_TAG>::count = 0;
 	SafeBinaryMutex<ResourceLoader::BINARY_MUTEX_TAG> ResourceLoader::thread_load_mutex;
+	// HashMap
+	HashMap<String, Vector<int>> ResourceLoader::type_to_loader_idx;
 
 
 	void ResourceLoader::initialize() {}
@@ -347,7 +349,12 @@ namespace lain {
 		String extension = p_path.get_extension();
 		if (type_to_loader_idx.has(extension)) {
 			found = true;
-			res = loader[type_to_loader_idx[extension][0]]->load(p_path, !p_original_path.is_empty() ? p_original_path : p_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);
+			for (int idx : type_to_loader_idx[extension]) {
+			res = loader[type_to_loader_idx[extension][idx]]->load(p_path, !p_original_path.is_empty() ? p_original_path : p_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);
+			if (!res.is_null()) {
+				break;
+			}
+			}
 		}
 
 
@@ -511,5 +518,9 @@ namespace lain {
 	void ResourceFormatLoader::get_recognized_extensions(List<String>* p_extensions) const {
 	}
 	
+	Ref<Resource> ResourceFormatLoader::load(const String& p_path, const String& p_original_path, Error* r_error, bool p_use_sub_threads, float* r_progress, CacheMode p_cache_mode) {
+		ERR_FAIL_V_MSG(Ref<Resource>(), "Failed to load resource '" + p_path + "'. ResourceFormatLoader::load was not implemented for this resource type.");
+
+	}
 
 }

@@ -194,7 +194,7 @@ namespace lain
         explicit operator Radian() const;
         explicit operator Degree() const;
     };
-
+	class RandomPCG;
 	class Math
 	{
 	private:
@@ -206,6 +206,8 @@ namespace lain
 
 		// angle units used by the api
 		static AngleUnit k_AngleUnit;
+		static RandomPCG default_rand;
+
 
 	public:
 		Math();

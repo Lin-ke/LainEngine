@@ -88,6 +88,7 @@ namespace lain {
 		//L_PRINT(ticks_per_second, ticks_start);
 		timeBeginPeriod(1);
 		
+		FileAccessWindows::initialize();
 	}
 
 
@@ -167,5 +168,52 @@ namespace lain {
 		NTSTATUS status = BCryptGenRandom(nullptr, r_buffer, p_bytes, BCRYPT_USE_SYSTEM_PREFERRED_RNG);
 		ERR_FAIL_COND_V(status, FAILED);
 		return OK;
+	}
+
+	uint64_t OSWindows::GetTicksUsec() const {
+		uint64_t ticks;
+
+		// This is the number of clock ticks since start
+		QueryPerformanceCounter((LARGE_INTEGER*)&ticks);
+		// Subtract the ticks at game start to get
+		// the ticks since the game started
+		ticks -= ticks_start;
+
+		// Divide by frequency to get the time in seconds
+		// original calculation shown below is subject to overflow
+		// with high ticks_per_second and a number of days since the last reboot.
+		// time = ticks * 1000000L / ticks_per_second;
+
+		// we can prevent this by either using 128 bit math
+		// or separating into a calculation for seconds, and the fraction
+		uint64_t seconds = ticks / ticks_per_second;
+
+		// compiler will optimize these two into one divide
+		uint64_t leftover = ticks % ticks_per_second;
+
+		// remainder
+		uint64_t time = (leftover * 1000000L) / ticks_per_second;
+
+		// seconds
+		time += seconds * 1000000L;
+
+		return time;
+	}
+
+	double OSWindows::GetUnixTime() const {
+		// 1 Windows tick is 100ns
+		const uint64_t WINDOWS_TICKS_PER_SECOND = 10000000;
+		const uint64_t TICKS_TO_UNIX_EPOCH = 116444736000000000LL;
+
+		SYSTEMTIME st;
+		GetSystemTime(&st);
+		FILETIME ft;
+		SystemTimeToFileTime(&st, &ft);
+		uint64_t ticks_time;
+		ticks_time = ft.dwHighDateTime;
+		ticks_time <<= 32;
+		ticks_time |= ft.dwLowDateTime;
+
+		return (double)(ticks_time - TICKS_TO_UNIX_EPOCH) / WINDOWS_TICKS_PER_SECOND;
 	}
 }

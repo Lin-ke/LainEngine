@@ -15,29 +15,28 @@ public:                                                                         
 private:
 
 namespace lain {
-	REFLECTION_TYPE(Resource)
-	CLASS(Resource: public RefCounted, Fields) {
-		REFLECTION_BODY(Resource);
-
+	class Resource: public RefCounted {
 		friend class ResourceCache;
-
 		LCLASS(Resource, RefCounted);
+
 	public:
 		static void register_custom_data_to_otdb() { ClassDB::add_resource_base_extension("res", get_class_static()); }
 		virtual String get_base_extension() const { return "res"; }
 	private:
 		String name;
 		String path_cache;
-		String scene_id;
+		String scene_unique_id;
 		//SelfList<Resource> remapped_list;
 	public:
 		void SetName(const String& p_name);
 		String GetName() const;
 
-		void SetPath(const String& p_path, bool p_take_over);
+		virtual void SetPath(const String& p_path, bool p_take_over = false);
 		String GetPath() const;
 		
-		void SetPathCache(const String& p_path) { path_cache = p_path; }
+		virtual void SetPathCache(const String& p_path) { path_cache = p_path; }
+		static String generate_scene_unique_id();
+
 		void set_scene_unique_id(const String& p_id);
 		String get_scene_unique_id() const;
 		virtual Error CopyFrom(const Ref<Resource>& p_resource);

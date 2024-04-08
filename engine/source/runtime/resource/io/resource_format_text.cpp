@@ -5,7 +5,9 @@
 //#define _printerr() ERR_PRINT(String(res_path + ":" + itos(lines) + " - Parse Error: " + error_text).utf8().get_data());
 
 namespace lain{
-	
+	ResourceFormatLoaderText* ResourceFormatLoaderText::singleton = nullptr;
+
+
 	void ResourceFormatLoaderText::get_recognized_extensions(List<String>* p_extensions) const {
 		p_extensions->push_back("tscn");
 		p_extensions->push_back("tres");
@@ -53,6 +55,19 @@ namespace lain{
 		else {
 			return Ref<Resource>();
 		}
+	}
+	Error _dict_form_line(const String& line, Dictionary& dict) {
+		std::string err;
+		//if (line.begins_with("{") && line.ends_with("}")) {
+		Json json = Json::parse(CSTR(line), err);
+		if (!err.empty()) {
+			return ERR_PARSE_ERROR; // Further error handle
+		}
+		Serializer::read(json, dict);
+		if (!dict.has("tag")) {
+			return ERR_FILE_CORRUPT;
+		}
+		return OK;
 	}
 	using json11::Json;
 	Error ResourceLoaderText::load() {
@@ -224,7 +239,7 @@ namespace lain{
 			return;
 		}
 		
-		String name = p.has("filetype") ? p["filetype"] : "";
+		String name = p["tag"];
 		if (name == "scene") {
 			is_scene = true;
 		}
@@ -246,18 +261,40 @@ namespace lain{
 
 	}
 
-	Error _dict_form_line(const String& line, Dictionary& dict) {
-		std::string err;
-		//if (line.begins_with("{") && line.ends_with("}")) {
-		Json json = Json::parse(CSTR(line), err);
-		if (!err.empty()) {
-			return ERR_PARSE_ERROR; // Further error handle
+	
+
+	// 封上一个头
+	Error ResourceLoaderText::set_uid(Ref<FileAccess> p_f, ResourceUID::ID p_uid) {
+		open(p_f, true);
+		ERR_FAIL_COND_V(error != OK, error);
+		//ignore_resource_parsing = true;
+
+		Ref<FileAccess> fw;
+
+		fw = FileAccess::open(local_path + ".uidren", FileAccess::WRITE);
+		Dictionary dict;
+		if (is_scene) {
+			dict["tag"] = "scene";
+			dict["uid"] = ResourceUID::get_singleton()->id_to_text(p_uid);
 		}
-		Serializer::read(json, dict);
-		if (!dict.has("tag")) {
-			return ERR_FILE_CORRUPT;
+		else {
+			dict["tag"] = "resource";
 		}
+		dict["load_steps"] = resources_total;
+		fw->store_string(Serializer::write(dict).dump().c_str()); 
+
+		uint8_t c = f->get_8();
+		while (!f->eof_reached()) {
+			fw->store_8(c);
+			c = f->get_8();
+		}
+
+		bool all_ok = fw->get_error() == OK;
+
+		if (!all_ok) {
+			return ERR_CANT_CREATE;
+		}
+
 		return OK;
 	}
-
 }

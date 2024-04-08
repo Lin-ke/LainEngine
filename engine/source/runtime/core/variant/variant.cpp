@@ -1,7 +1,17 @@
 #include "variant.h"
 #include "core/os/memory.h"
 #include "core/object/refcounted.h"
+#include "core/templates/list.h"
 namespace lain {
+	struct _VariantStrPair {
+		String key;
+		String value;
+
+		bool operator<(const _VariantStrPair& p) const {
+			return key < p.key;
+		}
+	};
+
 	String Variant::get_type_name(Variant::Type p_type) {
 		switch (p_type) {
 		case NIL: {
@@ -172,6 +182,29 @@ namespace lain {
 	Variant::Variant(const Vector2& p_vector2) {
 		type = VECTOR2;
 		memnew_placement(_data._mem, Vector2(p_vector2));
+	}
+
+	Variant::Variant(const Color& p_color) {
+		type = COLOR;
+		memnew_placement(_data._mem, Color(p_color));
+	}
+
+	Variant::operator Rect2() const {
+		if (type == RECT2) {
+			return *reinterpret_cast<const Rect2*>(_data._mem);
+		}
+		else if (type == RECT2I) {
+			return *reinterpret_cast<const Rect2i*>(_data._mem);
+		}
+		else {
+			return Rect2();
+		}
+	}
+
+
+	Variant::Variant(const StringName& p_string) {
+		type = STRING_NAME;
+		memnew_placement(_data._mem, StringName(p_string));
 	}
 
 	const Variant::ObjData& Variant::_get_obj() const {
@@ -541,8 +574,6 @@ namespace lain {
 			
 			return Reflection::TypeMeta::writeByName(ptr->m_meta.getTypeName(), ptr->m_instance).dump();
 		}
-
-			
 		case DICTIONARY: {
 			const Dictionary& d = *reinterpret_cast<const Dictionary*>(_data._mem);
 			if (recursion_count > MAX_RECURSION) {
@@ -652,14 +683,297 @@ namespace lain {
 		return hash_compare(p_variant);
 	}
 
-	bool Variant::hash_compare(const Variant& p_variant, int recursion_count) const {
+#define hash_compare_scalar_base(p_lhs, p_rhs, semantic_comparison) \
+	(((p_lhs) == (p_rhs)) || (semantic_comparison && Math::is_nan(p_lhs) && Math::is_nan(p_rhs)))
+#define hash_compare_scalar(p_lhs, p_rhs) \
+	(hash_compare_scalar_base(p_lhs, p_rhs, true))
+
+#define hash_compare_vector2(p_lhs, p_rhs)        \
+	(hash_compare_scalar((p_lhs).x, (p_rhs).x) && \
+			hash_compare_scalar((p_lhs).y, (p_rhs).y))
+
+#define hash_compare_vector3(p_lhs, p_rhs)               \
+	(hash_compare_scalar((p_lhs).x, (p_rhs).x) &&        \
+			hash_compare_scalar((p_lhs).y, (p_rhs).y) && \
+			hash_compare_scalar((p_lhs).z, (p_rhs).z))
+
+#define hash_compare_vector4(p_lhs, p_rhs)               \
+	(hash_compare_scalar((p_lhs).x, (p_rhs).x) &&        \
+			hash_compare_scalar((p_lhs).y, (p_rhs).y) && \
+			hash_compare_scalar((p_lhs).z, (p_rhs).z) && \
+			hash_compare_scalar((p_lhs).w, (p_rhs).w))
+
+#define hash_compare_quaternion(p_lhs, p_rhs)            \
+	(hash_compare_scalar((p_lhs).x, (p_rhs).x) &&        \
+			hash_compare_scalar((p_lhs).y, (p_rhs).y) && \
+			hash_compare_scalar((p_lhs).z, (p_rhs).z) && \
+			hash_compare_scalar((p_lhs).w, (p_rhs).w))
+
+#define hash_compare_color(p_lhs, p_rhs)                 \
+	(hash_compare_scalar((p_lhs).r, (p_rhs).r) &&        \
+			hash_compare_scalar((p_lhs).g, (p_rhs).g) && \
+			hash_compare_scalar((p_lhs).b, (p_rhs).b) && \
+			hash_compare_scalar((p_lhs).a, (p_rhs).a))
+
+#define hash_compare_packed_array(p_lhs, p_rhs, p_type, p_compare_func) \
+	const Vector<p_type> &l = PackedArrayRef<p_type>::get_array(p_lhs); \
+	const Vector<p_type> &r = PackedArrayRef<p_type>::get_array(p_rhs); \
+                                                                        \
+	if (l.size() != r.size())                                           \
+		return false;                                                   \
+                                                                        \
+	const p_type *lr = l.ptr();                                         \
+	const p_type *rr = r.ptr();                                         \
+                                                                        \
+	for (int i = 0; i < l.size(); ++i) {                                \
+		if (!p_compare_func((lr[i]), (rr[i])))                          \
+			return false;                                               \
+	}                                                                   \
+                                                                        \
+	return true
+
+
+	bool Variant::hash_compare(const Variant& p_variant, int recursion_count, bool semantic_comparison) const {
 		if (type != p_variant.type) {
 			return false;
 		}
-		// switch type
+
+		switch (type) {
+		case INT: {
+			return _data._int == p_variant._data._int;
+		} break;
+
+		case FLOAT: {
+			return hash_compare_scalar_base(_data._float, p_variant._data._float, semantic_comparison);
+		} break;
+
+		case STRING: {
+			return *reinterpret_cast<const String*>(_data._mem) == *reinterpret_cast<const String*>(p_variant._data._mem);
+		} break;
+
+		case STRING_NAME: {
+			return *reinterpret_cast<const StringName*>(_data._mem) == *reinterpret_cast<const StringName*>(p_variant._data._mem);
+		} break;
+
+		case VECTOR2: {
+			const Vector2* l = reinterpret_cast<const Vector2*>(_data._mem);
+			const Vector2* r = reinterpret_cast<const Vector2*>(p_variant._data._mem);
+
+			return hash_compare_vector2(*l, *r);
+		} break;
+		case VECTOR2I: {
+			const Vector2i* l = reinterpret_cast<const Vector2i*>(_data._mem);
+			const Vector2i* r = reinterpret_cast<const Vector2i*>(p_variant._data._mem);
+			return *l == *r;
+		} break;
+
+		case RECT2: {
+			const Rect2* l = reinterpret_cast<const Rect2*>(_data._mem);
+			const Rect2* r = reinterpret_cast<const Rect2*>(p_variant._data._mem);
+
+			return hash_compare_vector2(l->position, r->position) &&
+				hash_compare_vector2(l->size, r->size);
+		} break;
+		case RECT2I: {
+			const Rect2i* l = reinterpret_cast<const Rect2i*>(_data._mem);
+			const Rect2i* r = reinterpret_cast<const Rect2i*>(p_variant._data._mem);
+
+			return *l == *r;
+		} break;
+
+	/*	case TRANSFORM2D: {
+			Transform2D* l = _data._transform2d;
+			Transform2D* r = p_variant._data._transform2d;
+
+			for (int i = 0; i < 3; i++) {
+				if (!hash_compare_vector2(l->columns[i], r->columns[i])) {
+					return false;
+				}
+			}
+
+			return true;
+		} break;*/
+
+		case VECTOR3: {
+			const Vector3* l = reinterpret_cast<const Vector3*>(_data._mem);
+			const Vector3* r = reinterpret_cast<const Vector3*>(p_variant._data._mem);
+
+			return hash_compare_vector3(*l, *r);
+		} break;
+		case VECTOR3I: {
+			const Vector3i* l = reinterpret_cast<const Vector3i*>(_data._mem);
+			const Vector3i* r = reinterpret_cast<const Vector3i*>(p_variant._data._mem);
+
+			return *l == *r;
+		} break;
+		case VECTOR4: {
+			const Vector4* l = reinterpret_cast<const Vector4*>(_data._mem);
+			const Vector4* r = reinterpret_cast<const Vector4*>(p_variant._data._mem);
+
+			return hash_compare_vector4(*l, *r);
+		} break;
+		case VECTOR4I: {
+			const Vector4i* l = reinterpret_cast<const Vector4i*>(_data._mem);
+			const Vector4i* r = reinterpret_cast<const Vector4i*>(p_variant._data._mem);
+
+			return *l == *r;
+		} break;
+
+		case PLANE: {
+			const Plane* l = reinterpret_cast<const Plane*>(_data._mem);
+			const Plane* r = reinterpret_cast<const Plane*>(p_variant._data._mem);
+
+			return hash_compare_vector3(l->normal, r->normal) &&
+				hash_compare_scalar(l->d, r->d);
+		} break;
+
+		case AABB: {
+			const lain::AABB* l = _data._aabb;
+			const lain::AABB* r = p_variant._data._aabb;
+
+			return hash_compare_vector3(l->position, r->position) &&
+				hash_compare_vector3(l->size, r->size);
+
+		} break;
+
+		case QUATERNION: {
+			const Quaternion* l = reinterpret_cast<const Quaternion*>(_data._mem);
+			const Quaternion* r = reinterpret_cast<const Quaternion*>(p_variant._data._mem);
+
+			return hash_compare_quaternion(*l, *r);
+		} break;
+
+		/*case BASIS: {
+			const Basis* l = _data._basis;
+			const Basis* r = p_variant._data._basis;
+
+			for (int i = 0; i < 3; i++) {
+				if (!hash_compare_vector3(l->rows[i], r->rows[i])) {
+					return false;
+				}
+			}
+
+			return true;
+		} break;
+
+		case TRANSFORM3D: {
+			const Transform3D* l = _data._transform3d;
+			const Transform3D* r = p_variant._data._transform3d;
+
+			for (int i = 0; i < 3; i++) {
+				if (!hash_compare_vector3(l->basis.rows[i], r->basis.rows[i])) {
+					return false;
+				}
+			}
+
+			return hash_compare_vector3(l->origin, r->origin);
+		} break;
+		case PROJECTION: {
+			const Projection* l = _data._projection;
+			const Projection* r = p_variant._data._projection;
+
+			for (int i = 0; i < 4; i++) {
+				if (!hash_compare_vector4(l->columns[i], r->columns[i])) {
+					return false;
+				}
+			}
+
+			return true;
+		} break;*/
+
+		case COLOR: {
+			const Color* l = reinterpret_cast<const Color*>(_data._mem);
+			const Color* r = reinterpret_cast<const Color*>(p_variant._data._mem);
+
+			return hash_compare_color(*l, *r);
+		} break;
+
+		case ARRAY: {
+			const Array& l = *(reinterpret_cast<const Array*>(_data._mem));
+			const Array& r = *(reinterpret_cast<const Array*>(p_variant._data._mem));
+
+			if (!l.recursive_equal(r, recursion_count + 1)) {
+				return false;
+			}
+
+			return true;
+		} break;
+
+		case DICTIONARY: {
+			const Dictionary& l = *(reinterpret_cast<const Dictionary*>(_data._mem));
+			const Dictionary& r = *(reinterpret_cast<const Dictionary*>(p_variant._data._mem));
+
+			if (!l.recursive_equal(r, recursion_count + 1)) {
+				return false;
+			}
+
+			return true;
+		} break;
+
+			// This is for floating point comparisons only.
+		case PACKED_FLOAT32_ARRAY: {
+			hash_compare_packed_array(_data.packed_array, p_variant._data.packed_array, float, hash_compare_scalar);
+		} break;
+
+		case PACKED_FLOAT64_ARRAY: {
+			hash_compare_packed_array(_data.packed_array, p_variant._data.packed_array, double, hash_compare_scalar);
+		} break;
+
+		case PACKED_VECTOR2_ARRAY: {
+			hash_compare_packed_array(_data.packed_array, p_variant._data.packed_array, Vector2, hash_compare_vector2);
+		} break;
+
+		case PACKED_VECTOR3_ARRAY: {
+			hash_compare_packed_array(_data.packed_array, p_variant._data.packed_array, Vector3, hash_compare_vector3);
+		} break;
+
+		case PACKED_COLOR_ARRAY: {
+			hash_compare_packed_array(_data.packed_array, p_variant._data.packed_array, Color, hash_compare_color);
+		} break;
+
+		default:
+			bool v;
+			Variant r;
+			evaluate(OP_EQUAL, *this, p_variant, r, v);
+			return r;
+		}
+	}
+
+	bool StringLikeVariantComparator::compare(const Variant& p_lhs, const Variant& p_rhs) {
+		if (p_lhs.hash_compare(p_rhs)) {
+			return true;
+		}
+		if (p_lhs.get_type() == Variant::STRING && p_rhs.get_type() == Variant::STRING_NAME) {
+			return p_lhs.operator String() == p_rhs.operator StringName();
+		}
+		if (p_lhs.get_type() == Variant::STRING_NAME && p_rhs.get_type() == Variant::STRING) {
+			return p_lhs.operator StringName() == p_rhs.operator String();
+		}
 		return false;
 	}
 
+
+	// I put it here.
+	Variant::VariantEvaluatorFunction Variant::operator_evaluator_table[Variant::OP_MAX][Variant::VARIANT_MAX][Variant::VARIANT_MAX];
+
+
+	void Variant::evaluate(const Operator& p_op, const Variant& p_a,
+		const Variant& p_b, Variant& r_ret, bool& r_valid) {
+		ERR_FAIL_INDEX(p_op, Variant::OP_MAX);
+		Variant::Type type_a = p_a.get_type();
+		Variant::Type type_b = p_b.get_type();
+		ERR_FAIL_INDEX(type_a, Variant::VARIANT_MAX);
+		ERR_FAIL_INDEX(type_b, Variant::VARIANT_MAX);
+
+		VariantEvaluatorFunction ev = operator_evaluator_table[p_op][type_a][type_b];
+		if (unlikely(!ev)) {
+			r_valid = false;
+			r_ret = Variant();
+			return;
+		}
+
+		ev(p_a, p_b, &r_ret, r_valid);
+	}
 	/*
 	* copy
 	*/
@@ -1310,29 +1624,29 @@ namespace lain {
 		}
 	}
 
-	//Variant::operator Vector2i() const {
-	//	if (type == VECTOR2I) {
-	//		return *reinterpret_cast<const Vector2i*>(_data._mem);
-	//	}
-	//	else if (type == VECTOR2) {
-	//		return *reinterpret_cast<const Vector2*>(_data._mem);
-	//	}
-	//	else if (type == VECTOR3) {
-	//		return Vector2(reinterpret_cast<const Vector3*>(_data._mem)->x, reinterpret_cast<const Vector3*>(_data._mem)->y);
-	//	}
-	//	else if (type == VECTOR3I) {
-	//		return Vector2(reinterpret_cast<const Vector3i*>(_data._mem)->x, reinterpret_cast<const Vector3i*>(_data._mem)->y);
-	//	}
-	//	else if (type == VECTOR4) {
-	//		return Vector2(reinterpret_cast<const Vector4*>(_data._mem)->x, reinterpret_cast<const Vector4*>(_data._mem)->y);
-	//	}
-	//	else if (type == VECTOR4I) {
-	//		return Vector2(reinterpret_cast<const Vector4i*>(_data._mem)->x, reinterpret_cast<const Vector4i*>(_data._mem)->y);
-	//	}
-	//	else {
-	//		return Vector2i();
-	//	}
-	//}
+	Variant::operator Vector2i() const {
+		if (type == VECTOR2I) {
+			return *reinterpret_cast<const Vector2i*>(_data._mem);
+		}
+		else if (type == VECTOR2) {
+			return *reinterpret_cast<const Vector2*>(_data._mem);
+		}
+		else if (type == VECTOR3) {
+			return Vector2(reinterpret_cast<const Vector3*>(_data._mem)->x, reinterpret_cast<const Vector3*>(_data._mem)->y);
+		}
+		else if (type == VECTOR3I) {
+			return Vector2(reinterpret_cast<const Vector3i*>(_data._mem)->x, reinterpret_cast<const Vector3i*>(_data._mem)->y);
+		}
+		else if (type == VECTOR4) {
+			return Vector2(reinterpret_cast<const Vector4*>(_data._mem)->x, reinterpret_cast<const Vector4*>(_data._mem)->y);
+		}
+		else if (type == VECTOR4I) {
+			return Vector2(reinterpret_cast<const Vector4i*>(_data._mem)->x, reinterpret_cast<const Vector4i*>(_data._mem)->y);
+		}
+		else {
+			return Vector2i();
+		}
+	}
 
 	Variant::operator Vector3() const {
 		if (type == VECTOR3) {
@@ -1435,14 +1749,7 @@ namespace lain {
 
 
 
-	struct _VariantStrPair {
-		String key;
-		String value;
-
-		bool operator<(const _VariantStrPair& p) const {
-			return key < p.key;
-		}
-	};
+	
 
 	Variant::operator String() const {
 		return stringify(0);
@@ -2035,7 +2342,7 @@ namespace lain {
 		return false;
 	}
 
-	String Variant::stringify_variant_clean(const Variant& p_variant, int recursion_count) const {
+	String stringify_variant_clean(const Variant& p_variant, int recursion_count) {
 		String s = p_variant.stringify(recursion_count);
 
 		// Wrap strings in quotes to avoid ambiguity.
@@ -2057,7 +2364,7 @@ namespace lain {
 	}
 
 	template <typename T>
-	String Variant::stringify_vector(const T& vec, int recursion_count) const {
+	String stringify_vector(const T& vec, int recursion_count) {
 		String str("[");
 		for (int i = 0; i < vec.size(); i++) {
 			if (i > 0) {

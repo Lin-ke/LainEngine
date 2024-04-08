@@ -53,7 +53,43 @@ namespace lain {
 		}
 		return _p->array.write[p_idx];
 	}
+	void Array::operator=(const Array & p_array) {
+		if (this == &p_array) {
+			return;
+		}
+		_ref(p_array);
+	}
 
+	bool Array::operator==(const Array& p_array) const {
+		return recursive_equal(p_array, 0);
+	}
+
+	bool Array::recursive_equal(const Array& p_array, int recursion_count) const {
+		// Cheap checks
+		if (_p == p_array._p) {
+			return true;
+		}
+		const Vector<Variant>& a1 = _p->array;
+		const Vector<Variant>& a2 = p_array._p->array;
+		const int size = a1.size();
+		if (size != a2.size() || _p->typed != p_array._p->typed) {
+			return false;
+		}
+
+		// Heavy O(n) check
+		if (recursion_count > MAX_RECURSION) {
+			ERR_PRINT("Max recursion reached");
+			return true;
+		}
+		recursion_count++;
+		for (int i = 0; i < size; i++) {
+			if (!a1[i].hash_compare(a2[i], recursion_count, false)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
 
 	int Array::size() const {
 		return _p->array.size();

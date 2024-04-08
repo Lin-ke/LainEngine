@@ -2,6 +2,7 @@
 #ifndef __OS_WINDOWS_H__
 #define __OS_WINDOWS_H__
 #include "core/os/os.h"
+#include "core/os/main_loop.h"
 namespace lain {
 
 class OSWindows :public OS {
@@ -9,12 +10,15 @@ class OSWindows :public OS {
 	ui64 ticks_per_second = 0;
 public:
 	virtual	ui64 GetTimeUsec() const;
+	virtual	ui64 GetTicksUsec() const;
+	virtual double GetUnixTime() const;
 	virtual	DateTime GetDateTime(bool p_utc) const;
 
 	virtual void Initialize();
 	virtual void Finialize() {}
 	virtual void Run();
-	
+	MainLoop* main_loop = nullptr;
+
 
 	virtual String GetConfigPath() const override {
 		static String _configpath = HasEnv("APPDATA") ? GetEnv("APPDATA") : ".";

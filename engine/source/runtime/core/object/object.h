@@ -29,12 +29,16 @@ public:\
 			StringName::assign_static_unique_class_name(&_class_name_static, #m_class); 		\
 		} return &_class_name_static; \
 	}	\
+		\
 	static _FORCE_INLINE_ String get_class_static() {                     \
 		return String(#m_class);										   \
 	}																	\
+				\
 	static _FORCE_INLINE_ String get_parent_class_static() {						\
 			return String(m_inherits::get_class_static());					   \
-	}
+	}									\
+										\
+private:							
 
 
 // base class of all object
@@ -90,7 +94,7 @@ public:
 		return dynamic_cast<const T*>(p_object);
 	}
 	virtual String get_class() const { return "Object"; }
-	virtual String get_class_static() const { return "Object"; }
+	static String get_class_static() { return "Object"; }
 
 	virtual const StringName* _get_class_namev() const {
 		static StringName _class_name_static;

@@ -12,7 +12,7 @@
 //#include "core/math/projection.h"
 #include "core/math/quaternion.h"
 #include "core/math/rect2.h"
-//#include "core/math/rect2i.h"
+#include "core/math/rect2i.h"
 //#include "core/math/transform_2d.h"
 //#include "core/math/transform_3d.h"
 #include "core/math/vector2.h"
@@ -47,6 +47,7 @@ namespace lain {
 	class ConfigFile;
 	class VariantInternal;
 	class RID;
+	// variant的实现和lua是一样的，但是多一些类
 	class Variant {
 		friend class VariantInternal;
 	public:
@@ -106,6 +107,8 @@ namespace lain {
 			
 
 		};
+	
+		
 	private:
 
 		Type type = NIL;
@@ -191,12 +194,10 @@ namespace lain {
 		// constructor
 		Variant(const Variant*);
 		Variant(const Variant**);
-		String stringify(int recursion_count) const;
-		String stringify_variant_clean(const Variant& p_variant, int recursion_count) const;
-		template <typename T>
-		String stringify_vector(const T& vec, int recursion_count) const;
+		
 
 	public:
+		String stringify(int recursion_count) const;
 		_FORCE_INLINE_ Type get_type() const {
 			return type;
 		}
@@ -213,7 +214,8 @@ namespace lain {
 		static void construct_from_string(const String& p_string, Variant& r_value, ObjectConstruct p_obj_construct = nullptr, void* p_construct_ud = nullptr);
 		
 		ui32 recursive_hash(int recursion_count) const;
-		bool hash_compare(const Variant& p_variant, int recursion_count = 0) const;
+		bool hash_compare(const Variant& p_variant, int recursion_count = 0, bool semantic_comparison = true) const;
+
 		uint32_t Variant::hash() const {
 			return recursive_hash(0);
 		}
@@ -222,9 +224,9 @@ namespace lain {
 		Variant duplicate(bool p_deep = false) const;
 		Variant recursive_duplicate(bool p_deep, int recursion_count) const;
 		void set_type(Type p_type) { type = p_type; };
-		///constructors
 		// 装箱
 		// containers
+		/// Variant transform
 		Variant(const Array& p_array);
 		Variant(const Vector<String>& p_string_array);
 		Variant(const Vector<float>& p_float_array);
@@ -254,6 +256,8 @@ namespace lain {
 		Variant(const String& p_string);
 		Variant(const StringName& p_string);
 		Variant(const char* const p_cstring);
+		Variant(const Color& p_cstring);
+
 
 		// copy construct
 		Variant(const Variant& p_variant);
@@ -387,36 +391,112 @@ namespace lain {
 		}
 
 		void _clear_internal();
+		// convert function, type hint
 		static bool can_convert_strict(Type from, Type to);
+		bool is_ref_counted() const;
+		_FORCE_INLINE_ bool is_num() const {
+			return type == INT || type == FLOAT;
+		}
+		_FORCE_INLINE_ bool is_string() const {
+			return type == STRING || type == STRING_NAME;
+		}
+		_FORCE_INLINE_ bool is_array() const {
+			return type >= ARRAY;
+		}
+		bool is_shared() const;
+		bool is_zero() const;
+		bool is_one() const;
+		bool is_null() const;
+		
+	/// <summary>
+	/// variant operator
+	/// </summary>
+	public:
+		enum Operator {
+			//comparison
+			OP_EQUAL,
+			OP_NOT_EQUAL,
+			OP_LESS,
+			OP_LESS_EQUAL,
+			OP_GREATER,
+			OP_GREATER_EQUAL,
+			//mathematic
+			OP_ADD,
+			OP_SUBTRACT,
+			OP_MULTIPLY,
+			OP_DIVIDE,
+			OP_NEGATE,
+			OP_POSITIVE,
+			OP_MODULE,
+			OP_POWER,
+			//bitwise
+			OP_SHIFT_LEFT,
+			OP_SHIFT_RIGHT,
+			OP_BIT_AND,
+			OP_BIT_OR,
+			OP_BIT_XOR,
+			OP_BIT_NEGATE,
+			//logic
+			OP_AND,
+			OP_OR,
+			OP_XOR,
+			OP_NOT,
+			//containment
+			OP_IN,
+			OP_MAX
+
+		};
+		typedef void (*VariantEvaluatorFunction)(const Variant& p_left, const Variant& p_right, Variant* r_ret, bool& r_valid);
+		static VariantEvaluatorFunction operator_evaluator_table[Variant::OP_MAX][Variant::VARIANT_MAX][Variant::VARIANT_MAX];
+
+		static String get_operator_name(Operator p_op);
+		static void evaluate(const Operator& p_op, const Variant& p_a, const Variant& p_b, Variant& r_ret, bool& r_valid);
+		static _FORCE_INLINE_ Variant evaluate(const Operator& p_op, const Variant& p_a, const Variant& p_b) {
+			bool valid = true;
+			Variant res;
+			evaluate(p_op, p_a, p_b, res, valid);
+			return res;
+		}
+
 
 	};
 
 
+	/// <summary>
+	/// helper functions
+	/// </summary>
+
 	template <typename... VarArgs>
 	String vformat(const String& p_text, const VarArgs... p_args) {
-		return "";
+		Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
+		Array args_array;
+		args_array.resize(sizeof...(p_args));
+		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
+			args_array[i] = args[i];
+		}
+
+		bool error = false;
+		String fmt = p_text.sprintf(args_array, &error);
+
+		ERR_FAIL_COND_V_MSG(error, String(), fmt);
+
+		return fmt;
 	}
-	//String vformat(const String& p_text, const VarArgs... p_args) {
-	//	Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
-	//	Array args_array;
-	//	args_array.resize(sizeof...(p_args));
-	//	for (uint32_t i = 0; i < sizeof...(p_args); i++) {
-	//		args_array[i] = args[i];
-	//	}
-
-	//	bool error = false;
-	//	String fmt = p_text.sprintf(args_array, &error);
-
-	//	ERR_FAIL_COND_V_MSG(error, String(), fmt);
-
-	//	return fmt;
-	//}
 	struct VariantHasher {
 		static _FORCE_INLINE_ uint32_t hash(const Variant& p_variant) { return p_variant.hash(); }
 	};
 	struct StringLikeVariantComparator {
 		static bool compare(const Variant& p_lhs, const Variant& p_rhs);
 	};
+
+	struct VariantComparator {
+		static _FORCE_INLINE_ bool compare(const Variant& p_lhs, const Variant& p_rhs) { return p_lhs.hash_compare(p_rhs); }
+	};
+
+	// string helper function
+	template <typename T>
+	String stringify_vector(const T& vec, int recursion_count);
+	String stringify_variant_clean(const Variant& p_variant, int recursion_count);
 };
 
 #endif // !__VARIANT_H__

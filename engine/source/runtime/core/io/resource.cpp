@@ -117,6 +117,51 @@ namespace lain {
 		//}
 		return OK;
 	}
+	String Resource::generate_scene_unique_id() {
+		// Generate a unique enough hash, but still user-readable.
+		// If it's not unique it does not matter because the saver will try again.
+		OS::DateTime dt = OS::GetSingleton()->GetDateTime();
+		uint32_t hash = hash_murmur3_one_32(OS::GetSingleton()->GetTimeUsec());
+		hash = hash_murmur3_one_32(dt.year, hash);
+		hash = hash_murmur3_one_32(dt.month, hash);
+		hash = hash_murmur3_one_32(dt.day, hash);
+		hash = hash_murmur3_one_32(dt.hour, hash);
+		hash = hash_murmur3_one_32(dt.minute, hash);
+		hash = hash_murmur3_one_32(dt.second, hash);
+		hash = hash_murmur3_one_32(Math::rand(), hash);
+
+		static constexpr uint32_t characters = 5;
+		static constexpr uint32_t char_count = ('z' - 'a');
+		static constexpr uint32_t base = char_count + ('9' - '0');
+		String id;
+		for (uint32_t i = 0; i < characters; i++) {
+			uint32_t c = hash % base;
+			if (c < char_count) {
+				id += String::chr('a' + c);
+			}
+			else {
+				id += String::chr('0' + (c - char_count));
+			}
+			hash /= base;
+		}
+
+		return id;
+	}
+
+	void Resource::set_scene_unique_id(const String& p_id) {
+		bool is_valid = true;
+		for (int i = 0; i < p_id.length(); i++) {
+			if (!is_ascii_identifier_char(p_id[i])) {
+				is_valid = false;
+				scene_unique_id = Resource::generate_scene_unique_id();
+				break;
+			}
+		}
+
+		ERR_FAIL_COND_MSG(!is_valid, "The scene unique ID must contain only letters, numbers, and underscores.");
+		scene_unique_id = p_id;
+	}
+
 	RID Resource::GetRID() const { return RID(); }
 	void Resource::ResetState(){}
 	// resourceCache static:

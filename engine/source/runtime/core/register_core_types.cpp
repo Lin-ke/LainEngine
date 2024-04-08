@@ -1,19 +1,20 @@
 #include "core/register_core_types.h"
 #include "core/string/string_name.h"
 #include "core/thread/worker_thread_pool.h"
-#include "core/io/resource_uid.h"
 #include "core/io/resource_loader.h"
+#include "core/io/resource_uid.h"
 #include "core/object/objectdb.h"
-
+#include "core/meta/serializer/serializer.h"
 // scene
 #include "resource/io/resource_format_text.h"
 namespace lain {
 	static WorkerThreadPool* worker_thread_pool = nullptr;
 	static ResourceUID* resource_uid = nullptr;
+	//static ResourceLoader* _resource_loader = nullptr; // core_bind?
 	// resource loaders
 	//static Ref<ResourceFormatSaverBinary> resource_saver_binary;
 	//static Ref<ResourceFormatLoaderBinary> resource_loader_binary;
-	static Ref<ResourceFormatImporter> resource_format_importer;
+	//static Ref<ResourceFormatImporter> resource_format_importer;
 
 	//static Ref<ResourceFormatImporterSaver> resource_format_importer_saver;
 	//static Ref<ResourceFormatLoaderImage> resource_format_image;
@@ -45,8 +46,8 @@ namespace lain {
 		//resource_loader_binary.instantiate();
 		//ResourceLoader::add_resource_format_loader(resource_loader_binary);
 
-		resource_format_importer.instantiate();
-		ResourceLoader::add_resource_format_loader(resource_format_importer);
+		/*resource_format_importer.instantiate();
+		ResourceLoader::add_resource_format_loader(resource_format_importer);*/
 
 		//resource_format_importer_saver.instantiate();
 		//ResourceSaver::add_resource_format_saver(resource_format_importer_saver);
@@ -56,7 +57,17 @@ namespace lain {
 
 		resource_format_loader_text.instantiate();
 		ResourceLoader::add_resource_format_loader(resource_format_loader_text);
-
+		/*auto&& dict = ResourceLoader::type_to_loader_idx;
+		for (auto&& E : dict) {
+			L_JSON(E.key);
+			L_JSON(Serializer::write(E.value).dump());
+		}
+		ResourceLoader::remove_resource_format_loader(resource_format_loader_text);
+		for (auto&& E : dict) {
+			L_JSON(E.key);
+			L_JSON(Serializer::write(E.value).dump());
+		}
+			L_JSON(Variant("removed"));*/
 	}
 }
 

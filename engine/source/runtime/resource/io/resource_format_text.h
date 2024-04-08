@@ -1,10 +1,9 @@
 #pragma once
 #ifndef RESOURCE_FORMAT_TEXT_H
 #define RESOURCE_FORMAT_TEXT_H
-#include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
-#include "core/scene/packed_scene.h"
 #include "core/io/resource_uid.h"
+#include "core/scene/packed_scene.h"
 namespace lain {
 	// ³¡¾°Ê÷
 class ResourceFormatLoaderText : public ResourceFormatLoader {
@@ -107,12 +106,24 @@ class ResourceLoaderText {
 	
 public:
 	Error load();
-	Ref<Resource> get_resource();
+	Ref<Resource> get_resource() { return resource; }
 	Error set_uid(Ref<FileAccess> p_f, ResourceUID::ID p_uid);
 	void open(Ref<FileAccess> p_f, bool p_skip_first_tag = false);
-	ResourceLoaderText();
+	ResourceLoaderText() {}
 	
 };
+
+//class ResourceFormatSaverText : public ResourceFormatSaver {
+//public:
+//	static ResourceFormatSaverText* singleton;
+//	virtual Error save(const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0) override;
+//	virtual Error set_uid(const String& p_path, ResourceUID::ID p_uid) override;
+//	virtual bool recognize(const Ref<Resource>& p_resource) const override;
+//	virtual void get_recognized_extensions(const Ref<Resource>& p_resource, List<String>* p_extensions) const override;
+//
+//	ResourceFormatSaverText();
+//};
+
 }
 
 #endif // RESOURCE_FORMAT_TEXT_H

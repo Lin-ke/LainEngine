@@ -259,10 +259,10 @@ namespace lain {
 				Rect2 aabb = p_variant;
 				p_store_string_func(p_store_string_ud, "Rect2(" + rtos_fix(aabb.position.x) + ", " + rtos_fix(aabb.position.y) + ", " + rtos_fix(aabb.size.x) + ", " + rtos_fix(aabb.size.y) + ")");
 			} break;
-			case Variant::RECT2I: {
+			/*case Variant::RECT2I: {
 				Rect2i aabb = p_variant;
 				p_store_string_func(p_store_string_ud, "Rect2i(" + itos(aabb.position.x) + ", " + itos(aabb.position.y) + ", " + itos(aabb.size.x) + ", " + itos(aabb.size.y) + ")");
-			} break;
+			} break;*/
 		case Variant::VECTOR3: {
 			Vector3 v = p_variant;
 			p_store_string_func(p_store_string_ud, "Vector3(" + rtos_fix(v.x) + ", " + rtos_fix(v.y) + ", " + rtos_fix(v.z) + ")");
@@ -361,7 +361,7 @@ namespace lain {
 			str = "&\"" + str.c_escape() + "\"";
 			p_store_string_func(p_store_string_ud, str);
 		} break;
-		case Variant::NODE_PATH: {
+		case Variant::GOBJECT_PATH: {
 			String str = p_variant;
 			str = "GObjectPath(\"" + str.c_escape() + "\")";
 			p_store_string_func(p_store_string_ud, str);

@@ -39,7 +39,7 @@ namespace lain {
 			case Variant::STRING_NAME:
 				init_string_name(v);
 				break;
-			case Variant::NODE_PATH:
+			case Variant::GOBJECT_PATH:
 				init_node_path(v);
 				break;
 			case Variant::CALLABLE:

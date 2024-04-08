@@ -20,7 +20,7 @@ namespace lain
         Vector2i() = default;
 
         Vector2i(int x_, int y_) : x(x_), y(y_) {}
-
+        Vector2i(const Vector2& p_vec);
         explicit Vector2i(int scaler) : x(scaler), y(scaler) {}
 
         explicit Vector2i(const int v[2]) : x(v[0]), y(v[1]) {}
@@ -302,9 +302,22 @@ namespace lain
             return Vector2i(*this - (2 * this->dot(normal) * normal));
         }
 
+        Vector2i min(const Vector2i& p_vector) const {
+            return Vector2i(MIN(p_vector.x, p_vector.y), MIN(p_vector.x, p_vector.y));
+        }
 
+        Vector2i max(const Vector2i& p_vector) const {
+            return Vector2i(MAX(p_vector.x, p_vector.y), MAX(p_vector.x, p_vector.y));
+        }
+
+        Vector2i abs() const { return Vector2i(Math::abs(x), Math::abs(y)); }
         static Vector2i lerp(const Vector2i & lhs, const Vector2i & rhs, int alpha) { return lhs + alpha * (rhs - lhs); }
 
+        Vector2i clamp(const Vector2i& p_min, const Vector2i& p_max) const;
+        Vector2i snapped(const Vector2i& p_step) const;
+        int64_t length_squared() const;
+
+        operator String() const;
         // special points
         static const Vector2i ZERO;
         static const Vector2i UNIT_X;

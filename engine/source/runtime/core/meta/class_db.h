@@ -5,7 +5,7 @@
 // 2. Base and dertived relation
 #include "core/string/string_name.h"
 #include "core/templates/hash_map.h"
-#include "core/templates/self_list.h"
+#include "core/templates/list.h"
 
 namespace lain {
 	class ClassDB {

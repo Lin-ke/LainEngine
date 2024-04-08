@@ -40,7 +40,9 @@ public:
 		p_singleton = nullptr;
 	}
 	virtual ui64 GetTimeUsec() const = 0;
-	virtual DateTime GetDateTime(bool p_utc) const = 0;
+	virtual ui64 GetTicksUsec() const = 0;
+	virtual double GetUnixTime() const { return 0; }
+	virtual DateTime GetDateTime(bool p_utc = false) const = 0;
 	// Absolute path to res:// ( if not reload)
 	virtual String GetResourceDir() const;
 

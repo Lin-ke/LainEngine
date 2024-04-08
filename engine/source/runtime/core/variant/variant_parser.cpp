@@ -160,7 +160,7 @@
 //			str = "&\"" + str.c_escape() + "\"";
 //			p_store_string_func(p_store_string_ud, str);
 //		} break;
-//		case Variant::NODE_PATH: {
+//		case Variant::GOBJECT_PATH: {
 //			String str = p_variant;
 //			str = "GObjectPath(\"" + str.c_escape() + "\")";
 //			p_store_string_func(p_store_string_ud, str);

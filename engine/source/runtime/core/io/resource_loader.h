@@ -22,7 +22,7 @@ namespace lain {
 			CACHE_MODE_REPLACE_DEEP,
 		};
 		// Ŀǰ=0
-		virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "", Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE) = 0;
+		virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "", Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE);
 		virtual void get_recognized_extensions(List<String>* p_extensions) const;
 		/*virtual bool exists(const String& p_path) const;
 		virtual void get_recognized_extensions_for_type(const String& p_type, List<String>* p_extensions) const;*/
@@ -86,7 +86,7 @@ namespace lain {
 		
 		static void add_resource_format_loader(Ref<ResourceFormatLoader> p_format_loader, bool p_at_front = false);
 		//static void get_recognized_extensions_for_type(const String& p_type, List<String>* p_extensions);
-		void remove_resource_format_loader(Ref<ResourceFormatLoader> p_format_loader);
+		static void remove_resource_format_loader(Ref<ResourceFormatLoader> p_format_loader);
 
 		static HashMap<String, Vector<int>> type_to_loader_idx;
 

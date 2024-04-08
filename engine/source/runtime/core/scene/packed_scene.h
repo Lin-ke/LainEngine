@@ -6,7 +6,7 @@
 #include "core/io/resource.h"
 #include "core/scene/object/gobject.h"
 namespace lain {
-
+	class PackedScene;
 class SceneState : public RefCounted {
 	LCLASS(SceneState, RefCounted);
 
@@ -25,7 +25,7 @@ class SceneState : public RefCounted {
 		NAME_MASK = (1 << NAME_INDEX_BITS) - 1,
 	};
 
-	struct GobjectData {
+	struct GObjectData {
 		int parent = 0;
 		int owner = 0;
 		int type = 0;
@@ -48,7 +48,7 @@ class SceneState : public RefCounted {
 		Variant value;
 	};
 
-	Vector<GObjectData> gobjects;
+	Vector<SceneState::GObjectData> gobjects;
 
 	struct ConnectionData {
 		int from = 0;
@@ -210,9 +210,9 @@ class PackedScene : public Resource {
 	Dictionary _get_bundled_scene() const;
 
 protected:
-	virtual bool editor_can_reload_from_file() override { return false; } // this is handled by editor better
-	static void _bind_methods();
-	virtual void reset_state() override;
+	//virtual bool editor_can_reload_from_file() override { return false; } // this is handled by editor better
+	//static void _bind_methods();
+	//virtual void reset_state() override;
 
 public:
 	enum GenEditState {
@@ -234,8 +234,8 @@ public:
 
 	virtual void reload_from_file() override;
 
-	virtual void set_path(const String& p_path, bool p_take_over = false) override;
-	virtual void set_path_cache(const String& p_path) override;
+	virtual void SetPath(const String& p_path, bool p_take_over = false) override;
+	virtual void SetPathCache(const String& p_path) override;
 
 #ifdef TOOLS_ENABLED
 	virtual void set_last_modified_time(uint64_t p_time) override {
@@ -249,7 +249,7 @@ public:
 	PackedScene();
 };
 
-VARIANT_ENUM_CAST(PackedScene::GenEditState)
+//VARIANT_ENUM_CAST(PackedScene::GenEditState)
 }
 
 #endif // PACKED_SCENE_H

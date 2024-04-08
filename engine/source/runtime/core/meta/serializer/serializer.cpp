@@ -121,6 +121,7 @@ namespace lain
         for (const Variant& E : keys) {
             ret_context.insert_or_assign(CSTR(E.operator String()), Serializer::write(instance[E]));
         }
+        return ret_context;
     }
     template<>
     Dictionary& Serializer::read(const Json& json_context, Dictionary& instance)

@@ -5,10 +5,10 @@
 #include "function/render/rendering_system.h"
 #include "core/config/project_settings.h"
 #include "core/meta/reflection/reflection_register.h"
-#include "core/register_core_types.h"
 #include "core/thread/worker_thread_pool.h"
 #include "editor/editor_paths.h"
 #include "editor/project_manager.h"
+#include "core/register_core_types.h"
 //  initialization part
 namespace lain {
 
@@ -33,10 +33,11 @@ static ProjectManager* pmanager = nullptr;
 	 String project_path = "";
 	 // logger
 	 OS::GetSingleton()->Initialize();
+	 engine = memnew(Engine); // 
+	 
+	 register_core_types();
 	
 	 Reflection::TypeMetaRegister::metaRegister();
-	 register_core_types();
-	 engine = memnew(Engine); // 
 	 window_system = memnew(WindowSystem);
 	 render_system = memnew(RenderingSystem);
 	 globals = memnew(ProjectSettings);

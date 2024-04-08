@@ -332,6 +332,22 @@ namespace lain
 
         static Vector2 lerp(const Vector2& lhs, const Vector2& rhs, float alpha) { return lhs + alpha * (rhs - lhs); }
 
+        Vector2 min(const Vector2& p_vector2) const {
+            return Vector2(MIN(x, p_vector2.x), MIN(y, p_vector2.y));
+        }
+
+        Vector2 max(const Vector2& p_vector2) const {
+            return Vector2(MAX(x, p_vector2.x), MAX(y, p_vector2.y));
+        }
+
+        Vector2 round() const {
+                return Vector2(Math::round(x), Math::round(y));
+        }
+
+        _FORCE_INLINE_ Vector2 abs() const {
+            return Vector2(Math::abs(x), Math::abs(y));
+        }
+
         // special points
         static const Vector2 ZERO;
         static const Vector2 UNIT_X;
