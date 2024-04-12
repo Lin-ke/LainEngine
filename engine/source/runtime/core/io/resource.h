@@ -47,8 +47,10 @@ namespace lain {
 
 		virtual RID GetRID() const; // some resources may offer conversion to RID
 
-
-		virtual Ref<Resource> duplicate(bool p_subresources = false) const;
+		/// <summary>
+		/// @TODO
+		/// </summary>
+		virtual Ref<Resource> duplicate(bool p_subresources = false) const { return Ref<Resource>(); }
 		virtual void reload_from_file();
 		virtual void ResetState();
 		virtual void _resource_path_changed();

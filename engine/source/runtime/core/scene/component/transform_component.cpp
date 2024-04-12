@@ -3,7 +3,7 @@
 #include "runtime/core/math/matrix4.h"
 #include "runtime/core/math/transform.h"
 
-#include "runtime/resource/component/component.h"
+#include "component.h"
 
 namespace lain
 {

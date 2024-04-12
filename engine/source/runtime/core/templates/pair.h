@@ -3,7 +3,13 @@
 #define __PAIR_H__
 
 #include "base.h"
-#include "tuple.h"
+//#include "tuple.h"
+#include <tuple>
+#define Tuple std::tuple
+template<int32_t Idx, typename... Elem>
+auto __tuple_get(const Tuple<Elem...>& tuple) {
+	return std::get<Idx>(tuple);
+}
 namespace lain {
 
 template <class F, class S>

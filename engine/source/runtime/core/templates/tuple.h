@@ -16,18 +16,18 @@ namespace lain {
     template<int32_t _Idx, typename _Head>
     struct _Head_warp <_Idx, _Head, true>
     {
-        constexpr _Head_warp()
+         _Head_warp()
             : _M_head_impl() { }
 
-        constexpr _Head_warp(const _Head& __h)
+         _Head_warp(const _Head& __h)
             : _M_head_impl(__h) { }
 
-        constexpr _Head_warp(const _Head_warp&) = default; 
-        constexpr _Head_warp(_Head_warp&&) = default;
-        static constexpr _Head&
+         _Head_warp(const _Head_warp&) = default; 
+         _Head_warp(_Head_warp&&) = default;
+        static  _Head&
             _M_head(_Head_warp& __b) noexcept { return __b._M_head_impl; }
 
-        static constexpr const _Head&
+        static  const _Head&
             _M_head(const _Head_warp& __b) noexcept { return __b._M_head_impl; }
 
         _Head _M_head_impl;
@@ -37,23 +37,23 @@ namespace lain {
     struct _Head_warp<_Idx, _Head, false>
         : public _Head
     {
-        constexpr _Head_warp()
+         _Head_warp()
             : _Head() { }
 
-        constexpr _Head_warp(const _Head& __h)
+         _Head_warp(const _Head& __h)
             : _Head(__h) { }
 
-        constexpr _Head_warp(const _Head_warp&) = default;
-        constexpr _Head_warp(_Head_warp&&) = default;
+         _Head_warp(const _Head_warp&) = default;
+         _Head_warp(_Head_warp&&) = default;
 
         template<typename _UHead>
-        constexpr _Head_warp(_UHead&& __h)
+         _Head_warp(_UHead&& __h)
             : _Head(std::forward<_UHead>(__h)) { }
 
-        static constexpr _Head&
+        static  _Head&
             _M_head(_Head_warp& __b) noexcept { return __b; }
 
-        static constexpr const _Head&
+        static  const _Head&
             _M_head(const _Head_warp& __b) noexcept { return __b; }
     };
 
@@ -66,11 +66,11 @@ namespace lain {
         typedef _Head_warp<_Idx, _Head>         _Base;        // 当前节点类型        
 
         // 默认构造函数
-        constexpr _Tuple_impl() : _Inherited(), _Base() // 倒序，先父类，所以节点越往后越先分配
+         _Tuple_impl() : _Inherited(), _Base() // 倒序，先父类，所以节点越往后越先分配
         { }
 
         // 逐节点复制
-        explicit constexpr _Tuple_impl(const _Head& __head, const _Tail &...__tail)
+        explicit  _Tuple_impl(const _Head& __head, const _Tail &...__tail)
             : _Inherited(__tail...), _Base(__head)
         { }
 
@@ -78,21 +78,21 @@ namespace lain {
         template <typename _UHead,
             typename... _UTail,
             typename = typename std::enable_if<sizeof...(_Tail) == sizeof...(_UTail)>::type> // 元素个数要一致
-        explicit constexpr _Tuple_impl(_UHead&& __head, _UTail &&...__tail)
+        explicit  _Tuple_impl(_UHead&& __head, _UTail &&...__tail)
             : _Inherited(std::forward<_UTail>(__tail)...),
             _Base(std::forward<_UHead>(__head))
         { }
 
-        static constexpr _Head&
+        static  _Head&
             _M_head(_Tuple_impl& __t) noexcept { return _Base::_M_head(__t); }
 
-        static constexpr const _Head&
+        static  const _Head&
             _M_head(const _Tuple_impl& __t) noexcept { return _Base::_M_head(__t); }
 
-        static constexpr _Inherited&
+        static  _Inherited&
             _M_tail(_Tuple_impl& __t) noexcept { return __t; }
 
-        static constexpr const _Inherited&
+        static  const _Inherited&
             _M_tail(const _Tuple_impl& __t) noexcept { return __t; }
         _Tuple_impl&
             operator=(const _Tuple_impl& __in)
@@ -144,23 +144,23 @@ namespace lain {
 
 
         // 构造函数
-        constexpr _Tuple_impl() : _Base()
+         _Tuple_impl() : _Base()
         { }
 
         // 复制当前节点
-        explicit constexpr _Tuple_impl(const _Head& __head) : _Base(__head)
+        explicit  _Tuple_impl(const _Head& __head) : _Base(__head)
         { }
 
         // 移动当前节点
         template <typename _UHead>
-        explicit constexpr _Tuple_impl(_UHead&& __head)
+        explicit  _Tuple_impl(_UHead&& __head)
             : _Base(std::forward<_UHead>(__head))
         { }
 
-        static constexpr _Head&
+        static  _Head&
             _M_head(_Tuple_impl& __t) noexcept { return _Base::_M_head(__t); }
 
-        static constexpr const _Head&
+        static  const _Head&
             _M_head(const _Tuple_impl& __t) noexcept { return _Base::_M_head(__t); }
         //...
     };
@@ -171,22 +171,28 @@ namespace lain {
     class Tuple : public _Tuple_impl<0, _Elements...> {
         typedef _Tuple_impl<0, _Elements...> _Inherited;
     public:
-        template<typename... Elements>
-        explicit constexpr Tuple()
-            : _Inherited() { }
-        template<typename... Elements>
-        Tuple(const _Elements&... __elements)
+
+         Tuple():_Inherited(){}
+
+        
+        explicit  Tuple(const _Elements&... __elements)
             : _Inherited(__elements...) { }
-        constexpr Tuple(const Tuple&) = default;
+         Tuple(const Tuple&) = default;
+         Tuple(Tuple&&) = default;
 
-        constexpr Tuple(Tuple&&) = default;
-
+         template<typename... _UElements>
+         constexpr Tuple(const Tuple<_UElements...>& __in)
+             : _Inherited(static_cast<const _Tuple_impl<0, _UElements...>&>(__in))
+         { }
+         template<typename... _UElements>
+         constexpr Tuple(Tuple<_UElements...>&& __in)
+             : _Inherited(static_cast<_Tuple_impl<0, _UElements...>&&>(__in)) { }
         
         
     };
 
     template<typename... _Elements>
-    constexpr Tuple<typename _Elements...>
+     Tuple<typename _Elements...>
         make_tuple(_Elements&&... __args)
     {
         typedef Tuple<typename _Elements...>
@@ -215,27 +221,27 @@ namespace lain {
 
 
     template<int32_t __i, typename _Head, typename... _Tail>
-    constexpr _Head&
+     _Head&
         __tuple_get_helper(_Tuple_impl<__i, _Head, _Tail...>& __t) noexcept
     {
         return _Tuple_impl<__i, _Head, _Tail...>::_M_head(__t);
     }
 
     template<int32_t __i, typename _Head, typename... _Tail>
-    constexpr const _Head&
+     const _Head&
         __tuple_get_helper(const _Tuple_impl<__i, _Head, _Tail...>& __t) noexcept
     {
         return _Tuple_impl<__i, _Head, _Tail...>::_M_head(__t);
     }
     template<typename _Head, int32_t __i, typename... _Tail>
-    constexpr _Head&
+     _Head&
         __tuple_get_helper2(_Tuple_impl<__i, _Head, _Tail...>& __t) noexcept
     {
         return _Tuple_impl<__i, _Head, _Tail...>::_M_head(__t);
     }
 
     template<typename _Head, int32_t __i, typename... _Tail>
-    constexpr const _Head&
+     const _Head&
         __tuple_get_helper2(const _Tuple_impl<__i, _Head, _Tail...>& __t) noexcept
     {
         return _Tuple_impl<__i, _Head, _Tail...>::_M_head(__t);
@@ -248,20 +254,20 @@ namespace lain {
     /// <param name="__t">tuple</param>
     /// <returns></returns>
     template <typename _Tp, typename... _Types>
-    constexpr _Tp&
+     _Tp&
         __tuple_get(Tuple<_Types...>& __t) noexcept
     {
         return __tuple_get_helper2<_Tp>(__t);
     }
     template <typename _Tp, typename... _Types>
-    constexpr const _Tp&
+     const _Tp&
         __tuple_get(const Tuple<_Types...>& __t) noexcept
     {
         return __tuple_get_helper2<_Tp>(__t);
     }
 
     template <typename _Tp, typename... _Types>
-    constexpr _Tp&&
+     _Tp&&
         __tuple_get(Tuple<_Types...>&& __t) noexcept
     {
         return std::forward<_Tp&&>(__tuple_get_helper2<_Tp>(__t));
@@ -270,7 +276,7 @@ namespace lain {
 
     /// Return a reference to the ith element of a tuple.
     template<int32_t __i, typename... _Elements>
-    constexpr typename tuple_element<__i, Tuple<_Elements...>>::type&
+     typename tuple_element<__i, Tuple<_Elements...>>::type&
         __tuple_get(Tuple<_Elements...>& __t) noexcept
     {
         return __tuple_get_helper<__i>(__t);
@@ -278,7 +284,7 @@ namespace lain {
 
     /// Return a const reference to the ith element of a const tuple.
     template<int32_t __i, typename... _Elements>
-    constexpr const typename tuple_element<__i, Tuple<_Elements...>>::type&
+     const typename tuple_element<__i, Tuple<_Elements...>>::type&
         __tuple_get(const Tuple<_Elements...>& __t) noexcept
     {
         return __tuple_get_helper<__i>(__t);
@@ -286,7 +292,7 @@ namespace lain {
 
     /// Return an rvalue reference to the ith element of a tuple rvalue.
     template<int32_t __i, typename... _Elements>
-    constexpr typename tuple_element<__i, Tuple<_Elements...>>::type&&
+     typename tuple_element<__i, Tuple<_Elements...>>::type&&
         __tuple_get(Tuple<_Elements...>&& __t) noexcept
     {
         typedef tuple_element<__i, Tuple<_Elements...>> __element_type;
@@ -300,13 +306,13 @@ namespace lain {
     template<typename _Tp, typename _Up, size_t __i, size_t __size>
     struct __tuple_compare
     {
-        static constexpr bool
+        static  bool
             __eq(const _Tp& __t, const _Up& __u)
         {
             return bool(get<__i>(__t) == get<__i>(__u))
                 && __tuple_compare<_Tp, _Up, __i + 1, __size>::__eq(__t, __u);
         }
-        static constexpr bool
+        static  bool
             __less(const _Tp& __t, const _Up& __u)
         {
             return bool(get<__i>(__t) < get<__i>(__u))
@@ -317,7 +323,7 @@ namespace lain {
 
 
     template<typename... _TElements, typename... _UElements>
-    constexpr bool
+     bool
         operator==(const Tuple<_TElements...>& __t,
             const Tuple<_UElements...>& __u)
     {
@@ -330,7 +336,7 @@ namespace lain {
     }
 
     template<typename... _TElements, typename... _UElements>
-    constexpr bool
+     bool
         operator<(const Tuple<_TElements...>& __t,
             const Tuple<_UElements...>& __u)
     {

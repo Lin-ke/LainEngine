@@ -12,6 +12,8 @@ namespace lain {
 
     class GObject: public Object{
         LCLASS(GObject, Object);
+        friend class SceneState;
+        friend void register_core_types();
     public:
         enum InternalMode {
             INTERNAL_MODE_DISABLED,
@@ -24,7 +26,9 @@ namespace lain {
         };
         struct Data {
             String scene_file_path; // 如果场景是从文件实例化来的
-            Ref<SceneState> instance_state;
+            Ref<SceneState> instance_state; // 示例场景的scenestate
+            Ref<SceneState> inherited_state; // 继承场景的scenestate
+
 
             int depth = -1;
             StringName name;
@@ -33,13 +37,16 @@ namespace lain {
             bool is_prefab = false;
 
             HashMap<StringName, GObject*> children;
-            Vector<Component*> components; // Reflection::ReflectionPtr<Component>
+            HashMap<StringName, Component*> components;  // 每种component 最多一个;  类型名-components
+
             HashMap<StringName, GObject*> owned_unique_gobjects; // 儿子中使用%访问，无需路径
             bool unique_name_in_owner = false;
 
             // chidrencache，不常用hashmap
             mutable bool children_cache_dirty = true;
             mutable LocalVector<GObject*> children_cache;
+            mutable LocalVector<Component*> components_cache; // idx get
+
             mutable int index = -1; // relative to front, normal or back. 与chidren排序有关
             InternalMode internal_mode = INTERNAL_MODE_DISABLED;
             mutable int internal_children_front_count_cache = 0;
@@ -71,25 +78,15 @@ namespace lain {
 
             // view
             Viewport* viewport = nullptr;
+            // ?
+            
 
         } data; // 防止名称冲突
-
-        Vector<Component*> get_components() { return data.components; }
-        template<typename TComponent>
-        TComponent* try_get_component(const String& compenent_type_name)
-        {
-            for (auto& component : m_components)
-            {
-                if (component.get_class_name() == compenent_type_name)
-                {
-                    return static_cast<TComponent*>(component.operator->());
-                }
-            }
-
-            return nullptr;
-        }
+        
+        
         int get_index() const { return data.index; }
         StringName get_name() const { return data.name; }
+        void set_name(const StringName& p_name);
         GObject* get_owner() const { return data.owner; }
         GObject* get_parent() const { return data.parent; }
         GObject* find_parent(const String& p_pattern) const;
@@ -102,16 +99,25 @@ namespace lain {
         bool is_ancestor_of(const GObject*);
         bool is_unique_name_in_owner() const;
         bool is_inside_tree() { return data.inside_tree; }
-        void add_child(GObject* p_child, bool p_force_readable_name, InternalMode p_internal);
-        void add_sibling(GObject* p_sibling, bool p_force_readable_name);
+        void add_child(GObject* p_child, bool p_force_readable_name = false, InternalMode p_internal = INTERNAL_MODE_DISABLED);
+        void add_sibling(GObject* p_sibling, bool p_force_readable_name = false);
         void remove_child(GObject* p_child);
+
+        Component* get_component(const StringName& type_name) const;
+        Component* get_component(int p_index) const;
+        Vector<Component*> get_components() const;
+        int get_component_count() const;
         void add_component(Component*); // 还有一套和children对应的组件
         void remove_component(Component* p_child);
+        void move_component(Component* p_component, int p_index) ;
 
         void set_owner(GObject*);
+        void set_scene_inherited_state(Ref<SceneState> p_scene_state);
         GObject* get_owner() { return data.owner; }
-        GObjectPath get_path_to(const GObject*, bool) const;
+        GObjectPath get_path_to(const GObject*, bool use_unique_path = false) const;
         void add_to_group(const StringName&, bool);
+        int get_child_count(bool p_include_internal = true) const;
+        void move_child(GObject* p_child, int p_index);
     private:
         _FORCE_INLINE_ void _update_children_cache() const {
             if (unlikely(data.children_cache_dirty)) {
@@ -119,10 +125,19 @@ namespace lain {
             }
         }
 
-        void _update_children_cache_impl() const;
+        _FORCE_INLINE_ void _update_components_cache() const {
+            if (unlikely(data.children_cache_dirty)) {
+                _update_components_cache_impl();
+            }
+        }
 
+        void _move_child(GObject* p_child, int p_index, bool p_ignore_end = false);
+        void _update_children_cache_impl() const;
+        void _update_components_cache_impl() const;
+        GObject* _get_child_by_name(const StringName& p_name) const;
+        void _set_name_nocheck(const StringName& name);
         void _set_owner_nocheck(GObject*);
-        void _add_child_nocheck(GObject* p_child, const StringName& p_name, InternalMode p_internal_mode);
+        void _add_child_nocheck(GObject* p_child, const StringName& p_name, InternalMode p_internal_mode = INTERNAL_MODE_DISABLED);
         void _move_child(GObject* p_child, int p_index, bool p_ignore_end = false);
         void _clean_up_owner();
         void _release_unique_name_in_owner();
@@ -135,6 +150,8 @@ namespace lain {
         void _propagate_ready();
         void _propagate_groups_dirty();
         void _propagate_after_exit_tree();
+
+        void _add_component_nocheck(Component*);
         struct ComparatorByIndex {
             bool operator()(const GObject* p_left, const GObject* p_right) const {
                 static const uint32_t order[3] = { 1, 0, 2 };
@@ -147,6 +164,18 @@ namespace lain {
             }
         };
 
+
+        // Node needed in register
+        static void init_gobj_hrcr();
+
+
+        protected:
+            virtual void _physics_interpolated_changed() {}
+
+            virtual void add_child_notify(GObject* p_child) {}
+            virtual void remove_child_notify(GObject* p_child) {}
+            virtual void move_child_notify(GObject* p_child) {}
+            virtual void owner_changed_notify() {}
 	};
 }
 

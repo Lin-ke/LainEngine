@@ -6,6 +6,7 @@
 #include "core/io/resource_uid.h"
 #include "core/scene/packed_scene.h"
 #include "core/templates/pair.h"
+
 namespace lain {
 	// ³¡¾°Ê÷
 class ResourceFormatLoaderText : public ResourceFormatLoader {

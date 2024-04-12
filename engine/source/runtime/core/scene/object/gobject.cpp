@@ -4,8 +4,9 @@
 #include "core/templates/hash_set.h"
 #include "core/scene/packed_scene.h"
 #include "core/scene/object/viewport_object.h"
+#include "core/scene/component/component.h"
 namespace lain {
-
+	
 	GObject* GObject::find_parent(const String& p_pattern) const {
 		//ERR_THREAD_GUARD_V(nullptr);
 		GObject* p = data.parent;
@@ -130,6 +131,29 @@ namespace lain {
 		return nullptr;
 	}
 
+	Component* GObject::get_component(const StringName& type_name) const {
+		const Component * const * cmpt = data.components.getptr(type_name);
+		if (cmpt) {
+			return const_cast<Component*>(*cmpt);
+		}
+		else return nullptr;
+
+	}
+
+	Component* GObject::get_component(int p_index) const {
+		ERR_FAIL_INDEX_V(p_index, (int)data.components_cache.size(), nullptr);
+		return data.components_cache[p_index];
+	}
+	Vector<Component*> GObject::get_components() const {
+		Vector<Component*> arr;
+		int cc = get_component_count();
+		arr.resize(cc);
+		Component** p = arr.ptrw();
+		for (int i = 0; i < cc; i++) {
+			p[i] = get_component(i);
+		}
+		return arr;
+	}
 	// 在children修改后需要
 	void GObject::_update_children_cache_impl() const {
 		// Assign children
@@ -161,6 +185,42 @@ namespace lain {
 		}
 		data.children_cache_dirty = false;
 	}
+	int GObject::get_component_count() const {
+		_update_components_cache();
+		return data.components_cache.size();
+	}
+
+	void GObject::_update_components_cache_impl() const {
+		data.components_cache.resize(data.components.size());
+		int idx = 0;
+		for (const KeyValue<StringName, Component*>& K : data.components) {
+			data.components_cache[idx] = K.value;
+			idx++;
+		}
+		data.components_cache.sort_custom<Component::CompoaratorByIndexCompt>();
+		data.components_cache_dirty = false;
+
+	}
+	void GObject::add_component(Component* p_component) {
+		ERR_FAIL_COND_MSG(data.components.has(p_component->get_class_name()), vformat("Already have component type '%s'.", p_component->get_class_name()));
+		ERR_FAIL_COND(p_component == nullptr);
+		ERR_FAIL_COND_MSG(data.components[p_component->get_class_name()] == p_component, vformat("Already have component instance '%d'.", p_component));
+		_add_component_nocheck(p_component);
+
+	}
+	void GObject::_add_component_nocheck(Component* p_component) {
+		data.components.insert(p_component->get_class_name(), p_component);
+		p_component->m_parent = this;
+		// cache
+		if (!data.components_cache_dirty) {
+			// Special case, also add to the cached children array since its cheap.
+			data.components_cache.push_back(p_component);
+		}
+		else {
+			data.components_cache_dirty = true;
+		}
+	}
+
 
 	void GObject::add_child(GObject* p_child, bool p_force_readable_name, InternalMode p_internal) {
 		// check:
@@ -184,6 +244,33 @@ namespace lain {
 
 		_add_child_nocheck(p_child, p_child->data.name, p_internal);
 	}
+
+	static SafeRefCount gobj_hrcr_count;
+
+	void GObject::init_gobj_hrcr() {
+		gobj_hrcr_count.init(1);
+	}
+
+	void GObject::_validate_child_name(GObject* p_child, bool p_force_human_readable) {
+			bool unique = true;
+
+			if (p_child->data.name == StringName()) {
+				//new unique name must be assigned
+				unique = false;
+			}
+			else {
+				const GObject* const* existing = data.children.getptr(p_child->data.name);
+				unique = !existing || *existing == p_child;
+			}
+
+			if (!unique) {
+				ERR_FAIL_COND(!gobj_hrcr_count.ref());
+				// Optimized version of the code below:
+				 String name = "@" + String(p_child->get_name()) + "@" + itos(gobj_hrcr_count.get());
+			}
+	}
+
+
 	void GObject::_add_child_nocheck(GObject* p_child, const StringName& p_name, InternalMode p_internal_mode) {
 		p_child->data.name = p_name;
 		data.children.insert(p_name, p_child);
@@ -254,6 +341,7 @@ namespace lain {
 		//}
 
 	}
+	
 
 
 	void GObject::_propagate_exit_tree(){
@@ -277,7 +365,7 @@ namespace lain {
 			data.depth = 1;
 		}
 		// 如果这是viewport，直接用
-		data.viewport = Object::cast_to<Viewport>(this);
+		//data.viewport = dynamic_cast<ViewPort*>(this);
 		if (!data.viewport && data.parent) {
 			data.viewport = data.parent->data.viewport;
 		}
@@ -294,7 +382,7 @@ namespace lain {
 
 		emit_signal(SceneStringNames::get_singleton()->tree_entered);
 
-		data.tree->node_added(this);
+		data.tree->gobj_added(this);
 
 		if (data.parent) {
 			Variant c = this;
@@ -339,6 +427,114 @@ namespace lain {
 
 		data.grouped[p_identifier] = gd;
 	}
+
+	int GObject::get_child_count(bool p_include_internal) const {
+		//ERR_THREAD_GUARD_V(0);
+		_update_children_cache();
+
+		if (p_include_internal) {
+			return data.children_cache.size();
+		}
+		else {
+			return data.children_cache.size() - data.internal_children_front_count_cache - data.internal_children_back_count_cache;
+		}
+	}
+
+	void GObject::_set_name_nocheck(const StringName& p_name) {
+		data.name = p_name;
+	}
+
+	void GObject::move_child(GObject* p_child, int p_index) {
+		ERR_FAIL_COND_MSG(data.inside_tree && !Thread::is_main_thread(), "Moving child node positions inside the SceneTree is only allowed from the main thread. Use call_deferred(\"move_child\",child,index).");
+		ERR_FAIL_NULL(p_child);
+		ERR_FAIL_COND_MSG(p_child->data.parent != this, "Child is not a child of this node.");
+
+		_update_children_cache();
+		// We need to check whether node is internal and move it only in the relevant node range.
+		if (p_child->data.internal_mode == INTERNAL_MODE_FRONT) {
+			if (p_index < 0) {
+				p_index += data.internal_children_front_count_cache;
+			}
+			ERR_FAIL_INDEX_MSG(p_index, data.internal_children_front_count_cache, vformat("Invalid new child index: %d. Child is internal.", p_index).ascii().get_data());
+			_move_child(p_child, p_index);
+		}
+		else if (p_child->data.internal_mode == INTERNAL_MODE_BACK) {
+			if (p_index < 0) {
+				p_index += data.internal_children_back_count_cache;
+			}
+			ERR_FAIL_INDEX_MSG(p_index, data.internal_children_back_count_cache, vformat("Invalid new child index: %d. Child is internal.", p_index).ascii().get_data());
+			_move_child(p_child, (int)data.children_cache.size() - data.internal_children_back_count_cache + p_index);
+		}
+		else {
+			if (p_index < 0) {
+				p_index += get_child_count(false);
+			}
+			ERR_FAIL_INDEX_MSG(p_index, (int)data.children_cache.size() + 1 - data.internal_children_front_count_cache - data.internal_children_back_count_cache, vformat("Invalid new child index: %d.", p_index).ascii().get_data());
+			_move_child(p_child, p_index + data.internal_children_front_count_cache);
+		}
+	}
+
+	void GObject::_move_child(GObject* p_child, int p_index, bool p_ignore_end) {
+		ERR_FAIL_COND_MSG(data.blocked > 0, "Parent node is busy setting up children, `move_child()` failed. Consider using `move_child.call_deferred(child, index)` instead (or `popup.call_deferred()` if this is from a popup).");
+
+		// Specifying one place beyond the end
+		// means the same as moving to the last index
+		if (!p_ignore_end) { // p_ignore_end is a little hack to make back internal children work properly.
+			if (p_child->data.internal_mode == INTERNAL_MODE_FRONT) {
+				if (p_index == data.internal_children_front_count_cache) {
+					p_index--;
+				}
+			}
+			else if (p_child->data.internal_mode == INTERNAL_MODE_BACK) {
+				if (p_index == (int)data.children_cache.size()) {
+					p_index--;
+				}
+			}
+			else {
+				if (p_index == (int)data.children_cache.size() - data.internal_children_back_count_cache) {
+					p_index--;
+				}
+			}
+		}
+
+		int child_index = p_child->get_index();
+
+		if (child_index == p_index) {
+			return; //do nothing
+		}
+
+		int motion_from = MIN(p_index, child_index);
+		int motion_to = MAX(p_index, child_index);
+
+		data.children_cache.remove_at(child_index);
+		data.children_cache.insert(p_index, p_child);
+
+		if (data.tree) {
+			data.tree->tree_changed();
+		}
+
+		data.blocked++;
+		//new pos first
+		for (int i = motion_from; i <= motion_to; i++) {
+			if (data.children_cache[i]->data.internal_mode == INTERNAL_MODE_DISABLED) {
+				data.children_cache[i]->data.index = i - data.internal_children_front_count_cache;
+			}
+			else if (data.children_cache[i]->data.internal_mode == INTERNAL_MODE_BACK) {
+				data.children_cache[i]->data.index = i - data.internal_children_front_count_cache - data.external_children_count_cache;
+			}
+			else {
+				data.children_cache[i]->data.index = i;
+			}
+		}
+		// notification second
+		move_child_notify(p_child);
+		/*notification(NOTIFICATION_CHILD_ORDER_CHANGED);
+		emit_signal(SNAME("child_order_changed"));*/
+		p_child->_propagate_groups_dirty();
+
+		data.blocked--;
+	}
+
 
 	GObjectPath GObject::get_path_to(const GObject* p_node, bool p_use_unique_path) const {
 		ERR_FAIL_NULL_V(p_node, GObjectPath());
@@ -637,6 +833,10 @@ namespace lain {
 			_acquire_unique_name_in_owner();
 		}
 	}
+	void GObject::set_scene_inherited_state(Ref<SceneState> p_scene_state) {
+		data.inherited_state = p_scene_state;
+
+	}
 
 	void GObject::_set_owner_nocheck(GObject* p_owner) {
 		if (data.owner == p_owner) {
@@ -650,6 +850,14 @@ namespace lain {
 
 		//owner_changed_notify();
 	}
-
+	GObject* GObject::_get_child_by_name(const StringName& p_name) const {
+		const GObject* const* node = data.children.getptr(p_name);
+		if (node) {
+			return const_cast<GObject*>(*node);
+		}
+		else {
+			return nullptr;
+		}
+	}
 
 }

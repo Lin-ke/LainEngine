@@ -43,6 +43,7 @@ private:
 
 // base class of all object
 namespace lain {
+	class Viewport;
 	// signal mechanism
 	REFLECTION_TYPE(Connection)
 		CLASS(Connection, WhiteListFields) {

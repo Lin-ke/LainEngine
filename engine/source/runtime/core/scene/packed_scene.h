@@ -69,7 +69,7 @@ class SceneState : public RefCounted {
 	Error _parse_gobject(GObject* p_owner, GObject* p_gobject, int p_parent_idx, HashMap<StringName, int>& name_map, HashMap<Variant, int, VariantHasher, VariantComparator>& variant_map, HashMap<GObject*, int>& gobject_map, HashMap<GObject*, int>& gobjectpath_map);
 	Error _parse_connections(GObject* p_owner, GObject* p_gobject, HashMap<StringName, int>& name_map, HashMap<Variant, int, VariantHasher, VariantComparator>& variant_map, HashMap<GObject*, int>& gobject_map, HashMap<GObject*, int>& gobjectpath_map);
 
-	String path;
+	String path; // 这个路径是什么路径？
 
 	uint64_t last_modified_time = 0;
 
@@ -91,10 +91,10 @@ protected:
 	static void _bind_methods();
 
 public:
-	enum {
+	enum { // 标记资源位置，在variant中
 		FLAG_ID_IS_PATH = (1 << 30),
-		TYPE_INSTANTIATED = 0x7FFFFFFF,
-		FLAG_INSTANCE_IS_PLACEHOLDER = (1 << 30),
+		TYPE_INSTANTIATED = 0x7FFFFFFF, // 已经实例化
+		FLAG_INSTANCE_IS_PLACEHOLDER = (1 << 30), // placeholder示例
 		FLAG_PATH_PROPERTY_IS_gobject = (1 << 30),
 		FLAG_PROP_NAME_MASK = FLAG_PATH_PROPERTY_IS_gobject - 1,
 		FLAG_MASK = (1 << 24) - 1,
@@ -125,13 +125,14 @@ public:
 
 	Error pack(GObject* p_scene);
 
-	void set_path(const String& p_path);
+	void set_path(const String& p_path) { path = path; }
 	String get_path() const;
 
 	void clear();
 	Error copy_from(const Ref<SceneState>& p_scene_state);
 
 	bool can_instantiate() const;
+	/// @TODO
 	GObject* instantiate(GenEditState p_edit_state) const;
 
 	Array setup_resources_in_array(Array& array_to_scan, const SceneState::GObjectData& n, HashMap<Ref<Resource>, Ref<Resource>>& resources_local_to_sub_scene, GObject* gobject, const StringName sname, HashMap<Ref<Resource>, Ref<Resource>>& resources_local_to_scene, int i, GObject** ret_gobjects, SceneState::GenEditState p_edit_state) const;
@@ -199,7 +200,7 @@ public:
 	static void set_instantiation_warning_notify_func(InstantiationWarningNotify p_warn_notify) { instantiation_warn_notify = p_warn_notify; }
 #endif
 
-	SceneState();
+	SceneState() {}
 };
 
 //VARIANT_ENUM_CAST(SceneState::GenEditState)
@@ -235,8 +236,8 @@ public:
 
 	void recreate_state();
 	void replace_state(Ref<SceneState> p_by);
-
-	virtual void reload_from_file() override;
+	/// @TODO
+	virtual void reload_from_file() override {}
 
 	virtual void SetPath(const String& p_path, bool p_take_over = false) override;
 	virtual void SetPathCache(const String& p_path) override;

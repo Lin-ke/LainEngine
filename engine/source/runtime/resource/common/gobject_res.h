@@ -16,14 +16,14 @@ namespace lain
         String m_type_name;
         String m_component;
     };
-
+    
     REFLECTION_TYPE(GObjectDefinitionRes)
         CLASS(GObjectDefinitionRes, Fields)
     {
         REFLECTION_BODY(GObjectDefinitionRes);
 
     public:
-        Vector<Component> m_components;
+        Vector<Reflection::ReflectionPtr<Component>> m_components;
     };
     
 

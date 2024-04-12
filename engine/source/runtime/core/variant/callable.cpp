@@ -1,5 +1,8 @@
 #include "callable.h"
 #include "core/math/hashfuncs.h"
+#include "core/variant/variant.h"
+#include "core/object/object.h"
+#include "core/object/objectdb.h"
 namespace lain {
 	ui32 Callable::hash() const {
 		if (is_custom()) {
@@ -18,4 +21,103 @@ namespace lain {
 			}
 		}
 	}
+	Callable::Callable(const Callable& p_callable) {
+		if (p_callable.is_custom()) {
+			if (!p_callable.custom->ref_count.ref()) {
+				object = 0;
+			}
+			else {
+				object = 0;
+				custom = p_callable.custom;
+			}
+		}
+		else {
+			method = p_callable.method;
+			object = p_callable.object;
+		}
+	}
+	StringName CallableCustom::get_method() const {
+		ERR_FAIL_V_MSG(StringName(), vformat("Can't get method on CallableCustom \"%s\".", get_as_text()));
+	}
+	Callable::Callable(ObjectID p_object, const StringName& p_method) {
+		if (unlikely(p_method == StringName())) {
+			object = 0;
+			ERR_FAIL_MSG("Method argument to Callable constructor must be a non-empty string.");
+		}
+
+		object = p_object;
+		method = p_method;
+	}
+
+	Callable::Callable(const Object* p_object, const StringName& p_method) {
+		if (unlikely(p_method == StringName())) {
+			object = 0;
+			ERR_FAIL_MSG("Method argument to Callable constructor must be a non-empty string.");
+		}
+		if (unlikely(p_object == nullptr)) {
+			object = 0;
+			ERR_FAIL_MSG("Object argument to Callable constructor must be non-null.");
+		}
+
+		object = p_object->get_instance_id();
+		method = p_method;
+	}
+
+	void Callable::operator=(const Callable& p_callable) {
+		if (is_custom()) {
+			if (p_callable.is_custom()) {
+				if (custom == p_callable.custom) {
+					return;
+				}
+			}
+
+			if (custom->ref_count.unref()) {
+				memdelete(custom);
+			}
+		}
+
+		if (p_callable.is_custom()) {
+			method = StringName();
+			if (!p_callable.custom->ref_count.ref()) {
+				object = 0;
+			}
+			else {
+				object = 0;
+				custom = p_callable.custom;
+			}
+		}
+		else {
+			method = p_callable.method;
+			object = p_callable.object;
+		}
+	}
+	bool Callable::operator==(const Callable& p_callable) const {
+		bool custom_a = is_custom();
+		bool custom_b = p_callable.is_custom();
+
+		if (custom_a == custom_b) {
+			if (custom_a) {
+				if (custom == p_callable.custom) {
+					return true; //same pointer, don't even compare
+				}
+
+				CallableCustom::CompareEqualFunc eq_a = custom->get_compare_equal_func();
+				CallableCustom::CompareEqualFunc eq_b = p_callable.custom->get_compare_equal_func();
+				if (eq_a == eq_b) {
+					return eq_a(custom, p_callable.custom);
+				}
+				else {
+					return false;
+				}
+			}
+			else {
+				return object == p_callable.object && method == p_callable.method;
+			}
+		}
+		else {
+			return false;
+		}
+	}
+
+
 }

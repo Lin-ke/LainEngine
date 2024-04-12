@@ -8,6 +8,7 @@
 // scene
 #include "resource/io/resource_format_text.h"
 #include "core/scene/scene_stringnames.h"
+#include "core/scene/object/gobject.h"
 namespace lain {
 	static WorkerThreadPool* worker_thread_pool = nullptr;
 	static ResourceUID* resource_uid = nullptr;
@@ -70,6 +71,10 @@ namespace lain {
 			L_JSON(Serializer::write(E.value).dump());
 		}
 			L_JSON(Variant("removed"));*/
+
+
+		GObject::init_gobj_hrcr();
+
 	}
 }
 

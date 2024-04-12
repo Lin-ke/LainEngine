@@ -10,7 +10,15 @@
 
 namespace lain{
 	ResourceFormatLoaderText* ResourceFormatLoaderText::singleton = nullptr;
+	ResourceFormatSaverText* ResourceFormatSaverText::singleton = nullptr;
+	Error ResourceFormatSaverText::save(const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags) {
+		if (p_path.ends_with(".tscn") && !Ref<PackedScene>(p_resource).is_valid()) {
+			return ERR_FILE_UNRECOGNIZED;
+		}
 
+		ResourceSaverText saver;
+		return saver.save(p_path, p_resource, p_flags);
+	}
 
 	void ResourceFormatLoaderText::get_recognized_extensions(List<String>* p_extensions) const {
 		p_extensions->push_back("tscn");
@@ -303,15 +311,7 @@ namespace lain{
 	}
 
 	/// saver
-	ResourceFormatSaverText* ResourceFormatSaverText::singleton = nullptr;
-	Error ResourceFormatSaverText::save(const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags) {
-		if (p_path.ends_with(".tscn") && !Ref<PackedScene>(p_resource).is_valid()) {
-			return ERR_FILE_UNRECOGNIZED;
-		}
-
-		ResourceSaverText saver;
-		return saver.save(p_path, p_resource, p_flags);
-	}
+	
 
 	Error ResourceFormatSaverText::set_uid(const String& p_path, ResourceUID::ID p_uid) {
 		String lc = p_path.to_lower();
@@ -433,6 +433,7 @@ namespace lain{
 					cached_ids_found.insert(cached_id);
 				}
 			}
+			
 			Vector<Tuple<int, String, Ref<Resource>>> sorted_res;
 
 			// Create IDs for non cached resources.

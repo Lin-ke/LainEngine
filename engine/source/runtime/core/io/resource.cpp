@@ -201,6 +201,9 @@ namespace lain {
 	// public:
 	// static:
 	// 这个单例比较适合lock的使用
+	RWLock ResourceCache::path_cache_lock;
+	HashMap<String, HashMap<String, String>> ResourceCache::resource_path_cache; // Each tscn has a set of resource paths and IDs.
+
 	bool ResourceCache::has(const String& p_path) {
 		lock.lock();
 		Resource** res = resources.getptr(p_path);

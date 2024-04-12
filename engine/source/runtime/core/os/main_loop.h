@@ -25,11 +25,11 @@ public:
 		NOTIFICATION_TEXT_SERVER_CHANGED = 2018,
 	};
 
-	virtual void initialize();
+	virtual void initialize() {}
 	virtual void iteration_prepare() {}
-	virtual bool physics_process(double p_time);
-	virtual bool process(double p_time);
-	virtual void finalize();
+	virtual bool physics_process(double p_time) { return true; }
+	virtual bool process(double p_time) { return true; }
+	virtual void finalize() {}
 
 	MainLoop() {}
 	virtual ~MainLoop() {}

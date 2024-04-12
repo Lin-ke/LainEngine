@@ -10,28 +10,29 @@ namespace lain
     class GObject;
     // Component
     REFLECTION_TYPE(Component)
-        CLASS(Component : public Object, WhiteListFields)
+        CLASS(Component : public Object)
     {
         REFLECTION_BODY(Component)
+        LCLASS(Component, Object);
+        friend class GObject;
+
     protected:
-        GObject*               m_parent_object;
+        GObject*               m_parent;
         bool                   m_is_dirty{ false };
         bool                   m_is_scale_dirty{ false };
-      
+        int                    m_index = -1;
+        
     public:
         Component() = default;
         virtual ~Component() {}
 
-        // Instantiating the component after definition loaded
-        virtual void postLoadResource(GObject* parent_object) { m_parent_object = parent_object; }
 
-        virtual void tick(float delta_time) {};
+        struct CompoaratorByIndexCompt {
+            bool operator()(const Component* p_left, const Component* p_right){
+                return p_left->m_index < p_right->m_index;
+            }
+        };
 
-        bool isDirty() const { return m_is_dirty; }
-
-        void setDirtyFlag(bool is_dirty) { m_is_dirty = is_dirty; }
-
-        bool m_tick_in_editor_mode{ false };
     };
 
 } // namespace Piccolo

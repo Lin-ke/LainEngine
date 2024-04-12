@@ -1760,6 +1760,17 @@ namespace lain {
 		}
 	}
 
+	Variant::operator Rect2() const {
+		if (type == RECT2) {
+			return *reinterpret_cast<const Rect2*>(_data._mem);
+		}
+		else if (type == RECT2I) {
+			return *reinterpret_cast<const Rect2i*>(_data._mem);
+		}
+		else {
+			return Rect2();
+		}
+	}
 	
 
 	Variant::operator String() const {
