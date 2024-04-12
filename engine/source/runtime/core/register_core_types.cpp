@@ -7,6 +7,7 @@
 #include "core/meta/serializer/serializer.h"
 // scene
 #include "resource/io/resource_format_text.h"
+#include "core/scene/scene_stringnames.h"
 namespace lain {
 	static WorkerThreadPool* worker_thread_pool = nullptr;
 	static ResourceUID* resource_uid = nullptr;
@@ -34,6 +35,7 @@ namespace lain {
 		ObjectDB::setup();
 		StringName::setup();
 		ResourceLoader::initialize();
+		SceneStringNames::create(); // register stringnames
 
 		worker_thread_pool = memnew(WorkerThreadPool);
 

@@ -5,8 +5,12 @@
 
 #include "core/io/resource.h"
 #include "core/scene/object/gobject.h"
+#include "core/templates/hash_set.h"
 namespace lain {
-	class PackedScene;
+
+	
+	// 引擎内部的场景数据结构
+	class PackedScene; 
 class SceneState : public RefCounted {
 	LCLASS(SceneState, RefCounted);
 
@@ -222,9 +226,9 @@ public:
 		GEN_EDIT_STATE_MAIN_INHERITED,
 	};
 
-	Error pack(GObject* p_scene);
+	Error pack(GObject* p_scene) { state->pack(p_scene); }
 
-	void clear();
+	void clear() { state->clear(); }
 
 	bool can_instantiate() const;
 	GObject* instantiate(GenEditState p_edit_state = GEN_EDIT_STATE_DISABLED) const;
@@ -236,7 +240,7 @@ public:
 
 	virtual void SetPath(const String& p_path, bool p_take_over = false) override;
 	virtual void SetPathCache(const String& p_path) override;
-
+	
 #ifdef TOOLS_ENABLED
 	virtual void set_last_modified_time(uint64_t p_time) override {
 		Resource::set_last_modified_time(p_time);
@@ -244,7 +248,7 @@ public:
 	}
 
 #endif
-	Ref<SceneState> get_state() const;
+	Ref<SceneState> get_state() const { return state; }
 
 	PackedScene();
 };

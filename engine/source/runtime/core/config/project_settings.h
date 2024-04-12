@@ -12,7 +12,7 @@
 
 // TODO:
 #define GLOBAL_GET(m_var) ProjectSettings::GetSingleton()->GetSetting(m_var)
-
+// 不知道为什么不用dict，不理解
 namespace lain {
 	// config manager
 	class ProjectSettings:public Object {

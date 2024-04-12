@@ -21,7 +21,7 @@ namespace lain {
 	thread_local uint32_t SafeBinaryMutex<ResourceLoader::BINARY_MUTEX_TAG>::count = 0;
 	SafeBinaryMutex<ResourceLoader::BINARY_MUTEX_TAG> ResourceLoader::thread_load_mutex;
 	// HashMap
-	HashMap<String, Vector<int>> ResourceLoader::type_to_loader_idx;
+	HashMap<String, Vector<int>> ResourceLoader::ext_to_loader_idx;
 
 
 	void ResourceLoader::initialize() {}
@@ -46,7 +46,7 @@ namespace lain {
 		List<String> exts;
 		p_format_loader->get_recognized_extensions(&exts);
 		for (const String& ext : exts) {
-			Vector<int>& idxs = type_to_loader_idx[ext];
+			Vector<int>& idxs = ext_to_loader_idx[ext];
 			idxs.append(saved_idx);
 		}
 	}
@@ -68,10 +68,10 @@ namespace lain {
 		List<String> exts;
 		p_format_loader->get_recognized_extensions(&exts);
 		for (const String& ext : exts) {
-			Vector<int>& idxs = type_to_loader_idx[ext];
+			Vector<int>& idxs = ext_to_loader_idx[ext];
 			idxs.erase(i);
 			if (idxs.size() == 0) {
-				ERR_FAIL_COND(!type_to_loader_idx.erase(ext)); // delete failed
+				ERR_FAIL_COND(!ext_to_loader_idx.erase(ext)); // delete failed
 			}
 		}
 		// Shift next loaders up
@@ -347,10 +347,10 @@ namespace lain {
 		//	}
 		//}
 		String extension = p_path.get_extension();
-		if (type_to_loader_idx.has(extension)) {
+		if (ext_to_loader_idx.has(extension)) {
 			found = true;
-			for (int idx : type_to_loader_idx[extension]) {
-			res = loader[type_to_loader_idx[extension][idx]]->load(p_path, !p_original_path.is_empty() ? p_original_path : p_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);
+			for (int idx : ext_to_loader_idx[extension]) {
+			res = loader[ext_to_loader_idx[extension][idx]]->load(p_path, !p_original_path.is_empty() ? p_original_path : p_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);
 			if (!res.is_null()) {
 				break;
 			}

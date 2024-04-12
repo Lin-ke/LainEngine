@@ -3,6 +3,7 @@
 #define __PAIR_H__
 
 #include "base.h"
+#include "tuple.h"
 namespace lain {
 
 template <class F, class S>
@@ -82,6 +83,28 @@ struct KeyValueSort {
 		return A.key < B.key;
 	}
 };
+
+template <class K, class... V>
+struct KeyValues {
+	const K key;
+	Tuple<V...> value;
+
+	void operator=(const KeyValues& p_kv) = delete;
+	KeyValues(const KeyValues& p_kv) :
+		key(p_kv.key),
+		value(p_kv.value)
+	{
+	}
+
+	template <typename K, class... V>
+	KeyValues(const K& p_key, const V&... p_value) :
+		key(p_key),
+	{
+	 values = make_tuple(p_value...);
+	}
+};
+
+
 }
 
 #endif // !__PAIRS_H__

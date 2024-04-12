@@ -88,7 +88,7 @@ namespace lain {
 		//static void get_recognized_extensions_for_type(const String& p_type, List<String>* p_extensions);
 		static void remove_resource_format_loader(Ref<ResourceFormatLoader> p_format_loader);
 
-		static HashMap<String, Vector<int>> type_to_loader_idx;
+		static HashMap<String, Vector<int>> ext_to_loader_idx;
 
 		// get set functions
 		static void set_abort_on_missing_resources(bool p_abort) { abort_on_missing_resource = p_abort; }

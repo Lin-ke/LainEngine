@@ -258,7 +258,6 @@ namespace lain {
 		Variant(const char* const p_cstring);
 		Variant(const Color& p_cstring);
 
-
 		// copy construct
 		Variant(const Variant& p_variant);
 
@@ -305,7 +304,7 @@ namespace lain {
 		operator Projection() const;*/
 
 		operator Color() const;
-		/*operator GObjectPath() const;*/
+		operator GObjectPath() const;
 		operator lain::RID() const;
 
 		operator Object* () const;
@@ -337,6 +336,9 @@ namespace lain {
 		operator Orientation() const;
 
 		//operator IPAddress() const;
+
+		Object* get_validated_object() const;
+
 
 		_FORCE_INLINE_ void clear() {
 			static const bool needs_deinit[Variant::VARIANT_MAX] = {

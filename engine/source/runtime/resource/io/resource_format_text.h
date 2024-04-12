@@ -2,8 +2,10 @@
 #ifndef RESOURCE_FORMAT_TEXT_H
 #define RESOURCE_FORMAT_TEXT_H
 #include "core/io/resource_loader.h"
+#include "core/io/resource_saver.h"
 #include "core/io/resource_uid.h"
 #include "core/scene/packed_scene.h"
+#include "core/templates/pair.h"
 namespace lain {
 	// 场景树
 class ResourceFormatLoaderText : public ResourceFormatLoader {
@@ -26,7 +28,7 @@ public:
 	ResourceFormatLoaderText() { singleton = this; }
 };
 
-class ResourceFormatSaverTextInstance {
+class ResourceSaverText {
 	String local_path;
 
 	Ref<PackedScene> packed_scene;
@@ -46,7 +48,7 @@ class ResourceFormatSaverTextInstance {
 
 	HashSet<Ref<Resource>> resource_set;
 	List<Ref<Resource>> saved_resources;
-	HashMap<Ref<Resource>, String> external_resources;
+	HashMap<Ref<Resource>, Pair<int, String>> external_resources;
 	HashMap<Ref<Resource>, String> internal_resources;
 
 	struct ResourceSort {
@@ -66,19 +68,13 @@ public:
 	Error save(const String& p_path, const Ref<Resource>& p_resource, uint32_t p_flags = 0);
 };
 
-//class ResourceFormatSaverText : public ResourceFormatSaver {
-//public:
-//	static ResourceFormatSaverText* singleton;
-//	virtual Error save(const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0) override;
-//	virtual Error set_uid(const String& p_path, ResourceUID::ID p_uid) override;
-//	virtual bool recognize(const Ref<Resource>& p_resource) const override;
-//	virtual void get_recognized_extensions(const Ref<Resource>& p_resource, List<String>* p_extensions) const override;
-//
-//	ResourceFormatSaverText();
-//};
-	// 实际执行操作的类
+
+class ResourceFormatSaverText;
+
+// 实际执行操作的类
 class ResourceLoaderText {
 	friend class ResourceFormatLoaderText;
+	friend class ResourceFormatSaverText;
 	struct ExtResource {
 		Ref<ResourceLoader::LoadToken> load_token;
 		String path;
@@ -113,16 +109,19 @@ public:
 	
 };
 
-//class ResourceFormatSaverText : public ResourceFormatSaver {
-//public:
-//	static ResourceFormatSaverText* singleton;
-//	virtual Error save(const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0) override;
-//	virtual Error set_uid(const String& p_path, ResourceUID::ID p_uid) override;
-//	virtual bool recognize(const Ref<Resource>& p_resource) const override;
-//	virtual void get_recognized_extensions(const Ref<Resource>& p_resource, List<String>* p_extensions) const override;
-//
-//	ResourceFormatSaverText();
-//};
+class ResourceFormatSaverText : public ResourceFormatSaver {
+public:
+	static ResourceFormatSaverText* singleton;
+	virtual Error save(const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0) override;
+	virtual Error set_uid(const String& p_path, ResourceUID::ID p_uid) override;
+	//virtual bool recognize(const Ref<Resource>& p_resource) const override;
+	virtual void get_recognized_extensions(const Ref<Resource>& p_resource, List<String>* p_extensions) const override;
+	virtual void get_possible_extensions(List<String>* p_extensions) const override;
+	virtual void get_possible_resources(List<String>* p_extensions) const override;
+
+
+	ResourceFormatSaverText();
+};
 
 }
 

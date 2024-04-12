@@ -82,9 +82,9 @@ public:
 		return reference;
 	}
 
-	//operator Variant() const {
-	//	return Variant(reference);
-	//}
+	operator Variant() const {
+		return Variant(reference);
+	}
 
 	void operator=(const Ref& p_from) {
 		ref(p_from);
@@ -103,24 +103,24 @@ public:
 		r.reference = nullptr;
 	}
 
-	//void operator=(const Variant& p_variant) {
-	//	Object* object = p_variant.get_validated_object();
+	void operator=(const Variant& p_variant) {
+		Object* object = p_variant.get_validated_object();
 
-	//	if (object == reference) {
-	//		return;
-	//	}
+		if (object == reference) {
+			return;
+		}
 
-	//	unref();
+		unref();
 
-	//	if (!object) {
-	//		return;
-	//	}
+		if (!object) {
+			return;
+		}
 
-	//	T* r = Object::cast_to<T>(object);
-	//	if (r && r->reference()) {
-	//		reference = r;
-	//	}
-	//}
+		T* r = Object::cast_to<T>(object);
+		if (r && r->reference()) {
+			reference = r;
+		}
+	}
 
 	template <class T_Other>
 	void reference_ptr(T_Other* p_ptr) {
@@ -158,18 +158,18 @@ public:
 		}
 	}
 
-	//Ref(const Variant& p_variant) {
-	//	Object* object = p_variant.get_validated_object();
+	Ref(const Variant& p_variant) {
+		Object* object = p_variant.get_validated_object();
 
-	//	if (!object) {
-	//		return;
-	//	}
+		if (!object) {
+			return;
+		}
 
-	//	T* r = Object::cast_to<T>(object);
-	//	if (r && r->reference()) {
-	//		reference = r;
-	//	}
-	//}
+		T* r = Object::cast_to<T>(object);
+		if (r && r->reference()) {
+			reference = r;
+		}
+	}
 
 	inline bool is_valid() const { return reference != nullptr; }
 	inline bool is_null() const { return reference == nullptr; }

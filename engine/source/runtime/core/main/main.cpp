@@ -9,6 +9,8 @@
 #include "editor/editor_paths.h"
 #include "editor/project_manager.h"
 #include "core/register_core_types.h"
+#include "core/os/main_loop.h"
+#include "core/scene/scene_tree.h"
 //  initialization part
 namespace lain {
 
@@ -56,6 +58,7 @@ static ProjectManager* pmanager = nullptr;
 	 // change working dir
 	 String path = argv[0];
 	 // first time
+
 	 if (!FileAccess::exists(path.path_join(ProjectSettings::PROJECT_FILE_NAME))) {
 		 // mkdir
 		 if (!DirAccess::exists(path)) {
@@ -65,6 +68,7 @@ static ProjectManager* pmanager = nullptr;
 		 HashMap<String, HashMap<String, Variant>> config;
 		 config["application"]["config/name"] = String("default_project");
 		 config["application"]["config/description"] = String("this is a default project");
+		 //config["application"]["run/main_scene"] = String("this is a default project");
 		 pmanager->CreateProject(path, config);
 
 	 }
@@ -78,10 +82,29 @@ static ProjectManager* pmanager = nullptr;
 	 globals->Initialize(project_path); 
 	 // Initialize user data dir.
 	 OS::GetSingleton()->EnsureUserDataDir();
+
+	 Ref<DirAccess> da = DirAccess::create_for_path(project_path);
+	 String main_scene = GLOBAL_GET("application/config/name");
+	 if (main_scene=="") {
+		// no default scene
+		 Vector<String> scene_list = da->get_files();
+		 for (String& scene : scene_list) {
+			 if (scene.ends_with(".tscn")) {
+				 main_scene = scene;  break;
+			 }
+		 }
+	 }
+
+
+	 MainLoop* main_loop = memnew(SceneTree);
+	
+
 	 window_system->Initialize();
 	 window_system->NewWindow(lain::WindowCreateInfo(1280, 720, GLOBAL_GET("application/config/name"), false));
 
+	 if (main_scene != "") {
 
+	 }
 	 return OK;
  }
 /// <summary>

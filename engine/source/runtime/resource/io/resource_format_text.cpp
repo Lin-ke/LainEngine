@@ -1,7 +1,11 @@
 #include "resource_format_text.h"
+#include "core/io/dir_access.h"
 #include "core/config/project_settings.h"
 #include "core/meta/serializer/serializer.h"
 #include "core/meta/reflection/reflection.h"
+#include "resource/common/scene_res.h"
+#include "_generated/serializer/all_serializer.h"
+
 //#define _printerr() ERR_PRINT(String(res_path + ":" + itos(lines) + " - Parse Error: " + error_text).utf8().get_data());
 
 namespace lain{
@@ -297,4 +301,181 @@ namespace lain{
 
 		return OK;
 	}
+
+	/// saver
+	ResourceFormatSaverText* ResourceFormatSaverText::singleton = nullptr;
+	Error ResourceFormatSaverText::save(const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags) {
+		if (p_path.ends_with(".tscn") && !Ref<PackedScene>(p_resource).is_valid()) {
+			return ERR_FILE_UNRECOGNIZED;
+		}
+
+		ResourceSaverText saver;
+		return saver.save(p_path, p_resource, p_flags);
+	}
+
+	Error ResourceFormatSaverText::set_uid(const String& p_path, ResourceUID::ID p_uid) {
+		String lc = p_path.to_lower();
+		if (!lc.ends_with(".tscn") && !lc.ends_with(".tres")) {
+			return ERR_FILE_UNRECOGNIZED;
+		}
+
+		String local_path = ProjectSettings::GetSingleton()->LocalizePath(p_path);
+		Error err = OK;
+		{
+			Ref<FileAccess> file = FileAccess::open(p_path, FileAccess::READ);
+			if (file.is_null()) {
+				ERR_FAIL_V(ERR_CANT_OPEN);
+			}
+
+			ResourceLoaderText loader;
+			loader.local_path = local_path;
+			loader.res_path = loader.local_path;
+			err = loader.set_uid(file, p_uid);
+		}
+
+		if (err == OK) {
+			Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
+			da->remove(local_path);
+			da->rename(local_path + ".uidren", local_path);
+		}
+
+		return err;
+	}
+
+	void ResourceFormatSaverText::get_recognized_extensions(const Ref<Resource>& p_resource, List<String>* p_extensions) const {
+		if (Ref<PackedScene>(p_resource).is_valid()) {
+			p_extensions->push_back("tscn"); // Text scene.
+		}
+		else {
+			p_extensions->push_back("tres"); // Text resource.
+		}
+	}
+
+	void ResourceFormatSaverText::get_possible_extensions(List<String>* p_extensions) const{
+		p_extensions->push_back("tscn");
+		p_extensions->push_back("tres"); // Text resource.
+
+	}
+	void ResourceFormatSaverText::get_possible_resources(List<String>* p_extensions) const {
+		p_extensions->push_back("PackedScene");
+
+	}
+	ResourceFormatSaverText::ResourceFormatSaverText() {
+		singleton = this;
+	}
+
+	// save to .tscn
+	Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resource, uint32_t p_flags) {
+		packed_scene = p_resource;
+
+		Error err;
+		Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::WRITE, &err);
+		ERR_FAIL_COND_V_MSG(err, ERR_CANT_OPEN, "Cannot save file '" + p_path + "'.");
+		Ref<FileAccess> _fref(f);
+
+		local_path = ProjectSettings::GetSingleton()->LocalizePath(p_path);
+
+		relative_paths = p_flags & ResourceSaver::FLAG_RELATIVE_PATHS;
+		skip_editor = p_flags & ResourceSaver::FLAG_OMIT_EDITOR_PROPERTIES;
+		bundle_resources = p_flags & ResourceSaver::FLAG_BUNDLE_RESOURCES;
+		takeover_paths = p_flags & ResourceSaver::FLAG_REPLACE_SUBRESOURCE_PATHS;
+		if (!p_path.begins_with("res://")) {
+			takeover_paths = false;
+		}
+
+		// Save resources.
+		//_find_resources(p_resource, true);
+
+		//if (packed_scene.is_valid()) {
+		//	// Add instances to external resources if saving a packed scene.
+		//	for (int i = 0; i < packed_scene->get_state()->get_node_count(); i++) {
+		//		if (packed_scene->get_state()->is_node_instance_placeholder(i)) {
+		//			continue;
+		//		}
+
+		//		Ref<PackedScene> instance = packed_scene->get_state()->get_node_instance(i);
+		//		if (instance.is_valid() && !external_resources.has(instance)) {
+		//			int index = external_resources.size() + 1;
+		//			external_resources[instance] = itos(index) + "_" + Resource::generate_scene_unique_id(); // Keep the order for improved thread loading performance.
+		//		}
+		//	}
+		//}
+		Dictionary title;
+		title["tag"] = packed_scene.is_valid()? "scene" : "resource";
+			
+		if (packed_scene.is_null()) {
+			title["script_class"] = "";
+		}
+		title["load_steps"] = saved_resources.size() + external_resources.size();
+		ResourceUID::ID uid = ResourceSaver::get_resource_id_for_path(local_path, true);
+		if(uid != ResourceUID::INVALID_ID)
+			title["uid"] = uid;
+		if (packed_scene.is_valid()) {
+			PackedSceneRes packed_res;
+			packed_res.head = title;
+			for (int i = 0; i < packed_scene->get_state()->get_gobject_count();++i) {
+
+				Ref<PackedScene> instance = packed_scene->get_state()->get_gobject_instance(i);
+				if (instance.is_valid() && !external_resources.has(instance)) {
+					int index = external_resources.size() + 1;
+					external_resources[instance] = Pair(index, Resource::generate_scene_unique_id()); // Keep the order for improved thread loading performance.
+				}
+			}
+			HashSet<String> cached_ids_found;
+			for (KeyValue<Ref<Resource>, Pair<int, String>>& E : external_resources) {
+				
+				String cached_id = E.key->get_id_for_path(local_path);
+				if (cached_id.is_empty() || cached_ids_found.has(cached_id)) {
+					// continue to use
+				}
+				else {
+					E.value.second = cached_id;
+					cached_ids_found.insert(cached_id);
+				}
+			}
+			Vector<Tuple<int, String, Ref<Resource>>> sorted_res;
+
+			// Create IDs for non cached resources.
+			for (KeyValue<Ref<Resource>, Pair<int, String>>& E : external_resources) {
+				if (cached_ids_found.has(E.value.second)) { // Already cached, go on.
+					continue;
+				}
+
+				String attempt;
+				while (true) {
+					attempt = E.value.second + Resource::generate_scene_unique_id();
+					if (!cached_ids_found.has(attempt)) {
+						break;
+					}
+				}
+
+				cached_ids_found.insert(attempt);
+				E.value.second = attempt;
+				// Update also in resource.
+				Ref<Resource> res = E.key;
+				res->set_id_for_path(local_path, attempt);
+				sorted_res.push_back(Tuple(E.value.first, E.value.second, E.key));
+			}
+			sorted_res.sort();
+
+			// sort
+			// 0 inx, 1 id, 2 res
+			
+			for (auto&& E : sorted_res) {
+				ExtRes ext_res;
+				String p = __tuple_get<2>(E)->GetPath();
+
+				ext_res.m_id = itos(__tuple_get<0>(E)) + __tuple_get<1>(E);
+				ext_res.m_def_path = p;
+				auto uid = ResourceSaver::get_resource_id_for_path(p, false);
+				if (uid != ResourceUID::INVALID_ID) {
+					ext_res.m_uid = ResourceUID::get_singleton()->id_to_text(uid);
+				}
+				packed_res.ext_res.push_back(ext_res);
+			}
+			auto&& json = Serializer::write(packed_res);
+			f->store_string(json.dump());
+		}
+	}
+
 }

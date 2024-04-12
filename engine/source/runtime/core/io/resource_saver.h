@@ -25,6 +25,8 @@ public:
 	//virtual bool recognize(const Ref<Resource>& p_resource) const;
 	virtual void get_recognized_extensions(const Ref<Resource>& p_resource, List<String>* p_extensions) const;
 	virtual void get_possible_extensions(List<String>* p_extensions) const {}
+	virtual void get_possible_resources(List<String>* p_extensions) const {}
+
 
 	//virtual bool recognize_path(const Ref<Resource>& p_resource, const String& p_path) const;
 
@@ -48,6 +50,8 @@ class ResourceSaver {
 	static Ref<ResourceFormatSaver> _find_custom_resource_format_saver(const String& path);
 	// HashMap
 	static HashMap<String, Vector<int>> type_to_saver_idx;
+	static HashMap<String, Vector<int>> ext_to_saver_idx;
+
 public:
 	enum SaverFlags {
 		FLAG_NONE = 0,

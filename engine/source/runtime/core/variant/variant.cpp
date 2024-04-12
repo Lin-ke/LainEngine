@@ -2,6 +2,7 @@
 #include "core/os/memory.h"
 #include "core/object/refcounted.h"
 #include "core/templates/list.h"
+#include "core/object/objectdb.h"
 namespace lain {
 	struct _VariantStrPair {
 		String key;
@@ -189,18 +190,30 @@ namespace lain {
 		memnew_placement(_data._mem, Color(p_color));
 	}
 
-	Variant::operator Rect2() const {
-		if (type == RECT2) {
-			return *reinterpret_cast<const Rect2*>(_data._mem);
-		}
-		else if (type == RECT2I) {
-			return *reinterpret_cast<const Rect2i*>(_data._mem);
+
+	Variant::Variant(const Object* p_object) {
+		type = OBJECT;
+
+		memnew_placement(_data._mem, ObjData);
+
+		if (p_object) {
+			if (p_object->is_ref_counted()) {
+				RefCounted* ref_counted = const_cast<RefCounted*>(static_cast<const RefCounted*>(p_object));
+				if (!ref_counted->init_ref()) {
+					_get_obj().obj = nullptr;
+					_get_obj().id = ObjectID();
+					return;
+				}
+			}
+
+			_get_obj().obj = const_cast<Object*>(p_object);
+			_get_obj().id = p_object->get_instance_id();
 		}
 		else {
-			return Rect2();
+			_get_obj().obj = nullptr;
+			_get_obj().id = ObjectID();
 		}
 	}
-
 
 	Variant::Variant(const StringName& p_string) {
 		type = STRING_NAME;
@@ -213,32 +226,20 @@ namespace lain {
 	Variant::ObjData& Variant::_get_obj() {
 		return *reinterpret_cast<ObjData*>(&_data._mem[0]);
 	}
-	Variant::Variant(const Object* p_obj) {
-		type = OBJECT;
-		memnew_placement(_data._mem, ObjData);
-		if (p_obj) {
-			if (p_obj->is_ref_counted()) {
-				RefCounted* ref_counted = const_cast<RefCounted*>(static_cast<const RefCounted*>(p_obj));
-				if (!ref_counted->init_ref()) {
-					// 如果引用计数初始化失败，则将obj置空并返回
-					_get_obj().obj = nullptr;
-					_get_obj().id = ObjectID();
-					return;
-				}
-			}
-			// if refcount refcount + 1 ;
-			_get_obj().obj = const_cast<Object*>(p_obj);
-			_get_obj().id = p_obj->get_instance_id();
-		}
-		else {
-			// null input.
-			_get_obj().obj = nullptr;
-			_get_obj().id = ObjectID();
-		}
-	}
+	
 	Variant::Variant(const Variant& p_variant) {
 		reference(p_variant);
 	}
+
+	Object* Variant::get_validated_object() const {
+		if (type == OBJECT) {
+			return ObjectDB::get_instance(_get_obj().id);
+		}
+		else {
+			return nullptr;
+		}
+	}
+
 	uint32_t Variant::recursive_hash(int recursion_count) const {
 			switch (type) {
 			case NIL: {
@@ -1747,7 +1748,17 @@ namespace lain {
 		}
 	}
 
-
+	Variant::operator GObjectPath() const {
+		if (type == GOBJECT_PATH) {
+			return *reinterpret_cast<const GObjectPath*>(_data._mem);
+		}
+		else if (type == STRING) {
+			return GObjectPath(operator String());
+		}
+		else {
+			return GObjectPath();
+		}
+	}
 
 	
 

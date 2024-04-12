@@ -148,6 +148,32 @@ namespace lain {
 		return id;
 	}
 
+	String Resource::get_id_for_path(const String& p_path) const {
+		ResourceCache::path_cache_lock.read_lock();
+		if (ResourceCache::resource_path_cache[p_path].has(GetPath())) {
+			String result = ResourceCache::resource_path_cache[p_path][GetPath()];
+			ResourceCache::path_cache_lock.read_unlock();
+			return result;
+		}
+		else {
+			ResourceCache::path_cache_lock.read_unlock();
+			return "";
+		}
+	}
+	void Resource::set_id_for_path(const String& p_path, const String& p_id) {
+		if (p_id.is_empty()) {
+			ResourceCache::path_cache_lock.write_lock();
+			ResourceCache::resource_path_cache[p_path].erase(GetPath());
+			ResourceCache::path_cache_lock.write_unlock();
+		}
+		else {
+			ResourceCache::path_cache_lock.write_lock();
+			ResourceCache::resource_path_cache[p_path][GetPath()] = p_id;
+			ResourceCache::path_cache_lock.write_unlock();
+		}
+	}
+
+
 	void Resource::set_scene_unique_id(const String& p_id) {
 		bool is_valid = true;
 		for (int i = 0; i < p_id.length(); i++) {

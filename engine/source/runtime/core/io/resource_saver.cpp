@@ -13,6 +13,9 @@ bool ResourceSaver::timestamp_on_save = false;
 ResourceSavedCallback ResourceSaver::save_callback = nullptr;
 ResourceSaverGetResourceIDForPath ResourceSaver::save_get_id_for_path = nullptr;
 
+HashMap<String, Vector<int>> ResourceSaver::ext_to_saver_idx;
+HashMap<String, Vector<int>> ResourceSaver::type_to_saver_idx;
+
 Error ResourceFormatSaver::save(const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags) {
 	Error err = ERR_METHOD_NOT_FOUND;
 	//GDVIRTUAL_CALL(_save, p_resource, p_path, p_flags, err);
@@ -83,7 +86,13 @@ Error ResourceSaver::save(const Ref<Resource>& p_resource, const String& p_path,
 	if (!type_to_saver_idx.has(res_class)) {
 		return err;
 	}
+
+	String ext = p_path.get_extension();
+	if (!ext_to_saver_idx.has(ext)) {
+		return err;
+	}
 	for (int idx : type_to_saver_idx[res_class]) {
+		if (!ext_to_saver_idx[ext].has(idx)) { continue; }
 		String old_path = p_resource->GetPath();
 
 		String local_path = ProjectSettings::GetSingleton()->LocalizePath(path);
