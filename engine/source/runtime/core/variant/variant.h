@@ -1,37 +1,7 @@
 #pragma once
 #ifndef __VARIANT_H__
 #define __VARIANT_H__
-#include "core/math/math_defs.h"
-//#include "core/input/input_enums.h"
-//#include "core/io/ip_address.h"
-#include "core/math/aabb.h"
-//#include "core/math/basis.h"
-#include "core/math/color.h"
-//#include "core/math/face3.h"
-#include "core/math/plane.h"
-//#include "core/math/projection.h"
-#include "core/math/quaternion.h"
-#include "core/math/rect2.h"
-#include "core/math/rect2i.h"
-//#include "core/math/transform_2d.h"
-//#include "core/math/transform_3d.h"
-#include "core/math/vector2.h"
-#include "core/math/vector2i.h"
-#include "core/math/vector3.h"
-#include "core/math/vector3i.h"
-#include "core/math/vector4.h"
-#include "core/math/vector4i.h"
-#include "core/object/object_id.h"
-//#include "core/os/keyboard.h"
-#include "core/scene/object/gobject_path.h"
-#include "core/string/ustring.h"
-#include "core/templates/paged_allocator.h"
-//#include "core/templates/rid.h"
-#include "core/variant/array.h"
-#include "core/variant/callable.h"
-#include "core/variant/dictionary.h"
-#include "core/object/signal.h"
-#include "core/io/rid.h"
+#include "core/variant/variant_header.h"
 
 namespace lain {
 	typedef Vector<uint8_t> PackedByteArray;
@@ -47,9 +17,11 @@ namespace lain {
 	class ConfigFile;
 	class VariantInternal;
 	class RID;
+	class Serializer;
 	// variant的实现和lua是一样的，但是多一些类
 	class Variant {
 		friend class VariantInternal;
+		friend class Serializer;
 	public:
 		enum Type
 		{
@@ -201,7 +173,8 @@ namespace lain {
 		_FORCE_INLINE_ Type get_type() const {
 			return type;
 		}
-		static String get_type_name(Variant::Type p_type);
+		static const char* get_c_type_name(Variant::Type p_type);
+		static String get_type_name(Variant::Type p_type) { return get_c_type_name(p_type); }
 		L_INLINE String get_type_name() {
 			return get_type_name(type);
 		}
@@ -237,7 +210,7 @@ namespace lain {
 
 		// object
 		Variant(const Object* p_obj);
-		Variant(const Reflection::ReflectionInstance* p_instance);
+		Variant(const Reflection::ReflectionInstance& p_instance);
 		
 		// basics
 		Variant(int64_t p_int); // real one
@@ -255,6 +228,8 @@ namespace lain {
 		Variant(const Vector3& p_vector3);
 		Variant(const String& p_string);
 		Variant(const StringName& p_string);
+		Variant(const GObjectPath& p_string);
+
 		Variant(const char* const p_cstring);
 		Variant(const Color& p_cstring);
 
@@ -384,6 +359,7 @@ namespace lain {
 				true, //PACKED_VECTOR2_ARRAY,
 				true, //PACKED_VECTOR3_ARRAY,
 				true, //PACKED_COLOR_ARRAY,
+				false, //ReflecionInstance
 			};
 
 			if (unlikely(needs_deinit[type])) { // Make it fast for types that don't need deinit.

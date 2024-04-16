@@ -153,6 +153,8 @@ namespace lain {
 				ThreadLoadTask load_task;
 
 				//load_task.remapped_path = _path_remap(local_path, &load_task.xl_remapped);
+				// @TODO translate remapped_path
+				load_task.remapped_path = local_path;
 				load_task.load_token = load_token.ptr();
 				load_task.local_path = local_path;
 				load_task.type_hint = p_type_hint;
@@ -237,7 +239,7 @@ namespace lain {
 		if (!Thread::is_main_thread()) {
 			//set_current_thread_safe_for_nodes(true);
 		}
-
+		// @TODO : remapped path;
 		Ref<Resource> res = _load(load_task.remapped_path, load_task.remapped_path != load_task.local_path ? load_task.local_path : String(), load_task.type_hint, load_task.cache_mode, &load_task.error, load_task.use_sub_threads, &load_task.progress);
 		//if (mq_override) {
 			//mq_override->flush();

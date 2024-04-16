@@ -13,7 +13,7 @@ namespace lain
 {
     template<typename...>
     inline constexpr bool always_false = false;
-
+    // 应该建立一个 Map:<String(type_name), read\write> 这个是有的，然后向内部注入有关只serializer不反射的类
     class Serializer
     {
     public:

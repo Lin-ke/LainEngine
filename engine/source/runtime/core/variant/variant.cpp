@@ -13,11 +13,12 @@ namespace lain {
 		}
 	};
 
-	String Variant::get_type_name(Variant::Type p_type) {
+	const char* Variant::get_c_type_name(Variant::Type p_type) {
 		switch (p_type) {
 		case NIL: {
 			return "Nil";
 		}
+
 				// Atomic types.
 		case BOOL: {
 			return "bool";
@@ -69,9 +70,9 @@ namespace lain {
 		case QUATERNION: {
 			return "Quaternion";
 		}
-		//case BASIS: {
-		//	return "Basis";
-		//}
+		case BASIS: {
+			return "Basis";
+		}
 		case TRANSFORM3D: {
 			return "Transform3D";
 		}
@@ -92,9 +93,55 @@ namespace lain {
 		case CALLABLE: {
 			return "Callable";
 		}
-		default:
-			return "UNKNOWN";
-		};
+		case SIGNAL: {
+			return "Signal";
+		}
+		case STRING_NAME: {
+			return "StringName";
+		}
+		case GOBJECT_PATH: {
+			return "GObjectPath";
+		}
+		case DICTIONARY: {
+			return "Dictionary";
+		}
+		case ARRAY: {
+			return "Array";
+		}
+
+				  // Arrays.
+		case PACKED_BYTE_ARRAY: {
+			return "PackedByteArray";
+		}
+		case PACKED_INT32_ARRAY: {
+			return "PackedInt32Array";
+		}
+		case PACKED_INT64_ARRAY: {
+			return "PackedInt64Array";
+		}
+		case PACKED_FLOAT32_ARRAY: {
+			return "PackedFloat32Array";
+		}
+		case PACKED_FLOAT64_ARRAY: {
+			return "PackedFloat64Array";
+		}
+		case PACKED_STRING_ARRAY: {
+			return "PackedStringArray";
+		}
+		case PACKED_VECTOR2_ARRAY: {
+			return "PackedVector2Array";
+		}
+		case PACKED_VECTOR3_ARRAY: {
+			return "PackedVector3Array";
+		}
+		case PACKED_COLOR_ARRAY: {
+			return "PackedColorArray";
+		}
+		default: {
+		}
+		}
+
+		return "";
 	}
 
 
@@ -169,10 +216,14 @@ namespace lain {
 		_data.packed_array = PackedArrayRef<double>::create(p_double_array);
 	}
 
-	Variant::Variant(const Reflection::ReflectionInstance* p_instance) {
+	Variant::Variant(const Reflection::ReflectionInstance& p_instance) {
+		using Reflection::TypeMeta;
 		type = REFLECTIONINSTANCE;
-		memnew_placement(_data._ptr,void*);
-		_data._ptr = const_cast<Reflection::ReflectionInstance*>(p_instance);
+		const TypeMeta& t = p_instance.m_meta;
+		size_t copy_size = TypeMeta::getSizeOfByName(t.getTypeName().c_str());
+		_data._ptr = memalloc(copy_size);
+		memcpy(_data._ptr, p_instance.m_instance, copy_size); // «≥øΩ±¥
+		
 	}
 
 	Variant::Variant(const Vector3& p_vector3) {
@@ -219,6 +270,12 @@ namespace lain {
 		type = STRING_NAME;
 		memnew_placement(_data._mem, StringName(p_string));
 	}
+
+	Variant::Variant(const GObjectPath& p_node_path) {
+		type = GOBJECT_PATH;
+		memnew_placement(_data._mem, GObjectPath(p_node_path));
+	}
+
 
 	const Variant::ObjData& Variant::_get_obj() const {
 		return *reinterpret_cast<const ObjData*>(&_data._mem[0]);
@@ -570,11 +627,6 @@ namespace lain {
 			return rtos(_data._float);
 		case STRING:
 			return *reinterpret_cast<const String*>(_data._mem);
-		case REFLECTIONINSTANCE: {
-			auto ptr = reinterpret_cast<Reflection::ReflectionInstance*>(_data._ptr);
-			
-			return Reflection::TypeMeta::writeByName(ptr->m_meta.getTypeName(), ptr->m_instance).dump();
-		}
 		case DICTIONARY: {
 			const Dictionary& d = *reinterpret_cast<const Dictionary*>(_data._mem);
 			if (recursion_count > MAX_RECURSION) {
@@ -645,6 +697,10 @@ namespace lain {
 
 			return stringify_vector(arr, recursion_count);
 		}
+		case STRING_NAME:
+			return operator StringName();
+		case GOBJECT_PATH:
+			return operator GObjectPath();
 		//case OBJECT: {
 		//	if (_get_obj().obj) {
 		//		if (!_get_obj().id.is_ref_counted() && ObjectDB::get_instance(_get_obj().id) == nullptr) {
@@ -994,8 +1050,7 @@ namespace lain {
 		case FLOAT:
 			break;
 		default:
-			//clear(); // _clear_internal
-			type = NIL;
+			clear(); // _clear_internal
 		}
 		type = p_variant.type;
 
@@ -1025,17 +1080,17 @@ namespace lain {
 		case VECTOR2I: {
 			memnew_placement(_data._mem, Vector2i(*reinterpret_cast<const Vector2i*>(p_variant._data._mem)));
 		} break;
-			/*
+	
 		case RECT2: {
 			memnew_placement(_data._mem, Rect2(*reinterpret_cast<const Rect2*>(p_variant._data._mem)));
 		} break;
 		case RECT2I: {
 			memnew_placement(_data._mem, Rect2i(*reinterpret_cast<const Rect2i*>(p_variant._data._mem)));
 		} break;
-		case TRANSFORM2D: {
+		/*case TRANSFORM2D: {
 			_data._transform2d = (Transform2D*)Pools::_bucket_small.alloc();
 			memnew_placement(_data._transform2d, Transform2D(*p_variant._data._transform2d));
-		} break;
+		} break;*/
 		case VECTOR3: {
 			memnew_placement(_data._mem, Vector3(*reinterpret_cast<const Vector3*>(p_variant._data._mem)));
 		} break;
@@ -1051,14 +1106,14 @@ namespace lain {
 		case PLANE: {
 			memnew_placement(_data._mem, Plane(*reinterpret_cast<const Plane*>(p_variant._data._mem)));
 		} break;
-		case AABB: {
+		/*case AABB: {
 			_data._aabb = (::AABB*)Pools::_bucket_small.alloc();
 			memnew_placement(_data._aabb, ::AABB(*p_variant._data._aabb));
-		} break;
+		} break; */
 		case QUATERNION: {
 			memnew_placement(_data._mem, Quaternion(*reinterpret_cast<const Quaternion*>(p_variant._data._mem)));
 		} break;
-		case BASIS: {
+		/*case BASIS: {
 			_data._basis = (Basis*)Pools::_bucket_medium.alloc();
 			memnew_placement(_data._basis, Basis(*p_variant._data._basis));
 		} break;
@@ -1211,9 +1266,9 @@ namespace lain {
 		case RECT2: {
 			*reinterpret_cast<Rect2*>(_data._mem) = *reinterpret_cast<const Rect2*>(p_variant._data._mem);
 		} break;
-		//case RECT2I: {
-		//	*reinterpret_cast<Rect2i*>(_data._mem) = *reinterpret_cast<const Rect2i*>(p_variant._data._mem);
-		//} break;
+		case RECT2I: {
+			*reinterpret_cast<Rect2i*>(_data._mem) = *reinterpret_cast<const Rect2i*>(p_variant._data._mem);
+		} break;
 		//case TRANSFORM2D: {
 		//	*_data._transform2d = *(p_variant._data._transform2d);
 		//} break;
@@ -1256,7 +1311,7 @@ namespace lain {
 		case RID: {
 			*reinterpret_cast<lain::RID*>(_data._mem) = *reinterpret_cast<const lain::RID*>(p_variant._data._mem);
 		} break;
-		/*case OBJECT: {
+		case OBJECT: {
 			if (_get_obj().id.is_ref_counted()) {
 				//we are safe that there is a reference here
 				RefCounted* ref_counted = static_cast<RefCounted*>(_get_obj().obj);
@@ -1278,9 +1333,9 @@ namespace lain {
 			_get_obj().id = p_variant._get_obj().id;
 
 		} break;
-			case CALLABLE: {
+		case CALLABLE: {
 			*reinterpret_cast<Callable*>(_data._mem) = *reinterpret_cast<const Callable*>(p_variant._data._mem);
-		} break;*/
+		} break;
 		case SIGNAL: {
 			*reinterpret_cast<Signal*>(_data._mem) = *reinterpret_cast<const Signal*>(p_variant._data._mem);
 		} break;
@@ -1776,6 +1831,15 @@ namespace lain {
 	Variant::operator String() const {
 		return stringify(0);
 	}
+
+	Variant::operator Object* () const {
+		if (type == OBJECT) {
+			return _get_obj().obj;
+		}
+		else {
+			return nullptr;
+		}
+	}
 	/// <summary>
 	/// ¥¶¿ÌArray
 	/// </summary>
@@ -1974,9 +2038,9 @@ namespace lain {
 		case STRING_NAME: {
 			reinterpret_cast<StringName*>(_data._mem)->~StringName();
 		} break;
-	/*	case GOBJECT_PATH: {
+		case GOBJECT_PATH: {
 			reinterpret_cast<GObjectPath*>(_data._mem)->~GObjectPath();
-		} break;*/
+		} break;
 		case OBJECT: {
 			if (_get_obj().id.is_ref_counted()) {
 				// We are safe that there is a reference here.
@@ -2000,9 +2064,9 @@ namespace lain {
 		case SIGNAL: {
 			reinterpret_cast<Signal*>(_data._mem)->~Signal();
 		} break;
-		/*case DICTIONARY: {
+		case DICTIONARY: {
 			reinterpret_cast<Dictionary*>(_data._mem)->~Dictionary();
-		} break;*/
+		} break;
 		case ARRAY: {
 			reinterpret_cast<Array*>(_data._mem)->~Array();
 		} break;
@@ -2038,6 +2102,7 @@ namespace lain {
 		default: {
 			// Not needed, there is no point. The following do not allocate memory:
 			// VECTOR2, VECTOR3, RECT2, PLANE, QUATERNION, COLOR.
+			// reflection ptr: use with care, it could be deconstruct
 		}
 		}
 	}

@@ -23,6 +23,8 @@ public:\
 	virtual String get_class()	const override 	\
 		{return String(#m_class);}	\
 									\
+	virtual char* get_c_class() const override \
+	{return #m_class;} \
 	virtual StringName *_get_class_namev() const override{\
 		static StringName _class_name_static;\
 		if (unlikely(!_class_name_static)){ \
@@ -72,7 +74,7 @@ public:
 	{
 		REFLECTION_BODY(Object);
 	public:
-		Object() {}
+		Object() { _construct_object(false); }
 		Object(ObjectID id) { m_instance_id = id; m_type_is_reference = false; }
 		Object::Object(bool p_reference) {
 			_construct_object(p_reference);
@@ -94,9 +96,10 @@ public:
 	static const T* cast_to(const Object* p_object) {
 		return dynamic_cast<const T*>(p_object);
 	}
-	virtual String get_class() const { return "Object"; }
-	static String get_class_static() { return "Object"; }
-
+	virtual String get_class() const { return String("Object"); }
+	virtual char* get_c_class() const { return "Object"; }
+	static String get_class_static() { return String("Object"); }
+	
 	virtual const StringName* _get_class_namev() const {
 		static StringName _class_name_static;
 		if (unlikely(!_class_name_static)) {

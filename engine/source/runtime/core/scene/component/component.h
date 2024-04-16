@@ -10,7 +10,7 @@ namespace lain
     class GObject;
     // Component
     REFLECTION_TYPE(Component)
-        CLASS(Component : public Object)
+        CLASS(Component : public Object, WhiteListFields)
     {
         REFLECTION_BODY(Component)
         LCLASS(Component, Object);
@@ -27,8 +27,8 @@ namespace lain
         virtual ~Component() {}
 
 
-        struct CompoaratorByIndexCompt {
-            bool operator()(const Component* p_left, const Component* p_right){
+        struct ComparatorByIndexCompt {
+            bool operator()(const Component* p_left, const Component* p_right) const {
                 return p_left->m_index < p_right->m_index;
             }
         };

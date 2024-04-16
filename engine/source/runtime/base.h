@@ -58,6 +58,14 @@ void  L_STRPRINT(const Types&... args)
 	std::initializer_list <int> {  ([&args, &ss] {   ss <<  CSTR(args) << " "; }()     , 0)...};
 	L_CORE_INFO(ss.str());
 }
+
+template <typename ... Types>
+void  L_STRPERROR(const Types&... args)
+{
+	std::ostringstream  ss;
+	std::initializer_list <int> {  ([&args, &ss] {   ss << CSTR(args) << " "; }(), 0)...};
+	L_CORE_INFO(ss.str());
+}
 template <typename ... Types>
 void  L_PERROR(const Types&... args)
 {

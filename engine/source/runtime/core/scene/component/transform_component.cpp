@@ -15,8 +15,6 @@ namespace lain
     public:
         TransformComponent() = default;
 
-        void postLoadResource(GObject* parent_object) override;
-
         Vector3    getPosition() const { return m_transform_buffer[m_current_index].m_position; }
         Vector3    getScale() const { return m_transform_buffer[m_current_index].m_scale; }
         Quaternion getRotation() const { return m_transform_buffer[m_current_index].m_rotation; }
@@ -32,7 +30,6 @@ namespace lain
 
         Matrix4x4 getMatrix() const { return m_transform_buffer[m_current_index].getMatrix(); }
 
-        void tick(float delta_time) override;
 
         void tryUpdateRigidBodyComponent();
 

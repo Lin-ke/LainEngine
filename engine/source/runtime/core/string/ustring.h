@@ -152,15 +152,8 @@ namespace lain {
 			len = p_len;
 		}
 	};
-	namespace Reflection 
-	{ 
-			namespace TypeFieldReflectionOperator 
-		{ 
-			class TypeStringOperator; 
-		} 
-	};
+	
 	class String {
-		friend class Reflection::TypeFieldReflectionOperator::TypeStringOperator; 
 		friend class Serializer;
 		CowData<char32_t> _cowdata;
 		static const char32_t _null;

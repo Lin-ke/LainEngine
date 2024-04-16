@@ -103,7 +103,7 @@ public:
 	virtual Vector<String> get_csv_line(const String& p_delim = ",") const;
 	String get_as_text(bool p_skip_cr = false) const;
 	virtual String get_as_utf8_string(bool p_skip_cr = false) const;
-
+	virtual String get_residual_text(bool p_skip_cr = false) const;
 	/**
 	 * Use this for files WRITTEN in _big_ endian machines (ie, amiga/mac)
 	 * It's not about the current CPU type but file formats.

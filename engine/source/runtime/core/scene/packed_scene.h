@@ -28,6 +28,7 @@ class SceneState : public RefCounted {
 		NAME_INDEX_BITS = 18,
 		NAME_MASK = (1 << NAME_INDEX_BITS) - 1,
 	};
+	
 
 	struct GObjectData {
 		int parent = 0;
@@ -37,14 +38,24 @@ class SceneState : public RefCounted {
 		int instance = 0;
 		int index = 0;
 
+		// ÔÝÊ±²»¹Ü
 		struct Property {
 			int name = 0;
 			int value = 0;
 		};
 
+		/*struct ComponentData {
+			int parent = 0;
+			int type = 0;
+			int index = 0;
+			int instance = 0;
+		};*/
+		Vector<Component*> components;
 		Vector<Property> properties;
 		Vector<int> groups;
 	};
+
+	
 
 	struct DeferredGObjectPathProperties {
 		GObject* base = nullptr;
@@ -135,6 +146,7 @@ public:
 	/// @TODO
 	GObject* instantiate(GenEditState p_edit_state) const;
 
+
 	Array setup_resources_in_array(Array& array_to_scan, const SceneState::GObjectData& n, HashMap<Ref<Resource>, Ref<Resource>>& resources_local_to_sub_scene, GObject* gobject, const StringName sname, HashMap<Ref<Resource>, Ref<Resource>>& resources_local_to_scene, int i, GObject** ret_gobjects, SceneState::GenEditState p_edit_state) const;
 	Variant make_local_resource(Variant& value, const SceneState::GObjectData& p_gobject_data, HashMap<Ref<Resource>, Ref<Resource>>& p_resources_local_to_sub_scene, GObject* p_gobject, const StringName p_sname, HashMap<Ref<Resource>, Ref<Resource>>& p_resources_local_to_scene, int p_i, GObject** p_ret_gobjects, SceneState::GenEditState p_edit_state) const;
 	bool has_local_resource(const Array& p_array) const;
@@ -172,7 +184,8 @@ public:
 
 	bool has_connection(const GObjectPath& p_gobject_from, const StringName& p_signal, const GObjectPath& p_gobject_to, const StringName& p_method, bool p_no_inheritance = false);
 
-	Vector<GObjectPath> get_editable_instances() const;
+	Vector<GObjectPath> get_editable_instances() const { return editable_instances; }
+	static Vector<PackState> _get_gobject_states_stack(const GObject* p_node, const GObject* p_owner, bool* r_instantiated_by_owner);
 
 	//build API
 
@@ -188,6 +201,9 @@ public:
 
 	bool remove_group_references(const StringName& p_name);
 	bool rename_group_references(const StringName& p_old_name, const StringName& p_new_name);
+	void add_components(int p_index, const Vector<Component*>&);
+	Vector<Component*> get_gobject_components(int p_index);
+
 	HashSet<StringName> get_all_groups();
 
 	virtual void set_last_modified_time(uint64_t p_time) { last_modified_time = p_time; }
@@ -227,7 +243,7 @@ public:
 		GEN_EDIT_STATE_MAIN_INHERITED,
 	};
 
-	Error pack(GObject* p_scene) { state->pack(p_scene); }
+	Error pack(GObject* p_scene) { return state->pack(p_scene); }
 
 	void clear() { state->clear(); }
 
@@ -241,6 +257,7 @@ public:
 
 	virtual void SetPath(const String& p_path, bool p_take_over = false) override;
 	virtual void SetPathCache(const String& p_path) override;
+	
 	
 #ifdef TOOLS_ENABLED
 	virtual void set_last_modified_time(uint64_t p_time) override {

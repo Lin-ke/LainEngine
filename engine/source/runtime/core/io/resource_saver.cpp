@@ -161,8 +161,15 @@ void ResourceSaver::add_resource_format_saver(Ref<ResourceFormatSaver> p_format_
 	}
 	List<String> exts;
 	p_format_saver->get_possible_extensions(&exts);
+	List<String> res_types;
+	p_format_saver->get_possible_resources(&res_types);
+
 	for (const String& ext : exts) {
-		Vector<int>& idxs = type_to_saver_idx[ext];
+		Vector<int>& idxs = ext_to_saver_idx[ext];
+		idxs.append(saved_idx);
+	}
+	for (const String& res_type : res_types) {
+		Vector<int>& idxs = type_to_saver_idx[res_type];
 		idxs.append(saved_idx);
 	}
 }

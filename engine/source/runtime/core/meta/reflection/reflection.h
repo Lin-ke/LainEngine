@@ -4,67 +4,15 @@
 #include "runtime/core/meta/json.h"
 #include "runtime/core/templates/vector.h"
 #include "core/string/ustring.h"
+#include "reflection_marcos.h"
 #include "core/os/memory.h"
 #include <functional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-
 namespace lain
 {
 
-#define REFLECTABLE_TYPE(class_name)\
-    friend class Serializer;
-
-#if defined(__REFLECTION_PARSER__)
-#define META(...) __attribute__((annotate(#__VA_ARGS__)))
-#define CLASS(class_name, ...) class __attribute__((annotate(#__VA_ARGS__))) class_name
-#define STRUCT(struct_name, ...) struct __attribute__((annotate(#__VA_ARGS__))) struct_name
-//#define CLASS(class_name,...) class __attribute__((annotate(#__VA_ARGS__))) class_name:public Reflection::object
-#else
-#define META(...)
-#define CLASS(class_name, ...) class class_name
-#define STRUCT(struct_name, ...) struct struct_name
-//#define CLASS(class_name,...) class class_name:public Reflection::object
-#endif // __REFLECTION_PARSER__
-
-#define REFLECTION_BODY(class_name) \
-    friend class Reflection::TypeFieldReflectionOperator::Type##class_name##Operator; \
-    friend class Serializer;
-    // public: virtual std::string getTypeName() override {return #class_name;}
-
-#define REFLECTION_TYPE(class_name) \
-    namespace Reflection \
-    { \
-        namespace TypeFieldReflectionOperator \
-        { \
-            class Type##class_name##Operator; \
-        } \
-    };
-
-#define REGISTER_FIELD_TO_MAP(name, value) TypeMetaRegisterinterface::registerToFieldMap(name, value);
-#define REGISTER_Method_TO_MAP(name, value) TypeMetaRegisterinterface::registerToMethodMap(name, value);
-#define REGISTER_BASE_CLASS_TO_MAP(name, value) TypeMetaRegisterinterface::registerToClassMap(name, value);
-#define REGISTER_ARRAY_TO_MAP(name, value) TypeMetaRegisterinterface::registerToArrayMap(name, value);
-#define UNREGISTER_ALL TypeMetaRegisterinterface::unregisterAll();
-
-#define Lain_REFLECTION_NEW(name, ...) Reflection::ReflectionPtr(#name, new name(__VA_ARGS__));
-#define Lain_REFLECTION_DELETE(value) \
-    if (value) \
-    { \
-        delete value.operator->(); \
-        value.getPtrReference() = nullptr; \
-    }
-#define Lain_REFLECTION_DEEP_COPY(type, dst_ptr, src_ptr) \
-    *static_cast<type*>(dst_ptr) = *static_cast<type*>(src_ptr.getPtr());
-
-#define TypeMetaDef(class_name, ptr) \
-    lain::Reflection::ReflectionInstance(lain::Reflection::TypeMeta::newMetaFromName(#class_name), \
-                                            (class_name*)ptr)
-
-#define TypeMetaDefPtr(class_name, ptr) \
-    memnew(lain::Reflection::ReflectionInstance(lain::Reflection::TypeMeta::newMetaFromName(#class_name), \
-                                                (class_name*)ptr))
 
     template<typename T, typename U, typename = void>
     struct is_safely_castable : std::false_type
@@ -95,10 +43,20 @@ namespace lain
     typedef std::function<Json(void*)>                                  WriteJsonByName;
     typedef std::function<int(Reflection::ReflectionInstance*&, void*)> GetBaseClassReflectionInstanceListFunc;
 
+    typedef std::function<void(const Json&, void*)> SerialRead;
+    typedef std::function<Json(void*)> SerialWrite;
+    typedef std::function<void*(int)>               AllocMemArrFunc;
+    typedef std::function<void*()>                  AllocMemFunc;
+    typedef std::function<size_t()>                 GetSizeOfFunc;
+
+
+
+
     typedef std::tuple<SetFuncion, GetFuncion, GetNameFuncion, GetNameFuncion, GetNameFuncion, GetBoolFunc>
                                                        FieldFunctionTuple;
     typedef std::tuple<GetNameFuncion, InvokeFunction> MethodFunctionTuple;
-    typedef std::tuple<GetBaseClassReflectionInstanceListFunc, ConstructorWithJson, WriteJsonByName> ClassFunctionTuple;
+    typedef std::tuple<GetBaseClassReflectionInstanceListFunc, ConstructorWithJson, WriteJsonByName, SerialRead, AllocMemFunc, AllocMemArrFunc, GetSizeOfFunc> ClassFunctionTuple;
+
     typedef std::tuple<SetArrayFunc, GetArrayFunc, GetSizeFunc, GetNameFuncion, GetNameFuncion>      ArrayFunctionTuple;
 
     namespace Reflection
@@ -107,6 +65,7 @@ namespace lain
         {
         public:
             static void registerToClassMap(const char* name, ClassFunctionTuple* value);
+
             static void registerToFieldMap(const char* name, FieldFunctionTuple* value);
 
             static void registerToMethodMap(const char* name, MethodFunctionTuple* value);
@@ -126,22 +85,27 @@ namespace lain
             // static void Register();
 
             static TypeMeta newMetaFromName(std::string type_name);
-
+            static bool     writeToInstanceFromNameAndJson(std::string type_name, const Json& json_context, void* instance);
             static bool               newArrayAccessorFromName(std::string array_type_name, ArrayAccessor& accessor);
             static ReflectionInstance newFromNameAndJson(std::string type_name, const Json& json_context);
             static Json               writeByName(std::string type_name, void* instance);
+            static bool is_valid_type(const char* p_typename);
+            static size_t getSizeOfByName(const char* name);
+            static void* memnewByName(const char* name);
+            static void* memnewarrByName(const char* name, int num);
 
-            std::string getTypeName();
 
-            int getFieldsList(FieldAccessor*& out_list);
-            int getMethodsList(MethodAccessor*& out_list);
+            std::string getTypeName() const;
 
-            int getBaseClassReflectionInstanceList(ReflectionInstance*& out_list, void* instance);
+            int getFieldsList(FieldAccessor*& out_list) const;
+            int getMethodsList(MethodAccessor*& out_list) const;
 
-            FieldAccessor getFieldByName(const char* name);
-            MethodAccessor getMethodByName(const char* name);
+            int getBaseClassReflectionInstanceList(ReflectionInstance*& out_list, void* instance) const;
 
-            bool isValid() { return m_is_valid; }
+            FieldAccessor getFieldByName(const char* name) const;
+            MethodAccessor getMethodByName(const char* name) const;
+
+            bool isValid() const { return m_is_valid; }
 
             TypeMeta& operator=(const TypeMeta& dest);
             
@@ -241,6 +205,7 @@ namespace lain
             const char*         m_element_type_name;
         };
 
+        // @TODO 怎么才能避免void析构
         class ReflectionInstance
         {
         public:
@@ -272,6 +237,7 @@ namespace lain
         public:
             ReflectionPtr(std::string type_name, T* instance) : m_type_name(type_name), m_instance(instance) {}
             ReflectionPtr() : m_type_name(), m_instance(nullptr) {}
+
 
             ReflectionPtr(const ReflectionPtr& dest) : m_type_name(dest.m_type_name), m_instance(dest.m_instance) {}
 

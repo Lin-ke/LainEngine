@@ -54,6 +54,7 @@ namespace lain {
 	}
 
 	String ProjectSettings::LocalizePath(const String& p_path) const {
+		if (p_path.begins_with("res://")) return p_path;
 		String path = p_path.simplify_path();
 
 		if (resource_path.is_empty() || (path.is_absolute_path() && !path.begins_with(resource_path))) {

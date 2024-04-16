@@ -40,7 +40,7 @@ class ResourceSaver {
 	enum {
 		MAX_SAVERS = 64
 	};
-
+	friend void register_core_types();
 	static Ref<ResourceFormatSaver> saver[MAX_SAVERS];
 	static int saver_count;
 	static bool timestamp_on_save;

@@ -32,18 +32,25 @@ namespace lain {
 
             int depth = -1;
             StringName name;
-            GObject* parent;
-            GObject* owner; // 记录谁实例化了什么
+            GObject* parent = nullptr;
+            GObject* owner = nullptr; // 记录谁实例化了什么
             bool is_prefab = false;
+            bool editable_instance : 1;
+            
+            bool parent_owned : 1;
+            bool in_constructor : 1;
+            bool use_placeholder : 1;
+
 
             HashMap<StringName, GObject*> children;
             HashMap<StringName, Component*> components;  // 每种component 最多一个;  类型名-components
 
             HashMap<StringName, GObject*> owned_unique_gobjects; // 儿子中使用%访问，无需路径
             bool unique_name_in_owner = false;
-
             // chidrencache，不常用hashmap
             mutable bool children_cache_dirty = true;
+            mutable bool components_cache_dirty= true;
+
             mutable LocalVector<GObject*> children_cache;
             mutable LocalVector<Component*> components_cache; // idx get
 
@@ -70,7 +77,7 @@ namespace lain {
             bool ready_first : 1;
             mutable GObjectPath* path_cache = nullptr;
             int blocked = 0; // Safeguard that throws an error when attempting to modify the tree in a harmful way while being traversed.
-            SceneTree* tree;
+            SceneTree* tree = nullptr;
 
             List<GObject*>::Element* OW = nullptr; // Owned element. head?
             List<GObject*> owned; 
@@ -83,22 +90,29 @@ namespace lain {
 
         } data; // 防止名称冲突
         
-        
+        GObject* get_child(int p_index, bool p_include_internal = true) const;
+
+        String get_scene_file_path() const { return data.scene_file_path; }
         int get_index() const { return data.index; }
         StringName get_name() const { return data.name; }
-        void set_name(const StringName& p_name);
+        void set_name(const String& p_name);
         GObject* get_owner() const { return data.owner; }
         GObject* get_parent() const { return data.parent; }
         GObject* find_parent(const String& p_pattern) const;
         bool has_gobject(const GObjectPath& p_path) const;
         GObject* get_gobject_or_null(const GObjectPath& p_path) const;
+        Ref<SceneState> get_scene_inherited_state()const { return data.inherited_state; }
+        Ref<SceneState> get_scene_instance_state() const { return data.instance_state; }
         GObject* find_child(const String& pattern, bool p_recuresive, bool p_owned) const;
-        GObjectPath get_path() const {}
+        GObjectPath get_path() const;
         void set_scene_instance_state(Ref<SceneState> p) { data.instance_state = p; }
         void set_scene_file_path(String p_path) { data.scene_file_path = p_path; }
-        bool is_ancestor_of(const GObject*);
+        bool is_ancestor_of(const GObject*) const;
         bool is_unique_name_in_owner() const;
         bool is_inside_tree() { return data.inside_tree; }
+        bool is_editable_instance(const GObject*) const;
+        ///@TODO: place holder
+        bool get_scene_instance_load_placeholder() const { return false; }
         void add_child(GObject* p_child, bool p_force_readable_name = false, InternalMode p_internal = INTERNAL_MODE_DISABLED);
         void add_sibling(GObject* p_sibling, bool p_force_readable_name = false);
         void remove_child(GObject* p_child);
@@ -118,6 +132,12 @@ namespace lain {
         void add_to_group(const StringName&, bool);
         int get_child_count(bool p_include_internal = true) const;
         void move_child(GObject* p_child, int p_index);
+        
+        static int orphan_node_count;
+
+        GObject();
+        ~GObject();
+
     private:
         _FORCE_INLINE_ void _update_children_cache() const {
             if (unlikely(data.children_cache_dirty)) {
@@ -138,7 +158,6 @@ namespace lain {
         void _set_name_nocheck(const StringName& name);
         void _set_owner_nocheck(GObject*);
         void _add_child_nocheck(GObject* p_child, const StringName& p_name, InternalMode p_internal_mode = INTERNAL_MODE_DISABLED);
-        void _move_child(GObject* p_child, int p_index, bool p_ignore_end = false);
         void _clean_up_owner();
         void _release_unique_name_in_owner();
         void _acquire_unique_name_in_owner();

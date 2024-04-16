@@ -19,6 +19,37 @@ namespace lain {
 
 		return nullptr;
 	}
+	void GObject::set_name(const String& p_name) {
+		ERR_FAIL_COND_MSG(data.inside_tree && !Thread::is_main_thread(), "Changing the name to nodes inside the SceneTree is only allowed from the main thread. Use `set_name.call_deferred(new_name)`.");
+		String name = p_name.validate_node_name();
+
+		ERR_FAIL_COND(name.is_empty());
+
+		if (data.unique_name_in_owner && data.owner) {
+			_release_unique_name_in_owner();
+		}
+		String old_name = data.name;
+		data.name = name;
+
+		if (data.parent) {
+			data.parent->_validate_child_name(this, true);
+			bool success = data.parent->data.children.replace_key(old_name, data.name);
+			ERR_FAIL_COND_MSG(!success, "Renaming child in hashtable failed, this is a bug.");
+		}
+
+		if (data.unique_name_in_owner && data.owner) {
+			_acquire_unique_name_in_owner();
+		}
+
+		/*propagate_notification(NOTIFICATION_PATH_RENAMED);
+
+		if (is_inside_tree()) {
+			emit_signal(SNAME("renamed"));
+			get_tree()->node_renamed(this);
+			get_tree()->tree_changed();
+		}*/
+	}
+
 	// ½âÎögobjectpath
 	GObject* GObject::get_gobject_or_null(const GObjectPath& p_path) const {
 		//ERR_THREAD_GUARD_V(nullptr);
@@ -95,8 +126,8 @@ namespace lain {
 		return get_gobject_or_null(p_path) != nullptr;
 	}
 
-	bool GObject::is_ancestor_of(const GObject* obj) {
-		ERR_FAIL_COND_V(obj, false);
+	bool GObject::is_ancestor_of(const GObject* obj) const {
+		ERR_FAIL_COND_V(!obj, false);
 		GObject* temp = obj->data.parent;
 		while (temp) {
 			if (temp == this) { return true; }
@@ -197,7 +228,7 @@ namespace lain {
 			data.components_cache[idx] = K.value;
 			idx++;
 		}
-		data.components_cache.sort_custom<Component::CompoaratorByIndexCompt>();
+		data.components_cache.sort_custom<Component::ComparatorByIndexCompt>();
 		data.components_cache_dirty = false;
 
 	}
@@ -534,7 +565,51 @@ namespace lain {
 
 		data.blocked--;
 	}
+	void GObject::_release_unique_name_in_owner() {
+		ERR_FAIL_NULL(data.owner); // Safety check.
+		StringName key = StringName(UNIQUE_NODE_PREFIX + data.name.operator String());
+		GObject** which = data.owner->data.owned_unique_gobjects.getptr(key);
+		if (which == nullptr || *which != this) {
+			return; // Ignore.
+		}
+		data.owner->data.owned_unique_gobjects.erase(key);
+	}
+	void GObject::_acquire_unique_name_in_owner() {
+		ERR_FAIL_NULL(data.owner); // Safety check.
+		StringName key = StringName(UNIQUE_NODE_PREFIX + data.name.operator String());
+		GObject** which = data.owner->data.owned_unique_gobjects.getptr(key);
+		if (which != nullptr && *which != this) {
+			String which_path = is_inside_tree() ? (*which)->get_path() : data.owner->get_path_to(*which);
+			WARN_PRINT(vformat("Setting node name '%s' to be unique within scene for '%s', but it's already claimed by '%s'.\n'%s' is no longer set as having a unique name.",
+				get_name(), is_inside_tree() ? get_path() : data.owner->get_path_to(this), which_path, which_path));
+			data.unique_name_in_owner = false;
+			return;
+		}
+		data.owner->data.owned_unique_gobjects[key] = this;
+	}
 
+	GObjectPath GObject::get_path() const {
+		ERR_FAIL_COND_V_MSG(!data.inside_tree, GObjectPath(), "Cannot get path of node as it is not in a scene tree.");
+
+		if (data.path_cache) {
+			return *data.path_cache;
+		}
+
+		const GObject* n = this;
+
+		Vector<StringName> path;
+
+		while (n) {
+			path.push_back(n->get_name());
+			n = n->data.parent;
+		}
+
+		path.reverse();
+
+		data.path_cache = memnew(GObjectPath(path, true));
+
+		return *data.path_cache;
+	}
 
 	GObjectPath GObject::get_path_to(const GObject* p_node, bool p_use_unique_path) const {
 		ERR_FAIL_NULL_V(p_node, GObjectPath());
@@ -629,6 +704,15 @@ namespace lain {
 	bool GObject::is_unique_name_in_owner() const {
 		return data.unique_name_in_owner;
 	}
+	bool GObject::is_editable_instance(const GObject* p_obj) const {
+		if (!p_obj) {
+			return false; // Easier, null is never editable. :)
+		}
+		ERR_FAIL_COND_V(!is_ancestor_of(p_obj), false);
+		return p_obj->data.editable_instance;
+	}
+
+
 	// ¸´ÓÃ
 	void GObject::add_sibling(GObject* p_sibling, bool p_force_readable_name) {
 		ERR_FAIL_COND_MSG(data.inside_tree && !Thread::is_main_thread(), "Adding a sibling to a node inside the SceneTree is only allowed from the main thread. Use call_deferred(\"add_sibling\",node).");
@@ -642,66 +726,6 @@ namespace lain {
 		data.parent->_move_child(p_sibling, get_index() + 1);
 	}
 
-	void GObject::_move_child(GObject* p_child, int p_index, bool p_ignore_end) {
-		ERR_FAIL_COND_MSG(data.blocked > 0, "Parent node is busy setting up children, `move_child()` failed. Consider using `move_child.call_deferred(child, index)` instead (or `popup.call_deferred()` if this is from a popup).");
-
-		// Specifying one place beyond the end
-		// means the same as moving to the last index
-		if (!p_ignore_end) { // p_ignore_end is a little hack to make back internal children work properly.
-			if (p_child->data.internal_mode == INTERNAL_MODE_FRONT) {
-				if (p_index == data.internal_children_front_count_cache) {
-					p_index--;
-				}
-			}
-			else if (p_child->data.internal_mode == INTERNAL_MODE_BACK) {
-				if (p_index == (int)data.children_cache.size()) {
-					p_index--;
-				}
-			}
-			else {
-				if (p_index == (int)data.children_cache.size() - data.internal_children_back_count_cache) {
-					p_index--;
-				}
-			}
-		}
-
-		int child_index = p_child->get_index();
-
-		if (child_index == p_index) {
-			return; //do nothing
-		}
-
-		int motion_from = MIN(p_index, child_index);
-		int motion_to = MAX(p_index, child_index);
-
-		data.children_cache.remove_at(child_index);
-		data.children_cache.insert(p_index, p_child);
-
-		if (data.tree) {
-			data.tree->tree_changed();
-		}
-
-		data.blocked++;
-		//new pos first
-		for (int i = motion_from; i <= motion_to; i++) {
-			if (data.children_cache[i]->data.internal_mode == INTERNAL_MODE_DISABLED) {
-				data.children_cache[i]->data.index = i - data.internal_children_front_count_cache;
-			}
-			else if (data.children_cache[i]->data.internal_mode == INTERNAL_MODE_BACK) {
-				data.children_cache[i]->data.index = i - data.internal_children_front_count_cache - data.external_children_count_cache;
-			}
-			else {
-				data.children_cache[i]->data.index = i;
-			}
-		}
-		// notification second
-		//move_child_notify(p_child);
-		//notification(NOTIFICATION_CHILD_ORDER_CHANGED);
-		//emit_signal(SNAME("child_order_changed"));
-		p_child->_propagate_groups_dirty();
-
-		data.blocked--;
-	}
 
 	void GObject::_propagate_groups_dirty() {
 		for (const KeyValue<StringName, GroupData>& E : data.grouped) {
@@ -860,4 +884,88 @@ namespace lain {
 		}
 	}
 
+	void GObject::_propagate_ready() {
+		data.ready_notified = true;
+		data.blocked++;
+		for (KeyValue<StringName, GObject*>& K : data.children) {
+			K.value->_propagate_ready();
+		}
+
+		data.blocked--;
+
+		/*notification(NOTIFICATION_POST_ENTER_TREE);
+
+		if (data.ready_first) {
+			data.ready_first = false;
+			notification(NOTIFICATION_READY);
+			emit_signal(SceneStringNames::get_singleton()->ready);
+		}*/
+	}
+
+	GObject* GObject::get_child(int p_index, bool p_include_internal) const {
+		//ERR_THREAD_GUARD_V(nullptr);
+		_update_children_cache();
+
+		if (p_include_internal) {
+			if (p_index < 0) {
+				p_index += data.children_cache.size();
+			}
+			ERR_FAIL_INDEX_V(p_index, (int)data.children_cache.size(), nullptr);
+			return data.children_cache[p_index];
+		}
+		else {
+			if (p_index < 0) {
+				p_index += (int)data.children_cache.size() - data.internal_children_front_count_cache - data.internal_children_back_count_cache;
+			}
+			ERR_FAIL_INDEX_V(p_index, (int)data.children_cache.size() - data.internal_children_front_count_cache - data.internal_children_back_count_cache, nullptr);
+			p_index += data.internal_children_front_count_cache;
+			return data.children_cache[p_index];
+		}
+	}
+	int GObject::orphan_node_count = 0;
+	GObject::GObject() {
+			
+			orphan_node_count++;
+
+			// Default member initializer for bitfield is a C++20 extension, so:
+
+			/*data.process_mode = PROCESS_MODE_INHERIT;
+			data.physics_interpolation_mode = PHYSICS_INTERPOLATION_MODE_INHERIT;*/
+
+			data.physics_process = false;
+			data.process = false;
+
+			data.physics_process_internal = false;
+			data.process_internal = false;
+
+			data.input = false;
+			data.shortcut_input = false;
+			data.unhandled_input = false;
+			data.unhandled_key_input = false;
+
+			/*data.physics_interpolated = false;*/
+
+			data.parent_owned = false;
+			data.in_constructor = true;
+			data.use_placeholder = false;
+
+			//data.display_folded = false;
+			data.editable_instance = false;
+
+			data.inside_tree = false;
+			data.ready_notified = false; // This is a small hack, so if a node is added during _ready() to the tree, it correctly gets the _ready() notification.
+			data.ready_first = true;
+	}
+
+	GObject::~GObject() {
+		data.grouped.clear();
+		data.owned.clear();
+		data.children.clear();
+		data.children_cache.clear();
+
+		ERR_FAIL_COND(data.parent);
+		ERR_FAIL_COND(data.children_cache.size());
+
+		orphan_node_count--;
+	}
 }

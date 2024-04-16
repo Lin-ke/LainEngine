@@ -6,13 +6,13 @@
 #include "core/string/ustring.h"
 #include "core/templates/list.h"
 #include "core/variant/array.h"
+#include "core/meta/reflection/reflection.h"
 namespace lain {
 
 class Variant;
 
 struct DictionaryPrivate;
-
-class Dictionary {
+class Dictionary{
 	mutable DictionaryPrivate* _p;
 
 	void _ref(const Dictionary& p_from) const;

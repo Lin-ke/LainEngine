@@ -52,8 +52,8 @@ namespace lain {
         GLFWwindow* window = glfwCreateWindow(create_info.width, create_info.height, create_info.title.utf8().get_data(), nullptr, nullptr);
         // add
         if (!window) {
-            L_ERROR(__FUNCTION__, "create window error, check glfw");
             glfwTerminate();
+            ERR_FAIL_V_MSG(-1, "create window error, check glfw");
         }
         // Setup input callbacks
         glfwSetKeyCallback(window, keyCallback);

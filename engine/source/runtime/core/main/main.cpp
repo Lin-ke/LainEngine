@@ -11,6 +11,7 @@
 #include "core/register_core_types.h"
 #include "core/os/main_loop.h"
 #include "core/scene/scene_tree.h"
+
 //  initialization part
 namespace lain {
 
@@ -97,7 +98,7 @@ static ProjectManager* pmanager = nullptr;
 
 
 	 MainLoop* main_loop = memnew(SceneTree);
-	
+
 
 	 window_system->Initialize();
 	 window_system->NewWindow(lain::WindowCreateInfo(1280, 720, GLOBAL_GET("application/config/name"), false));

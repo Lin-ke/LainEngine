@@ -3,4 +3,5 @@
 #define TEST_HEADERS_H
 #include "test_reflect.h"
 #include "test_fileio.h"
+#include "test_scene.h"
 #endif // !TEST_HEADERS_H

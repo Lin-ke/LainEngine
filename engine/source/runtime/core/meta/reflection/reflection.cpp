@@ -47,6 +47,7 @@ namespace lain
             }
         }
 
+
         void TypeMetaRegisterinterface::unregisterAll()
         {
             for (const auto& itr : m_field_map)
@@ -94,12 +95,48 @@ namespace lain
         }
 
         TypeMeta::TypeMeta() : m_type_name(k_unknown_type), m_is_valid(false) { m_fields.clear(); m_methods.clear(); }
+        bool TypeMeta::is_valid_type(const char* p_typename) {
+            return m_class_map.find(p_typename) != m_class_map.end();
+        }
 
         TypeMeta TypeMeta::newMetaFromName(std::string type_name)
         {
             TypeMeta f_type(type_name);
             return f_type;
         }
+        size_t TypeMeta::getSizeOfByName(const char* m_type_name) {
+            auto iter = m_class_map.find(m_type_name);
+
+            if (iter != m_class_map.end())
+            {
+                return (std::get<6>(*iter->second))();
+            }
+
+            return 0;
+        }
+
+        void* TypeMeta::memnewByName(const char* m_type_name) {
+            auto iter = m_class_map.find(m_type_name);
+
+            if (iter != m_class_map.end())
+            {
+                return (std::get<4>(*iter->second))();
+            }
+
+            return nullptr;
+        }
+
+        void* TypeMeta::memnewarrByName(const char* m_type_name, int num) {
+            auto iter = m_class_map.find(m_type_name);
+
+            if (iter != m_class_map.end())
+            {
+                return (std::get<5>(*iter->second))(num);
+            }
+
+            return nullptr;
+        }
+
 
         bool TypeMeta::newArrayAccessorFromName(std::string array_type_name, ArrayAccessor& accessor)
         {
@@ -137,8 +174,20 @@ namespace lain
             return Json();
         }
 
-        std::string TypeMeta::getTypeName() { return m_type_name; }
-        int TypeMeta::getFieldsList(FieldAccessor*& out_list)
+        bool TypeMeta::writeToInstanceFromNameAndJson(std::string type_name, const Json& json_context, void* instance)
+        {
+            auto iter = m_class_map.find(type_name);
+
+            if (iter != m_class_map.end())
+            {
+                std::get<3>(*iter->second)(json_context, instance);
+                return true;
+            }
+            return false;
+        }
+
+        std::string TypeMeta::getTypeName() const { return m_type_name; }
+        int TypeMeta::getFieldsList(FieldAccessor*& out_list)const
         {
             int count = m_fields.size();
             out_list  = memnew_arr(FieldAccessor,count);
@@ -149,7 +198,7 @@ namespace lain
             return count;
         }
 
-        int TypeMeta::getMethodsList(MethodAccessor*& out_list)
+        int TypeMeta::getMethodsList(MethodAccessor*& out_list)const
         {
             int count = m_methods.size();
             out_list  = memnew_arr(MethodAccessor, count);
@@ -160,7 +209,7 @@ namespace lain
             return count;
         }
 
-        int TypeMeta::getBaseClassReflectionInstanceList(ReflectionInstance*& out_list, void* instance)
+        int TypeMeta::getBaseClassReflectionInstanceList(ReflectionInstance*& out_list, void* instance)const
         {
             auto iter = m_class_map.find(m_type_name);
 
@@ -172,7 +221,7 @@ namespace lain
             return 0;
         }
 
-        FieldAccessor TypeMeta::getFieldByName(const char* name)
+        FieldAccessor TypeMeta::getFieldByName(const char* name)const
         {
             const auto it = std::find_if(m_fields.begin(), m_fields.end(), [&](const auto& i) {
                 return std::strcmp(i.getFieldName(), name) == 0;
@@ -182,7 +231,7 @@ namespace lain
             return FieldAccessor(nullptr);
         }
 
-        MethodAccessor TypeMeta::getMethodByName(const char* name)
+        MethodAccessor TypeMeta::getMethodByName(const char* name)const
         {
             const auto it = std::find_if(m_methods.begin(), m_methods.end(), [&](const auto& i) {
                 return std::strcmp(i.getMethodName(), name) == 0;

@@ -56,7 +56,7 @@ namespace lain{
 		loader.local_path = ProjectSettings::GetSingleton()->LocalizePath(path);
 		loader.progress = r_progress;
 		loader.res_path = loader.local_path;
-		loader.open(f);
+		loader.open(f); // 读封上的头，文件类型等
 		err = loader.load();
 		if (r_error) {
 			*r_error = err;
@@ -83,32 +83,57 @@ namespace lain{
 	}
 	using json11::Json;
 	Error ResourceLoaderText::load() {
+		
 		if (error != OK) {
 			return error;
 		}
-		Dictionary dict;
-		String tag;
+
+		PackedSceneRes packed_res;
+		
+		Vector<uint8> json_chars;
+		int residual_length = static_cast<int>(f->get_length()-f->get_position());
+		json_chars.resize(residual_length + 1);
+		f->get_buffer(json_chars.ptrw(), residual_length);
+		json_chars.ptrw()[residual_length] = static_cast<ui8>(0);
+		std::string error_line;
+
+		//String json_string = f->get_as_text();
+		//json11::Json json_text = Json::parse(CSTR(json_string), error_line);
+		json11::Json json_text = Json::parse((const char*)(json_chars.ptr()), error_line);
+
+		ERR_FAIL_COND_V_MSG(!error_line.empty(), FAILED, error_line);
+		Serializer::read(json_text, packed_res);
+
+		
+		
+		Dictionary p = packed_res.head;
+		String name = p["tag"];
+
+
+		if (name == "scene") {
+			is_scene = true;
+		}
+		else if (name == "resource") {
+
+		}
+		else {
+			error_text = "Unrecognized file type: " + name;
+			error = ERR_PARSE_ERROR;
+			ERR_FAIL_COND_V(false,ERR_FILE_CORRUPT,error_text);
+		}
+		if (p.has("uid")) {
+			res_uid = ResourceUID::get_singleton()->text_to_id(p["uid"]);
+		}
+		if (p.has("load_steps")) {
+			resources_total = p["load_steps"];
+		}
 		// 处理外部文件
-		while(!f->eof_reached()) {
-			String line = f->get_line();
-			if (line == "") continue;
-			error = _dict_form_line(line, dict);
-			if (error != OK) {
-				ERR_FAIL_V(error);
-			}
-			// 处理tag
-			tag = dict["tag"];
-			if (tag != "ext_resource") break;
-			// ext_resource
-			if (!dict.has("id") || !dict.has("path") || !dict.has("type")) {
-				error = ERR_FILE_CORRUPT;
-				ERR_FAIL_V(error);
-			}
-			String path = dict["path"];
-			String type = dict["type"];
-			String id = dict["id"];
-			if (dict.has("uid")) {
-				String uidt = dict["uid"];
+		for (auto&& ext_file : packed_res.ext_res) {
+			String path = ext_file.m_def_path;
+			String type = ext_file.m_type;
+			String id = ext_file.m_id;
+			if (ext_file.m_uid != "") {
+				String uidt = ext_file.m_uid;
 				ResourceUID::ID uid = ResourceUID::get_singleton()->text_to_id(uidt);
 				if (uid != ResourceUID::INVALID_ID && ResourceUID::get_singleton()->has_id(uid)) {
 					// If a UID is found and the path is valid, it will be used, otherwise, it falls back to the path.
@@ -119,6 +144,7 @@ namespace lain{
 				// path is relative to file being loaded, so convert to a resource path
 				path = ProjectSettings::GetSingleton()->LocalizePath(local_path.get_base_dir().path_join(path));
 			}
+
 			ext_resources[id].path = path;
 			ext_resources[id].type = type;
 			ext_resources[id].load_token = ResourceLoader::_load_start(path, type, use_sub_threads ? ResourceLoader::LOAD_THREAD_DISTRIBUTE : ResourceLoader::LOAD_THREAD_FROM_CURRENT, cache_mode_for_external);
@@ -127,7 +153,7 @@ namespace lain{
 				if (ResourceLoader::get_abort_on_missing_resources()) {
 					error = ERR_FILE_CORRUPT;
 					error_text = "[ext_resource] referenced non-existent resource at: " + path;
-					L_CORE_ERROR(error_text);
+					L_STRPERROR(error_text);
 					return error;
 				}
 				else {
@@ -139,138 +165,119 @@ namespace lain{
 		//these are the ones that count
 		resources_total -= resource_current;
 		resource_current = 0;
-		while (!f->eof_reached()) {
-			String line = f->get_line();
-			if (line == "") continue;
-			error = _dict_form_line(line, dict);
-			if (error != OK) {
-				ERR_FAIL_V(error);
+		//
+		// @TODO:sub_resource
+		// @TODO:resource
+
+		if (is_scene && packed_res.gobjects.size() > 0) {
+			error_text += "found the 'gobject' tag on a resource file!";
+			error = ERR_FILE_CORRUPT;
+			ERR_FAIL_COND_V(false, ERR_FILE_CORRUPT, error_text);
+		}
+
+		Dictionary dict;
+		Ref<PackedScene> packed_scene;
+		for (auto&& gobject : packed_res.gobjects) {
+			if(packed_scene.is_null())	packed_scene.instantiate(); // first time
+			dict = gobject.m_variants;
+			int parent = -1;
+			int owner = -1;
+			int type = -1;
+			int name = -1;
+			int instance = -1;
+			int index = -1;
+			{
+				L_JSON(dict);
 			}
+			if (dict.has("name"))
+				name = packed_scene->get_state()->add_name(dict["name"]);
+			if (dict.has("type"))
+				name = packed_scene->get_state()->add_name(dict["name"]);
+			else 
+				type = SceneState::TYPE_INSTANTIATED; //no type? assume this was instantiated
 
-			if (!dict.has("type")) {
-				error = ERR_FILE_CORRUPT;
-				error_text = "Missing 'type' in external resource tag";
-				L_CORE_ERROR(error_text);
-				return error;
+			if (dict.has("parent")) {
+				GObjectPath np = dict["parent"];
+				np.prepend_period(); //compatible to how it manages paths internally
+				parent = packed_scene->get_state()->add_gobject_path(np);
 			}
+			if (dict.has("instance")) {
+				instance = packed_scene->get_state()->add_value(dict["instance"]);
 
-			if (!dict.has("id")) {
-				error = ERR_FILE_CORRUPT;
-				error_text = "Missing 'id' in external resource tag";
-				L_CORE_ERROR(error_text);
-				return error;
+				if (packed_scene->get_state()->get_gobject_count() == 0 && parent == -1) {
+					packed_scene->get_state()->set_base_scene(instance); //int
+					instance = -1;
+				}
+
 			}
-			String type = dict["type"];
-			String id = dict["id"];
-
-			String path = local_path + "::" + id;
-
-			Ref<Resource> res;
-			bool do_assign = false;
-
-			if (cache_mode == ResourceFormatLoader::CACHE_MODE_REPLACE && ResourceCache::has(path)) {
-				//reuse existing
-				Ref<Resource> cache = ResourceCache::get_ref(path);
-				if (cache.is_valid() && cache->get_class() == type) {
-					res = cache;
-					res->ResetState();
-					do_assign = true;
+			if (dict.has("owner")) {
+				owner = packed_scene->get_state()->add_gobject_path(dict["owner"]);
+			}
+			else {
+				if (parent != -1 && !(type == SceneState::TYPE_INSTANTIATED && instance == -1)) {
+					owner = 0; //if no owner, owner is root
+				}
+			}
+			if (dict.has("index")) {
+				index = dict["index"];
+			}
+			
+			int gobject_id = packed_scene->get_state()->add_gobject(parent, owner, type, name, instance, index);
+			if (dict.has("groups")) {
+				Array groups = dict["groups"];
+				for (int i = 0; i < groups.size(); i++) {
+					packed_scene->get_state()->add_gobject_group(gobject_id, packed_scene->get_state()->add_name(groups[i]));
+				}
+			}
+			
+			if (gobject.m_instanced_components.size() > 0) {
+				Vector<Component*> cmpts;
+				cmpts.resize(gobject.m_instanced_components.size());
+				auto&& writer = cmpts.ptrw();
+				for (int i = 0; i < gobject.m_instanced_components.size(); i++) {
+					writer[i] = gobject.m_instanced_components[i].operator->();
 				}
 			}
 
-			if (res.is_null()) { //not reuse
-				Ref<Resource> cache = ResourceCache::get_ref(path);
-				if (cache_mode != ResourceFormatLoader::CACHE_MODE_IGNORE && cache.is_valid()) { //only if it doesn't exist
-					//cached, do not assign
-					res = cache;
-				}
-				else {
-					//create
-					Object* obj = nullptr;
-					// 都是object就好办了
-					{
-						using Reflection::TypeMeta;
-						using json11::Json;
-						String json_context = dict["json"];
-						auto instance = TypeMeta::newFromNameAndJson(CSTR(type), CSTR(json_context));
-						obj = static_cast<Object*>(instance.m_instance);
-					}
-					if (!obj) {
-						/*if (ResourceLoader::is_creating_missing_resources_if_class_unavailable_enabled()) {
-							missing_resource = memnew(MissingResource);
-							missing_resource->set_original_class(type);
-							missing_resource->set_recording_properties(true);
-							obj = missing_resource;
-						}
-						else {*/
-							error_text += "Can't create sub resource of type: " + type;
-							L_CORE_ERROR(error_text);
-							error = ERR_FILE_CORRUPT;
-							return error;
-						//}
-					}
+			// properties
 
-					Resource* r = Object::cast_to<Resource>(obj);
-					if (!r) {
-						error_text += "Can't create sub resource of type, because not a resource: " + type;
-						L_CORE_ERROR(error_text);
-						error = ERR_FILE_CORRUPT;
-						return error;
-					}
+			// component
+			// 按他这个写法和python有啥区别，dict和variant装全部
+			// 组件里面只有一些数据，所以也不是不行吧
+			
+			
+		} // exit parsing gobject
+		/*if (!packed_scene.is_valid()) {
+			return error;
+		}*/
 
-					res = Ref<Resource>(r);
-					do_assign = true;
-				}
-			}
-			resource_current++;
-			if (progress && resources_total > 0) {
-				*progress = resource_current / float(resources_total);
-			}
-
-			int_resources[id] = res; // Always assign int resources.
-			if (do_assign) {
-				if (cache_mode != ResourceFormatLoader::CACHE_MODE_IGNORE) {
-					res->SetPath(path, cache_mode == ResourceFormatLoader::CACHE_MODE_REPLACE);
-				}
-				else {
-					res->SetPathCache(path);
-				}
-				res->set_scene_unique_id(id);
+		error = OK;
+		//get it here
+		resource = packed_scene;
+		if (cache_mode != ResourceFormatLoader::CACHE_MODE_IGNORE) {
+			if (!ResourceCache::has(res_path)) {
+				packed_scene->SetPath(res_path);
 			}
 		}
+		else {
+			packed_scene->get_state()->set_path(res_path);
+			packed_scene->SetPathCache(res_path);
+		}
+
+		resource_current++;
+
+		if (progress && resources_total > 0) {
+			*progress = resource_current / float(resources_total);
+		}
+
 		return error;
+
 	}
+
 	void ResourceLoaderText::open(Ref<FileAccess> p_f, bool p_skip_first_tag) { 
 		// basic informations
 		error = OK;
 		f = p_f;
-		String line = p_f->get_line();
-		Dictionary p;
-		if (_dict_form_line(line, p) != OK) {
-			error = FAILED;
-			return;
-		}
-		
-		String name = p["tag"];
-		if (name == "scene") {
-			is_scene = true;
-		}
-		else if (name == "resource") {
-
-		}
-		else {
-			error_text = "Unrecognized file type: " + name;
-			L_CORE_ERROR(error_text);
-			error = ERR_PARSE_ERROR;
-			return;
-		}
-		if (p.has("uid")) {
-			res_uid = ResourceUID::get_singleton()->text_to_id(p["uid"]);
-		}
-		if (p.has("load_steps")) {
-			resources_total = p["load_steps"];
-		} 
-
 	}
 
 	
@@ -384,16 +391,16 @@ namespace lain{
 		}
 
 		// Save resources.
-		//_find_resources(p_resource, true);
+		_find_resources(p_resource, true);
 
 		//if (packed_scene.is_valid()) {
 		//	// Add instances to external resources if saving a packed scene.
-		//	for (int i = 0; i < packed_scene->get_state()->get_node_count(); i++) {
-		//		if (packed_scene->get_state()->is_node_instance_placeholder(i)) {
+		//	for (int i = 0; i < packed_scene->get_state()->get_gobject_count(); i++) {
+		//		if (packed_scene->get_state()->is_gobject_instance_placeholder(i)) {
 		//			continue;
 		//		}
 
-		//		Ref<PackedScene> instance = packed_scene->get_state()->get_node_instance(i);
+		//		Ref<PackedScene> instance = packed_scene->get_state()->get_gobject_instance(i);
 		//		if (instance.is_valid() && !external_resources.has(instance)) {
 		//			int index = external_resources.size() + 1;
 		//			external_resources[instance] = itos(index) + "_" + Resource::generate_scene_unique_id(); // Keep the order for improved thread loading performance.
@@ -402,17 +409,16 @@ namespace lain{
 		//}
 		Dictionary title;
 		title["tag"] = packed_scene.is_valid()? "scene" : "resource";
-			
+		title["123"] = "123";
 		if (packed_scene.is_null()) {
+			title["type"] = p_resource->get_class();
 			title["script_class"] = "";
 		}
-		title["load_steps"] = saved_resources.size() + external_resources.size();
 		ResourceUID::ID uid = ResourceSaver::get_resource_id_for_path(local_path, true);
 		if(uid != ResourceUID::INVALID_ID)
 			title["uid"] = uid;
 		if (packed_scene.is_valid()) {
 			PackedSceneRes packed_res;
-			packed_res.head = title;
 			for (int i = 0; i < packed_scene->get_state()->get_gobject_count();++i) {
 
 				Ref<PackedScene> instance = packed_scene->get_state()->get_gobject_instance(i);
@@ -435,7 +441,7 @@ namespace lain{
 			}
 			
 			Vector<Tuple<int, String, Ref<Resource>>> sorted_res;
-
+			//sorted_res.resize(10);
 			// Create IDs for non cached resources.
 			for (KeyValue<Ref<Resource>, Pair<int, String>>& E : external_resources) {
 				if (cached_ids_found.has(E.value.second)) { // Already cached, go on.
@@ -457,26 +463,171 @@ namespace lain{
 				res->set_id_for_path(local_path, attempt);
 				sorted_res.push_back(Tuple(E.value.first, E.value.second, E.key));
 			}
-			sorted_res.sort();
+			if(sorted_res.size() > 0)
+				sorted_res.sort();
 
 			// sort
 			// 0 inx, 1 id, 2 res
-			
-			for (auto&& E : sorted_res) {
-				ExtRes ext_res;
-				String p = __tuple_get<2>(E)->GetPath();
+			packed_res.ext_res.resize(sorted_res.size());
+			{
+				auto&& prtw = packed_res.ext_res.ptrw();
+				int idx = 0;
+					for (auto&& E : sorted_res) {
+						ExtRes ext_res;
+						String p = __tuple_get<2>(E)->GetPath();
 
-				ext_res.m_id = itos(__tuple_get<0>(E)) + __tuple_get<1>(E);
-				ext_res.m_def_path = p;
-				auto uid = ResourceSaver::get_resource_id_for_path(p, false);
-				if (uid != ResourceUID::INVALID_ID) {
-					ext_res.m_uid = ResourceUID::get_singleton()->id_to_text(uid);
-				}
-				packed_res.ext_res.push_back(ext_res);
+						ext_res.m_id = itos(__tuple_get<0>(E)) + __tuple_get<1>(E);
+						ext_res.m_def_path = p;
+						auto uid = ResourceSaver::get_resource_id_for_path(p, false);
+						if (uid != ResourceUID::INVALID_ID) {
+							ext_res.m_uid = ResourceUID::get_singleton()->id_to_text(uid);
+						}
+						prtw[idx++] = ext_res; 
+					}
 			}
+
+			if (packed_scene.is_valid()) {
+				// If this is a scene, save gobjects and connections!
+				Ref<SceneState> state = packed_scene->get_state();
+				int gobjects_size = state->get_gobject_count();
+				packed_res.gobjects.resize(gobjects_size);
+				for (int i = 0; i < gobjects_size; i++) {
+					StringName type = state->get_gobject_type(i);
+					StringName name = state->get_gobject_name(i);
+					int index = state->get_gobject_index(i);
+					GObjectPath path = state->get_gobject_path(i, true);
+					GObjectPath owner = state->get_gobject_owner_path(i);
+					Ref<PackedScene> instance = state->get_gobject_instance(i);
+					GObjectInstanceRes gires;
+ 					if (type != StringName()) {
+						gires.m_variants["type"] = type;
+					}
+					if (path != GObjectPath()) {
+						gires.m_variants["parent"] = path;
+					}
+					if (owner != GObjectPath() && owner != GObjectPath(".")) {
+						gires.m_variants["owner"] = owner.simplified();
+					}
+					if (index >= 0) {
+						gires.m_variants["index"] = index;
+					}
+
+					gires.m_variants["name"] = name;
+					Vector<Component*> cmpts = state->get_gobject_components(i);
+					using Reflection::ReflectionPtr;
+					Vector<ReflectionPtr<Component>> cmpts_ref; cmpts_ref.resize(cmpts.size());
+					{
+						auto&& ptrw = cmpts_ref.ptrw();
+
+						for (int idx = 0; idx < cmpts.size(); ++idx) {
+							cmpts_ref.ptrw()[idx] = ReflectionPtr<Component>(cmpts[idx]->get_c_class(), cmpts[idx]);
+						}
+					}
+					gires.m_instanced_components = cmpts_ref;
+					packed_res.gobjects.ptrw()[i] = gires;
+				}
+				
+			}
+
+			title["load_steps"] = saved_resources.size() + external_resources.size();
+			packed_res.head = title;
+
 			auto&& json = Serializer::write(packed_res);
 			f->store_string(json.dump());
 		}
 	}
+
+	void ResourceSaverText::_find_resources(const Variant& p_variant, bool p_main) {
+		switch (p_variant.get_type()) {
+		case Variant::OBJECT: {
+			Ref<Resource> res = p_variant;
+
+			if (res.is_null() || external_resources.has(res) /*|| res->get_meta(SNAME("_skip_save_"), false)*/) {
+				return;
+			}
+
+			if (!p_main && (!bundle_resources) && !res->IsBuiltIn()) {
+				if (res->GetPath() == local_path) {
+					ERR_PRINT("Circular reference to resource being saved found: '" + local_path + "' will be null next time it's loaded.");
+					return;
+				}
+
+				// Use a numeric ID as a base, because they are sorted in natural order before saving.
+				// This increases the chances of thread loading to fetch them first.
+				external_resources[res] = Pair(static_cast<int>(external_resources.size() + 1), Resource::generate_scene_unique_id());
+				return;
+			}
+
+			if (resource_set.has(res)) {
+				return;
+			}
+
+			resource_set.insert(res);
+			// property中可能有需要保存的Res
+			/*List<PropertyInfo> property_list;
+
+			res->get_property_list(&property_list);
+			property_list.sort();
+
+			List<PropertyInfo>::Element* I = property_list.front();
+
+			while (I) {
+				PropertyInfo pi = I->get();
+
+				if (pi.usage & PROPERTY_USAGE_STORAGE) {
+					Variant v = res->get(I->get().name); // 感觉这么写很不优雅啊
+
+					if (pi.usage & PROPERTY_USAGE_RESOURCE_NOT_PERSISTENT) {
+						NonPersistentKey npk;
+						npk.base = res;
+						npk.property = pi.name;
+						non_persistent_map[npk] = v;
+
+						Ref<Resource> sres = v;
+						if (sres.is_valid()) {
+							resource_set.insert(sres);
+							saved_resources.push_back(sres);
+						}
+						else {
+							_find_resources(v);
+						}
+					}
+					else {
+						_find_resources(v);
+					}
+				}
+
+				I = I->next();
+			}*/
+
+			saved_resources.push_back(res); // Saved after, so the children it needs are available when loaded
+
+		} break;
+		case Variant::ARRAY: {
+			Array varray = p_variant;
+			int len = varray.size();
+			for (int i = 0; i < len; i++) {
+				const Variant& v = varray.get(i);
+				_find_resources(v);
+			}
+
+		} break;
+		case Variant::DICTIONARY: {
+			Dictionary d = p_variant;
+			List<Variant> keys;
+			d.get_key_list(&keys);
+			for (const Variant& E : keys) {
+				// Of course keys should also be cached, after all we can't prevent users from using resources as keys, right?
+				// See also ResourceFormatSaverBinaryInstance::_find_resources (when p_variant is of type Variant::DICTIONARY)
+				_find_resources(E);
+				Variant v = d[E];
+				_find_resources(v);
+			}
+		} break;
+		default: {
+		}
+		}
+	}
+
 
 }

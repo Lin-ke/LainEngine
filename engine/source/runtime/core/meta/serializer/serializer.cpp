@@ -1,7 +1,10 @@
 #include "serializer.h"
 #include <assert.h>
 #include "core/templates/hash_map.h"
+#include "core/object/object.h"
 #include "core/variant/variant.h"
+#include "_generated/serializer/all_serializer.h"
+#include "core/variant/variant_helper.h"
 namespace lain
 {
 
@@ -136,7 +139,7 @@ namespace lain
         }
         return instance;
     }
-
+   // variant 和 reflectptr是一样的
      template<>
      Json Serializer::write(const Variant& instance)
     {
@@ -158,9 +161,28 @@ namespace lain
          case Variant::ARRAY:   // vector<variant>
              return Serializer::write(instance.operator Array());
          case Variant::DICTIONARY:
-             return Serializer::write(instance.operator Dictionary());
+             return Json::object{ {"$typeName", Json("Dictionary")},
+                          {"$context", Serializer::write(instance.operator Dictionary())} };
+         case Variant::STRING_NAME:
+             return Json::object{ {"$typeName", Json("StringName")},
+                          {"$context", Serializer::write(instance.operator StringName())} };
+        
+         case Variant::OBJECT:
+         {
+             
+             Object* obj = instance.operator Object * ();
+             Reflection::ReflectionPtr rptr = Reflection::ReflectionPtr(obj->get_c_class(), obj);
+             return Serializer::write(rptr);
+         }
+
          default:
+         {
+             // plan A :从typename到Type，然后转
+             if (VariantHelper::is_serializable(instance)) {
+                 return Reflection::TypeMeta::writeByName(Variant::get_c_type_name(instance.get_type()), const_cast<void*>(reinterpret_cast<const void*>( instance._data._mem)));
+             }
              return Serializer::write(String(instance));
+         }
          }
     }
      template<>
@@ -200,18 +222,25 @@ namespace lain
              Array variant_arr;
              variant_arr.resize(json_array.size());
              for (int i = 0; i < json_array.size(); i++) {
-                 Variant newT;
-                 Serializer::read(json_array[i], newT);
-                 variant_arr[i] = newT;
+                 Serializer::read(json_array[i], variant_arr[i]);
              }
-             return instance;
+              instance = variant_arr;
+              return instance;
          }
 
          case Json::OBJECT:
          {
-             Dictionary dict; // dictionary 的構造函數是在堆上的
-             dict = Serializer::read(json_context, dict);
-             instance = dict;
+             std::string type_name = json_context["$typeName"].string_value();
+             ERR_FAIL_COND_V_MSG(!VariantHelper::is_serializable_type(type_name.c_str()), instance, "type cant be reflected");
+             
+                 auto rinstance = Reflection::TypeMeta::newFromNameAndJson(type_name, json_context["$context"]);
+                 instance.type = VariantHelper::get_type_from_name(type_name.c_str());
+                 ERR_FAIL_COND_V_MSG(instance.type == Variant::NIL, instance, type_name);
+                 for (size_t i = 0; i < sizeof(void*); i++) {
+                     instance._data._mem[i] = reinterpret_cast<uint8_t*>(rinstance.m_instance)[i];
+                 }
+             
+
              return instance;
          }
          default:

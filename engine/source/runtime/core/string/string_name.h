@@ -5,7 +5,8 @@
 #include "core/templates/safe_numeric.h"
 #include "core/object/safe_refcount.h"
 #include "core/string/ustring.h"
-#include "core/meta/reflection/reflection.h"
+#include "core/meta/reflection/reflection_marcos.h"
+
 #define UNIQUE_NODE_PREFIX "%"
 // For compare speed
 
@@ -21,9 +22,10 @@ namespace lain {
 		STRING_TABLE_LEN = 1 << STRING_TABLE_BITS,
 		STRING_TABLE_MASK = STRING_TABLE_LEN - 1
 	};
-	REFLECTION_TYPE(StringName)
+	REFLECTION_TYPE(StringName);
 	class StringName {
-		REFLECTION_BODY(StringName)
+	REFLECTION_BODY(StringName);
+		friend class Serializer;
 		struct _Data
 		{
 			SafeRefCount refcount;
@@ -177,7 +179,10 @@ namespace lain {
 #ifdef DEBUG_ENABLED
 		static void set_debug_stringnames(bool p_enable) { debug_stringname = p_enable; }
 #endif
+		
 	};
+
+	
 
 	bool operator==(const String& p_name, const StringName& p_string_name);
 	bool operator!=(const String& p_name, const StringName& p_string_name);
@@ -185,6 +190,8 @@ namespace lain {
 	bool operator!=(const char* p_name, const StringName& p_string_name);
 
 	StringName _scs_create(const char* p_chr, bool p_static = false);
+
+
 }
 /*
  * The SNAME macro is used to speed up StringName creation, as it allows caching it after the first usage in a very efficient way.

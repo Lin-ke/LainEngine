@@ -17,6 +17,10 @@ namespace Reflection{
     class Type{{class_name}}Operator{
     public:
         static const char* getClassName(){ return "{{class_name}}";}
+	static size_t get_size_of(){ return sizeof({{class_name}});}
+	static void* memnew_class() {return memnew({{class_name}});}
+	static void* memnew_class_arr(int size_of_arr) {return memnew_arr({{class_name}},size_of_arr);}
+
         static void* constructorWithJson(const Json& json_context){
             {{class_name}}* ret_instance= memnew({{class_name}});
             Serializer::read(json_context, *ret_instance);
@@ -25,6 +29,9 @@ namespace Reflection{
         static Json writeByName(void* instance){
             return Serializer::write(*({{class_name}}*)instance);
         }
+	static void json_read_warpper(const Json& json, void* instance) {
+       Serializer::read(json, *reinterpret_cast<{{class_name}}*>(instance));  
+	}
         // base class
         static int get{{class_name}}BaseClassReflectionInstanceList(ReflectionInstance* &out_list, void* instance){
             int count = {{class_base_class_size}};
@@ -104,7 +111,11 @@ namespace Reflection{
         {{#class_need_register}}ClassFunctionTuple* class_function_tuple_{{class_name}}=memnew(ClassFunctionTuple(
             &TypeFieldReflectionOperator::Type{{class_name}}Operator::get{{class_name}}BaseClassReflectionInstanceList,
             &TypeFieldReflectionOperator::Type{{class_name}}Operator::constructorWithJson,
-            &TypeFieldReflectionOperator::Type{{class_name}}Operator::writeByName));
+            &TypeFieldReflectionOperator::Type{{class_name}}Operator::writeByName,
+	&TypeFieldReflectionOperator::Type{{class_name}}Operator::json_read_warpper,
+	&TypeFieldReflectionOperator::Type{{class_name}}Operator::memnew_class,
+	&TypeFieldReflectionOperator::Type{{class_name}}Operator::memnew_class_arr,
+	&TypeFieldReflectionOperator::Type{{class_name}}Operator::get_size_of));
         REGISTER_BASE_CLASS_TO_MAP("{{class_name}}", class_function_tuple_{{class_name}});
         {{/class_need_register}}
     }{{/class_defines}}

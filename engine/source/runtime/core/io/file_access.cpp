@@ -579,6 +579,23 @@ namespace lain {
 		return text;
 	}
 
+	String FileAccess::get_residual_text(bool p_skip_cr) const {
+		Vector<uint8_t> sourcef;
+		uint64_t len = get_length() - get_position();
+		sourcef.resize(len + 1);
+
+		uint8_t* w = sourcef.ptrw();
+		uint64_t r = get_buffer(w, len);
+		ERR_FAIL_COND_V(r != len, String());
+		w[len] = 0;
+
+		String s;
+		s.parse_utf8((const char*)w, -1, p_skip_cr);
+		return s;
+	}
+
+
+
 	String FileAccess::get_as_utf8_string(bool p_skip_cr) const {
 		Vector<uint8_t> sourcef;
 		uint64_t len = get_length();

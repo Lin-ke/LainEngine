@@ -32,10 +32,10 @@ namespace lain
 
         REFLECTION_BODY(ExtRes);
     public:
-        StringName m_type;
-        String  m_uid;
-        String  m_def_path;
-        String  m_id;
+        StringName m_type = "";
+        String  m_uid = "";
+        String  m_def_path = "";
+        String  m_id = "";
     };
        
 
@@ -46,14 +46,7 @@ namespace lain
         REFLECTION_BODY(GObjectInstanceRes);
 
     public:
-        int         m_index;
-        StringName      m_name;
-        StringName      m_type;
-        String      m_parent;
-        String      m_root_path; // nodepath to root
-        String      m_owner;
-        String      m_definition; // definition path
-        Variant     m_instance;  // 是外部的实例化
+        Dictionary m_variants;
         //Groups 
         Vector <Reflection::ReflectionPtr<Component>> m_instanced_components;
     };

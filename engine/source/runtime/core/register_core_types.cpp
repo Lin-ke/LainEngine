@@ -29,6 +29,8 @@ namespace lain {
 
 	// godot: register scene types
 	static Ref<ResourceFormatLoaderText> resource_format_loader_text;
+	static Ref<ResourceFormatSaverText> resource_format_saver_text;
+
 
 	void register_core_types() {
 
@@ -36,6 +38,8 @@ namespace lain {
 		ObjectDB::setup();
 		StringName::setup();
 		ResourceLoader::initialize();
+		//ResourceSaver::initialize();
+
 		SceneStringNames::create(); // register stringnames
 
 		worker_thread_pool = memnew(WorkerThreadPool);
@@ -60,6 +64,8 @@ namespace lain {
 
 		resource_format_loader_text.instantiate();
 		ResourceLoader::add_resource_format_loader(resource_format_loader_text);
+		resource_format_saver_text.instantiate();
+		ResourceSaver::add_resource_format_saver(resource_format_saver_text);
 		/*auto&& dict = ResourceLoader::type_to_loader_idx;
 		for (auto&& E : dict) {
 			L_JSON(E.key);
