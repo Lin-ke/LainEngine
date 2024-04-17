@@ -175,17 +175,17 @@ namespace lain {
          Tuple():_Inherited(){}
 
         
-        explicit  Tuple(const _Elements&... __elements)
+        Tuple(const _Elements&... __elements)
             : _Inherited(__elements...) { }
-         Tuple(const Tuple&) = default;
+        Tuple(const Tuple&) = default;
          Tuple(Tuple&&) = default;
 
          template<typename... _UElements>
-         constexpr Tuple(const Tuple<_UElements...>& __in)
+         Tuple(const Tuple<_UElements...>& __in)
              : _Inherited(static_cast<const _Tuple_impl<0, _UElements...>&>(__in))
          { }
          template<typename... _UElements>
-         constexpr Tuple(Tuple<_UElements...>&& __in)
+         Tuple(Tuple<_UElements...>&& __in)
              : _Inherited(static_cast<_Tuple_impl<0, _UElements...>&&>(__in)) { }
         
         

@@ -149,7 +149,7 @@ namespace lain
 
         if (radian > Radian(0.0))
         {
-            if (radian < Radian(Math_PI))
+            if (radian < Radian(static_cast<float>(Math_PI)))
             {
                 axis.x = m_mat[2][1] - m_mat[1][2];
                 axis.y = m_mat[0][2] - m_mat[2][0];

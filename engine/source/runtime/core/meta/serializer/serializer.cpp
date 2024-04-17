@@ -218,7 +218,7 @@ namespace lain
          {
              Json::array json_array = json_context.array_items();
              Array variant_arr;
-             variant_arr.resize(json_array.size());
+             variant_arr.resize(static_cast<int>(json_array.size()));
              for (int i = 0; i < json_array.size(); i++) {
                  Serializer::read(json_array[i], variant_arr[i]);
              }

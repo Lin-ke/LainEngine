@@ -31,7 +31,7 @@ namespace lain
         }
     };
     REFLECTION_TYPE(Transform2D)
-        CLASS(Transform2D, Fields)
+        STRUCT(Transform2D, Fields)
     {
         REFLECTION_BODY(Transform);
 

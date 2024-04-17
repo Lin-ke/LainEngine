@@ -115,12 +115,12 @@ namespace lain
             return 0;
         }
 
-        void* TypeMeta::memnewByName(const char* m_type_name) {
+        void* TypeMeta::memnewByName(const char* m_type_name, void* target) {
             auto iter = m_class_map.find(m_type_name);
 
             if (iter != m_class_map.end())
             {
-                return (std::get<4>(*iter->second))();
+                return (std::get<4>(*iter->second))(target);
             }
 
             return nullptr;

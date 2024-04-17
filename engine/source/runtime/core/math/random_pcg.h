@@ -147,7 +147,7 @@ public:
 	_FORCE_INLINE_ float randfn(float p_mean, float p_deviation) {
 		float temp = randf();
 		if (temp < CMP_EPSILON) {
-			temp += CMP_EPSILON; // To prevent generating of INF value in log function, resulting to return NaN value from this function.
+			temp += float(CMP_EPSILON); // To prevent generating of INF value in log function, resulting to return NaN value from this function.
 		}
 		return p_mean + p_deviation * (cos((float)Math_TAU * randf()) * sqrt(-2.0 * log(temp))); // Box-Muller transform.
 	}

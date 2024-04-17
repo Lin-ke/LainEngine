@@ -107,7 +107,7 @@ namespace lain{
 		else {
 			error_text = "Unrecognized file type: " + name;
 			error = ERR_PARSE_ERROR;
-			ERR_FAIL_COND_V(false,ERR_FILE_CORRUPT,error_text);
+			ERR_FAIL_COND_V_MSG(false,ERR_FILE_CORRUPT,error_text);
 		}
 		if (p.has("uid")) {
 			res_uid = ResourceUID::get_singleton()->text_to_id(p["uid"]);
@@ -163,7 +163,7 @@ namespace lain{
 		if (is_scene && packed_res.gobjects.size() > 0) {
 			error_text += "found the 'gobject' tag on a resource file!";
 			error = ERR_FILE_CORRUPT;
-			ERR_FAIL_COND_V(false, ERR_FILE_CORRUPT, error_text);
+			ERR_FAIL_COND_V_MSG(false, ERR_FILE_CORRUPT, error_text);
 		}
 
 		Dictionary dict;
@@ -482,7 +482,7 @@ namespace lain{
 				}
 			}
 			
-			Vector<Tuple<int, String, Ref<Resource>>> sorted_res;
+			Vector<Pair<int,Pair<String, Ref<Resource>>>> sorted_res;
 			//sorted_res.resize(10);
 			// Create IDs for non cached resources.
 			for (KeyValue<Ref<Resource>, Pair<int, String>>& E : external_resources) {
@@ -503,10 +503,10 @@ namespace lain{
 				// Update also in resource.
 				Ref<Resource> res = E.key;
 				res->set_id_for_path(local_path, attempt);
-				sorted_res.push_back(Tuple(E.value.first, E.value.second, E.key));
+				sorted_res.push_back(Pair(E.value.first, Pair(E.value.second, E.key)));
 			}
-			if(sorted_res.size() > 0)
-				sorted_res.sort();
+			if (sorted_res.size() > 0)
+				sorted_res.sort_custom(PairSort<sorted_res  ::f_type> >);
 
 			// sort
 			// 0 inx, 1 id, 2 res
@@ -516,11 +516,11 @@ namespace lain{
 				int idx = 0;
 					for (auto&& E : sorted_res) {
 						ExtRes ext_res;
-						String p = __tuple_get<2>(E)->GetPath();
+						String p = E.second.second->GetPath();
 
-						ext_res.m_id = itos(__tuple_get<0>(E)) +"_" + __tuple_get<1>(E);
+						ext_res.m_id = itos(E.first) +"_" + E.second.first;
 						ext_res.m_def_path = p;
-						ext_res.m_type = __tuple_get<2>(E)->get_class();
+						ext_res.m_type = E.second.second->get_class();
 						auto uid = ResourceSaver::get_resource_id_for_path(p, false);
 						if (uid != ResourceUID::INVALID_ID) {
 							ext_res.m_uid = ResourceUID::get_singleton()->id_to_text(uid);
@@ -604,6 +604,7 @@ namespace lain{
 			auto&& json = Serializer::write(packed_res);
 			f->store_string(json.dump());
 		}
+	return err;
 	}
 
 	void ResourceSaverText::_find_resources(const Variant& p_variant, bool p_main) {

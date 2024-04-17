@@ -91,7 +91,7 @@ namespace lain
             static Json               writeByName(std::string type_name, void* instance);
             static bool is_valid_type(const char* p_typename);
             static size_t getSizeOfByName(const char* name);
-            static void* memnewByName(const char* name);
+            static void* memnewByName(const char* name, void* target = nullptr);
             static void* memnewarrByName(const char* name, int num);
 
 

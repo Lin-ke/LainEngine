@@ -14,6 +14,9 @@ namespace lain {
 
 template <class F, class S>
 struct Pair {
+	typedef F ftype;
+	typedef S stype;
+
 	F first;
 	S second;
 
@@ -109,7 +112,6 @@ struct KeyValues {
 	 values = make_tuple(p_value...);
 	}
 };
-
 
 }
 

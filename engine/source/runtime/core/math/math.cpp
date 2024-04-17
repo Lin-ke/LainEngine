@@ -59,7 +59,7 @@ namespace lain
             return Radian(0.0);
         }
 
-        return Radian(Math_PI);
+        return Radian(float(Math_PI));
     }
     //-----------------------------------------------------------------------
     Radian Math::asin(float value)
