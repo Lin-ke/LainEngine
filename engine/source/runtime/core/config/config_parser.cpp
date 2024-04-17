@@ -31,7 +31,7 @@ namespace lain {
                     err = ERR_PARSE_ERROR;
                 }
                 if (variant_value.get_type() == Variant::Type::NIL) {
-                    L_CORE_WARN("NIL config meet: " + currentField + "/" + key);
+					L_PWARNING(CSTR("NIL config meet: " + currentField + "/" + key));
                 }
                 values[currentField][key] = variant_value;
                 
@@ -69,7 +69,7 @@ namespace lain {
             if (!error.empty())
             {
                 if (error_print)
-                L_CORE_ERROR("parse json file {} failed!", str);
+					L_CORE_ERROR("parse json file {} failed!", CSTR(str));
                 return Variant();
             }
             if (str.begins_with("PackedString")) {
@@ -86,7 +86,7 @@ namespace lain {
 			}
 			else {
 				if (error_print)
-				L_CORE_ERROR("unspported Packed", str);
+					L_CORE_ERROR("unspported Packed", CSTR(str));
 				return Variant();
 			}
         }
@@ -134,7 +134,7 @@ namespace lain {
 
             if(error_print)
                 L_CORE_ERROR(error);
-            L_CORE_WARN("parse json file {} failed!", str);
+            L_PWARNING("parse json file failed!", CSTR(str));
             return Variant();
         } 
     }

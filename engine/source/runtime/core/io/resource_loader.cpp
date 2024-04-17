@@ -313,12 +313,12 @@ namespace lain {
 
 		thread_load_mutex.unlock();
 
-		//if (load_nesting == 0) {
-		//	if (mq_override) {
-		//		memdelete(mq_override);
-		//	}
-		//	memdelete(load_paths_stack);
-		//}
+		if (load_nesting == 0) {
+			/*if (mq_override) {
+				memdelete(mq_override);
+			}*/
+			memdelete(load_paths_stack);
+		}
 	}
 	
 	Ref<Resource> ResourceLoader::_load(const String& p_path, const String& p_original_path, const String& p_type_hint, ResourceFormatLoader::CacheMode p_cache_mode, Error* r_error, bool p_use_sub_threads, float* r_progress) {

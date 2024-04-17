@@ -319,15 +319,15 @@ namespace lain {
 			case VECTOR2: {
 				return HashMapHasherDefault::hash(*reinterpret_cast<const Vector2*>(_data._mem));
 			} break;
-			//case VECTOR2I: {
-			//	return HashMapHasherDefault::hash(*reinterpret_cast<const Vector2i*>(_data._mem));
-			//} break;
-			//case RECT2: {
-			//	return HashMapHasherDefault::hash(*reinterpret_cast<const Rect2*>(_data._mem));
-			//} break;
-			//case RECT2I: {
-			//	return HashMapHasherDefault::hash(*reinterpret_cast<const Rect2i*>(_data._mem));
-			//} break;
+			case VECTOR2I: {
+				return HashMapHasherDefault::hash(*reinterpret_cast<const Vector2i*>(_data._mem));
+			} break;
+			case RECT2: {
+				return HashMapHasherDefault::hash(*reinterpret_cast<const Rect2*>(_data._mem));
+			} break;
+			case RECT2I: {
+				return HashMapHasherDefault::hash(*reinterpret_cast<const Rect2i*>(_data._mem));
+			} break;
 			//case TRANSFORM2D: {
 			//	uint32_t h = HASH_MURMUR3_SEED;
 			//	const Transform2D& t = *_data._transform2d;
@@ -340,18 +340,18 @@ namespace lain {
 
 			//	return hash_fmix32(h);
 			//} break;
-			//case VECTOR3: {
-			//	return HashMapHasherDefault::hash(*reinterpret_cast<const Vector3*>(_data._mem));
-			//} break;
-			//case VECTOR3I: {
-			//	return HashMapHasherDefault::hash(*reinterpret_cast<const Vector3i*>(_data._mem));
-			//} break;
-			//case VECTOR4: {
-			//	return HashMapHasherDefault::hash(*reinterpret_cast<const Vector4*>(_data._mem));
-			//} break;
-			//case VECTOR4I: {
-			//	return HashMapHasherDefault::hash(*reinterpret_cast<const Vector4i*>(_data._mem));
-			//} break;
+			case VECTOR3: {
+				return HashMapHasherDefault::hash(*reinterpret_cast<const Vector3*>(_data._mem));
+			} break;
+			case VECTOR3I: {
+				return HashMapHasherDefault::hash(*reinterpret_cast<const Vector3i*>(_data._mem));
+			} break;
+			case VECTOR4: {
+				return HashMapHasherDefault::hash(*reinterpret_cast<const Vector4*>(_data._mem));
+			} break;
+			/*case VECTOR4I: {
+				return HashMapHasherDefault::hash(*reinterpret_cast<const Vector4i*>(_data._mem));
+			} break;*/
 			///*case PLANE: {
 			//	uint32_t h = HASH_MURMUR3_SEED;
 			//	const Plane& p = *reinterpret_cast<const Plane*>(_data._mem);
@@ -361,9 +361,9 @@ namespace lain {
 			//	h = hash_murmur3_one_real(p.d, h);
 			//	return hash_fmix32(h);
 			//} break;
-			//case AABB: {
-			//	return HashMapHasherDefault::hash(*_data._aabb);
-			//} break;*/
+			case AABB: {
+				return HashMapHasherDefault::hash(*_data._aabb);
+			} break;
 			//case QUATERNION: {
 			//	uint32_t h = HASH_MURMUR3_SEED;
 			//	const Quaternion& q = *reinterpret_cast<const Quaternion*>(_data._mem);
@@ -444,13 +444,13 @@ namespace lain {
 			case STRING_NAME: {
 				return reinterpret_cast<const StringName*>(_data._mem)->hash();
 			} break;
-			/*case GOBJECT_PATH: {
+			case GOBJECT_PATH: {
 				return reinterpret_cast<const GObjectPath*>(_data._mem)->hash();
 			} break;
 			case DICTIONARY: {
 				return reinterpret_cast<const Dictionary*>(_data._mem)->recursive_hash(recursion_count);
 
-			} break;*/
+			} break;
 			case CALLABLE: {
 				return reinterpret_cast<const Callable*>(_data._mem)->hash();
 

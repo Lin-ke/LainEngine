@@ -9,6 +9,7 @@
 #include <cassert>
 #include <string>
 #include "core/variant/dictionary.h"
+#include "core/templates/hash_map.h"
 namespace lain
 {
     template<typename...>
@@ -141,7 +142,25 @@ namespace lain
             return instance;
         }
         
+        template<typename K,typename V>
+        static HashMap<K,V>& read(const Json& json_context, HashMap<K,V>& instance) {
+            for (const auto& pair : json_context.object_items()) {
+                K k; V v;
+                Serializer::read(pair.first, k);
+                Serializer::read(pair.second, v);
+                instance[k] = v;
+            }
+            return instance;
+        }
 
+        template<typename K, typename V>
+        static Json & write(const lain::HashMap<K, V>& instance) {
+            Json::object  ret_context;
+            for (const KeyValue<K,V>& E : instance) {
+                ret_context.insert_or_assign(Serializer::write(E.key).dump(), Serializer::write(V.value));
+            }
+            return ret_context;
+        }
     };
 
     // implementation of base types

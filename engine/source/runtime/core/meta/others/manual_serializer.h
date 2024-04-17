@@ -16,5 +16,6 @@ namespace lain {
 
 	template<>
 	Json Serializer::write(const GObjectPath& instance);
+
 }
 #endif // !MANUAL_SERIALIZER_H

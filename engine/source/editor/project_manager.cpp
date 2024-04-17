@@ -90,7 +90,7 @@ namespace lain {
 		else {
 			grayed = true;
 			missing = true;
-			L_CORE_WARN("Project is missing: " + conf);
+			L_CORE_WARN(CSTR("Project is missing: " + conf));
 		}
 
 		/*for (const String& tag : tags) {

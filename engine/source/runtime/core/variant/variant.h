@@ -76,11 +76,11 @@ namespace lain {
 			REFLECTIONINSTANCE,
 			VARIANT_MAX,
 
-			
+
 
 		};
-	
-		
+
+
 	private:
 
 		Type type = NIL;
@@ -150,7 +150,7 @@ namespace lain {
 			ObjectID id;
 			Object* obj = nullptr;
 		};
-		
+
 		union {
 			bool _bool;
 			int64_t _int;
@@ -166,7 +166,7 @@ namespace lain {
 		// constructor
 		Variant(const Variant*);
 		Variant(const Variant**);
-		
+
 
 	public:
 		String stringify(int recursion_count) const;
@@ -180,12 +180,12 @@ namespace lain {
 		}
 		void reference(const Variant& p_variant);
 		void operator=(const Variant& p_variant); // only this is enough for all the other 
-		
+
 		bool operator==(const Variant& p_variant) const;
 
 		typedef void (*ObjectConstruct)(const String& p_text, void* ud, Variant& r_value);
 		static void construct_from_string(const String& p_string, Variant& r_value, ObjectConstruct p_obj_construct = nullptr, void* p_construct_ud = nullptr);
-		
+
 		ui32 recursive_hash(int recursion_count) const;
 		bool hash_compare(const Variant& p_variant, int recursion_count = 0, bool semantic_comparison = true) const;
 
@@ -211,7 +211,7 @@ namespace lain {
 		// object
 		Variant(const Object* p_obj);
 		Variant(const Reflection::ReflectionInstance& p_instance);
-		
+
 		// basics
 		Variant(int64_t p_int); // real one
 		Variant(uint64_t p_int);
@@ -221,8 +221,8 @@ namespace lain {
 		Variant(signed int p_int); // real one
 		Variant(unsigned int p_int);
 		// array
-		 
-		
+
+
 		//other class
 		Variant(const Vector2& p_vector2);
 		Variant(const Vector3& p_vector3);
@@ -314,7 +314,7 @@ namespace lain {
 
 		Object* get_validated_object() const;
 
-
+		~Variant() { clear(); }
 		_FORCE_INLINE_ void clear() {
 			static const bool needs_deinit[Variant::VARIANT_MAX] = {
 				false, //NIL,

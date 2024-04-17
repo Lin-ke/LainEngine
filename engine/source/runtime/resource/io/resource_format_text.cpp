@@ -68,22 +68,10 @@ namespace lain{
 			return Ref<Resource>();
 		}
 	}
-	Error _dict_form_line(const String& line, Dictionary& dict) {
-		std::string err;
-		//if (line.begins_with("{") && line.ends_with("}")) {
-		Json json = Json::parse(CSTR(line), err);
-		if (!err.empty()) {
-			return ERR_PARSE_ERROR; // Further error handle
-		}
-		Serializer::read(json, dict);
-		if (!dict.has("tag")) {
-			return ERR_FILE_CORRUPT;
-		}
-		return OK;
-	}
-	using json11::Json;
+	
 	Error ResourceLoaderText::load() {
 		
+		using json11::Json;
 		if (error != OK) {
 			return error;
 		}
@@ -99,7 +87,7 @@ namespace lain{
 
 		//String json_string = f->get_as_text();
 		//json11::Json json_text = Json::parse(CSTR(json_string), error_line);
-		json11::Json json_text = Json::parse((const char*)(json_chars.ptr()), error_line);
+		Json json_text = Json::parse((const char*)(json_chars.ptr()), error_line);
 
 		ERR_FAIL_COND_V_MSG(!error_line.empty(), FAILED, error_line);
 		Serializer::read(json_text, packed_res);
@@ -138,7 +126,7 @@ namespace lain{
 				if (uid != ResourceUID::INVALID_ID && ResourceUID::get_singleton()->has_id(uid)) {
 					// If a UID is found and the path is valid, it will be used, otherwise, it falls back to the path.
 					path = ResourceUID::get_singleton()->get_id_path(uid);
-				}
+				} 
 			}
 			if (!path.contains("://") && path.is_relative_path()) {
 				// path is relative to file being loaded, so convert to a resource path
@@ -157,7 +145,10 @@ namespace lain{
 					return error;
 				}
 				else {
-					//ResourceLoader::notify_dependency_error(local_path, path, type);
+					//ResourceLoader::notify_dependency_error(local_path, path, type); // trying to load again
+					error_text = "[ext_resource] dependency error resource at: " + path;
+					L_STRPERROR(error_text);
+					return error;
 				}
 			}
 			resource_current++;
@@ -177,8 +168,8 @@ namespace lain{
 
 		Dictionary dict;
 		Ref<PackedScene> packed_scene;
+		packed_scene.instantiate();
 		for (auto&& gobject : packed_res.gobjects) {
-			if(packed_scene.is_null())	packed_scene.instantiate(); // first time
 			dict = gobject.m_variants;
 			int parent = -1;
 			int owner = -1;
@@ -186,9 +177,6 @@ namespace lain{
 			int name = -1;
 			int instance = -1;
 			int index = -1;
-			{
-				L_JSON(dict);
-			}
 			if (dict.has("name"))
 				name = packed_scene->get_state()->add_name(dict["name"]);
 			if (dict.has("type"))
@@ -202,7 +190,61 @@ namespace lain{
 				parent = packed_scene->get_state()->add_gobject_path(np);
 			}
 			if (dict.has("instance")) {
-				instance = packed_scene->get_state()->add_value(dict["instance"]);
+				String type_id = dict["instance"]; 
+				int start_pos = 0; int end_pos = 0;
+				for (int i = 0; i < type_id.length(); i++) {
+					if (type_id[i] == '\"')
+					{
+						if (!start_pos) start_pos = i;
+						else end_pos = i;
+					}
+				}
+				String id = type_id.substr(start_pos + 1, end_pos - start_pos - 1);
+				String type = type_id.substr(0, start_pos - 1); // without (
+				Ref<ResourceLoader::LoadToken>& load_token = ext_resources[id].load_token;
+				Error err = OK;
+				Ref<Resource>r_res;
+				if (!ext_resources.has(id)) {
+					L_STRPERROR("Can't load cached ext-resource id: " + id);
+				}
+				else {
+
+					if (load_token.is_valid()) { // If not valid, it's OK since then we know this load accepts broken dependencies.
+						Ref<Resource> res = ResourceLoader::_load_complete(*load_token.ptr(), &err);
+						if (res.is_null()) {
+							/*if (!ResourceLoader::is_cleaning_tasks()) {
+								if (ResourceLoader::get_abort_on_missing_resources()) {
+									error = ERR_FILE_MISSING_DEPENDENCIES;
+									error_text = "[ext_resource] referenced non-existent resource at: " + path;
+									_printerr();
+									err = error;
+								}
+								else {
+									ResourceLoader::notify_dependency_error(local_path, path, type);
+								}
+							}*/
+						}
+						else {
+	#ifdef TOOLS_ENABLED
+							//remember ID for saving
+							res->set_id_for_path(local_path, id);
+	#endif
+							r_res = res;
+						}
+					}
+					else {
+						r_res = Ref<Resource>();
+					}
+#ifdef TOOLS_ENABLED
+					if (r_res.is_null()) {
+						// Hack to allow checking original path.
+						r_res.instantiate();
+						//r_res->set_meta("__load_path__", ext_resources[id].path);
+					}
+#endif
+				}
+
+				instance = packed_scene->get_state()->add_value(r_res); // variants[instance] = ref<resource> from ext_resource, value: "Ext("..")"
 
 				if (packed_scene->get_state()->get_gobject_count() == 0 && parent == -1) {
 					packed_scene->get_state()->set_base_scene(instance); //int
@@ -237,8 +279,9 @@ namespace lain{
 				for (int i = 0; i < gobject.m_instanced_components.size(); i++) {
 					writer[i] = gobject.m_instanced_components[i].operator->();
 				}
+				packed_scene->get_state()->add_components(gobject_id, cmpts); //ref
 			}
-
+			//  
 			// properties
 
 			// component
@@ -409,7 +452,6 @@ namespace lain{
 		//}
 		Dictionary title;
 		title["tag"] = packed_scene.is_valid()? "scene" : "resource";
-		title["123"] = "123";
 		if (packed_scene.is_null()) {
 			title["type"] = p_resource->get_class();
 			title["script_class"] = "";
@@ -476,8 +518,9 @@ namespace lain{
 						ExtRes ext_res;
 						String p = __tuple_get<2>(E)->GetPath();
 
-						ext_res.m_id = itos(__tuple_get<0>(E)) + __tuple_get<1>(E);
+						ext_res.m_id = itos(__tuple_get<0>(E)) +"_" + __tuple_get<1>(E);
 						ext_res.m_def_path = p;
+						ext_res.m_type = __tuple_get<2>(E)->get_class();
 						auto uid = ResourceSaver::get_resource_id_for_path(p, false);
 						if (uid != ResourceUID::INVALID_ID) {
 							ext_res.m_uid = ResourceUID::get_singleton()->id_to_text(uid);
@@ -510,6 +553,32 @@ namespace lain{
 					}
 					if (index >= 0) {
 						gires.m_variants["index"] = index;
+					}
+					if (instance.is_valid()) {
+						Ref<Resource> res = instance;
+						String p;
+						if (external_resources.has(res)) {
+							p = "ExtResource(\"" + itos(external_resources[res].first) + String("_") + external_resources[res].second + "\")";
+						}
+						else {
+							if (internal_resources.has(res)) {
+								p = "SubResource(\"" + internal_resources[res] + "\")";
+							}
+							else if (!res->IsBuiltIn()) {
+								if (res->GetPath() == local_path) { //circular reference attempt
+									p = "null";
+								}
+								//external resource
+								String path = relative_paths ? local_path.path_to_file(res->GetPath()) : res->GetPath();
+								p =  "Resource(\"" + path + "\")";
+							}
+							else {
+								ERR_PRINT("Resource was not pre cached for the resource section, bug?"); p = "";
+								//internal resource
+							}
+
+						}
+						gires.m_variants["instance"] = p;
 					}
 
 					gires.m_variants["name"] = name;

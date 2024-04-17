@@ -9,10 +9,11 @@ namespace lain {
     class Component;
     class Viewport;
     class SceneState;
-
+    
     class GObject: public Object{
         LCLASS(GObject, Object);
         friend class SceneState;
+        friend class SceneTree;
         friend void register_core_types();
     public:
         enum InternalMode {
@@ -35,7 +36,8 @@ namespace lain {
             GObject* parent = nullptr;
             GObject* owner = nullptr; // 记录谁实例化了什么
             bool is_prefab = false;
-            bool editable_instance : 1;
+            bool editable_instance : 1; // ？
+            bool display_folded : 1;    // ？
             
             bool parent_owned : 1;
             bool in_constructor : 1;
@@ -101,6 +103,8 @@ namespace lain {
         GObject* find_parent(const String& p_pattern) const;
         bool has_gobject(const GObjectPath& p_path) const;
         GObject* get_gobject_or_null(const GObjectPath& p_path) const;
+        void set_editable_instance(GObject* p_node, bool p_editable);
+
         Ref<SceneState> get_scene_inherited_state()const { return data.inherited_state; }
         Ref<SceneState> get_scene_instance_state() const { return data.instance_state; }
         GObject* find_child(const String& pattern, bool p_recuresive, bool p_owned) const;

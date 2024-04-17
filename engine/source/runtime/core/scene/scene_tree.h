@@ -11,7 +11,8 @@ namespace lain {
 		_THREAD_SAFE_CLASS_
 		friend class GObject;
 		static SceneTree* singleton;
-		GObject* current_scene = nullptr;
+		GObject* current_scene;
+		GObject* root; // window
 	public:
 		struct Group {
 			Vector<GObject*> nodes;
@@ -22,8 +23,13 @@ namespace lain {
 	public:
 		SceneTree();
 		~SceneTree();
-		void tree_changed() {}
+		static SceneTree* get_singleton() { return singleton; }
 
+		virtual void initialize() override;
+		virtual void finalize() override;
+
+		void tree_changed() {}
+		GObject* get_root() const { return root; }
 		Group* add_to_group(const StringName&, GObject*);
 
 	};

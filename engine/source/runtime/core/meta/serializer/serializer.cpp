@@ -160,13 +160,8 @@ namespace lain
          case Variant::PACKED_STRING_ARRAY:
          case Variant::ARRAY:   // vector<variant>
              return Serializer::write(instance.operator Array());
-         case Variant::DICTIONARY:
-             return Json::object{ {"$typeName", Json("Dictionary")},
-                          {"$context", Serializer::write(instance.operator Dictionary())} };
-         case Variant::STRING_NAME:
-             return Json::object{ {"$typeName", Json("StringName")},
-                          {"$context", Serializer::write(instance.operator StringName())} };
-        
+         case Variant::STRING:
+             return Serializer::write(instance.operator String());
          case Variant::OBJECT:
          {
              
@@ -174,12 +169,15 @@ namespace lain
              Reflection::ReflectionPtr rptr = Reflection::ReflectionPtr(obj->get_c_class(), obj);
              return Serializer::write(rptr);
          }
-
          default:
          {
              // plan A :从typename到Type，然后转
              if (VariantHelper::is_serializable(instance)) {
-                 return Reflection::TypeMeta::writeByName(Variant::get_c_type_name(instance.get_type()), const_cast<void*>(reinterpret_cast<const void*>( instance._data._mem)));
+                 const char* type_name = Variant::get_c_type_name(instance.get_type());
+                 return Json::object{ 
+                     {"$typeName", Json(type_name)},
+                     {"$context", Reflection::TypeMeta::writeByName(type_name, const_cast<void*>(reinterpret_cast<const void*>(instance._data._mem)) )} };
+                 
              }
              return Serializer::write(String(instance));
          }
@@ -232,15 +230,11 @@ namespace lain
          {
              std::string type_name = json_context["$typeName"].string_value();
              ERR_FAIL_COND_V_MSG(!VariantHelper::is_serializable_type(type_name.c_str()), instance, "type cant be reflected");
-             
-                 auto rinstance = Reflection::TypeMeta::newFromNameAndJson(type_name, json_context["$context"]);
-                 instance.type = VariantHelper::get_type_from_name(type_name.c_str());
-                 ERR_FAIL_COND_V_MSG(instance.type == Variant::NIL, instance, type_name);
-                 for (size_t i = 0; i < sizeof(void*); i++) {
-                     instance._data._mem[i] = reinterpret_cast<uint8_t*>(rinstance.m_instance)[i];
-                 }
-             
-
+             Reflection::TypeMeta::writeToInstanceFromNameAndJson(type_name, json_context["$context"], instance._data._mem);
+            instance.type = VariantHelper::get_type_from_name(type_name.c_str());
+            ERR_FAIL_COND_V_MSG(instance.type == Variant::NIL, instance, type_name);
+            
+           
              return instance;
          }
          default:
@@ -265,9 +259,7 @@ namespace lain
          Json::array json_array = json_context.array_items();
          instance.resize(static_cast<int>(json_array.size()));
          for (int i = 0; i < json_array.size(); i++) {
-             Variant newT;
-             Serializer::read(json_array[i], newT);
-             instance.push_back(newT); // 这个variant的实现
+             Serializer::read(json_array[i], instance[i]);
          }
 
          return instance;

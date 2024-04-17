@@ -216,8 +216,8 @@ namespace lain {
 		props = prop_count > 0 ? variants.ptr() : nullptr;
 
 		const GObjectData* nd = gobjects.ptr();
-		GObject** ret_gobjects = (GObject**)memnew_arr(GObject*, nc); // 为什么要在栈上分配一些指针的空间？
-		bool gen_gobject_path_cache = p_edit_state != GEN_EDIT_STATE_DISABLED && gobject_path_cache.is_empty(); // 生成
+		GObject** ret_gobjects = (GObject**)alloca(sizeof(GObject*)*nc); // 为什么要在栈上分配一些指针的空间？
+		bool gen_gobject_path_cache = p_edit_state != GEN_EDIT_STATE_DISABLED && gobject_path_cache.is_empty(); // 重新生成路径
 		// GObjects where instantiation failed (because something is missing.)
 		List<GObject*> stray_instances;
 
@@ -246,7 +246,7 @@ namespace lain {
 					gobj->set_scene_inherited_state(sdata->get_state()); 
 				}
 			}
-			else if(n.instance > 0){  // node data中有一些实例化
+			else if(n.instance >= 0){  // node data中有一些实例化
 				// 占位符
 				if (n.instance & FLAG_INSTANCE_IS_PLACEHOLDER) {
 					const String scene_path = props[n.instance & FLAG_MASK];
@@ -310,7 +310,7 @@ namespace lain {
 				}
 			}
 			else {
-				// GObject belongs to this scene and must be created.
+				// GObject belongs to this scene and must be created. @TODO
 				//Object* obj = ClassDB::instantiate(snames[n.type]);
 				Object* obj = memnew(GObject);
 				gobj = Object::cast_to<GObject>(obj);
@@ -389,10 +389,43 @@ namespace lain {
 					}
 				}
 
+				if (n.owner >= 0) {
+					GOBJ_FROM_ID(owner, n.owner);
+					if (owner) {
+						gobj->_set_owner_nocheck(owner);
+						if (gobj->data.unique_name_in_owner) {
+							gobj->_acquire_unique_name_in_owner();
+						}
+					}
+				}
+				for (int idx = 0; n.instance < 0 && idx < n.components.size(); ++idx) // if n.cowdata = nullptr, return 0
+				{
+					gobj->add_component(n.components[idx]);
+				}
 
+				
+			}
+			ret_gobjects[i] = gobj;
+			if (gobj && gen_gobject_path_cache && ret_gobjects[0]) {
+				GObjectPath n2 = ret_gobjects[0]->get_path_to(gobj);
+				gobject_path_cache[n2] = i;
 			}
 
 		}
+		//remove nodes that could not be added, likely as a result that
+		while (stray_instances.size()) { 
+			memdelete(stray_instances.front()->get());
+			stray_instances.pop_front();
+		}
+
+		for (int i = 0; i < editable_instances.size(); i++) {
+			GObject* ei = ret_gobjects[0]->get_gobject_or_null(editable_instances[i]);
+			if (ei) {
+				ret_gobjects[0]->set_editable_instance(ei, true);
+			}
+		}
+		return ret_gobjects[0]; // root
+
 
 	}
 	static int _vm_get_variant(const Variant& p_variant, HashMap<Variant, int, VariantHasher, VariantComparator>& variant_map) {

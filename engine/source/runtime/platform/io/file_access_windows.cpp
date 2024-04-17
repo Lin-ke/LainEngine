@@ -391,7 +391,7 @@ namespace lain {
 			return st.st_mtime;
 		}
 		else {
-			L_CORE_WARN("Failed to get modified time for: " + p_file + "");
+			L_CORE_WARN(CSTR("Failed to get modified time for: " + p_file + ""));
 			return 0;
 		}
 	}

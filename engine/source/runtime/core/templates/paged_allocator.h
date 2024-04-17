@@ -150,7 +150,7 @@ public:
 		bool leaked = allocs_available < pages_allocated * page_size;
 		if (leaked) {
 			//if (leak_reporting_enabled) {
-				L_CORE_WARN(String("Pages in use exist at exit in PagedAllocator: ") + String(typeid(T).name()));
+			L_CORE_WARN(CSTR(String("Pages in use exist at exit in PagedAllocator: ") + String(typeid(T).name())));
 			//}
 		}
 		else {

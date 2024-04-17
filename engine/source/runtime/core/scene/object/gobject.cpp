@@ -122,6 +122,22 @@ namespace lain {
 		return current;
 	}
 
+	// why use this? data.display_folded
+	void GObject::set_editable_instance(GObject* p_node, bool p_editable) {
+		//ERR_THREAD_GUARD
+			ERR_FAIL_NULL(p_node);
+		ERR_FAIL_COND(!is_ancestor_of(p_node));
+		if (!p_editable) {
+			p_node->data.editable_instance = false;
+			// Avoid this flag being needlessly saved;
+			// also give more visual feedback if editable children are re-enabled
+			data.display_folded = false;
+		}
+		else {
+			p_node->data.editable_instance = true;
+		}
+	}
+
 	bool GObject::has_gobject(const GObjectPath& p_path) const {
 		return get_gobject_or_null(p_path) != nullptr;
 	}

@@ -327,7 +327,7 @@ namespace lain {
 			MutexLock lock(task_mutex);
 			SelfList<Task>* E = low_priority_task_queue.first();
 			while (E) {
-				L_CORE_ERROR("Task waiting was never re-claimed: " + E->self()->description);
+				L_CORE_ERROR(CSTR("Task waiting was never re-claimed: " + E->self()->description));
 				E = E->next();
 			}
 		}
