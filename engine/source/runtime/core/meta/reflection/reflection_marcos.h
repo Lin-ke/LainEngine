@@ -104,7 +104,9 @@
            Serializer::read(json, *reinterpret_cast<CLASS*>(instance));      \
     }                                                   \
 static size_t get_size_of(){ return sizeof(CLASS);}            \
-static void* memnew_class() { return memnew(CLASS); }             \
+static void* memnew_class(void* target = nullptr) { if(target != nullptr) { \
+    memnew_placement(target, {{class_name}}); return target}\
+    return memnew(CLASS); }             \
 static void* memnew_class_arr(int size_of_arr) { return memnew_arr(CLASS, size_of_arr); }\
 };                                          }   \
                                                     \

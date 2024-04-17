@@ -46,7 +46,7 @@ namespace lain
     typedef std::function<void(const Json&, void*)> SerialRead;
     typedef std::function<Json(void*)> SerialWrite;
     typedef std::function<void*(int)>               AllocMemArrFunc;
-    typedef std::function<void*()>                  AllocMemFunc;
+    typedef std::function<void*(void*)>                  AllocMemFunc;
     typedef std::function<size_t()>                 GetSizeOfFunc;
 
 
