@@ -1,7 +1,7 @@
 #pragma once
  
-#ifndef TUPLE_H
-#define TUPLE_H
+#ifndef Tuple_H
+#define Tuple_H
 #include "base.h"
 #include <type_traits>
 namespace lain {
@@ -167,33 +167,79 @@ namespace lain {
 
     
 
-    template <typename... _Elements>
-    class Tuple : public _Tuple_impl<0, _Elements...> {
-        typedef _Tuple_impl<0, _Elements...> _Inherited;
-    public:
-
-         Tuple():_Inherited(){}
-
-        
-        Tuple(const _Elements&... __elements)
-            : _Inherited(__elements...) { }
-        Tuple(const Tuple&) = default;
-         Tuple(Tuple&&) = default;
-
-         template<typename... _UElements>
-         Tuple(const Tuple<_UElements...>& __in)
-             : _Inherited(static_cast<const _Tuple_impl<0, _UElements...>&>(__in))
-         { }
-         template<typename... _UElements>
-         Tuple(Tuple<_UElements...>&& __in)
-             : _Inherited(static_cast<_Tuple_impl<0, _UElements...>&&>(__in)) { }
-        
-        
+    template < typename... _Elements>
+               class Tuple : public _Tuple_impl < 0, _Elements...>
+         {
+         typedef _Tuple_impl<0, _Elements...> _Inherited;
+         
+         public:
+            Tuple()
+       : _Inherited() { }
+ 
+       explicit
+       Tuple(const _Elements&... __elements)
+ : _Inherited(__elements...) { }
+ 
+       template < typename... _UElements>
+         explicit
+         Tuple(_UElements&&... __elements)
+     : _Inherited(std::forward<_UElements>(__elements)...) { }
+ 
+       Tuple(const Tuple & __in)
+ : _Inherited(static_cast<const _Inherited&>(__in)) { }
+ 
+       Tuple(Tuple && __in)
+ : _Inherited(static_cast<_Inherited&&>(__in)) { }
+ 
+       template<typename... _UElements>
+         Tuple(const Tuple<_UElements...>&__in)
+     : _Inherited(static_cast<const _Tuple_impl<0, _UElements...>&>(__in))
+     { }
+ 
+       template < typename... _UElements>
+         Tuple(Tuple<_UElements...> && __in)
+ : _Inherited(static_cast<_Tuple_impl<0, _UElements...>&&>(__in)) { }
+ 
+       // XXX http://gcc.gnu.org/ml/libstdc++/2008-02/msg00047.html
+       template<typename... _UElements>
+         Tuple(Tuple<_UElements...>&__in)
+     : _Inherited(static_cast<const _Tuple_impl<0, _UElements...>&>(__in))
+     { }
+ 
+       Tuple &
+       operator=(const Tuple & __in)
+       {
+     static_cast<_Inherited&>(*this) = __in;
+     return *this;
+       }
+ 
+       Tuple &
+       operator=(Tuple && __in)
+       {
+     static_cast<_Inherited&>(*this) = std::move(__in);
+     return *this;
+       }
+ 
+       template < typename... _UElements>
+         Tuple &
+         operator=(const Tuple<_UElements...>&__in)
+         {
+       static_cast<_Inherited&>(*this) = __in;
+       return *this;
+     }
+ 
+       template<typename... _UElements>
+         Tuple&
+         operator=(Tuple<_UElements...>&& __in)
+         {
+       static_cast<_Inherited&>(*this) = std::move(__in);
+       return *this;
+     }
     };
 
     template<typename... _Elements>
      Tuple<typename _Elements...>
-        make_tuple(_Elements&&... __args)
+        make_Tuple(_Elements&&... __args)
     {
         typedef Tuple<typename _Elements...>
             __result_type;
@@ -201,48 +247,48 @@ namespace lain {
     }
 
     template<int32_t __i, typename _Head, typename... _Tail>
-    struct tuple_element;
+    struct Tuple_element;
 
     template<int32_t __i, typename _Head, typename... _Tail>
-    struct tuple_element<__i, Tuple<_Head, _Tail...> >
-        : tuple_element<__i - 1, Tuple<_Tail...> > { };
+    struct Tuple_element<__i, Tuple<_Head, _Tail...> >
+        : Tuple_element<__i - 1, Tuple<_Tail...> > { };
 
     template<typename _Head, typename... _Tail>
-    struct tuple_element<0, Tuple<_Head, _Tail...> >
+    struct Tuple_element<0, Tuple<_Head, _Tail...> >
     {
         typedef _Head type; // public继承
     };
     template<size_t __i>
-    struct tuple_element<__i, Tuple<>>
+    struct Tuple_element<__i, Tuple<>>
     {
         static_assert(__i < 0,
-            "tuple index is in range");
+            "Tuple index is in range");
     };
 
 
     template<int32_t __i, typename _Head, typename... _Tail>
      _Head&
-        __tuple_get_helper(_Tuple_impl<__i, _Head, _Tail...>& __t) noexcept
+        __Tuple_get_helper(_Tuple_impl<__i, _Head, _Tail...>& __t) noexcept
     {
         return _Tuple_impl<__i, _Head, _Tail...>::_M_head(__t);
     }
 
     template<int32_t __i, typename _Head, typename... _Tail>
      const _Head&
-        __tuple_get_helper(const _Tuple_impl<__i, _Head, _Tail...>& __t) noexcept
+        __Tuple_get_helper(const _Tuple_impl<__i, _Head, _Tail...>& __t) noexcept
     {
         return _Tuple_impl<__i, _Head, _Tail...>::_M_head(__t);
     }
     template<typename _Head, int32_t __i, typename... _Tail>
      _Head&
-        __tuple_get_helper2(_Tuple_impl<__i, _Head, _Tail...>& __t) noexcept
+        __Tuple_get_helper2(_Tuple_impl<__i, _Head, _Tail...>& __t) noexcept
     {
         return _Tuple_impl<__i, _Head, _Tail...>::_M_head(__t);
     }
 
     template<typename _Head, int32_t __i, typename... _Tail>
      const _Head&
-        __tuple_get_helper2(const _Tuple_impl<__i, _Head, _Tail...>& __t) noexcept
+        __Tuple_get_helper2(const _Tuple_impl<__i, _Head, _Tail...>& __t) noexcept
     {
         return _Tuple_impl<__i, _Head, _Tail...>::_M_head(__t);
     }
@@ -251,73 +297,73 @@ namespace lain {
     /// </summary>
     /// <typeparam name="_Tp">index</typeparam>
     /// <typeparam name="..._Types">通过类型推导</typeparam>
-    /// <param name="__t">tuple</param>
+    /// <param name="__t">Tuple</param>
     /// <returns></returns>
     template <typename _Tp, typename... _Types>
      _Tp&
-        __tuple_get(Tuple<_Types...>& __t) noexcept
+        __Tuple_get(Tuple<_Types...>& __t) noexcept
     {
-        return __tuple_get_helper2<_Tp>(__t);
+        return __Tuple_get_helper2<_Tp>(__t);
     }
     template <typename _Tp, typename... _Types>
      const _Tp&
-        __tuple_get(const Tuple<_Types...>& __t) noexcept
+        __Tuple_get(const Tuple<_Types...>& __t) noexcept
     {
-        return __tuple_get_helper2<_Tp>(__t);
+        return __Tuple_get_helper2<_Tp>(__t);
     }
 
     template <typename _Tp, typename... _Types>
      _Tp&&
-        __tuple_get(Tuple<_Types...>&& __t) noexcept
+        __Tuple_get(Tuple<_Types...>&& __t) noexcept
     {
-        return std::forward<_Tp&&>(__tuple_get_helper2<_Tp>(__t));
+        return std::forward<_Tp&&>(__Tuple_get_helper2<_Tp>(__t));
     }
 
 
-    /// Return a reference to the ith element of a tuple.
+    /// Return a reference to the ith element of a Tuple.
     template<int32_t __i, typename... _Elements>
-     typename tuple_element<__i, Tuple<_Elements...>>::type&
-        __tuple_get(Tuple<_Elements...>& __t) noexcept
+     typename Tuple_element<__i, Tuple<_Elements...>>::type&
+        __Tuple_get(Tuple<_Elements...>& __t) noexcept
     {
-        return __tuple_get_helper<__i>(__t);
+        return __Tuple_get_helper<__i>(__t);
     }
 
-    /// Return a const reference to the ith element of a const tuple.
+    /// Return a const reference to the ith element of a const Tuple.
     template<int32_t __i, typename... _Elements>
-     const typename tuple_element<__i, Tuple<_Elements...>>::type&
-        __tuple_get(const Tuple<_Elements...>& __t) noexcept
+     const typename Tuple_element<__i, Tuple<_Elements...>>::type&
+        __Tuple_get(const Tuple<_Elements...>& __t) noexcept
     {
-        return __tuple_get_helper<__i>(__t);
+        return __Tuple_get_helper<__i>(__t);
     }
 
-    /// Return an rvalue reference to the ith element of a tuple rvalue.
+    /// Return an rvalue reference to the ith element of a Tuple rvalue.
     template<int32_t __i, typename... _Elements>
-     typename tuple_element<__i, Tuple<_Elements...>>::type&&
-        __tuple_get(Tuple<_Elements...>&& __t) noexcept
+     typename Tuple_element<__i, Tuple<_Elements...>>::type&&
+        __Tuple_get(Tuple<_Elements...>&& __t) noexcept
     {
-        typedef tuple_element<__i, Tuple<_Elements...>> __element_type;
+        typedef Tuple_element<__i, Tuple<_Elements...>> __element_type;
         return std::forward<__element_type&&>(std::get<__i>(__t));
     }
 
     /**
-  * Error case for tuple_element: invalid index.
+  * Error case for Tuple_element: invalid index.
   */
 
     template<typename _Tp, typename _Up, size_t __i, size_t __size>
-    struct __tuple_compare
+    struct __Tuple_compare
     {
         static  bool
             __eq(const _Tp& __t, const _Up& __u)
         {
             return bool(get<__i>(__t) == get<__i>(__u))
-                && __tuple_compare<_Tp, _Up, __i + 1, __size>::__eq(__t, __u);
+                && __Tuple_compare<_Tp, _Up, __i + 1, __size>::__eq(__t, __u);
         }
         static  bool
             __less(const _Tp& __t, const _Up& __u)
         {
             return bool(get<__i>(__t) < get<__i>(__u))
                 || (!bool(get<__i>(__u) < get<__i>(__t))
-                    && __tuple_compare<_Tp, _Up, __i + 1, __size>::__less(__t, __u));
+                    && __Tuple_compare<_Tp, _Up, __i + 1, __size>::__less(__t, __u));
         }
     };
 
@@ -328,9 +374,9 @@ namespace lain {
             const Tuple<_UElements...>& __u)
     {
         static_assert(sizeof...(_TElements) == sizeof...(_UElements),
-            "tuple objects can only be compared if they have equal sizes.");
-        using __compare = __tuple_compare<tuple<_TElements...>,
-            tuple<_UElements...>,
+            "Tuple objects can only be compared if they have equal sizes.");
+        using __compare = __Tuple_compare<Tuple<_TElements...>,
+            Tuple<_UElements...>,
             0, sizeof...(_TElements)>;
         return __compare::__eq(__t, __u);
     }
@@ -341,12 +387,12 @@ namespace lain {
             const Tuple<_UElements...>& __u)
     {
         static_assert(sizeof...(_TElements) == sizeof...(_UElements),
-            "tuple objects can only be compared if they have equal sizes.");
-        using __compare = __tuple_compare<tuple<_TElements...>,
-            tuple<_UElements...>,
+            "Tuple objects can only be compared if they have equal sizes.");
+        using __compare = __Tuple_compare<Tuple<_TElements...>,
+            Tuple<_UElements...>,
             0, sizeof...(_TElements)>;
         return __compare::__less(__t, __u);
     }
 }
 
-#endif // !TUPLE_H
+#endif // !Tuple_H

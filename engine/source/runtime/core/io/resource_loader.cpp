@@ -22,6 +22,7 @@ namespace lain {
 	SafeBinaryMutex<ResourceLoader::BINARY_MUTEX_TAG> ResourceLoader::thread_load_mutex;
 	// HashMap
 	HashMap<String, Vector<int>> ResourceLoader::ext_to_loader_idx;
+	HashMap<String, Vector<int>> ResourceLoader::type_to_loader_idx;
 
 
 	void ResourceLoader::initialize() {}
@@ -44,9 +45,17 @@ namespace lain {
 			loader[loader_count++] = p_format_loader;
 		}
 		List<String> exts;
-		p_format_loader->get_recognized_extensions(&exts);
+		p_format_loader->get_possible_extensions(&exts);
+		List<String> res_types;
+
+		p_format_loader->get_possible_resources(&res_types);
+
 		for (const String& ext : exts) {
 			Vector<int>& idxs = ext_to_loader_idx[ext];
+			idxs.append(saved_idx);
+		}
+		for (const String& res_type : res_types) {
+			Vector<int>& idxs = type_to_loader_idx[res_type];
 			idxs.append(saved_idx);
 		}
 	}
@@ -66,7 +75,17 @@ namespace lain {
 		ERR_FAIL_COND(i >= loader_count); // Not found
 
 		List<String> exts;
-		p_format_loader->get_recognized_extensions(&exts);
+		p_format_loader ->get_possible_extensions(&exts);
+		for (const String& ext : exts) {
+			Vector<int>& idxs = type_to_loader_idx[ext];
+			idxs.erase(i);
+			if (idxs.size() == 0) {
+				ERR_FAIL_COND(!type_to_loader_idx.erase(ext)); // delete failed
+			}
+		}
+
+		exts.clear();
+		p_format_loader->get_possible_resources(&exts);
 		for (const String& ext : exts) {
 			Vector<int>& idxs = ext_to_loader_idx[ext];
 			idxs.erase(i);
@@ -517,12 +536,33 @@ namespace lain {
 
 	//// ResourceFormatLoader
 
-	void ResourceFormatLoader::get_recognized_extensions(List<String>* p_extensions) const {
-	}
+	/*void ResourceFormatLoader::get_possible_extensions(List<String>* p_extensions) const {
+	}*/
+
 	
 	Ref<Resource> ResourceFormatLoader::load(const String& p_path, const String& p_original_path, Error* r_error, bool p_use_sub_threads, float* r_progress, CacheMode p_cache_mode) {
 		ERR_FAIL_V_MSG(Ref<Resource>(), "Failed to load resource '" + p_path + "'. ResourceFormatLoader::load was not implemented for this resource type.");
 
+	}
+
+	bool ResourceLoader::exists(const String& p_path, const String& p_type_hint) {
+		String local_path = _validate_local_path(p_path);
+
+		if (ResourceCache::has(local_path)) {
+			return true; // If cached, it probably exists
+		}
+
+		/*bool xl_remapped = false;
+		String path = _path_remap(local_path, &xl_remapped);*/
+		String ext = p_path.get_extension();
+		for (auto idx : ext_to_loader_idx[ext]) {
+			if (p_type_hint != "" && !type_to_loader_idx[p_type_hint].has(idx)) {
+				continue; // if have typehint but idx can't use
+			}
+			if (loader[idx]->exists(p_path)) return true;
+		}
+
+		return FileAccess::exists(p_path);
 	}
 
 }

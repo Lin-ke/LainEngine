@@ -15,13 +15,12 @@ project "Editor"
 
 	includedirs
 	{
+		"%{IncludeDir.json11}",
 		"%{IncludeDir.spdlog}",
 		prjprefix,
-      (prjprefix .. "/runtime"),
+		(prjprefix .. "/editor"),
+      	(prjprefix .. "/runtime"),
 		vdrprefix,
-		"%{IncludeDir.glm}",
-		"%{IncludeDir.json11}",
-
 	}
 
 	links

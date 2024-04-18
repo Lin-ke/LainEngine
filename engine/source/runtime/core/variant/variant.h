@@ -206,6 +206,8 @@ namespace lain {
 		Variant(const Vector<int64_t>& p_int64_array);
 		Variant(const Vector<int32_t>& p_int32_array);
 		Variant(const Vector<double>& p_double_array);
+		Variant(const Vector<ui8>& p_ui8_array);
+
 		Variant(const Dictionary& p_dictionary);
 
 		// object

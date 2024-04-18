@@ -428,6 +428,8 @@ namespace lain
             return ret;
         }
 
+        L_INLINE Vector3 lerp(const Vector3& rhs, real_t alpha) { return Vector3::lerp(*this, rhs, alpha); }
+
         /** Calculates a reflection vector to the plane with the given normal .
         @remarks NB assumes 'this' is pointing AWAY FROM the plane, invert if it is not.
         */

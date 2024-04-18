@@ -3,13 +3,6 @@
 #define __PAIR_H__
 
 #include "base.h"
-//#include "tuple.h"
-#include <tuple>
-#define Tuple std::tuple
-template<int32_t Idx, typename... Elem>
-auto __tuple_get(const Tuple<Elem...>& tuple) {
-	return std::get<Idx>(tuple);
-}
 namespace lain {
 
 template <class F, class S>
@@ -34,6 +27,14 @@ struct Pair {
 template <class F, class S>
 bool operator==(const Pair<F, S>& pair, const Pair<F, S>& other) {
 	return (pair.first == other.first) && (pair.second == other.second);
+}
+
+template <class F, class S>
+bool operator<(const Pair<F, S>& A, const Pair<F, S>& B) {
+	if (A.first != B.first) {
+		return A.first < B.first;
+	}
+	return A.second < B.second;
 }
 
 template <class F, class S>
@@ -93,25 +94,25 @@ struct KeyValueSort {
 	}
 };
 
-template <class K, class... V>
-struct KeyValues {
-	const K key;
-	Tuple<V...> value;
-
-	void operator=(const KeyValues& p_kv) = delete;
-	KeyValues(const KeyValues& p_kv) :
-		key(p_kv.key),
-		value(p_kv.value)
-	{
-	}
-
-	template <typename K, class... V>
-	KeyValues(const K& p_key, const V&... p_value) :
-		key(p_key),
-	{
-	 values = make_tuple(p_value...);
-	}
-};
+//template <class K, class... V>
+//struct KeyValues {
+//	const K key;
+//	Tuple<V...> value;
+//
+//	void operator=(const KeyValues& p_kv) = delete;
+//	KeyValues(const KeyValues& p_kv) :
+//		key(p_kv.key),
+//		value(p_kv.value)
+//	{
+//	}
+//
+//	template <typename K, class... V>
+//	KeyValues(const K& p_key, const V&... p_value) :
+//		key(p_key),
+//	{
+//	 values = make_tuple(p_value...);
+//	}
+//};
 
 }
 

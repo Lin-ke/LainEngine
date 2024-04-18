@@ -21,11 +21,13 @@ project "LainRuntime"
       {
          prjprefix,
          prjprefix .. "/runtime",
-          "%{IncludeDir.spdlog}",
-          "%{IncludeDir.glfw}",
-          "%{IncludeDir.json11}",
-            "%{IncludeDir.mbedtls}",
+         "%{IncludeDir.spdlog}",
+         "%{IncludeDir.glfw}",
+         "%{IncludeDir.json11}",
+         "%{IncludeDir.mbedtls}",
          "%{IncludeDir.VulkanSDK}",
+         "%{IncludeDir.stb_image}",
+         "%{IncludeDir.tinyobj}",
 
       }
       -- the links aligns with the project names in premakes.lua

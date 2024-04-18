@@ -5,7 +5,7 @@
 #include "core/meta/reflection/reflection.h"
 #include "resource/common/scene_res.h"
 #include "_generated/serializer/all_serializer.h"
-
+#include "core/templates/tuple.h"
 //#define _printerr() ERR_PRINT(String(res_path + ":" + itos(lines) + " - Parse Error: " + error_text).utf8().get_data());
 
 namespace lain{
@@ -20,9 +20,13 @@ namespace lain{
 		return saver.save(p_path, p_resource, p_flags);
 	}
 
-	void ResourceFormatLoaderText::get_recognized_extensions(List<String>* p_extensions) const {
+	void ResourceFormatLoaderText::get_possible_extensions(List<String>* p_extensions) const {
 		p_extensions->push_back("tscn");
 		p_extensions->push_back("tres");
+	}
+
+	void ResourceFormatLoaderText::get_possible_resources(List<String>* p_extensions) const {
+		p_extensions->push_back("PackedScene");
 	}
 	Ref<Resource> ResourceFormatLoaderText::load(const String& p_path, const String& p_original_path, Error* r_error, bool p_use_sub_threads, float* r_progress, CacheMode p_cache_mode) {
 		if (r_error) {
@@ -483,6 +487,7 @@ namespace lain{
 			}
 			
 			Vector<Pair<int,Pair<String, Ref<Resource>>>> sorted_res;
+			
 			//sorted_res.resize(10);
 			// Create IDs for non cached resources.
 			for (KeyValue<Ref<Resource>, Pair<int, String>>& E : external_resources) {
@@ -506,8 +511,7 @@ namespace lain{
 				sorted_res.push_back(Pair(E.value.first, Pair(E.value.second, E.key)));
 			}
 			if (sorted_res.size() > 0)
-				sorted_res.sort_custom(PairSort<sorted_res  ::f_type> >);
-
+				sorted_res.sort_custom< PairSort<int, Pair<String, Ref<Resource> >> >();
 			// sort
 			// 0 inx, 1 id, 2 res
 			packed_res.ext_res.resize(sorted_res.size());

@@ -196,6 +196,16 @@ void ResourceSaver::remove_resource_format_saver(Ref<ResourceFormatSaver> p_form
 			ERR_FAIL_COND(!type_to_saver_idx.erase(ext)); // delete failed
 		}
 	}
+
+	exts.clear();
+	p_format_saver->get_possible_resources(&exts);
+	for (const String& ext : exts) {
+		Vector<int>& idxs = ext_to_saver_idx[ext];
+		idxs.erase(i);
+		if (idxs.size() == 0) {
+			ERR_FAIL_COND(!ext_to_saver_idx.erase(ext)); // delete failed
+		}
+	}
 	 //Shift next savers up
 	for (; i < saver_count - 1; ++i) {
 		saver[i] = saver[i + 1];

@@ -215,6 +215,10 @@ namespace lain {
 		type = PACKED_FLOAT64_ARRAY;
 		_data.packed_array = PackedArrayRef<double>::create(p_double_array);
 	}
+	Variant::Variant(const Vector<ui8>& p_ui8_array) {
+		type = PACKED_BYTE_ARRAY;
+		_data.packed_array = PackedArrayRef<ui8>::create(p_ui8_array);
+	}
 
 	Variant::Variant(const Reflection::ReflectionInstance& p_instance) {
 		using Reflection::TypeMeta;

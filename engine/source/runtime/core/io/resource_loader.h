@@ -23,9 +23,11 @@ namespace lain {
 		};
 		// Ŀǰ=0
 		virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "", Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE);
-		virtual void get_recognized_extensions(List<String>* p_extensions) const;
-		/*virtual bool exists(const String& p_path) const;
-		virtual void get_recognized_extensions_for_type(const String& p_type, List<String>* p_extensions) const;*/
+		virtual void get_possible_extensions(List<String>* p_extensions) const {}
+		virtual void get_possible_resources(List<String>* p_extensions) const {}
+
+		virtual bool exists(const String& p_path) const {}
+		//virtual void get_recognized_extensions_for_type(const String& p_type, List<String>* p_extensions) const;
 		//virtual bool recognize_path(const String& p_path, const String& p_for_type = String()) const; = 0
 		//virtual bool handles_type(const String& p_type) const;
 		//virtual void get_classes_used(const String& p_path, HashSet<StringName>* r_classes);
@@ -89,11 +91,14 @@ namespace lain {
 		static void remove_resource_format_loader(Ref<ResourceFormatLoader> p_format_loader);
 
 		static HashMap<String, Vector<int>> ext_to_loader_idx;
+		static HashMap<String, Vector<int>> type_to_loader_idx;
+
 
 		// get set functions
 		static void set_abort_on_missing_resources(bool p_abort) { abort_on_missing_resource = p_abort; }
 		static bool get_abort_on_missing_resources() { return abort_on_missing_resource; }
 
+		static bool exists(const String& p_path, const String& p_type_hint = "");
 	private:
 		static Ref<Resource> _load_complete_inner(LoadToken& p_load_token, Error* r_error, MutexLock<SafeBinaryMutex<BINARY_MUTEX_TAG>>& p_thread_load_lock);
 
