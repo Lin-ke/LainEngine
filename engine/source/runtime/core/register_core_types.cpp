@@ -7,6 +7,8 @@
 #include "core/meta/serializer/serializer.h"
 // scene
 #include "resource/io/resource_format_text.h"
+#include "resource/io/image_loader.h"
+#include "resource/io/image_loader_stb.h"
 #include "core/scene/scene_stringnames.h"
 #include "core/scene/object/gobject.h"
 namespace lain {
@@ -30,6 +32,9 @@ namespace lain {
 	// godot: register scene types
 	static Ref<ResourceFormatLoaderText> resource_format_loader_text;
 	static Ref<ResourceFormatSaverText> resource_format_saver_text;
+	static Ref<ResourceFormatLoaderImage> resource_format_loader_image;
+
+
 
 
 	void register_core_types() {
@@ -64,20 +69,16 @@ namespace lain {
 
 		resource_format_loader_text.instantiate();
 		ResourceLoader::add_resource_format_loader(resource_format_loader_text);
+
+		resource_format_loader_image.instantiate();
+		ResourceLoader::add_resource_format_loader(resource_format_loader_image);
+
 		resource_format_saver_text.instantiate();
 		ResourceSaver::add_resource_format_saver(resource_format_saver_text);
-		/*auto&& dict = ResourceLoader::type_to_loader_idx;
-		for (auto&& E : dict) {
-			L_JSON(E.key);
-			L_JSON(Serializer::write(E.value).dump());
-		}
-		ResourceLoader::remove_resource_format_loader(resource_format_loader_text);
-		for (auto&& E : dict) {
-			L_JSON(E.key);
-			L_JSON(Serializer::write(E.value).dump());
-		}
-			L_JSON(Variant("removed"));*/
 
+		/*auto&& dict = ResourceLoader::ext_to_loader_idx;
+		L_JSON(dict);*/
+		
 
 		GObject::init_gobj_hrcr();
 

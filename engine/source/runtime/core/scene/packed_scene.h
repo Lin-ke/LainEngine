@@ -143,7 +143,6 @@ public:
 	Error copy_from(const Ref<SceneState>& p_scene_state);
 
 	bool can_instantiate() const;
-	/// @TODO
 	GObject* instantiate(GenEditState p_edit_state) const;
 
 

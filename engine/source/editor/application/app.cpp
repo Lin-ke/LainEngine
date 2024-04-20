@@ -17,7 +17,8 @@ int main() {
 	if (err != OK) {
 		// LPRINT
 	}
-	test::test_scene();
+	//test::test_scene();
+	test::test_image_io();
 
 	os.Run();
 	/*test::test_Vector3_reflect();

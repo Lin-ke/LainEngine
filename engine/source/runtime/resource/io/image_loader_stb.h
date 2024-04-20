@@ -4,6 +4,7 @@
 #include "image_loader.h"
 namespace lain {
 	class StbLoader : public ResourceLoaderImage {
+		friend class ResourceFormatLoaderImage;
 		virtual void get_possible_extensions(List<String>* p_list) const override {
 			p_list->push_back("png");
 			p_list->push_back("jpg");

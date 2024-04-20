@@ -154,10 +154,10 @@ namespace lain
         }
 
         template<typename K, typename V>
-        static Json & write(const lain::HashMap<K, V>& instance) {
+        static Json write(const lain::HashMap<K, V>& instance) {
             Json::object  ret_context;
             for (const KeyValue<K,V>& E : instance) {
-                ret_context.insert_or_assign(Serializer::write(E.key).dump(), Serializer::write(V.value));
+                ret_context.insert_or_assign(Serializer::write(E.key).dump(), Serializer::write(E.value));
             }
             return ret_context;
         }

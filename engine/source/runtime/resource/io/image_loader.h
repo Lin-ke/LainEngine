@@ -3,8 +3,9 @@
 #define IMAGE_LOADER_H
 #include "core/io/resource_loader.h"
 #include "resource/common/image.h"
+
 namespace lain {
-	
+
 	class ResourceFormatLoaderImage;
 
 	// 干活儿的类
@@ -31,6 +32,8 @@ namespace lain {
 		};
 		static void add_image_format_loader(Ref<ResourceLoaderImage>& p_loader);
 		static void remove_image_format_loader(Ref<ResourceLoaderImage>& p_loader);
+		static void remove_all_loaders();
+
 		static Error load_image(const String& p_file, Ref<Image> p_image, Ref<FileAccess> p_custom = Ref<FileAccess>(), LoaderFlags p_flags = ImageLoader::FLAG_NONE, float p_scale = 1.0);
 	};
 
@@ -46,23 +49,28 @@ namespace lain {
 
 	class ResourceFormatLoaderImage : public ResourceFormatLoader {
 	private:
-		
+
 		static ResourceFormatLoaderImage* singleton;
 	public:
 		virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "", Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
-		virtual void get_possible_extensions(List<String>* p_extensions) const{
+		virtual void get_possible_extensions(List<String>* p_extensions) const {
 			ImageLoader::get_possible_extensions(p_extensions);
 		}
 		virtual void get_possible_resources(List<String>* p_extensions) const override {
 			p_extensions->push_back("Image");
 		}
-		
-		ResourceFormatLoaderImage() {
-			singleton = this;
-			// built in loaders
-		} 
-		
-		
+		ResourceFormatLoaderImage();
+		L_INLINE void add_image_format_loader(Ref < ResourceLoaderImage> p_loader) {
+			ImageLoader::add_image_format_loader(p_loader);
+		}
+		L_INLINE void remove_image_format_loader(Ref < ResourceLoaderImage> p_loader) {
+			ImageLoader::remove_image_format_loader(p_loader);
+		}
+		~ResourceFormatLoaderImage() {
+			singleton = nullptr;
+			ImageLoader::remove_all_loaders();
+		}
+
 	};
 	
 }

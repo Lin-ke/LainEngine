@@ -74,6 +74,7 @@ void  L_PERROR(const Types&... args)
 	L_CORE_ERROR(ss.str());
 }
 
+
 template <typename ... Types>
 void  L_PWARNING(const Types&... args)
 {

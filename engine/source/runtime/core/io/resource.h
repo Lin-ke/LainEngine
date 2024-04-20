@@ -56,10 +56,12 @@ namespace lain {
 		virtual void _resource_path_changed();
 		
 		_FORCE_INLINE_ bool IsBuiltIn() const { return path_cache.is_empty() || path_cache.contains("::") || path_cache.begins_with("local://"); }
+		~Resource();
 	protected:
 		void _set_path(const String& p_path) { SetPath(p_path, false); }
 		void _take_over_path(const String& p_path) { SetPath(p_path, true); }
 		virtual void reset_local_to_scene() {}
+	private:
 
 	};
 	class ResourceCache {

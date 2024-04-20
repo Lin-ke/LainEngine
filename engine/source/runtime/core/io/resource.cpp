@@ -245,6 +245,15 @@ namespace lain {
 
 		return ref;
 	}
+
+	Resource::~Resource() {
+		if (!path_cache.is_empty()) {
+			ResourceCache::lock.lock();
+			ResourceCache::resources.erase(path_cache);
+			ResourceCache::lock.unlock();
+		}
+	}
+
 	void ResourceCache::get_cached_resources(List<Ref<Resource>>* p_resources) {
 		lock.lock();
 

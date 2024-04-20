@@ -1,4 +1,5 @@
 #include "image_loader.h"
+#include "image_loader_stb.h"
 namespace lain {
 
 	Ref<Resource> ResourceFormatLoaderImage::load(const String& p_path, const String& p_original_path, Error* r_error, bool p_use_sub_threads, float* r_progress, CacheMode p_cache_mode) {
@@ -13,7 +14,7 @@ namespace lain {
 		ERR_FAIL_COND_V(ImageLoader::ext_to_id[ext].is_empty(), (*r_error = ERR_FILE_UNRECOGNIZED, Ref<Resource>()));
 		Ref<Image> image;
 		image.instantiate();
-		Error err;
+		Error err = FAILED;
 		for (int i : ImageLoader::ext_to_id[ext]) {
 			err = ImageLoader::loader[i]->load_image(image, f);
 			if (err != OK) continue;
@@ -25,35 +26,69 @@ namespace lain {
 
 	ResourceFormatLoaderImage* ResourceFormatLoaderImage::singleton = nullptr;
 
+	ResourceFormatLoaderImage::ResourceFormatLoaderImage() {
+			singleton = this;
+			// built in loaders
+			Ref<StbLoader> stbloader = memnew(StbLoader);
+			add_image_format_loader(stbloader);
+	}
+	
+
+
 	Ref<ResourceLoaderImage> ImageLoader::loader[ImageLoader::MAX_LOADERS];
+	int ImageLoader::loader_count = 0;
 	HashMap<String, Vector<int>> ImageLoader::ext_to_id;
 
 	void ImageLoader::add_image_format_loader(Ref<ResourceLoaderImage>& p_loader) {
 		ERR_FAIL_COND(p_loader.is_null());
-
-		int i;
-		for (i = 0; i < loader_count; i++) {
-			if (loader[i] == p_loader) {
-				// 移动
-				break;
-			}
-		}
-		ERR_FAIL_COND( i == loader_count);
-		for (; i < loader_count - 1; i++) {
-			loader[i] = loader[i+1];
-		}
+		ERR_FAIL_COND(loader_count >= ImageLoader::MAX_LOADERS);
+		
+		loader[loader_count] = p_loader;
 		List<String> exts;
 		p_loader->get_possible_extensions(&exts);
 
 		for (const String& ext : exts) {
 			Vector<int>& idxs = ext_to_id[ext];
-			idxs.erase(i);
+			idxs.append(loader_count);
+		}
+		loader_count++;
+	}
+
+	void ImageLoader::remove_image_format_loader(Ref<ResourceLoaderImage>& p_loader) {
+		int idx;
+		for (idx = 0; idx < loader_count; idx++) {
+			if (loader[idx] == p_loader) break;
+		}
+		ERR_FAIL_COND_MSG(idx == loader_count, "loader not found");
+	
+
+		List<String> exts;
+		p_loader->get_possible_extensions(&exts);
+
+		for (const String& ext : exts) {
+			Vector<int>& idxs = ext_to_id[ext];
+			idxs.erase(idx);
 			if (idxs.size() == 0) {
 				ERR_FAIL_COND(!ext_to_id.erase(ext)); // delete failed
 			}
 		}
+
 		loader_count--;
+		for (; idx < loader_count - 1; idx++) {
+			loader[idx] = loader[idx + 1]; // 这些ref都去ref别的
+		}
+		loader[loader_count-1].unref(); // unref
+
+		loader_count--;
+
 	}
+	void ImageLoader::remove_all_loaders() {
+		for (int i = 0; i < loader_count; i++) {
+			loader[i].unref();
+		}
+		loader_count = 0;
+	}
+
 
 	Error ImageLoader::load_image(const String& p_file, Ref<Image> p_image, Ref<FileAccess> p_custom, LoaderFlags p_flags, float p_scale) {
 		ERR_FAIL_COND_V_MSG(p_image.is_null(), ERR_INVALID_PARAMETER, "Can't load an image: invalid Image object.");

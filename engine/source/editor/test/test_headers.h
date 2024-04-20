@@ -4,4 +4,6 @@
 #include "test_reflect.h"
 #include "test_fileio.h"
 #include "test_scene.h"
+#include "test_imageio.h"
+#include "test_tree.h"
 #endif // !TEST_HEADERS_H

@@ -6,8 +6,8 @@ namespace lain {
 
 	Error StbLoader::load_image(Ref<Image> p_image, Ref<FileAccess> f, ImageLoader::LoaderFlags p_flags, float p_scale) {
 		int width, height, channels;
-		const char* p_file = CSTR(f->get_path_absolute());
-		ui8* img = stbi_load(p_file, & width, & height, & channels, 0);
+		// 等号运算符是错误的
+		ui8* img = stbi_load(CSTR(f->get_path_absolute()), & width, & height, & channels, 0);
 		ERR_FAIL_NULL_V_MSG(img, ERR_FILE_CORRUPT, "stbi_load failed");
 		Image::Format fmt;
 		Vector<ui8> data;
@@ -20,7 +20,7 @@ namespace lain {
 		stbi_image_free(img);
 		return OK;
 	}
-	Image::Format _get_format(String p_ext, int p_channels) {
+	Image::Format StbLoader::_get_format(String p_ext, int p_channels) {
 		if (p_ext == "jpeg" || p_ext == "jpg") {
 			if (p_channels == 1) {
 				return Image::FORMAT_L8;

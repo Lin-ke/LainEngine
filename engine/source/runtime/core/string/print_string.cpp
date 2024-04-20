@@ -2,7 +2,7 @@
 namespace lain {
 	static PrintHandlerList* print_handler_list = nullptr;
 	void print_error(String p_string) {
-		L_ERROR(p_string.utf8().get_data());
+		L_CORE_ERROR(CSTR(p_string));
 
 		_global_lock();
 		PrintHandlerList* l = print_handler_list;
@@ -15,7 +15,7 @@ namespace lain {
 	}
 	void __print_line(String p_string) {
 
-		L_CORE_INFO("%s\n", p_string.utf8().get_data());
+		L_CORE_INFO("%s\n", CSTR(p_string));
 
 		_global_lock();
 		PrintHandlerList* l = print_handler_list;
@@ -102,7 +102,7 @@ namespace lain {
 			p_string_ansi = p_string_ansi.replace("[/fgcolor]", "\u001b[39;49m");
 		}
 
-		L_CORE_INFO("%s\n", p_string_ansi.utf8().get_data());
+		L_CORE_INFO("%s\n", CSTR(p_string_ansi));
 
 		_global_lock();
 		PrintHandlerList* l = print_handler_list;

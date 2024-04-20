@@ -49,7 +49,7 @@ namespace lain {
     int WindowSystem::NewWindow(WindowCreateInfo create_info) {
         _THREAD_SAFE_METHOD_
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        GLFWwindow* window = glfwCreateWindow(create_info.width, create_info.height, create_info.title.utf8().get_data(), nullptr, nullptr);
+        GLFWwindow* window = glfwCreateWindow(create_info.width, create_info.height, CSTR(create_info.title), nullptr, nullptr);
         // add
         if (!window) {
             glfwTerminate();

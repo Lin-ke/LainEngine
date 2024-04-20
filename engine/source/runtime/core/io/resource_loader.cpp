@@ -356,25 +356,15 @@ namespace lain {
 		
 		bool found = false;
 		Ref<Resource> res;
-		//for (int i = 0; i < loader_count; i++) {
-		//	// 其他加载类的
-		//	if (!loader[i]->recognize_path(p_path, p_type_hint)) {
-		//		continue;
-		//	}
-		//	found = true;
-		//	res = loader[i]->load(p_path, !p_original_path.is_empty() ? p_original_path : p_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);
-		//	if (!res.is_null()) {
-		//		break;
-		//	}
-		//}
 		String extension = p_path.get_extension();
 		if (ext_to_loader_idx.has(extension)) {
 			found = true;
 			for (int idx : ext_to_loader_idx[extension]) {
-			res = loader[ext_to_loader_idx[extension][idx]]->load(p_path, !p_original_path.is_empty() ? p_original_path : p_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);
-			if (!res.is_null()) {
-				break;
-			}
+				res = loader[idx]->load(p_path, !p_original_path.is_empty() ? p_original_path : p_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);
+				if (!res.is_null()) {
+					break;
+				}
+				// res is null, try next loader
 			}
 		}
 

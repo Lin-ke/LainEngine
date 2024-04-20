@@ -26,7 +26,7 @@ namespace lain {
 		virtual void get_possible_extensions(List<String>* p_extensions) const {}
 		virtual void get_possible_resources(List<String>* p_extensions) const {}
 
-		virtual bool exists(const String& p_path) const {}
+		virtual bool exists(const String& p_path) const { return false; }
 		//virtual void get_recognized_extensions_for_type(const String& p_type, List<String>* p_extensions) const;
 		//virtual bool recognize_path(const String& p_path, const String& p_for_type = String()) const; = 0
 		//virtual bool handles_type(const String& p_type) const;
