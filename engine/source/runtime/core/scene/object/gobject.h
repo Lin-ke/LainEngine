@@ -10,6 +10,13 @@ namespace lain {
     class Viewport;
     class SceneState;
     
+    // 1. Parent; Children; Sibling的树关系
+    // 2. Owner,树上的节点，但是有保存相关
+    // 3. Grouped, 类似tag，有组关系
+    // 4. Process 部分，有ProcessGroup关系
+
+
+
     class GObject: public Object{
         LCLASS(GObject, Object);
         friend class SceneState;
@@ -21,6 +28,18 @@ namespace lain {
             INTERNAL_MODE_FRONT,
             INTERNAL_MODE_BACK,
         }; // 在siblings强制靠前/靠后
+        enum ProcessThreadGroup {
+            PROCESS_THREAD_GROUP_INHERIT,
+            PROCESS_THREAD_GROUP_MAIN_THREAD,
+            PROCESS_THREAD_GROUP_SUB_THREAD,
+        }; // 处理线程
+        enum ProcessMode : unsigned int {
+            PROCESS_MODE_INHERIT, // same as parent node
+            PROCESS_MODE_PAUSABLE, // process only if not paused
+            PROCESS_MODE_WHEN_PAUSED, // process only if paused
+            PROCESS_MODE_ALWAYS, // process always
+            PROCESS_MODE_DISABLED, // never process
+        };// 处理方法
         struct GroupData {
             bool persistent = false;
             SceneTree::Group* group = nullptr;
@@ -35,15 +54,16 @@ namespace lain {
             StringName name;
             GObject* parent = nullptr;
             GObject* owner = nullptr; // 记录谁实例化了什么
-            bool is_prefab = false;
+            //bool is_prefab = false; // 和scene_file_path应该作用一样
             bool editable_instance : 1; // ？
             bool display_folded : 1;    // ？
             
             bool parent_owned : 1;
             bool in_constructor : 1;
             bool use_placeholder : 1;
-
-
+            // 排序接口
+            int process_priority = 0;
+            int physics_process_priority = 0;
             HashMap<StringName, GObject*> children;
             HashMap<StringName, Component*> components;  // 每种component 最多一个;  类型名-components
 
@@ -90,33 +110,46 @@ namespace lain {
             // ?
             
 
+            // 节点处理顺序
+            int process_thread_group_order = 0;
+            ProcessThreadGroup process_thread_group = PROCESS_THREAD_GROUP_INHERIT;
+            GObject* process_thread_group_owner = nullptr;
+            void* process_group = nullptr; // to avoid cyclic dependency
+            ProcessMode process_mode : ProcessMode::PROCESS_MODE_PAUSABLE; // mode
+            GObject* process_owner = nullptr;
+
         } data; // 防止名称冲突
         
         GObject* get_child(int p_index, bool p_include_internal = true) const;
 
-        String get_scene_file_path() const { return data.scene_file_path; }
-        int get_index() const { return data.index; }
-        StringName get_name() const { return data.name; }
+        L_INLINE String get_scene_file_path() const { return data.scene_file_path; }
+        L_INLINE int get_index() const { return data.index; }
+        L_INLINE StringName get_name() const { return data.name; }
         void set_name(const String& p_name);
-        GObject* get_owner() const { return data.owner; }
-        GObject* get_parent() const { return data.parent; }
+        L_INLINE GObject* get_owner() const { return data.owner; }
+        L_INLINE GObject* get_parent() const { return data.parent; }
         GObject* find_parent(const String& p_pattern) const;
         bool has_gobject(const GObjectPath& p_path) const;
         GObject* get_gobject_or_null(const GObjectPath& p_path) const;
         void set_editable_instance(GObject* p_node, bool p_editable);
 
-        Ref<SceneState> get_scene_inherited_state()const { return data.inherited_state; }
-        Ref<SceneState> get_scene_instance_state() const { return data.instance_state; }
+        L_INLINE Ref<SceneState> get_scene_inherited_state()const { return data.inherited_state; }
+        L_INLINE Ref<SceneState> get_scene_instance_state() const { return data.instance_state; }
         GObject* find_child(const String& pattern, bool p_recuresive, bool p_owned) const;
         GObjectPath get_path() const;
-        void set_scene_instance_state(Ref<SceneState> p) { data.instance_state = p; }
-        void set_scene_file_path(String p_path) { data.scene_file_path = p_path; }
+        L_INLINE void set_scene_instance_state(Ref<SceneState> p) { data.instance_state = p; }
+        L_INLINE void set_scene_file_path(String p_path) { data.scene_file_path = p_path; }
         bool is_ancestor_of(const GObject*) const;
         bool is_unique_name_in_owner() const;
-        bool is_inside_tree() { return data.inside_tree; }
+        L_INLINE bool is_inside_tree() const { return data.inside_tree; }
+        _FORCE_INLINE_ SceneTree* get_tree() const {
+            ERR_FAIL_NULL_V(data.tree, nullptr);
+            return data.tree;
+        }
         bool is_editable_instance(const GObject*) const;
+        bool is_greater_than(const GObject*) const;
         ///@TODO: place holder
-        bool get_scene_instance_load_placeholder() const { return false; }
+        L_INLINE bool get_scene_instance_load_placeholder() const { return false; }
         void add_child(GObject* p_child, bool p_force_readable_name = false, InternalMode p_internal = INTERNAL_MODE_DISABLED);
         void add_sibling(GObject* p_sibling, bool p_force_readable_name = false);
         void remove_child(GObject* p_child);
@@ -126,21 +159,99 @@ namespace lain {
         Vector<Component*> get_components() const;
         int get_component_count() const;
         void add_component(Component*); // 还有一套和children对应的组件
+        // @TODO
         void remove_component(Component* p_child);
         void move_component(Component* p_component, int p_index) ;
 
         void set_owner(GObject*);
         void set_scene_inherited_state(Ref<SceneState> p_scene_state);
-        GObject* get_owner() { return data.owner; }
+        L_INLINE GObject* get_owner() { return data.owner; }
         GObjectPath get_path_to(const GObject*, bool use_unique_path = false) const;
         void add_to_group(const StringName&, bool);
         int get_child_count(bool p_include_internal = true) const;
         void move_child(GObject* p_child, int p_index);
         
+        L_INLINE bool is_physics_processing_internal() const { return data.physics_process_internal; }
+        L_INLINE bool is_physics_processing() const { return data.physics_process; }
+        L_INLINE bool is_processing_internal() const { return data.process_internal; }
+        L_INLINE bool is_processing() const { return data.process; }
+        L_INLINE bool is_any_processing() const {
+            return data.process || data.process_internal || data.physics_process || data.physics_process_internal;
+        }
+
         static int orphan_node_count;
+        // WTODO: Process group management 处理组管理
+        
+        void _add_process_group();
+        void _remove_process_group();
+        void _add_to_process_thread_group();
+        void _remove_from_process_thread_group();
+        void _remove_tree_from_process_thread_group();
+        void _add_tree_to_process_thread_group(GObject* p_owner);
+
+        static thread_local GObject* current_process_thread_group;
+
+        // process
+        bool can_process() const;
+
+
 
         GObject();
         ~GObject();
+
+        // notification机制
+        // notification机制可以用来解耦，并不需要在意
+        enum {
+            // You can make your own, but don't use the same numbers as other notifications in other nodes.
+            NOTIFICATION_ENTER_TREE = 10,
+            NOTIFICATION_EXIT_TREE = 11,
+            NOTIFICATION_MOVED_IN_PARENT = 12,
+            NOTIFICATION_READY = 13,
+            NOTIFICATION_PAUSED = 14,
+            NOTIFICATION_UNPAUSED = 15,
+            NOTIFICATION_PHYSICS_PROCESS = 16,
+            NOTIFICATION_PROCESS = 17,
+            NOTIFICATION_PARENTED = 18,
+            NOTIFICATION_UNPARENTED = 19,
+            NOTIFICATION_SCENE_INSTANTIATED = 20,
+            NOTIFICATION_DRAG_BEGIN = 21,
+            NOTIFICATION_DRAG_END = 22,
+            NOTIFICATION_PATH_RENAMED = 23,
+            NOTIFICATION_CHILD_ORDER_CHANGED = 24,
+            NOTIFICATION_INTERNAL_PROCESS = 25,
+            NOTIFICATION_INTERNAL_PHYSICS_PROCESS = 26,
+            NOTIFICATION_POST_ENTER_TREE = 27,
+            NOTIFICATION_DISABLED = 28,
+            NOTIFICATION_ENABLED = 29,
+            NOTIFICATION_RESET_PHYSICS_INTERPOLATION = 2001, // A GodotSpace Odyssey.
+            // Keep these linked to Node.
+            NOTIFICATION_WM_MOUSE_ENTER = 1002,
+            NOTIFICATION_WM_MOUSE_EXIT = 1003,
+            NOTIFICATION_WM_WINDOW_FOCUS_IN = 1004,
+            NOTIFICATION_WM_WINDOW_FOCUS_OUT = 1005,
+            NOTIFICATION_WM_CLOSE_REQUEST = 1006,
+            NOTIFICATION_WM_GO_BACK_REQUEST = 1007,
+            NOTIFICATION_WM_SIZE_CHANGED = 1008,
+            NOTIFICATION_WM_DPI_CHANGE = 1009,
+            NOTIFICATION_VP_MOUSE_ENTER = 1010,
+            NOTIFICATION_VP_MOUSE_EXIT = 1011,
+
+            NOTIFICATION_OS_MEMORY_WARNING = MainLoop::NOTIFICATION_OS_MEMORY_WARNING,
+            NOTIFICATION_TRANSLATION_CHANGED = MainLoop::NOTIFICATION_TRANSLATION_CHANGED,
+            NOTIFICATION_WM_ABOUT = MainLoop::NOTIFICATION_WM_ABOUT,
+            NOTIFICATION_CRASH = MainLoop::NOTIFICATION_CRASH,
+            NOTIFICATION_OS_IME_UPDATE = MainLoop::NOTIFICATION_OS_IME_UPDATE,
+            NOTIFICATION_APPLICATION_RESUMED = MainLoop::NOTIFICATION_APPLICATION_RESUMED,
+            NOTIFICATION_APPLICATION_PAUSED = MainLoop::NOTIFICATION_APPLICATION_PAUSED,
+            NOTIFICATION_APPLICATION_FOCUS_IN = MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN,
+            NOTIFICATION_APPLICATION_FOCUS_OUT = MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT,
+            NOTIFICATION_TEXT_SERVER_CHANGED = MainLoop::NOTIFICATION_TEXT_SERVER_CHANGED,
+
+            // Editor specific node notifications
+            NOTIFICATION_EDITOR_PRE_SAVE = 9001,
+            NOTIFICATION_EDITOR_POST_SAVE = 9002,
+        };
+
 
     private:
         _FORCE_INLINE_ void _update_children_cache() const {
@@ -175,6 +286,9 @@ namespace lain {
         void _propagate_after_exit_tree();
 
         void _add_component_nocheck(Component*);
+        bool _can_process(bool p_paused) const;
+
+        // 排序接口
         struct ComparatorByIndex {
             bool operator()(const GObject* p_left, const GObject* p_right) const {
                 static const uint32_t order[3] = { 1, 0, 2 };
@@ -186,13 +300,25 @@ namespace lain {
                 return order_left < order_right;
             }
         };
+        struct ComparatorWithPriority {
+            bool operator()(const GObject* p_a, const GObject* p_b) const { return p_b->data.process_priority == p_a->data.process_priority ? p_b->is_greater_than(p_a) : p_b->data.process_priority > p_a->data.process_priority; }
+        };
+
+        struct ComparatorWithPhysicsPriority {
+            bool operator()(const GObject* p_a, const GObject* p_b) const { return p_b->data.physics_process_priority == p_a->data.physics_process_priority ? p_b->is_greater_than(p_a) : p_b->data.physics_process_priority > p_a->data.physics_process_priority; }
+        };
 
 
-        // Node needed in register
+        // GObject needed in register
         static void init_gobj_hrcr();
 
 
         protected:
+            void _block() { data.blocked++; }
+            void _unblock() { data.blocked--; }
+
+            void _notification(int p_notification) {}
+
             virtual void _physics_interpolated_changed() {}
 
             virtual void add_child_notify(GObject* p_child) {}

@@ -13,7 +13,12 @@
 #include "core/string/string_name.h"
 #include "core/variant/variant.h"
 
+// m_class::_get_notification() != m_inherits::_get_notification()
+// 判断是否重载了_notification函数指针
+// 
+// 反射总归是通过字典实现的，但是A.传包装过的variant，B.直接传指针，我觉得还是B更可行，比如一些自定义类，在当前实现中需要通过object* 然后 variant来传
 // Macros
+
 #define LCLASS(m_class, m_inherits)		\
 private:								\
 	void operator=(const m_class &p_rval) {} \
@@ -40,6 +45,21 @@ public:\
 			return String(m_inherits::get_class_static());					   \
 	}									\
 										\
+     \
+	_FORCE_INLINE_ void (Object::*_get_notification() const)(int) {                                                                              \
+		return (void(Object::*)(int)) & m_class::_notification;                                                                                  \
+	}                 \
+	virtual void _notificationv(int p_notification, bool p_reversed) override {                                                                  \
+		if (!p_reversed) {                                                                                                                       \
+			m_inherits::_notificationv(p_notification, p_reversed);                                                                              \
+		}                                                                                                                                        \
+		if (m_class::_get_notification() != m_inherits::_get_notification()) {                                                                   \
+			_notification(p_notification);                                                                                                       \
+		}                                                                                                                                        \
+		if (p_reversed) {                                                                                                                        \
+			m_inherits::_notificationv(p_notification, p_reversed);                                                                              \
+		}                                                                                                                                        \
+	}                                                                                                                                            \
 private:							
 
 
@@ -84,14 +104,14 @@ public:
 		HashMap<StringName, Variant*> metadata_properties;
 		mutable const StringName* _class_name_ptr = nullptr;
 
+
 	L_INLINE bool is_ref_counted() const { return m_type_is_reference; }
-	ObjectID get_instance_id() const { return m_instance_id; }
+	L_INLINE ObjectID get_instance_id() const { return m_instance_id; }
 	/// static method
 	template <class T>
 	static T* cast_to(Object* p_object) {
 		return dynamic_cast<T*>(p_object);
 	}
-
 	template <class T>
 	static const T* cast_to(const Object* p_object) {
 		return dynamic_cast<const T*>(p_object);
@@ -120,6 +140,13 @@ public:
 		}
 		return *_class_name_ptr;
 	}
+	void notification(int p_notification, bool p_reversed = false);
+	virtual void _notificationv(int p_notification, bool p_reversed) {}
+	void _notification(int p_notification) {}
+	_FORCE_INLINE_ void (Object::* _get_notification() const)(int) {
+		return &Object::_notification;
+	}
+
 
 private:
 	ObjectID m_instance_id;

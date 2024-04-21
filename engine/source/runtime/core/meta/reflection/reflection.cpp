@@ -7,6 +7,8 @@ namespace lain
 {
     namespace Reflection 
     {
+        // @TODO把const char*, string换成StringName以进行高效比较
+
         const char* k_unknown_type = "UnknownType";
         const char* k_unknown      = "Unknown";
 

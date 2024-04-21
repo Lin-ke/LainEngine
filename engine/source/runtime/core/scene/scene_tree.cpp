@@ -1,6 +1,7 @@
 #include "scene_tree.h"
 #include "core/scene/object/gobject.h"
 #include "core/scene/packed_scene.h"
+#include "core/thread/worker_thread_pool.h"
 namespace lain {
 	SceneTree* SceneTree::singleton = nullptr;
 	SceneTree::SceneTree() {
@@ -49,5 +50,346 @@ namespace lain {
 
 	}
 
+
+	bool SceneTree::process(double p_time) {
+		root_lock++;
+
+		if (MainLoop::process(p_time)) {
+			_quit = true;
+		}
+
+		process_time = p_time;
+
+		/*if (multiplayer_poll) {
+			multiplayer->poll();
+			for (KeyValue<GObjectPath, Ref<MultiplayerAPI>>& E : custom_multiplayers) {
+				E.value->poll();
+			}
+		}
+
+		emit_signal(SNAME("process_frame"));*/
+
+		//MessageQueue::get_singleton()->flush(); //small little hack
+
+		//flush_transform_notifications();
+
+		_process(false);
+
+		//_flush_ugc();
+		//MessageQueue::get_singleton()->flush(); //small little hack
+		//flush_transform_notifications(); //transforms after world update, to avoid unnecessary enter/exit notifications
+
+		root_lock--;
+
+		/*_flush_delete_queue();
+
+		if (unlikely(pending_new_scene)) {
+			_flush_scene_change();
+		}*/
+
+		//process_timers(p_time, false); //go through timers
+
+		//process_tweens(p_time, false);
+
+		//flush_transform_notifications(); //additional transforms after timers update
+
+		//_call_idle_callbacks();
+
+#ifdef TOOLS_ENABLED
+#ifndef _3D_DISABLED
+		if (Engine::get_singleton()->is_editor_hint()) {
+			//simple hack to reload fallback environment if it changed from editor
+			String env_path = GLOBAL_GET(SNAME("rendering/environment/defaults/default_environment"));
+			env_path = env_path.strip_edges(); //user may have added a space or two
+			String cpath;
+			Ref<Environment> fallback = get_root()->get_world_3d()->get_fallback_environment();
+			if (fallback.is_valid()) {
+				cpath = fallback->get_path();
+			}
+			if (cpath != env_path) {
+				if (!env_path.is_empty()) {
+					fallback = ResourceLoader::load(env_path);
+					if (fallback.is_null()) {
+						//could not load fallback, set as empty
+						ProjectSettings::get_singleton()->set("rendering/environment/defaults/default_environment", "");
+					}
+				}
+				else {
+					fallback.unref();
+				}
+				get_root()->get_world_3d()->set_fallback_environment(fallback);
+			}
+		}
+#endif // _3D_DISABLED
+#endif // TOOLS_ENABLED
+
+		return _quit;
+	}
+
+	void SceneTree::_process(bool p_physics) {
+		if (process_groups_dirty) {
+			{
+				// First, remove dirty groups.
+				// This needs to be done when not processing to avoid problems.
+				ProcessGroup** pg_ptr = (ProcessGroup**)process_groups.ptr(); // discard constness.
+				uint32_t pg_count = process_groups.size();
+
+				for (uint32_t i = 0; i < pg_count; i++) {
+					if (pg_ptr[i]->removed) {
+						// Replace removed with last.
+						pg_ptr[i] = pg_ptr[pg_count - 1];
+						// Retry
+						i--;
+						pg_count--;
+					}
+				}
+				if (pg_count != process_groups.size()) {
+					process_groups.resize(pg_count);
+				}
+			}
+			{
+				// Then, re-sort groups.
+				process_groups.sort_custom<ProcessGroupSort>();
+			}
+
+			process_groups_dirty = false;
+		}
+
+		// Cache the group count, because during processing new groups may be added.
+		// They will be added at the end, hence for consistency they will be ignored by this process loop.
+		// No group will be removed from the array during processing (this is done earlier in this function by marking the groups dirty).
+		uint32_t group_count = process_groups.size();
+
+		if (group_count == 0) {
+			return;
+		}
+
+		process_last_pass++; // Increment pass
+		uint32_t from = 0;
+		uint32_t process_count = 0;
+		nodes_removed_on_group_call_lock++;
+
+		int current_order = process_groups[0]->owner ? process_groups[0]->owner->data.process_thread_group_order : 0;
+		bool current_threaded = process_groups[0]->owner ? process_groups[0]->owner->data.process_thread_group == GObject::PROCESS_THREAD_GROUP_SUB_THREAD : false;
+
+		for (uint32_t i = 0; i <= group_count; i++) {
+			int order = i < group_count && process_groups[i]->owner ? process_groups[i]->owner->data.process_thread_group_order : 0;
+			bool threaded = i < group_count && process_groups[i]->owner ? process_groups[i]->owner->data.process_thread_group == GObject::PROCESS_THREAD_GROUP_SUB_THREAD : false;
+
+			if (i == group_count || current_order != order || current_threaded != threaded) {
+				if (process_count > 0) {
+					// Proceed to process the group.
+					bool using_threads = process_groups[from]->owner && process_groups[from]->owner->data.process_thread_group == GObject::PROCESS_THREAD_GROUP_SUB_THREAD && !node_threading_disabled;
+
+					if (using_threads) {
+						local_process_group_cache.clear();
+					}
+					for (uint32_t j = from; j < i; j++) {
+						if (process_groups[j]->last_pass == process_last_pass) {
+							if (using_threads) {
+								local_process_group_cache.push_back(process_groups[j]);
+							}
+							else {
+								_process_group(process_groups[j], p_physics);
+							}
+						}
+					}
+
+					if (using_threads) {
+						WorkerThreadPool::GroupID id = WorkerThreadPool::get_singleton()->add_template_group_task(this, &SceneTree::_process_groups_thread, p_physics, local_process_group_cache.size(), -1, true);
+						WorkerThreadPool::get_singleton()->wait_for_group_task_completion(id);
+					}
+				}
+
+				if (i == group_count) {
+					// This one is invalid, no longer process
+					break;
+				}
+
+				from = i;
+				current_threaded = threaded;
+				current_order = order;
+			}
+
+			if (process_groups[i]->removed) {
+				continue;
+			}
+
+			ProcessGroup* pg = process_groups[i];
+
+			// Validate group for processing
+			bool process_valid = false;
+			if (p_physics) {
+				if (!pg->physics_nodes.is_empty()) {
+					process_valid = true;
+				}
+				/*else if ((pg == &default_process_group || (pg->owner != nullptr && pg->owner->data.process_thread_messages.has_flag(GObject::FLAG_PROCESS_THREAD_MESSAGES_PHYSICS))) && pg->call_queue.has_messages()) {
+					process_valid = true;
+				}*/
+			}
+			else {
+				if (!pg->nodes.is_empty()) {
+					process_valid = true;
+				}
+				/*else if ((pg == &default_process_group || (pg->owner != nullptr && pg->owner->data.process_thread_messages.has_flag(GObject::FLAG_PROCESS_THREAD_MESSAGES))) && pg->call_queue.has_messages()) {
+					process_valid = true;
+				}*/
+			}
+
+			if (process_valid) {
+				pg->last_pass = process_last_pass; // Enable for processing
+				process_count++;
+			}
+		}
+
+		nodes_removed_on_group_call_lock--;
+		if (nodes_removed_on_group_call_lock == 0) {
+			nodes_removed_on_group_call.clear();
+		}
+	}
+
+	void SceneTree::_process_groups_thread(uint32_t p_index, bool p_physics) {
+		GObject::current_process_thread_group = local_process_group_cache[p_index]->owner;
+		_process_group(local_process_group_cache[p_index], p_physics);
+		GObject::current_process_thread_group = nullptr;
+	}
+
+	void SceneTree::_process_group(ProcessGroup* p_group, bool p_physics) {
+		// When reading this function, keep in mind that this code must work in a way where
+		// if any node is removed, this needs to continue working.
+
+		//p_group->call_queue.flush(); // Flush messages before processing.
+
+		Vector<GObject*>& nodes = p_physics ? p_group->physics_nodes : p_group->nodes;
+		if (nodes.is_empty()) {
+			return;
+		}
+
+		if (p_physics) {
+			if (p_group->physics_node_order_dirty) {
+				nodes.sort_custom<GObject::ComparatorWithPhysicsPriority>();
+				p_group->physics_node_order_dirty = false;
+			}
+		}
+		else {
+			if (p_group->node_order_dirty) {
+				nodes.sort_custom<GObject::ComparatorWithPriority>();
+				p_group->node_order_dirty = false;
+			}
+		}
+
+		// Make a copy, so if nodes are added/removed from process, this does not break
+		Vector<GObject*> nodes_copy = nodes;
+
+		uint32_t node_count = nodes_copy.size();
+		GObject** nodes_ptr = (GObject**)nodes_copy.ptr(); // Force cast, pointer will not change.
+
+		for (uint32_t i = 0; i < node_count; i++) {
+			GObject* n = nodes_ptr[i];
+			if (nodes_removed_on_group_call.has(n)) {
+				// GObject may have been removed during process, skip it.
+				// Keep in mind removals can only happen on the main thread.
+				continue;
+			}
+
+			if (!n->can_process() || !n->is_inside_tree()) {
+				continue;
+			}
+
+			if (p_physics) {
+				if (n->is_physics_processing_internal()) {
+					n->notification(GObject::NOTIFICATION_INTERNAL_PHYSICS_PROCESS);
+				}
+				if (n->is_physics_processing()) {
+					n->notification(GObject::NOTIFICATION_PHYSICS_PROCESS);
+				}
+			}
+			else {
+				if (n->is_processing_internal()) {
+					n->notification(GObject::NOTIFICATION_INTERNAL_PROCESS);
+				}
+				if (n->is_processing()) {
+					n->notification(GObject::NOTIFICATION_PROCESS);
+				}
+			}
+
+		}
+
+		//p_group->call_queue.flush(); // Flush messages also after processing (for potential deferred calls).
+	}
+
+
+
+	bool SceneTree::ProcessGroupSort::operator()(const ProcessGroup* p_left, const ProcessGroup* p_right) const {
+		int left_order = p_left->owner ? p_left->owner->data.process_thread_group_order : 0;
+		int right_order = p_right->owner ? p_right->owner->data.process_thread_group_order : 0;
+
+		if (left_order == right_order) {
+			int left_threaded = p_left->owner != nullptr && p_left->owner->data.process_thread_group == GObject::PROCESS_THREAD_GROUP_SUB_THREAD ? 0 : 1;
+			int right_threaded = p_right->owner != nullptr && p_right->owner->data.process_thread_group == GObject::PROCESS_THREAD_GROUP_SUB_THREAD ? 0 : 1;
+			return left_threaded < right_threaded;
+		}
+		else {
+			return left_order < right_order;
+		}
+	}
+
+
+
+	void SceneTree::_remove_process_group(GObject* p_node) {
+		_THREAD_SAFE_METHOD_
+			ProcessGroup* pg = (ProcessGroup*)p_node->data.process_group;
+		ERR_FAIL_NULL(pg);
+		ERR_FAIL_COND(pg->removed);
+		pg->removed = true;
+		pg->owner = nullptr;
+		p_node->data.process_group = nullptr;
+		process_groups_dirty = true;
+	}
+
+	void SceneTree::_add_process_group(GObject* p_node) {
+		_THREAD_SAFE_METHOD_
+			ERR_FAIL_NULL(p_node);
+
+		ProcessGroup* pg = memnew(ProcessGroup);
+
+		pg->owner = p_node;
+		p_node->data.process_group = pg;
+
+		process_groups.push_back(pg);
+
+		process_groups_dirty = true;
+	}
+
+
+	void SceneTree::_remove_node_from_process_group(GObject* p_node, GObject* p_owner) {
+		_THREAD_SAFE_METHOD_
+			ProcessGroup* pg = p_owner ? (ProcessGroup*)p_owner->data.process_group : &default_process_group;
+
+		if (p_node->is_processing() || p_node->is_processing_internal()) {
+			bool found = pg->nodes.erase(p_node);
+			ERR_FAIL_COND(!found);
+		}
+
+		if (p_node->is_physics_processing() || p_node->is_physics_processing_internal()) {
+			bool found = pg->physics_nodes.erase(p_node);
+			ERR_FAIL_COND(!found);
+		}
+	}
+
+	void SceneTree::_add_node_to_process_group(GObject* p_node, GObject* p_owner) {
+		_THREAD_SAFE_METHOD_
+			ProcessGroup* pg = p_owner ? (ProcessGroup*)p_owner->data.process_group : &default_process_group;
+
+		if (p_node->is_processing() || p_node->is_processing_internal()) {
+			pg->nodes.push_back(p_node);
+			pg->node_order_dirty = true;
+		}
+
+		if (p_node->is_physics_processing() || p_node->is_physics_processing_internal()) {
+			pg->physics_nodes.push_back(p_node);
+			pg->physics_node_order_dirty = true;
+		}
+	}
 
 }

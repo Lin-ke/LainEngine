@@ -28,7 +28,7 @@ public:
 	virtual void initialize() {}
 	virtual void iteration_prepare() {}
 	virtual bool physics_process(double p_time) { return true; }
-	virtual bool process(double p_time) { return true; }
+	virtual bool process(double p_time) { return false; }
 	virtual void finalize() {}
 
 	MainLoop() {}

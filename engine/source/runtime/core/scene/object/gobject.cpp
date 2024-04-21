@@ -938,15 +938,170 @@ namespace lain {
 			return data.children_cache[p_index];
 		}
 	}
+
+	bool GObject::can_process() const {
+		ERR_FAIL_COND_V(!is_inside_tree(), false);
+		return _can_process(get_tree()->is_paused());
+	}
+
+	bool GObject::_can_process(bool p_is_paused) const {
+		ProcessMode process_mode;
+
+		if (data.process_mode == PROCESS_MODE_INHERIT) {
+			if (!data.process_owner) {
+				process_mode = PROCESS_MODE_PAUSABLE;
+			}
+			else {
+				process_mode = data.process_owner->data.process_mode;
+			}
+		}
+		else {
+			process_mode = data.process_mode;
+		}
+
+		// The owner can't be set to inherit, must be a bug.
+		ERR_FAIL_COND_V(process_mode == PROCESS_MODE_INHERIT, false);
+
+		if (process_mode == PROCESS_MODE_DISABLED) {
+			return false;
+		}
+		else if (process_mode == PROCESS_MODE_ALWAYS) {
+			return true;
+		}
+
+		if (p_is_paused) {
+			return process_mode == PROCESS_MODE_WHEN_PAUSED;
+		}
+		else {
+			return process_mode == PROCESS_MODE_PAUSABLE;
+		}
+	}
+
+	bool GObject::is_greater_than(const GObject* p_node) const {
+		ERR_FAIL_NULL_V(p_node, false);
+		ERR_FAIL_COND_V(!data.inside_tree, false);
+		ERR_FAIL_COND_V(!p_node->data.inside_tree, false);
+
+		ERR_FAIL_COND_V(data.depth < 0, false);
+		ERR_FAIL_COND_V(p_node->data.depth < 0, false);
+
+		_update_children_cache();
+
+		int* this_stack = (int*)alloca(sizeof(int) * data.depth);
+		int* that_stack = (int*)alloca(sizeof(int) * p_node->data.depth);
+
+		const GObject* n = this;
+
+		int idx = data.depth - 1;
+		while (n) {
+			ERR_FAIL_INDEX_V(idx, data.depth, false);
+			this_stack[idx--] = n->get_index();
+			n = n->data.parent;
+		}
+
+		ERR_FAIL_COND_V(idx != -1, false);
+		n = p_node;
+		idx = p_node->data.depth - 1;
+		while (n) {
+			ERR_FAIL_INDEX_V(idx, p_node->data.depth, false);
+			that_stack[idx--] = n->get_index();
+
+			n = n->data.parent;
+		}
+		ERR_FAIL_COND_V(idx != -1, false);
+		idx = 0;
+
+		bool res;
+		while (true) {
+			// using -2 since out-of-tree or nonroot nodes have -1
+			int this_idx = (idx >= data.depth) ? -2 : this_stack[idx];
+			int that_idx = (idx >= p_node->data.depth) ? -2 : that_stack[idx];
+
+			if (this_idx > that_idx) {
+				res = true;
+				break;
+			}
+			else if (this_idx < that_idx) {
+				res = false;
+				break;
+			}
+			else if (this_idx == -2) {
+				res = false; // equal
+				break;
+			}
+			idx++;
+		}
+
+		return res;
+	}
+
+
+	void GObject::_add_process_group() {
+		get_tree()->_add_process_group(this);
+	}
+
+	void GObject::_remove_process_group() {
+		get_tree()->_remove_process_group(this);
+	}
+
+	void GObject::_remove_from_process_thread_group() {
+		get_tree()->_remove_node_from_process_group(this, data.process_thread_group_owner);
+	}
+
+	void GObject::_add_to_process_thread_group() {
+		get_tree()->_add_node_to_process_group(this, data.process_thread_group_owner);
+	}
+
+	void GObject::_remove_tree_from_process_thread_group() {
+		if (!is_inside_tree()) {
+			return; // May not be initialized yet.
+		}
+
+		for (KeyValue<StringName, GObject*>& K : data.children) {
+			if (K.value->data.process_thread_group != PROCESS_THREAD_GROUP_INHERIT) {
+				continue;
+			}
+
+			K.value->_remove_tree_from_process_thread_group();
+		}
+
+		if (is_any_processing()) {
+			_remove_from_process_thread_group();
+		}
+	}
+
+	void GObject::_add_tree_to_process_thread_group(GObject* p_owner) {
+		if (is_any_processing()) {
+			_add_to_process_thread_group();
+		}
+
+		data.process_thread_group_owner = p_owner;
+		if (p_owner != nullptr) {
+			data.process_group = p_owner->data.process_group;
+		}
+		else {
+			data.process_group = &data.tree->default_process_group;
+		}
+
+		for (KeyValue<StringName, GObject*>& K : data.children) {
+			if (K.value->data.process_thread_group != PROCESS_THREAD_GROUP_INHERIT) {
+				continue;
+			}
+
+			K.value->_add_to_process_thread_group();
+		}
+	}
+
 	int GObject::orphan_node_count = 0;
+	thread_local GObject* GObject::current_process_thread_group = nullptr;
+
 	GObject::GObject() {
 			
 			orphan_node_count++;
 
 			// Default member initializer for bitfield is a C++20 extension, so:
 
-			/*data.process_mode = PROCESS_MODE_INHERIT;
-			data.physics_interpolation_mode = PHYSICS_INTERPOLATION_MODE_INHERIT;*/
+			data.process_mode = PROCESS_MODE_INHERIT;
 
 			data.physics_process = false;
 			data.process = false;
@@ -959,7 +1114,8 @@ namespace lain {
 			data.unhandled_input = false;
 			data.unhandled_key_input = false;
 
-			/*data.physics_interpolated = false;*/
+			/*data.physics_interpolation_mode = PHYSICS_INTERPOLATION_MODE_INHERIT;
+			data.physics_interpolated = false;*/
 
 			data.parent_owned = false;
 			data.in_constructor = true;
@@ -984,4 +1140,7 @@ namespace lain {
 
 		orphan_node_count--;
 	}
+
+
+
 }

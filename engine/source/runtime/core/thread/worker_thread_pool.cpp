@@ -477,4 +477,87 @@ namespace lain {
 
 		return OK;
 	}
+
+	WorkerThreadPool::GroupID WorkerThreadPool::_add_group_task(const Callable& p_callable, void (*p_func)(void*, uint32_t), void* p_userdata, BaseTemplateUserdata* p_template_userdata, int p_elements, int p_tasks, bool p_high_priority, const String& p_description) {
+		ERR_FAIL_COND_V(p_elements < 0, INVALID_TASK_ID);
+		if (p_tasks < 0) {
+			p_tasks = MAX(1u, threads.size());
+		}
+
+		task_mutex.lock();
+		Group* group = group_allocator.alloc();
+		GroupID id = last_task++;
+		group->max = p_elements;
+		group->self = id;
+
+		Task** tasks_posted = nullptr;
+		if (p_elements == 0) {
+			// Should really not call it with zero Elements, but at least it should work.
+			group->completed.set_to(true);
+			group->done_semaphore.post();
+			group->tasks_used = 0;
+			p_tasks = 0;
+			if (p_template_userdata) {
+				memdelete(p_template_userdata);
+			}
+
+		}
+		else {
+			group->tasks_used = p_tasks;
+			tasks_posted = (Task**)alloca(sizeof(Task*) * p_tasks); // 只需要在栈上分配
+			for (int i = 0; i < p_tasks; i++) {
+				Task* task = task_allocator.alloc();
+				task->native_group_func = p_func;
+				task->native_func_userdata = p_userdata;
+				task->description = p_description;
+				task->group = group;
+				task->callable = p_callable;
+				task->template_userdata = p_template_userdata;
+				tasks_posted[i] = task;
+				// No task ID is used.
+			}
+		}
+
+		groups[id] = group;
+
+		_post_tasks_and_unlock(tasks_posted, p_tasks, p_high_priority);
+
+		return id;
+	}
+	// @TODO read it
+	void WorkerThreadPool::wait_for_group_task_completion(GroupID p_group) {
+		task_mutex.lock();
+		Group** groupp = groups.getptr(p_group);
+		task_mutex.unlock();
+		if (!groupp) {
+			ERR_FAIL_MSG("Invalid Group ID.");
+		}
+
+		{
+			Group* group = *groupp;
+
+			/*if (flushing_cmd_queue) {
+				flushing_cmd_queue->unlock();
+			}*/
+			group->done_semaphore.wait();
+			/*if (flushing_cmd_queue) {
+				flushing_cmd_queue->lock();
+			}*/
+
+			uint32_t max_users = group->tasks_used + 1; // Add 1 because the thread waiting for it is also user. Read before to avoid another thread freeing task after increment.
+			uint32_t finished_users = group->finished.increment(); // fetch happens before inc, so increment later.
+
+			if (finished_users == max_users) {
+				// All tasks using this group are gone (finished before the group), so clear the group too.
+				task_mutex.lock();
+				group_allocator.free(group);
+				task_mutex.unlock();
+			}
+		}
+
+		task_mutex.lock(); // This mutex is needed when Physics 2D and/or 3D is selected to run on a separate thread.
+		groups.erase(p_group);
+		task_mutex.unlock();
+	}
+
 }
