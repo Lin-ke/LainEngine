@@ -2,6 +2,7 @@
 #include "core/scene/object/gobject.h"
 #include "core/scene/packed_scene.h"
 #include "core/thread/worker_thread_pool.h"
+#include "core/scene/component/component.h"
 namespace lain {
 	SceneTree* SceneTree::singleton = nullptr;
 	SceneTree::SceneTree() {
@@ -169,17 +170,17 @@ namespace lain {
 		uint32_t process_count = 0;
 		nodes_removed_on_group_call_lock++;
 
-		int current_order = process_groups[0]->owner ? process_groups[0]->owner->data.process_thread_group_order : 0;
-		bool current_threaded = process_groups[0]->owner ? process_groups[0]->owner->data.process_thread_group == GObject::PROCESS_THREAD_GROUP_SUB_THREAD : false;
+		int current_order = process_groups[0]->owner ? process_groups[0]->owner->tickdata.process_thread_group_order : 0;
+		bool current_threaded = process_groups[0]->owner ? process_groups[0]->owner->tickdata.process_thread_group == GObject::PROCESS_THREAD_GROUP_SUB_THREAD : false;
 
 		for (uint32_t i = 0; i <= group_count; i++) {
-			int order = i < group_count && process_groups[i]->owner ? process_groups[i]->owner->data.process_thread_group_order : 0;
-			bool threaded = i < group_count && process_groups[i]->owner ? process_groups[i]->owner->data.process_thread_group == GObject::PROCESS_THREAD_GROUP_SUB_THREAD : false;
+			int order = i < group_count && process_groups[i]->owner ? process_groups[i]->owner->tickdata.process_thread_group_order : 0;
+			bool threaded = i < group_count && process_groups[i]->owner ? process_groups[i]->owner->tickdata.process_thread_group == GObject::PROCESS_THREAD_GROUP_SUB_THREAD : false;
 
 			if (i == group_count || current_order != order || current_threaded != threaded) {
 				if (process_count > 0) {
 					// Proceed to process the group.
-					bool using_threads = process_groups[from]->owner && process_groups[from]->owner->data.process_thread_group == GObject::PROCESS_THREAD_GROUP_SUB_THREAD && !node_threading_disabled;
+					bool using_threads = process_groups[from]->owner && process_groups[from]->owner->tickdata.process_thread_group == GObject::PROCESS_THREAD_GROUP_SUB_THREAD && !node_threading_disabled;
 
 					if (using_threads) {
 						local_process_group_cache.clear();
@@ -260,7 +261,7 @@ namespace lain {
 
 		//p_group->call_queue.flush(); // Flush messages before processing.
 
-		Vector<GObject*>& nodes = p_physics ? p_group->physics_nodes : p_group->nodes;
+		Vector<TickObject*>& nodes = p_physics ? p_group->physics_nodes : p_group->nodes;
 		if (nodes.is_empty()) {
 			return;
 		}
@@ -279,20 +280,21 @@ namespace lain {
 		}
 
 		// Make a copy, so if nodes are added/removed from process, this does not break
-		Vector<GObject*> nodes_copy = nodes;
+		Vector<TickObject*> nodes_copy = nodes;
 
 		uint32_t node_count = nodes_copy.size();
-		GObject** nodes_ptr = (GObject**)nodes_copy.ptr(); // Force cast, pointer will not change.
+		TickObject** nodes_ptr = (TickObject**)nodes_copy.ptr(); // Force cast, pointer will not change.
 
 		for (uint32_t i = 0; i < node_count; i++) {
-			GObject* n = nodes_ptr[i];
+			TickObject* n = nodes_ptr[i];
 			if (nodes_removed_on_group_call.has(n)) {
 				// GObject may have been removed during process, skip it.
 				// Keep in mind removals can only happen on the main thread.
 				continue;
 			}
-
-			if (!n->can_process() || !n->is_inside_tree()) {
+			// can_process will check is_inside_tree
+			// is virtual function works here?
+			if (!n->can_process()){
 				continue;
 			}
 
@@ -321,12 +323,12 @@ namespace lain {
 
 
 	bool SceneTree::ProcessGroupSort::operator()(const ProcessGroup* p_left, const ProcessGroup* p_right) const {
-		int left_order = p_left->owner ? p_left->owner->data.process_thread_group_order : 0;
-		int right_order = p_right->owner ? p_right->owner->data.process_thread_group_order : 0;
+		int left_order = p_left->owner ? p_left->owner->tickdata.process_thread_group_order : 0;
+		int right_order = p_right->owner ? p_right->owner->tickdata.process_thread_group_order : 0;
 
 		if (left_order == right_order) {
-			int left_threaded = p_left->owner != nullptr && p_left->owner->data.process_thread_group == GObject::PROCESS_THREAD_GROUP_SUB_THREAD ? 0 : 1;
-			int right_threaded = p_right->owner != nullptr && p_right->owner->data.process_thread_group == GObject::PROCESS_THREAD_GROUP_SUB_THREAD ? 0 : 1;
+			int left_threaded = p_left->owner != nullptr && p_left->owner->tickdata.process_thread_group == GObject::PROCESS_THREAD_GROUP_SUB_THREAD ? 0 : 1;
+			int right_threaded = p_right->owner != nullptr && p_right->owner->tickdata.process_thread_group == GObject::PROCESS_THREAD_GROUP_SUB_THREAD ? 0 : 1;
 			return left_threaded < right_threaded;
 		}
 		else {
@@ -338,12 +340,12 @@ namespace lain {
 
 	void SceneTree::_remove_process_group(GObject* p_node) {
 		_THREAD_SAFE_METHOD_
-			ProcessGroup* pg = (ProcessGroup*)p_node->data.process_group;
+			ProcessGroup* pg = (ProcessGroup*)p_node->tickdata.process_group;
 		ERR_FAIL_NULL(pg);
 		ERR_FAIL_COND(pg->removed);
 		pg->removed = true;
 		pg->owner = nullptr;
-		p_node->data.process_group = nullptr;
+		p_node->tickdata.process_group = nullptr;
 		process_groups_dirty = true;
 	}
 
@@ -353,18 +355,19 @@ namespace lain {
 
 		ProcessGroup* pg = memnew(ProcessGroup);
 
-		pg->owner = p_node;
-		p_node->data.process_group = pg;
+		pg->owner = p_node; 
+		p_node->tickdata.process_group = pg;
 
 		process_groups.push_back(pg);
 
 		process_groups_dirty = true;
+		// 并不加入
 	}
 
 
-	void SceneTree::_remove_node_from_process_group(GObject* p_node, GObject* p_owner) {
+	void SceneTree::_remove_node_from_process_group(TickObject* p_node, GObject* p_owner) {
 		_THREAD_SAFE_METHOD_
-			ProcessGroup* pg = p_owner ? (ProcessGroup*)p_owner->data.process_group : &default_process_group;
+			ProcessGroup* pg = p_owner ? (ProcessGroup*)p_owner->tickdata.process_group : &default_process_group;
 
 		if (p_node->is_processing() || p_node->is_processing_internal()) {
 			bool found = pg->nodes.erase(p_node);
@@ -377,9 +380,9 @@ namespace lain {
 		}
 	}
 
-	void SceneTree::_add_node_to_process_group(GObject* p_node, GObject* p_owner) {
+	void SceneTree::_add_node_to_process_group(TickObject* p_node, GObject* p_owner) {
 		_THREAD_SAFE_METHOD_
-			ProcessGroup* pg = p_owner ? (ProcessGroup*)p_owner->data.process_group : &default_process_group;
+			ProcessGroup* pg = p_owner ? (ProcessGroup*)p_owner->tickdata.process_group : &default_process_group;
 
 		if (p_node->is_processing() || p_node->is_processing_internal()) {
 			pg->nodes.push_back(p_node);
@@ -391,5 +394,6 @@ namespace lain {
 			pg->physics_node_order_dirty = true;
 		}
 	}
+
 
 }

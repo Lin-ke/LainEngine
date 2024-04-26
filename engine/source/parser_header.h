@@ -80,6 +80,7 @@
 #include  "D:/LainEngine/engine/source/runtime/core/scene/packed_scene.h"
 #include  "D:/LainEngine/engine/source/runtime/core/scene/scene_stringnames.h"
 #include  "D:/LainEngine/engine/source/runtime/core/scene/scene_tree.h"
+#include  "D:/LainEngine/engine/source/runtime/core/scene/tick_object.h"
 #include  "D:/LainEngine/engine/source/runtime/core/scene/component/camera.h"
 #include  "D:/LainEngine/engine/source/runtime/core/scene/component/camera_conf.h"
 #include  "D:/LainEngine/engine/source/runtime/core/scene/component/component.h"
@@ -147,6 +148,8 @@
 #include  "D:/LainEngine/engine/source/runtime/resource/common/texture2d.h"
 #include  "D:/LainEngine/engine/source/runtime/resource/common/viewport.h"
 #include  "D:/LainEngine/engine/source/runtime/resource/common/world.h"
+#include  "D:/LainEngine/engine/source/runtime/resource/io/image_loader.h"
+#include  "D:/LainEngine/engine/source/runtime/resource/io/image_loader_stb.h"
 #include  "D:/LainEngine/engine/source/runtime/resource/io/resource_format_text.h"
 #include  "D:/LainEngine/engine/source/runtime/resource/manager/resource_manager.h"
 #endif

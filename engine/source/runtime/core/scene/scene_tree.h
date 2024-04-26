@@ -9,6 +9,8 @@ namespace lain {
 	// 需要一个main viewport
 	// viewport只保存渲染信息
 	class GObject;
+	class Component;
+	class TickObject;
 	class SceneTree : public MainLoop {
 		_THREAD_SAFE_CLASS_
 		friend class GObject;
@@ -34,8 +36,8 @@ namespace lain {
 		uint64_t process_last_pass = 1;
 		struct ProcessGroup {
 			//CallQueue call_queue;
-			Vector<GObject*> nodes;
-			Vector<GObject*> physics_nodes;
+			Vector<TickObject*> nodes;
+			Vector<TickObject*> physics_nodes;
 			bool node_order_dirty = true;
 			bool physics_node_order_dirty = true;
 			bool removed = false;
@@ -57,7 +59,8 @@ namespace lain {
 
 		// Safety for when a node is deleted while a group is being called.
 		int nodes_removed_on_group_call_lock = 0;
-		HashSet<GObject*> nodes_removed_on_group_call; // Skip erased nodes.
+		HashSet<TickObject*> nodes_removed_on_group_call; // Skip erased nodes.
+		int nodes_in_tree_count = 0;
 
 
 		void _process(bool);
@@ -66,8 +69,9 @@ namespace lain {
 
 		void _remove_process_group(GObject* p_node);
 		void _add_process_group(GObject* p_node);
-		void _remove_node_from_process_group(GObject* p_node, GObject* p_owner);
-		void _add_node_to_process_group(GObject* p_node, GObject* p_owner);
+		void _remove_node_from_process_group(TickObject* p_node, GObject* p_owner);
+		void _add_node_to_process_group(TickObject* p_node, GObject* p_owner);
+
 
 	public:
 		SceneTree();

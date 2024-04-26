@@ -5,19 +5,22 @@
 #include "gobject_path.h"
 #include "core/templates/local_vector.h"
 #include "core/scene/scene_tree.h"
+#include "core/scene/tick_object.h"
 namespace lain {
     class Component;
     class Viewport;
+    class GObject;
     class SceneState;
+    SAFE_FLAG_TYPE_PUN_GUARANTEES
+    SAFE_NUMERIC_TYPE_PUN_GUARANTEES(uint32_t)
     
     // 1. Parent; Children; Sibling的树关系
     // 2. Owner,树上的节点，但是有保存相关
     // 3. Grouped, 类似tag，有组关系
     // 4. Process 部分，有ProcessGroup关系
+    
 
-
-
-    class GObject: public Object{
+    class GObject: public TickObject{
         LCLASS(GObject, Object);
         friend class SceneState;
         friend class SceneTree;
@@ -28,18 +31,7 @@ namespace lain {
             INTERNAL_MODE_FRONT,
             INTERNAL_MODE_BACK,
         }; // 在siblings强制靠前/靠后
-        enum ProcessThreadGroup {
-            PROCESS_THREAD_GROUP_INHERIT,
-            PROCESS_THREAD_GROUP_MAIN_THREAD,
-            PROCESS_THREAD_GROUP_SUB_THREAD,
-        }; // 处理线程
-        enum ProcessMode : unsigned int {
-            PROCESS_MODE_INHERIT, // same as parent node
-            PROCESS_MODE_PAUSABLE, // process only if not paused
-            PROCESS_MODE_WHEN_PAUSED, // process only if paused
-            PROCESS_MODE_ALWAYS, // process always
-            PROCESS_MODE_DISABLED, // never process
-        };// 处理方法
+    
         struct GroupData {
             bool persistent = false;
             SceneTree::Group* group = nullptr;
@@ -61,9 +53,7 @@ namespace lain {
             bool parent_owned : 1;
             bool in_constructor : 1;
             bool use_placeholder : 1;
-            // 排序接口
-            int process_priority = 0;
-            int physics_process_priority = 0;
+            
             HashMap<StringName, GObject*> children;
             HashMap<StringName, Component*> components;  // 每种component 最多一个;  类型名-components
 
@@ -82,12 +72,7 @@ namespace lain {
             mutable int internal_children_back_count_cache = 0;
             mutable int external_children_count_cache = 0;
 
-            /// process bools
-            bool physics_process : 1;
-            bool process : 1;
-
-            bool physics_process_internal : 1;
-            bool process_internal : 1;
+          
 
             bool input : 1;
             bool shortcut_input : 1;
@@ -110,15 +95,9 @@ namespace lain {
             // ?
             
 
-            // 节点处理顺序
-            int process_thread_group_order = 0;
-            ProcessThreadGroup process_thread_group = PROCESS_THREAD_GROUP_INHERIT;
-            GObject* process_thread_group_owner = nullptr;
-            void* process_group = nullptr; // to avoid cyclic dependency
-            ProcessMode process_mode : ProcessMode::PROCESS_MODE_PAUSABLE; // mode
-            GObject* process_owner = nullptr;
 
         } data; // 防止名称冲突
+       
         
         GObject* get_child(int p_index, bool p_include_internal = true) const;
 
@@ -171,13 +150,7 @@ namespace lain {
         int get_child_count(bool p_include_internal = true) const;
         void move_child(GObject* p_child, int p_index);
         
-        L_INLINE bool is_physics_processing_internal() const { return data.physics_process_internal; }
-        L_INLINE bool is_physics_processing() const { return data.physics_process; }
-        L_INLINE bool is_processing_internal() const { return data.process_internal; }
-        L_INLINE bool is_processing() const { return data.process; }
-        L_INLINE bool is_any_processing() const {
-            return data.process || data.process_internal || data.physics_process || data.physics_process_internal;
-        }
+       
 
         static int orphan_node_count;
         // WTODO: Process group management 处理组管理
@@ -185,6 +158,10 @@ namespace lain {
         void _add_process_group();
         void _remove_process_group();
         void _add_to_process_thread_group();
+        void _add_all_components_to_ptg();
+        void _add_components_to_ptg();
+        // 一个指针和一个函数指针的大小是一样的吧
+
         void _remove_from_process_thread_group();
         void _remove_tree_from_process_thread_group();
         void _add_tree_to_process_thread_group(GObject* p_owner);
@@ -192,7 +169,7 @@ namespace lain {
         static thread_local GObject* current_process_thread_group;
 
         // process
-        bool can_process() const;
+        virtual bool can_process() const override;
 
 
 
@@ -201,6 +178,7 @@ namespace lain {
 
         // notification机制
         // notification机制可以用来解耦，并不需要在意
+        // 就用这个notification作为所有的notification吧
         enum {
             // You can make your own, but don't use the same numbers as other notifications in other nodes.
             NOTIFICATION_ENTER_TREE = 10,
@@ -300,13 +278,7 @@ namespace lain {
                 return order_left < order_right;
             }
         };
-        struct ComparatorWithPriority {
-            bool operator()(const GObject* p_a, const GObject* p_b) const { return p_b->data.process_priority == p_a->data.process_priority ? p_b->is_greater_than(p_a) : p_b->data.process_priority > p_a->data.process_priority; }
-        };
-
-        struct ComparatorWithPhysicsPriority {
-            bool operator()(const GObject* p_a, const GObject* p_b) const { return p_b->data.physics_process_priority == p_a->data.physics_process_priority ? p_b->is_greater_than(p_a) : p_b->data.physics_process_priority > p_a->data.physics_process_priority; }
-        };
+      
 
 
         // GObject needed in register
@@ -317,7 +289,7 @@ namespace lain {
             void _block() { data.blocked++; }
             void _unblock() { data.blocked--; }
 
-            void _notification(int p_notification) {}
+            void _notification(int p_notification);
 
             virtual void _physics_interpolated_changed() {}
 

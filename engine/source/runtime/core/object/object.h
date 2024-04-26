@@ -8,7 +8,7 @@
 #include "core/variant/callable.h"
 #include "core/templates/hash_map.h"
 #include "core/math/hashfuncs.h"
-#include "core/meta/reflection/reflection.h"
+#include "core/meta/reflection/reflection_marcos.h"
 #include "core/object/object_id.h"
 #include "core/string/string_name.h"
 #include "core/variant/variant.h"
@@ -140,6 +140,7 @@ public:
 		}
 		return *_class_name_ptr;
 	}
+	// 其目的是允许对象响应可能与其相关的各种引擎级回调
 	void notification(int p_notification, bool p_reversed = false);
 	virtual void _notificationv(int p_notification, bool p_reversed) {}
 	void _notification(int p_notification) {}

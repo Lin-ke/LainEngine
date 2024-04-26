@@ -345,16 +345,16 @@ namespace lain {
 			data.children_cache_dirty = true;
 		}
 
-		//p_child->notification(NOTIFICATION_PARENTED);
+		p_child->notification(NOTIFICATION_PARENTED);
 
 		if (data.tree) {
 			p_child->_set_tree(data.tree);
 		}
 		
-		/*p_child->data.parent_owned = data.in_constructor;
+		p_child->data.parent_owned = data.in_constructor; // ???
 		add_child_notify(p_child);
 		notification(NOTIFICATION_CHILD_ORDER_CHANGED);
-		emit_signal(SNAME("child_order_changed"));*/
+		/*emit_signal(SNAME("child_order_changed"));*/
 	}
 
 	void GObject::_set_tree(SceneTree* p_tree) {
@@ -422,10 +422,10 @@ namespace lain {
 		for (KeyValue<StringName, GroupData>& E : data.grouped) {
 			E.value.group = data.tree->add_to_group(E.key, this);
 		}
+		
+		notification(NOTIFICATION_ENTER_TREE);
 
-		/*notification(NOTIFICATION_ENTER_TREE);
-
-		GDVIRTUAL_CALL(_enter_tree);
+		/*GDVIRTUAL_CALL(_enter_tree);
 
 		emit_signal(SceneStringNames::get_singleton()->tree_entered);
 
@@ -575,8 +575,8 @@ namespace lain {
 		}
 		// notification second
 		move_child_notify(p_child);
-		/*notification(NOTIFICATION_CHILD_ORDER_CHANGED);
-		emit_signal(SNAME("child_order_changed"));*/
+		notification(NOTIFICATION_CHILD_ORDER_CHANGED);
+		/*emit_signal(SNAME("child_order_changed")); */
 		p_child->_propagate_groups_dirty();
 
 		data.blocked--;
@@ -778,7 +778,7 @@ namespace lain {
 		//}
 
 		//remove_child_notify(p_child);
-		//p_child->notification(NOTIFICATION_UNPARENTED);
+		p_child->notification(NOTIFICATION_UNPARENTED);
 
 		data.blocked--;
 
@@ -789,7 +789,7 @@ namespace lain {
 		p_child->data.parent = nullptr;
 		p_child->data.index = -1;
 
-		//notification(NOTIFICATION_CHILD_ORDER_CHANGED);
+		notification(NOTIFICATION_CHILD_ORDER_CHANGED);
 		//emit_signal(SNAME("child_order_changed"));
 
 		if (data.inside_tree) {
@@ -909,13 +909,13 @@ namespace lain {
 
 		data.blocked--;
 
-		/*notification(NOTIFICATION_POST_ENTER_TREE);
+		notification(NOTIFICATION_POST_ENTER_TREE);
 
 		if (data.ready_first) {
 			data.ready_first = false;
 			notification(NOTIFICATION_READY);
-			emit_signal(SceneStringNames::get_singleton()->ready);
-		}*/
+			//emit_signal(SceneStringNames::get_singleton()->ready);
+		}
 	}
 
 	GObject* GObject::get_child(int p_index, bool p_include_internal) const {
@@ -947,16 +947,16 @@ namespace lain {
 	bool GObject::_can_process(bool p_is_paused) const {
 		ProcessMode process_mode;
 
-		if (data.process_mode == PROCESS_MODE_INHERIT) {
-			if (!data.process_owner) {
+		if (tickdata.process_mode == PROCESS_MODE_INHERIT) {
+			if (!tickdata.process_owner) {
 				process_mode = PROCESS_MODE_PAUSABLE;
 			}
 			else {
-				process_mode = data.process_owner->data.process_mode;
+				process_mode = tickdata.process_owner->tickdata.process_mode;
 			}
 		}
 		else {
-			process_mode = data.process_mode;
+			process_mode = tickdata.process_mode;
 		}
 
 		// The owner can't be set to inherit, must be a bug.
@@ -1045,12 +1045,16 @@ namespace lain {
 	}
 
 	void GObject::_remove_from_process_thread_group() {
-		get_tree()->_remove_node_from_process_group(this, data.process_thread_group_owner);
+		get_tree()->_remove_node_from_process_group(this, tickdata.process_thread_group_owner);
 	}
 
 	void GObject::_add_to_process_thread_group() {
-		get_tree()->_add_node_to_process_group(this, data.process_thread_group_owner);
+		get_tree()->_add_node_to_process_group(this, tickdata.process_thread_group_owner);
 	}
+	void GObject::_add_all_components_to_ptg() {
+		//get_tree()->
+	}
+
 
 	void GObject::_remove_tree_from_process_thread_group() {
 		if (!is_inside_tree()) {
@@ -1058,7 +1062,7 @@ namespace lain {
 		}
 
 		for (KeyValue<StringName, GObject*>& K : data.children) {
-			if (K.value->data.process_thread_group != PROCESS_THREAD_GROUP_INHERIT) {
+			if (K.value->tickdata.process_thread_group != PROCESS_THREAD_GROUP_INHERIT) {
 				continue;
 			}
 
@@ -1075,16 +1079,16 @@ namespace lain {
 			_add_to_process_thread_group();
 		}
 
-		data.process_thread_group_owner = p_owner;
+		tickdata.process_thread_group_owner = p_owner;
 		if (p_owner != nullptr) {
-			data.process_group = p_owner->data.process_group;
+			tickdata.process_group = p_owner->tickdata.process_group;
 		}
 		else {
-			data.process_group = &data.tree->default_process_group;
+			tickdata.process_group = &data.tree->default_process_group;
 		}
 
 		for (KeyValue<StringName, GObject*>& K : data.children) {
-			if (K.value->data.process_thread_group != PROCESS_THREAD_GROUP_INHERIT) {
+			if (K.value->tickdata.process_thread_group != PROCESS_THREAD_GROUP_INHERIT) {
 				continue;
 			}
 
@@ -1101,13 +1105,11 @@ namespace lain {
 
 			// Default member initializer for bitfield is a C++20 extension, so:
 
-			data.process_mode = PROCESS_MODE_INHERIT;
-
-			data.physics_process = false;
-			data.process = false;
-
-			data.physics_process_internal = false;
-			data.process_internal = false;
+			tickdata.process_mode = PROCESS_MODE_INHERIT;
+			tickdata.physics_process = false;
+			tickdata.process = false;
+			tickdata.physics_process_internal = false;
+			tickdata.process_internal = false;
 
 			data.input = false;
 			data.shortcut_input = false;
@@ -1141,6 +1143,75 @@ namespace lain {
 		orphan_node_count--;
 	}
 
+	void GObject::_notification(int p_notification) {
+		switch (p_notification) {
+			// 这里去调用脚本了
+			// 在unity中，脚本也是component的一部分
+		case NOTIFICATION_PROCESS: {
+			// call _process in script
+		} break;
+		case NOTIFICATION_ENTER_TREE: {
+			// #like in unreal begin play, adding to tick function set.
+			// # 肯定不如unreal的任务图，怎么做到负载均衡？
+			// 但是UE的任务图肯定会需要大量的额外时间（但是这部分开销并不在_tick中）
+			ERR_FAIL_NULL(get_tree());
+			if (tickdata.process_mode == PROCESS_MODE_INHERIT) {
+				if (data.parent) {
+					tickdata.process_owner = data.parent->tickdata.process_owner;
+				}
+				else {
+					ERR_PRINT("The root node can't be set to Inherit process mode, reverting to Pausable instead.");
+					tickdata.process_mode = PROCESS_MODE_PAUSABLE;
+					tickdata.process_owner = this;
+				}
+			}
+			else {
+				tickdata.process_owner = this;
+			}
 
+			{ // Update threaded process mode.
+				if (tickdata.process_thread_group == PROCESS_THREAD_GROUP_INHERIT) {
+					if (data.parent) {
+						tickdata.process_thread_group_owner = data.parent->tickdata.process_thread_group_owner;
+					}
+
+					if (tickdata.process_thread_group_owner) {
+						tickdata.process_group = tickdata.process_thread_group_owner->tickdata.process_group;
+					}
+					else {
+						tickdata.process_group = &data.tree->default_process_group;
+					}
+				}
+				// use new process_group
+				else {
+					tickdata.process_thread_group_owner = this;
+					_add_process_group();
+				}
+
+				if (is_any_processing()) {
+					_add_to_process_thread_group();
+				}
+			}
+
+			//if (data.physics_interpolation_mode == PHYSICS_INTERPOLATION_MODE_INHERIT) {
+			//	bool interpolate = true; // Root node default is for interpolation to be on.
+			//	if (data.parent) {
+			//		interpolate = data.parent->is_physics_interpolated();
+			//	}
+			//	_propagate_physics_interpolated(interpolate);
+			//}
+			// input group
+			{
+				// add components
+
+			}
+			get_tree()->nodes_in_tree_count++;
+			orphan_node_count--;
+
+		} break;
+		default:
+			return;
+		}
+	}
 
 }

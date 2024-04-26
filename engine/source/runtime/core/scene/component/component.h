@@ -4,13 +4,14 @@
 
 #include "runtime/core/meta/reflection/reflection.h"
 #include "runtime/core/object/object.h"
+#include "core/scene/object/gobject.h"
 #include "core/object/refcounted.h"
 namespace lain
 {
     class GObject;
     // Component
     REFLECTION_TYPE(Component)
-        CLASS(Component : public Object, WhiteListFields)
+        CLASS(Component : public TickObject, WhiteListFields)
     {
         REFLECTION_BODY(Component)
         LCLASS(Component, Object);
@@ -26,6 +27,20 @@ namespace lain
         Component() = default;
         virtual ~Component() {}
 
+        L_INLINE bool is_physics_processing_internal() const { return tickdata.physics_process_internal; }
+        L_INLINE bool is_physics_processing() const { return tickdata.physics_process; }
+        L_INLINE bool is_processing_internal() const { return tickdata.process_internal; }
+        L_INLINE bool is_processing() const { return tickdata.process; }
+        L_INLINE bool is_any_processing() const {
+            return tickdata.process || tickdata.process_internal || tickdata.physics_process || tickdata.physics_process_internal;
+        }
+       /* void _remove_from_process_thread_group() {
+            m_parent->get_tree()->_remove_node_from_process_group(this, tickdata.process_thread_group_owner);
+        }
+
+        void _add_to_process_thread_group() {
+            get_tree()->_add_node_to_process_group(this, tickdata.process_thread_group_owner);
+        }*/
 
         struct ComparatorByIndexCompt {
             bool operator()(const Component* p_left, const Component* p_right) const {
