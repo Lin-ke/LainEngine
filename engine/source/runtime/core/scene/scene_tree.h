@@ -14,6 +14,7 @@ namespace lain {
 	class SceneTree : public MainLoop {
 		_THREAD_SAFE_CLASS_
 		friend class GObject;
+		friend class Component;
 		static SceneTree* singleton;
 		GObject* current_scene;
 		GObject* root; // window
@@ -41,7 +42,7 @@ namespace lain {
 			bool node_order_dirty = true;
 			bool physics_node_order_dirty = true;
 			bool removed = false;
-			GObject* owner = nullptr;
+			TickObject* owner = nullptr;
 			uint64_t last_pass = 0;
 		};
 		struct ProcessGroupSort {
@@ -67,10 +68,10 @@ namespace lain {
 		void _process_group(ProcessGroup* p_group, bool p_physics);
 		void _process_groups_thread(uint32_t p_index, bool p_physics);
 
-		void _remove_process_group(GObject* p_node);
-		void _add_process_group(GObject* p_node);
-		void _remove_node_from_process_group(TickObject* p_node, GObject* p_owner);
-		void _add_node_to_process_group(TickObject* p_node, GObject* p_owner);
+		void _remove_process_group(TickObject* p_node);
+		void _add_process_group(TickObject* p_node);
+		void _remove_node_from_process_group(TickObject* p_node, TickObject* p_owner);
+		void _add_node_to_process_group(TickObject* p_node, TickObject* p_owner);
 
 
 	public:

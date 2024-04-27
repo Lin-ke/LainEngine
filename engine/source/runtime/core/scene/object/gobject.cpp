@@ -179,6 +179,7 @@ namespace lain {
 	}
 
 	Component* GObject::get_component(const StringName& type_name) const {
+		_update_components_cache();
 		const Component * const * cmpt = data.components.getptr(type_name);
 		if (cmpt) {
 			return const_cast<Component*>(*cmpt);
@@ -189,6 +190,7 @@ namespace lain {
 
 	Component* GObject::get_component(int p_index) const {
 		ERR_FAIL_INDEX_V(p_index, (int)data.components_cache.size(), nullptr);
+		_update_components_cache();
 		return data.components_cache[p_index];
 	}
 	Vector<Component*> GObject::get_components() const {
@@ -266,6 +268,7 @@ namespace lain {
 		else {
 			data.components_cache_dirty = true;
 		}
+		p_component->notification();
 	}
 
 
@@ -392,6 +395,18 @@ namespace lain {
 
 
 	void GObject::_propagate_exit_tree(){
+		data.blocked++;
+		for (HashMap<StringName, Component*>::Iterator I = data.components.last(); I; --I) {
+			I->value->notification(NOTIFICATION_EXIT_TREE, true); // @TODO 虚函数链的调用顺序
+		}
+
+		for (HashMap<StringName, GObject*>::Iterator I = data.children.last(); I; --I) {
+			I->value->_propagate_exit_tree();
+		}
+
+		data.blocked--;
+		notification(NOTIFICATION_EXIT_TREE, true);
+
 		if (data.tree->current_scene == this) {
 			data.tree->current_scene = nullptr;
 		}
@@ -1046,14 +1061,34 @@ namespace lain {
 
 	void GObject::_remove_from_process_thread_group() {
 		get_tree()->_remove_node_from_process_group(this, tickdata.process_thread_group_owner);
+		{
+			_remove_all_components_from_ptg();
+		}
 	}
 
 	void GObject::_add_to_process_thread_group() {
 		get_tree()->_add_node_to_process_group(this, tickdata.process_thread_group_owner);
+		{
+			// add components
+			_add_all_components_to_ptg();
+		}
+
 	}
 	void GObject::_add_all_components_to_ptg() {
-		//get_tree()->
+		_update_components_cache();
+		for (auto& component : data.components_cache) {
+			ERR_FAIL_COND(component->m_parent != this); // 不是你的你还要设计
+			component->_add_to_process_thread_group();
+		}
 	}
+	void GObject::_remove_all_components_from_ptg() {
+		_update_components_cache();
+		for (auto& component : data.components_cache) {
+			ERR_FAIL_COND(component->m_parent != this); // 不是你的你还要设计
+			component->_remove_from_process_thread_group();
+		}
+	}
+
 
 
 	void GObject::_remove_tree_from_process_thread_group() {
@@ -1097,7 +1132,7 @@ namespace lain {
 	}
 
 	int GObject::orphan_node_count = 0;
-	thread_local GObject* GObject::current_process_thread_group = nullptr;
+	thread_local TickObject* GObject::current_process_thread_group = nullptr;
 
 	GObject::GObject() {
 			
@@ -1201,14 +1236,32 @@ namespace lain {
 			//	_propagate_physics_interpolated(interpolate);
 			//}
 			// input group
-			{
-				// add components
-
-			}
+			
 			get_tree()->nodes_in_tree_count++;
 			orphan_node_count--;
 
 		} break;
+		case NOTIFICATION_EXIT_TREE: {
+			ERR_FAIL_NULL(get_tree());
+			get_tree()->nodes_in_tree_count--;
+			orphan_node_count++;
+			// Remove from processing first.
+			if (is_any_processing()) {
+				_remove_from_process_thread_group();
+			}
+			// Remove the process group.
+			if (tickdata.process_thread_group_owner == this) {
+				_remove_process_group();
+			}
+			tickdata.process_thread_group_owner = nullptr;
+			tickdata.process_owner = nullptr;
+
+			if (data.path_cache) {
+				memdelete(data.path_cache);
+				data.path_cache = nullptr;
+			}
+			break;
+		}
 		default:
 			return;
 		}

@@ -13,7 +13,7 @@ namespace lain {
 
         friend class SceneTree;
 
-    protected:
+    public:
         enum ProcessThreadGroup {
             PROCESS_THREAD_GROUP_INHERIT,
             PROCESS_THREAD_GROUP_MAIN_THREAD,
@@ -46,11 +46,11 @@ namespace lain {
             bool process_internal : 1;
             int process_thread_group_order = 0;
             ProcessThreadGroup process_thread_group = PROCESS_THREAD_GROUP_INHERIT;
-            GObject* process_thread_group_owner = nullptr;
+            TickObject* process_thread_group_owner = nullptr;
             void* process_group = nullptr; // to avoid cyclic dependency
             // 是否处理
             ProcessMode process_mode : ProcessMode::PROCESS_MODE_PAUSABLE; // mode
-            GObject* process_owner = nullptr;
+            TickObject* process_owner = nullptr;
             // 排序接口
             int process_priority = 0;
             int physics_process_priority = 0;

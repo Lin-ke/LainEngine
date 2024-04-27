@@ -34,20 +34,28 @@ namespace lain
         L_INLINE bool is_any_processing() const {
             return tickdata.process || tickdata.process_internal || tickdata.physics_process || tickdata.physics_process_internal;
         }
-       /* void _remove_from_process_thread_group() {
+        L_INLINE void _remove_process_group() {
+            m_parent->get_tree()->_remove_process_group(this);
+        }
+        L_INLINE void _add_process_group() {
+            m_parent->get_tree()->_add_process_group(this);
+        }
+
+        L_INLINE void _add_to_process_thread_group() {
+            m_parent->get_tree()->_add_node_to_process_group(this, tickdata.process_thread_group_owner);
+        }
+        L_INLINE void _remove_from_process_thread_group() {
             m_parent->get_tree()->_remove_node_from_process_group(this, tickdata.process_thread_group_owner);
         }
 
-        void _add_to_process_thread_group() {
-            get_tree()->_add_node_to_process_group(this, tickdata.process_thread_group_owner);
-        }*/
-
+        
         struct ComparatorByIndexCompt {
             bool operator()(const Component* p_left, const Component* p_right) const {
                 return p_left->m_index < p_right->m_index;
             }
         };
-
+    private:
+        void _notification(int p_what);
     };
 
 } // namespace Piccolo

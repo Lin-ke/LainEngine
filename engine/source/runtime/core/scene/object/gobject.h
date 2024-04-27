@@ -6,6 +6,7 @@
 #include "core/templates/local_vector.h"
 #include "core/scene/scene_tree.h"
 #include "core/scene/tick_object.h"
+#include "core/scene/packed_scene.h"
 namespace lain {
     class Component;
     class Viewport;
@@ -132,6 +133,10 @@ namespace lain {
         void add_child(GObject* p_child, bool p_force_readable_name = false, InternalMode p_internal = INTERNAL_MODE_DISABLED);
         void add_sibling(GObject* p_sibling, bool p_force_readable_name = false);
         void remove_child(GObject* p_child);
+        template<typename T>
+        Component* get_component() const {
+            return get_component(*T._get_class_namev());
+        }
 
         Component* get_component(const StringName& type_name) const;
         Component* get_component(int p_index) const;
@@ -159,6 +164,8 @@ namespace lain {
         void _remove_process_group();
         void _add_to_process_thread_group();
         void _add_all_components_to_ptg();
+        void _remove_all_components_from_ptg();
+
         void _add_components_to_ptg();
         // 一个指针和一个函数指针的大小是一样的吧
 
@@ -166,7 +173,7 @@ namespace lain {
         void _remove_tree_from_process_thread_group();
         void _add_tree_to_process_thread_group(GObject* p_owner);
 
-        static thread_local GObject* current_process_thread_group;
+        static thread_local TickObject* current_process_thread_group;
 
         // process
         virtual bool can_process() const override;
@@ -266,6 +273,9 @@ namespace lain {
         void _add_component_nocheck(Component*);
         bool _can_process(bool p_paused) const;
 
+        /*LocalVector<Component*> & _get_components() const {
+            return data.components_cache;
+        }*/
         // 排序接口
         struct ComparatorByIndex {
             bool operator()(const GObject* p_left, const GObject* p_right) const {

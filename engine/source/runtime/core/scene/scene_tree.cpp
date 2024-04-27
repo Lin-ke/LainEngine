@@ -338,7 +338,7 @@ namespace lain {
 
 
 
-	void SceneTree::_remove_process_group(GObject* p_node) {
+	void SceneTree::_remove_process_group(TickObject* p_node) {
 		_THREAD_SAFE_METHOD_
 			ProcessGroup* pg = (ProcessGroup*)p_node->tickdata.process_group;
 		ERR_FAIL_NULL(pg);
@@ -349,7 +349,7 @@ namespace lain {
 		process_groups_dirty = true;
 	}
 
-	void SceneTree::_add_process_group(GObject* p_node) {
+	void SceneTree::_add_process_group(TickObject* p_node) {
 		_THREAD_SAFE_METHOD_
 			ERR_FAIL_NULL(p_node);
 
@@ -365,7 +365,7 @@ namespace lain {
 	}
 
 
-	void SceneTree::_remove_node_from_process_group(TickObject* p_node, GObject* p_owner) {
+	void SceneTree::_remove_node_from_process_group(TickObject* p_node, TickObject* p_owner) {
 		_THREAD_SAFE_METHOD_
 			ProcessGroup* pg = p_owner ? (ProcessGroup*)p_owner->tickdata.process_group : &default_process_group;
 
@@ -380,7 +380,7 @@ namespace lain {
 		}
 	}
 
-	void SceneTree::_add_node_to_process_group(TickObject* p_node, GObject* p_owner) {
+	void SceneTree::_add_node_to_process_group(TickObject* p_node, TickObject* p_owner) {
 		_THREAD_SAFE_METHOD_
 			ProcessGroup* pg = p_owner ? (ProcessGroup*)p_owner->tickdata.process_group : &default_process_group;
 
