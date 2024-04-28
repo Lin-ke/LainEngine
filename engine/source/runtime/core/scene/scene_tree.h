@@ -77,15 +77,18 @@ namespace lain {
 	public:
 		SceneTree();
 		~SceneTree();
-		static SceneTree* get_singleton() { return singleton; }
+		L_INLINE static SceneTree* get_singleton() { return singleton; }
 
 		virtual void initialize() override;
 		virtual void finalize() override;
 
 		void tree_changed() {}
-		GObject* get_root() const { return root; }
+		L_INLINE GObject* get_root() const { return root; }
 		Group* add_to_group(const StringName&, GObject*);
 		virtual bool process(double p_time) override;
+		L_INLINE int get_node_count() {
+			return nodes_in_tree_count;
+		}
 
 		// state
 		bool is_paused() const { return paused; }

@@ -8,10 +8,10 @@ namespace lain{
 		int test_fileio() {
 			auto p = Vector2(1, 4);
 			Ref<FileAccess> fileacc = FileAccess::open("res://1.txt", FileAccess::ModeFlags::WRITE_READ);
-			L_STRPRINT(fileacc->get_path(), fileacc->get_path_absolute());
-			fileacc->store_string(lain::Serializer::write(p).dump());
-			L_STRPRINT(ProjectSettings::GetSingleton()->GetProjectDataPath());
-			L_STRPRINT(ProjectSettings::GetSingleton()->GetResourcePath());
+			L_PRINT(fileacc->get_path(), fileacc->get_path_absolute());
+			fileacc->store_string(lain::Serializer::write(p).dump().c_str());
+			L_PRINT(ProjectSettings::GetSingleton()->GetProjectDataPath());
+			L_PRINT(ProjectSettings::GetSingleton()->GetResourcePath());
 
 			return 0;
 		}

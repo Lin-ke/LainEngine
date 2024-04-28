@@ -40,56 +40,84 @@
 // # define L_INLINE __forceinline 
 # define L_INLINE __forceinline 
 
+enum LogLevel
+{
+	LOGTRACE,
+	LOGINFO,
+	LOGWARN,
+	LOGERROR,
+};
 
 
 template <typename ... Types>
-void  L_PRINT(const Types&... args)
+void  L_APP_LOG(const LogLevel level = LOGINFO, const Types&... args)
 {
 	std::ostringstream  ss;
-	std::initializer_list <int> { ([&args, &ss] {ss << (args) << " "; }(), 0)...};
-	L_INFO(ss.str());
+	std::initializer_list <int> { ([&args, &ss] {
+		/*if constexpr (std::is_same_v<decltype(args), lain::String>) {
+			ss << CSTR(args) << " ";
+		}
+		else*/
+		{
+			ss << args << " ";
+		}
+		}(), 0)...};
+	switch (level) {
+	case LOGINFO:
+		L_INFO(ss.str());
+		break;
+	case LOGWARN:
+		L_WARN(ss.str());
+		break;
+	case LOGERROR:
+		L_ERROR(ss.str());
+		break;
+	case LOGTRACE:
+		L_TRACE(ss.str());
+		break;
+	default:
+		L_INFO(ss.str());
+	}
 }
 
-// duck class
 template <typename ... Types>
-void  L_STRPRINT(const Types&... args)
+void  L_CORE_LOG(const LogLevel level = LOGINFO, const Types&... args)
 {
 	std::ostringstream  ss;
-	std::initializer_list <int> {  ( [&args, &ss] {   ss <<  CSTR(args) << " "; }() , 0)...};
-	L_CORE_INFO(ss.str());
+	std::initializer_list <int> { ([&args, &ss] {
+			/*if constexpr (std::is_same_v<decltype(args), lain::String>) {
+				ss << CSTR(args) << " ";
+			}
+			else */
+			{
+				ss << args << " ";
+			} 
+		}(), 0)...};
+	switch (level) {
+	case LOGINFO:
+		L_CORE_INFO(ss.str());
+		break;
+	case LOGWARN:
+		L_CORE_WARN(ss.str());
+		break;
+	case LOGERROR:
+		L_CORE_ERROR(ss.str());
+		break;
+	case LOGTRACE:
+		L_CORE_TRACE(ss.str());
+		break;
+	default:
+		L_CORE_INFO(ss.str());
+	}
 }
 
-template <typename ... Types>
-void  L_STRPERROR(const Types&... args)
-{
-	std::ostringstream  ss;
-	std::initializer_list <int> {  ([&args, &ss] {   ss << CSTR(args) << " "; }(), 0)...};
-	L_CORE_INFO(ss.str());
-}
-template <typename ... Types>
-void  L_PERROR(const Types&... args)
-{
-	std::ostringstream  ss;
-	std::initializer_list <int> { ([&args, &ss] {ss << (args) << " "; }(), 0)...};
-	L_CORE_ERROR(ss.str());
-}
+#define L_PRINT(...)	L_APP_LOG(LOGINFO,__FUNCTION__,__LINE__, __VA_ARGS__);
+#define L_PERROR(...)	L_APP_LOG(LOGERROR,__FUNCTION__,__LINE__, __VA_ARGS__);
+#define L_PWARNING(...)	L_APP_LOG(LOGWARN,__FUNCTION__,__LINE__, __VA_ARGS__);
+#define L_CORE_PRINT(...)	L_CORE_LOG(LOGINFO,__FUNCTION__,__LINE__, __VA_ARGS__);
 
 
-template <typename ... Types>
-void  L_PWARNING(const Types&... args)
-{
-	std::ostringstream  ss;
-	std::initializer_list <int> { ([&args, &ss] {ss << (args) << " "; }(), 0)...};
-	L_CORE_WARN(ss.str());
-}
-
-template <typename ... Types>
-L_INLINE void L_CORE_PRINT(const Types&... args)
-{
-	std::initializer_list <int> { ([&args] {L_CORE_INFO(args); }(), 0)...};
-}
-
-# define L_JSON(x) L_PRINT(__FUNCTION__, __LINE__, "json of ",#x,lain::Serializer::write(x).dump());
+# define L_JSON(x) L_PRINT("json of ",#x,lain::Serializer::write(x).dump());
 # define L_CORE_JSON(x) L_CORE_PRINT("json of " + std::string(#x) + " " + (lain::Serializer::write(x).dump()));
 
 # define L_NAME(x) #x

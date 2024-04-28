@@ -54,7 +54,10 @@ namespace lain {
 
 
 	void OSWindows::Run() {
-		// init
+		ERR_FAIL_NULL(main_loop);
+		main_loop->initialize(); // scenetree
+
+
 		while (true) {
 			//人机交互
 			// display.send_events;
@@ -67,8 +70,13 @@ namespace lain {
 			WindowSystem::GetSingleton()->PollEvents();
 
 		}
+		main_loop->finalize(); 
 		L_PRINT("Exiting. Have a nice day.");
 
+	}
+
+	void OSWindows::SetMainLoop(MainLoop* p_main_loop) {
+		main_loop = p_main_loop;
 	}
 	// 填必要的环境变量、文件操作
 	void OSWindows::Initialize() {

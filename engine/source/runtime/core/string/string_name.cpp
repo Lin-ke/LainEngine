@@ -60,8 +60,8 @@ void StringName::cleanup() {
 				rarely_referenced_stringnames += 1;
 			}
 		}
-		L_STRPRINT(vformat("\nOut of %d StringNames, %d StringNames were never referenced during this run (0 times) (%.2f%%).", data.size(), unreferenced_stringnames, unreferenced_stringnames / float(data.size()) * 100));
-		L_STRPRINT(vformat("Out of %d StringNames, %d StringNames were rarely referenced during this run (1-4 times) (%.2f%%).", data.size(), rarely_referenced_stringnames, rarely_referenced_stringnames / float(data.size()) * 100));
+		L_PRINT(vformat("\nOut of %d StringNames, %d StringNames were never referenced during this run (0 times) (%.2f%%).", data.size(), unreferenced_stringnames, unreferenced_stringnames / float(data.size()) * 100));
+		L_PRINT(vformat("Out of %d StringNames, %d StringNames were rarely referenced during this run (1-4 times) (%.2f%%).", data.size(), rarely_referenced_stringnames, rarely_referenced_stringnames / float(data.size()) * 100));
 	}
 #endif
 	int lost_strings = 0;
@@ -71,10 +71,10 @@ void StringName::cleanup() {
 			if (d->static_count.get() != d->refcount.get()) {
 				lost_strings++;
 				if (d->cname) {
-					L_STRPRINT("Orphan StringName: " + String(d->cname));
+					L_PRINT("Orphan StringName: " + String(d->cname));
 				}
 				else {
-					L_STRPRINT("Orphan StringName: " + String(d->name));
+					L_PRINT("Orphan StringName: " + String(d->name));
 				}
 			}
 

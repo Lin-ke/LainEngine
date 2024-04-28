@@ -2,7 +2,6 @@
 #ifndef __OS_WINDOWS_H__
 #define __OS_WINDOWS_H__
 #include "core/os/os.h"
-#include "core/os/main_loop.h"
 namespace lain {
 
 class OSWindows :public OS {
@@ -17,6 +16,7 @@ public:
 	virtual void Initialize();
 	virtual void Finialize() {}
 	virtual void Run();
+	virtual void SetMainLoop(MainLoop* p_main_loop) override;
 	MainLoop* main_loop = nullptr;
 
 

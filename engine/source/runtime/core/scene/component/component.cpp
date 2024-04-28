@@ -3,7 +3,7 @@ namespace lain {
     void Component::_notification(int p_notification) {
         switch (p_notification) {
         case GObject::NOTIFICATION_PROCESS: {
-                L_PRINT("Component tick");
+                L_PRINT("Component tick", "parent", CSTR(m_parent->get_name().operator String()));
         }break;
         case GObject::NOTIFICATION_ENTER_TREE: {
             ERR_FAIL_NULL(m_parent);
@@ -44,6 +44,7 @@ namespace lain {
             L_PRINT("NOTIFICATION_PARENTED"); 
             return;
         } break;
+
 
         default:{
             return;

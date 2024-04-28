@@ -6,6 +6,7 @@
 #include "thread_safe.h"
 #include "time_enums.h"
 #include "core/config/project_settings.h"
+#include "core/os/main_loop.h"
 
 // abstruct of the OS
 namespace lain {
@@ -18,6 +19,8 @@ public:
 	virtual void Run() = 0;
 	virtual void Finialize() = 0;
 	virtual void Initialize() = 0;
+	virtual void SetMainLoop(MainLoop* p_main_loop) = 0;
+
 	// logger default
 
 	virtual void Addlogger() {}

@@ -32,6 +32,7 @@ static ProjectManager* pmanager = nullptr;
  /// Main initialization.
  /// </summary>
  Error Main::Initialize(int argc, char* argv[]) {
+	 Thread::make_main_thread();
 
 	 String project_path = "";
 	 // logger
@@ -45,7 +46,7 @@ static ProjectManager* pmanager = nullptr;
 	 render_system = memnew(RenderingSystem);
 	 globals = memnew(ProjectSettings);
 	 EditorPaths::create(); // editor需要在global之后，在ProjectManager之前
-	 //L_STRPRINT(EditorPaths::GetSingleton()->GetDataDir(), EditorPaths::GetSingleton()->GetConfigDir());
+	 //L_PRINT(EditorPaths::GetSingleton()->GetDataDir(), EditorPaths::GetSingleton()->GetConfigDir());
 	 pmanager = memnew(ProjectManager);
 	 // parse parameter
 	 List<String> args;
@@ -71,7 +72,6 @@ static ProjectManager* pmanager = nullptr;
 		 config["application"]["config/description"] = String("this is a default project");
 		 //config["application"]["run/main_scene"] = String("this is a default project");
 		 pmanager->CreateProject(path, config);
-
 	 }
 
 	 if (OS::GetSingleton()->SetCwd(path) == OK) {
@@ -106,6 +106,8 @@ static ProjectManager* pmanager = nullptr;
 	 if (main_scene != "") {
 
 	 }
+	 OS::GetSingleton()->SetMainLoop(main_loop);
+
 	 return OK;
  }
 /// <summary>

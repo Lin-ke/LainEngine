@@ -90,6 +90,7 @@ namespace lain {
             List<GObject*>::Element* OW = nullptr; // Owned element. head?
             List<GObject*> owned; 
             HashMap<StringName, GroupData> grouped; // 节点可以加入到组中，便于管理
+            // 这个group为啥还是sceneTree中的
 
             // view
             Viewport* viewport = nullptr;

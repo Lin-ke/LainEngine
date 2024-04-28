@@ -2298,6 +2298,11 @@ String::String(const StrRange& p_range) {
 String::String(const std::string& p_str) {
 	copy_from(p_str.c_str());
 }
+std::ostream& operator<<(std::ostream& p_out, const String& p_str) {
+	p_out << p_str.utf8().get_data();
+	return p_out;
+}
+
 int64_t String::hex_to_int() const {
 	int len = length();
 	if (len == 0) {

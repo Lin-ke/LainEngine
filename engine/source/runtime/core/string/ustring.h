@@ -8,7 +8,7 @@
 #include "core/templates/vector.h"
 #include "core/typedefs.h"
 #include "core/variant/array.h"
-
+#include <ostream>
 /*************************************************************************/
 /*  CharProxy                                                            */
 /*************************************************************************/
@@ -458,6 +458,7 @@ namespace lain {
 		String(const char32_t* p_str, int p_clip_to_len);
 		String(const StrRange& p_range);
 		String(const std::string& p_str);
+		friend std::ostream& operator<<(std::ostream&, const String&);
 	};
 
 	bool operator==(const char* p_chr, const String& p_str);
@@ -468,6 +469,8 @@ namespace lain {
 	String operator+(const char* p_chr, const String& p_str);
 	String operator+(const wchar_t* p_chr, const String& p_str);
 	String operator+(char32_t p_chr, const String& p_str);
+
+	
 
 	String itos(int64_t p_val);
 	String uitos(uint64_t p_val);

@@ -93,7 +93,7 @@ namespace lain{
 		//json11::Json json_text = Json::parse(CSTR(json_string), error_line);
 		Json json_text = Json::parse((const char*)(json_chars.ptr()), error_line);
 
-		ERR_FAIL_COND_V_MSG(!error_line.empty(), FAILED, error_line);
+		ERR_FAIL_COND_V_MSG(!error_line.empty(), FAILED, error_line.c_str());
 		Serializer::read(json_text, packed_res);
 
 		
@@ -145,13 +145,13 @@ namespace lain{
 				if (ResourceLoader::get_abort_on_missing_resources()) {
 					error = ERR_FILE_CORRUPT;
 					error_text = "[ext_resource] referenced non-existent resource at: " + path;
-					L_STRPERROR(error_text);
+					L_PERROR(error_text);
 					return error;
 				}
 				else {
 					//ResourceLoader::notify_dependency_error(local_path, path, type); // trying to load again
 					error_text = "[ext_resource] dependency error resource at: " + path;
-					L_STRPERROR(error_text);
+					L_PERROR(error_text);
 					return error;
 				}
 			}
@@ -209,7 +209,7 @@ namespace lain{
 				Error err = OK;
 				Ref<Resource>r_res;
 				if (!ext_resources.has(id)) {
-					L_STRPERROR("Can't load cached ext-resource id: " + id);
+					L_PERROR("Can't load cached ext-resource id: " + id);
 				}
 				else {
 
@@ -606,7 +606,7 @@ namespace lain{
 			packed_res.head = title;
 
 			auto&& json = Serializer::write(packed_res);
-			f->store_string(json.dump());
+			f->store_string(json.dump().c_str());
 		}
 	return err;
 	}

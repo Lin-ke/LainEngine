@@ -39,7 +39,7 @@ extern bool is_print_verbose_enabled();
 #define print_verbose(m_text)             \
 	{                                     \
 		if (is_print_verbose_enabled()) { \
-			L_STRPRINT(m_text);           \
+			L_PRINT(m_text);           \
 		}                                 \
 	}
 

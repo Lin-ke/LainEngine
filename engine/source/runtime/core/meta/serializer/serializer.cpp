@@ -132,7 +132,7 @@ namespace lain
         assert(json_context.is_object());
         // 这里有一点左值右值的问题
         for (const auto& pair : json_context.object_items()) {
-            Variant key(pair.first);
+            Variant key(pair.first.c_str());
             Variant value;
             value = Serializer::read(pair.second, value);
             instance[key] = value;
@@ -232,7 +232,7 @@ namespace lain
              ERR_FAIL_COND_V_MSG(!VariantHelper::is_serializable_type(type_name.c_str()), instance, "type cant be reflected");
              Reflection::TypeMeta::writeToInstanceFromNameAndJson(type_name, json_context["$context"], instance._data._mem);
             instance.type = VariantHelper::get_type_from_name(type_name.c_str());
-            ERR_FAIL_COND_V_MSG(instance.type == Variant::NIL, instance, type_name);
+            ERR_FAIL_COND_V_MSG(instance.type == Variant::NIL, instance, type_name.c_str());
             
            
              return instance;
