@@ -268,7 +268,10 @@ namespace lain {
 		else {
 			data.components_cache_dirty = true;
 		}
-		p_component->notification();
+		p_component->notification(NOTIFICATION_PARENTED);
+		if(data.tree)
+			p_component->notification(NOTIFICATION_ENTER_TREE);
+
 	}
 
 

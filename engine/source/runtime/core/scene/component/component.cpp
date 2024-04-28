@@ -40,8 +40,14 @@ namespace lain {
             tickdata.process_owner = nullptr;
 
         } break;
+        case GObject::NOTIFICATION_PARENTED: {
+            L_PRINT("NOTIFICATION_PARENTED"); 
+            return;
+        } break;
+
         default:{
             return;
+
         }
         }
     }
