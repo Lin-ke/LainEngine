@@ -399,19 +399,19 @@ namespace lain {
 
 	void GObject::_propagate_exit_tree(){
 		data.blocked++;
-		for (HashMap<StringName, Component*>::Iterator I = data.components.last(); I; --I) {
-			I->value->notification(NOTIFICATION_EXIT_TREE, true); // @TODO 虚函数链的调用顺序
-		}
-
+		// children first
 		for (HashMap<StringName, GObject*>::Iterator I = data.children.last(); I; --I) {
 			I->value->_propagate_exit_tree();
 		}
 
 		data.blocked--;
 		notification(NOTIFICATION_EXIT_TREE, true);
-
-		if (data.tree->current_scene == this) {
-			data.tree->current_scene = nullptr;
+		if (data.tree) {
+			data.tree->node_removed(this);
+		}
+		for (HashMap<StringName, Component*>::Iterator I = data.components.last(); I; --I) {
+			I->value->notification(NOTIFICATION_EXIT_TREE, true); // @TODO 虚函数链的调用顺序
+			I->value->set_inside_tree(false);
 		}
 		data.viewport = nullptr;
 		data.ready_notified = false;
@@ -454,6 +454,12 @@ namespace lain {
 			const Variant* cptr = &c;
 			data.parent->emit_signalp(SNAME("child_entered_tree"), &cptr, 1);
 		}*/
+		for (KeyValue<StringName, Component*>& K : data.components) {
+			if (!K.value->is_inside_tree()) { // could have been added in enter_tree
+				K.value->set_inside_tree(true);
+				K.value->notification(NOTIFICATION_ENTER_TREE);
+			}
+		}
 
 		data.blocked++;
 		//block while adding children
@@ -957,43 +963,7 @@ namespace lain {
 		}
 	}
 
-	bool GObject::can_process() const {
-		ERR_FAIL_COND_V(!is_inside_tree(), false);
-		return _can_process(get_tree()->is_paused());
-	}
 
-	bool GObject::_can_process(bool p_is_paused) const {
-		ProcessMode process_mode;
-
-		if (tickdata.process_mode == PROCESS_MODE_INHERIT) {
-			if (!tickdata.process_owner) {
-				process_mode = PROCESS_MODE_PAUSABLE;
-			}
-			else {
-				process_mode = tickdata.process_owner->tickdata.process_mode;
-			}
-		}
-		else {
-			process_mode = tickdata.process_mode;
-		}
-
-		// The owner can't be set to inherit, must be a bug.
-		ERR_FAIL_COND_V(process_mode == PROCESS_MODE_INHERIT, false);
-
-		if (process_mode == PROCESS_MODE_DISABLED) {
-			return false;
-		}
-		else if (process_mode == PROCESS_MODE_ALWAYS) {
-			return true;
-		}
-
-		if (p_is_paused) {
-			return process_mode == PROCESS_MODE_WHEN_PAUSED;
-		}
-		else {
-			return process_mode == PROCESS_MODE_PAUSABLE;
-		}
-	}
 
 	bool GObject::is_greater_than(const GObject* p_node) const {
 		ERR_FAIL_NULL_V(p_node, false);
@@ -1053,30 +1023,6 @@ namespace lain {
 		return res;
 	}
 
-
-	void GObject::_add_process_group() {
-		get_tree()->_add_process_group(this);
-	}
-
-	void GObject::_remove_process_group() {
-		get_tree()->_remove_process_group(this);
-	}
-
-	void GObject::_remove_from_process_thread_group() {
-		get_tree()->_remove_node_from_process_group(this, tickdata.process_thread_group_owner);
-		{
-			_remove_all_components_from_ptg();
-		}
-	}
-
-	void GObject::_add_to_process_thread_group() {
-		get_tree()->_add_node_to_process_group(this, tickdata.process_thread_group_owner);
-		{
-			// add components
-			_add_all_components_to_ptg();
-		}
-
-	}
 	void GObject::_add_all_components_to_ptg() {
 		_update_components_cache();
 		for (auto& component : data.components_cache) {
@@ -1091,9 +1037,6 @@ namespace lain {
 			component->_remove_from_process_thread_group();
 		}
 	}
-
-
-
 	void GObject::_remove_tree_from_process_thread_group() {
 		if (!is_inside_tree()) {
 			return; // May not be initialized yet.
@@ -1124,14 +1067,24 @@ namespace lain {
 		else {
 			tickdata.process_group = &data.tree->default_process_group;
 		}
+		for (KeyValue<StringName, Component*>& K : data.components) {
+			if (K.value->tickdata.process_thread_group != PROCESS_THREAD_GROUP_INHERIT) {
+				continue;
+			}
+			K.value->set_ptg_owner(p_owner);
+			K.value->_add_to_process_thread_group();
+			
+		}
+		data.blocked++;
 
 		for (KeyValue<StringName, GObject*>& K : data.children) {
 			if (K.value->tickdata.process_thread_group != PROCESS_THREAD_GROUP_INHERIT) {
 				continue;
 			}
 
-			K.value->_add_to_process_thread_group();
+			K.value->_add_tree_to_process_thread_group(p_owner);
 		}
+		data.blocked--;
 	}
 
 	int GObject::orphan_node_count = 0;

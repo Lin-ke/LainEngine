@@ -18,42 +18,26 @@ namespace lain
         friend class GObject;
 
     protected:
-        GObject*               m_parent;
+        GObject*               m_parent=nullptr;
         bool                   m_is_dirty{ false };
         bool                   m_is_scale_dirty{ false };
         int                    m_index = -1;
+        bool                   m_inside_tree{ false };
         
     public:
         Component() = default;
         virtual ~Component() {}
 
-        L_INLINE bool is_physics_processing_internal() const { return tickdata.physics_process_internal; }
-        L_INLINE bool is_physics_processing() const { return tickdata.physics_process; }
-        L_INLINE bool is_processing_internal() const { return tickdata.process_internal; }
-        L_INLINE bool is_processing() const { return tickdata.process; }
-        L_INLINE bool is_any_processing() const {
-            return tickdata.process || tickdata.process_internal || tickdata.physics_process || tickdata.physics_process_internal;
-        }
-        L_INLINE void _remove_process_group() {
-            m_parent->get_tree()->_remove_process_group(this);
-        }
-        L_INLINE void _add_process_group() {
-            m_parent->get_tree()->_add_process_group(this);
-        }
-
-        L_INLINE void _add_to_process_thread_group() {
-            m_parent->get_tree()->_add_node_to_process_group(this, tickdata.process_thread_group_owner);
-        }
-        L_INLINE void _remove_from_process_thread_group() {
-            m_parent->get_tree()->_remove_node_from_process_group(this, tickdata.process_thread_group_owner);
-        }
-
+        L_INLINE virtual bool is_inside_tree() const override { return m_inside_tree; }
+        L_INLINE void set_inside_tree(bool p_inside) { m_inside_tree = p_inside; }
+        L_INLINE virtual SceneTree* get_tree() const override { return m_parent->get_tree(); }
         
         struct ComparatorByIndexCompt {
             bool operator()(const Component* p_left, const Component* p_right) const {
                 return p_left->m_index < p_right->m_index;
             }
         };
+
     private:
         void _notification(int p_what);
     };

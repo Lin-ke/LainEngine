@@ -122,8 +122,8 @@ namespace lain {
         L_INLINE void set_scene_file_path(String p_path) { data.scene_file_path = p_path; }
         bool is_ancestor_of(const GObject*) const;
         bool is_unique_name_in_owner() const;
-        L_INLINE bool is_inside_tree() const { return data.inside_tree; }
-        _FORCE_INLINE_ SceneTree* get_tree() const {
+        virtual bool is_inside_tree() const override { return data.inside_tree; }
+        _FORCE_INLINE_ virtual SceneTree* get_tree() const override {
             ERR_FAIL_NULL_V(data.tree, nullptr);
             return data.tree;
         }
@@ -161,25 +161,18 @@ namespace lain {
         static int orphan_node_count;
         // WTODO: Process group management 处理组管理
         
-        void _add_process_group();
-        void _remove_process_group();
-        void _add_to_process_thread_group();
         void _add_all_components_to_ptg();
         void _remove_all_components_from_ptg();
 
         void _add_components_to_ptg();
         // 一个指针和一个函数指针的大小是一样的吧
 
-        void _remove_from_process_thread_group();
         void _remove_tree_from_process_thread_group();
         void _add_tree_to_process_thread_group(GObject* p_owner);
 
         static thread_local TickObject* current_process_thread_group;
 
         // process
-        virtual bool can_process() const override;
-
-
 
         GObject();
         ~GObject();
@@ -272,7 +265,6 @@ namespace lain {
         void _propagate_after_exit_tree();
 
         void _add_component_nocheck(Component*);
-        bool _can_process(bool p_paused) const;
 
         /*LocalVector<Component*> & _get_components() const {
             return data.components_cache;

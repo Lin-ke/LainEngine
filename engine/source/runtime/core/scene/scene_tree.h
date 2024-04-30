@@ -13,6 +13,7 @@ namespace lain {
 	class TickObject;
 	class SceneTree : public MainLoop {
 		_THREAD_SAFE_CLASS_
+		friend class TickObject;
 		friend class GObject;
 		friend class Component;
 		static SceneTree* singleton;
@@ -89,6 +90,8 @@ namespace lain {
 		L_INLINE int get_node_count() {
 			return nodes_in_tree_count;
 		}
+		/// signal method
+		void node_removed(GObject* node);
 
 		// state
 		bool is_paused() const { return paused; }

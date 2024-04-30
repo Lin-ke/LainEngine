@@ -4,7 +4,6 @@
 #include "core/object/object.h"
 namespace lain {
 
-    class GObject;
     REFLECTION_TYPE(TickObject)
     CLASS(TickObject: public Object, WhiteListFields) {
         REFLECTION_BODY(TickObject)
@@ -57,7 +56,8 @@ namespace lain {
 
         } tickdata;
         // must
-        virtual bool can_process() const { return true; };
+        bool can_process() const;
+        L_INLINE virtual bool is_inside_tree() const { return false; }
         L_INLINE bool is_physics_processing_internal() const { return tickdata.physics_process_internal; }
         L_INLINE bool is_physics_processing() const { return tickdata.physics_process; }
         L_INLINE bool is_processing_internal() const { return tickdata.process_internal; }
@@ -65,8 +65,17 @@ namespace lain {
         L_INLINE bool is_any_processing() const {
             return tickdata.process || tickdata.process_internal || tickdata.physics_process || tickdata.physics_process_internal;
         }
-    private:
-        bool _can_process() const;
+        L_INLINE void set_ptg_owner(TickObject* p_owner) { tickdata.process_thread_group_owner = p_owner; }
+        void set_process_priority(int p_priority);
+        virtual SceneTree* get_tree()const { return nullptr; }
+        void set_process(bool p_process);
+        // 没办法内联，因为get_tree() 
+        void _remove_from_process_thread_group();
+        void _add_to_process_thread_group();
+        void _remove_process_group();
+        void _add_process_group();
+        bool _can_process(bool) const;
+
     };
 }
 

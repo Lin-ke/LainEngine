@@ -11,7 +11,11 @@ namespace lain {
 		}
 		current_scene = nullptr;
 		root = memnew(GObject);
+		root->set_name("root");
 		// 在这里设置屏幕相关数据
+		// MSAA等等
+		process_groups.push_back(&default_process_group);
+
 	}
 	SceneTree::~SceneTree() {
 		singleton = nullptr;
@@ -134,7 +138,7 @@ namespace lain {
 				// This needs to be done when not processing to avoid problems.
 				ProcessGroup** pg_ptr = (ProcessGroup**)process_groups.ptr(); // discard constness.
 				uint32_t pg_count = process_groups.size();
-
+				// # 去掉需要remove 的
 				for (uint32_t i = 0; i < pg_count; i++) {
 					if (pg_ptr[i]->removed) {
 						// Replace removed with last.
@@ -268,13 +272,13 @@ namespace lain {
 
 		if (p_physics) {
 			if (p_group->physics_node_order_dirty) {
-				nodes.sort_custom<GObject::ComparatorWithPhysicsPriority>();
+				nodes.sort_custom<TickObject::ComparatorWithPhysicsPriority>();
 				p_group->physics_node_order_dirty = false;
 			}
 		}
 		else {
 			if (p_group->node_order_dirty) {
-				nodes.sort_custom<GObject::ComparatorWithPriority>();
+				nodes.sort_custom<TickObject::ComparatorWithPriority>();
 				p_group->node_order_dirty = false;
 			}
 		}
@@ -395,5 +399,10 @@ namespace lain {
 		}
 	}
 
-
+	/// signal method
+	void SceneTree::node_removed(GObject* p_node) {
+		if (current_scene == p_node) {
+			current_scene = nullptr;
+		}
+	}
 }

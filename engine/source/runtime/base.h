@@ -111,10 +111,10 @@ void  L_CORE_LOG(const LogLevel level = LOGINFO, const Types&... args)
 	}
 }
 
-#define L_PRINT(...)	L_APP_LOG(LOGINFO,__FUNCTION__,__LINE__, __VA_ARGS__);
-#define L_PERROR(...)	L_APP_LOG(LOGERROR,__FUNCTION__,__LINE__, __VA_ARGS__);
-#define L_PWARNING(...)	L_APP_LOG(LOGWARN,__FUNCTION__,__LINE__, __VA_ARGS__);
-#define L_CORE_PRINT(...)	L_CORE_LOG(LOGINFO,__FUNCTION__,__LINE__, __VA_ARGS__);
+#define L_PRINT(...)	L_APP_LOG(LOGINFO,__FUNCTION__,"in line:",__LINE__, __VA_ARGS__);
+#define L_PERROR(...)	L_APP_LOG(LOGERROR,__FUNCTION__,"in line:",__LINE__, __VA_ARGS__);
+#define L_PWARNING(...)	L_APP_LOG(LOGWARN,__FUNCTION__,"in line:",__LINE__, __VA_ARGS__);
+#define L_CORE_PRINT(...)	L_CORE_LOG(LOGINFO,__FUNCTION__,"in line:",__LINE__, __VA_ARGS__);
 
 
 # define L_JSON(x) L_PRINT("json of ",#x,lain::Serializer::write(x).dump());
