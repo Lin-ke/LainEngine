@@ -53,6 +53,7 @@ class SceneState : public RefCounted {
 		Vector<Component*> components;
 		Vector<Property> properties;
 		Vector<int> groups;
+		String node_def_res;
 	};
 
 	

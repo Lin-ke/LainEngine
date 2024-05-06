@@ -12,6 +12,7 @@
 #include "core/object/object_id.h"
 #include "core/string/string_name.h"
 #include "core/variant/variant.h"
+#include "core/meta/class_db.h"
 
 // m_class::_get_notification() != m_inherits::_get_notification()
 // 判断是否重载了_notification函数指针
@@ -75,7 +76,7 @@ public:                                                                         
 			return;                                                                                                                              \
 		}                                                                                                                                        \
 		m_inherits::initialize_class();                                                                                                          \
-		::ClassDB::_add_class<m_class>();                                                                                                        \
+		BASENAMESPACE::ClassDB::_add_class<m_class>();                                                                                                        \
 		if (m_class::_get_bind_methods() != m_inherits::_get_bind_methods()) {                                                                   \
 			_bind_methods();                                                                                                                     \
 		}                                                                                                                                        \
@@ -308,9 +309,9 @@ public:
 	_FORCE_INLINE_ void (Object::* _get_notification() const)(int) {
 		return &Object::_notification;
 	}
-	static void _bind_methods();
-	static void _bind_compatibility_methods();
-
+	static void _bind_methods() {}
+	static void _bind_compatibility_methods() {}
+	static void initialize_class() {}
 	_FORCE_INLINE_ static void (*_get_bind_methods())() {
 		return &Object::_bind_methods;
 	}

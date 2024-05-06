@@ -311,7 +311,8 @@ namespace lain {
 			}
 			else {
 				// GObject belongs to this scene and must be created. @TODO
-				Object* obj = ClassDB::instantiate(snames[n.type]);
+				//Object* obj = ClassDB::instantiate(snames[n.type]);
+				Object* obj = static_cast<Object*>(Reflection::TypeMeta::newFromNameAndJson(SCSTR(snames[n.type]),CSTR(n.node_def_res)).m_instance);
 				gobj = Object::cast_to<GObject>(obj);
 
 				if (!gobj) {

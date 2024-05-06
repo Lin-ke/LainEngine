@@ -29,7 +29,7 @@ namespace lain {
 		}
 	}
 	// classÊý¾Ý¿â
-	static Object* instantiate(const StringName& cp_class, bool p_require_real_class = false) {
+	Object* ClassDB::instantiate(const StringName& cp_class, bool p_require_real_class) {
 		return static_cast<Object*>(Reflection::TypeMeta::memnewByName(SCSTR(cp_class)));
 	}
 	void ClassDB::_add_class2(const StringName& p_class, const StringName& p_inherits) {
@@ -54,6 +54,10 @@ namespace lain {
 			ti.inherits_ptr = nullptr;
 		}
 	}
+	/*StringName ClassDB::get_parent_class(const StringName& p_class) {
+		
+	}*/
+	
 
 
 

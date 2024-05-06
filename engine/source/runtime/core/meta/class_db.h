@@ -6,7 +6,7 @@
 #include "core/string/string_name.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/list.h"
-
+#include "core/meta/type_info.h"
 namespace lain {
 	// 以数据库列，表的方式组织
 	struct MethodDefinition {
@@ -38,8 +38,14 @@ namespace lain {
 		StringName name;
 		StringName inherits;
 		//HashMap<StringName, MethodBind*> method_map;
-
+		HashMap<StringName, int64_t> constant_map;
 		Object* (*creation_func)() = nullptr;
+		struct EnumInfo {
+			List<StringName> constants;
+			bool is_bitfield = false;
+		};
+		HashMap<StringName, EnumInfo> enum_map;
+		//HashMap<StringName, MethodInfo> signal_map;
 
 		ClassInfo() {}
 		~ClassInfo() {}
@@ -55,6 +61,8 @@ namespace lain {
 	static StringName get_parent_class(const StringName& p_class);
 	static bool class_exists(const StringName& p_class);
 	static Object* instantiate(const StringName& cp_class, bool p_require_real_class  =  false);
+	static void* instantiate_with_json(const StringName& cp_class, bool p_require_real_class = false);
+
 	template <typename T>
 	static void register_class(bool p_virtual = false) {
 		GLOBAL_LOCK_FUNCTION;
@@ -75,7 +83,28 @@ namespace lain {
 	}
 	static void _add_class2(const StringName& p_class, const StringName& p_inherits);
 
+	template <typename T>
+	static Object* creator() {
+		return memnew(T);
+	}
+	//template <typename N, typename M, typename... VarArgs>
+	//static MethodBind* bind_method(N p_method_name, M p_method, VarArgs... p_args) {
+	//	Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
+	//	const Variant* argptrs[sizeof...(p_args) + 1];
+	//	for (uint32_t i = 0; i < sizeof...(p_args); i++) {
+	//		argptrs[i] = &args[i];
+	//	}
+	//	MethodBind* bind = create_method_bind(p_method);
+	//	if constexpr (std::is_same_v<typename member_function_traits<M>::return_type, Object*>) {
+	//		bind->set_return_type_is_raw_object_ptr(true);
+	//	}
+	//	return bind_methodfi(METHOD_FLAGS_DEFAULT, bind, false, p_method_name, sizeof...(p_args) == 0 ? nullptr : (const Variant**)argptrs, sizeof...(p_args));
+	//}
+
 	};
+
+
+
 
 
 }
