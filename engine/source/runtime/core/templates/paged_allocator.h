@@ -42,10 +42,10 @@ public:
 			pages_allocated++;
 			// 页面池是一个指针数组(T**)，这些指针指向T的所在内存(二维数组，列是索引）
 			page_pool = (T**)memrealloc(page_pool, sizeof(T*) * pages_allocated);
-			//available_pool = (T***)memrealloc(available_pool, sizeof(T**) * pages_allocated);
+			available_pool = (T***)memrealloc(available_pool, sizeof(T**) * pages_allocated);
 			// 分配新页面的内存空间
 			page_pool[pages_used] = (T*)memalloc(sizeof(T) * page_size);
-			//available_pool[pages_used] = (T**)memalloc(sizeof(T*) * page_size);
+			available_pool[pages_used] = (T**)memalloc(sizeof(T*) * page_size);
 
 			// 将新页面的对象指针添加到可用对象指针数组中
 			for (uint32_t i = 0; i < page_size; i++) {

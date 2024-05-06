@@ -1135,6 +1135,7 @@ namespace lain {
 	}
 
 	void GObject::_notification(int p_notification) {
+		L_PRINT("[Node notification]", "name", CSTR(data.name.operator lain::String()),p_notification);
 		switch (p_notification) {
 			// 这里去调用脚本了
 			// 在unity中，脚本也是component的一部分
@@ -1143,7 +1144,7 @@ namespace lain {
 		} break;
 		case NOTIFICATION_ENTER_TREE: {
 			// #like in unreal begin play, adding to tick function set.
-			// # 肯定不如unreal的任务图，怎么做到负载均衡？
+			// # 肯定不如unreal的任务图，怎么做到负载均衡？（每个线程分配一个任务）
 			// 但是UE的任务图肯定会需要大量的额外时间（但是这部分开销并不在_tick中）
 			ERR_FAIL_NULL(get_tree());
 			if (tickdata.process_mode == PROCESS_MODE_INHERIT) {

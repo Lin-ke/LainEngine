@@ -97,6 +97,7 @@ namespace lain {
 			Task* task_to_process = nullptr;
 			{
 				MutexLock lock(singleton->task_mutex); // unique_lock
+				// 这个锁锁的是与任务分发相关的类单例互斥量task_mutex
 				if (singleton->exit_threads) {
 					return;
 				}

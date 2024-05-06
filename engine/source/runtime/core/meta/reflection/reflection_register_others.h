@@ -1,8 +1,8 @@
 #pragma once
 #ifndef REGISTER_OTHER_TYPES_H
 #define REGISTER_OTHER_TYPES_H
-#define Seriali(class) Reflection::TypeWrappersRegister::ClassFunction_Manual_##class##();
-#define Reflect(class) Reflection::TypeWrappersRegister::##class##();
+#define SERIAL_REG(class) Reflection::TypeWrappersRegister::ClassFunction_Manual_##class##();
+#define REFLECT_REG(class) Reflection::TypeWrappersRegister::##class##();
 
 #include "core/meta/reflection/reflection.h"
 #include "core/meta/serializer/serializer.h"
@@ -30,15 +30,11 @@ namespace lain {
 
 
 	L_INLINE void register_other_meta() {
-		Reflect(StringName);
-		Seriali(Dictionary);
-		Seriali(StringName);
-		Seriali(GObjectPath);
-		Seriali(String);
-
-
-		// dictionary
-
+		REFLECT_REG(StringName);
+		SERIAL_REG(Dictionary);
+		SERIAL_REG(StringName);
+		SERIAL_REG(GObjectPath);
+		SERIAL_REG(String);
 	}
 
 

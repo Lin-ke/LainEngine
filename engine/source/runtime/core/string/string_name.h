@@ -9,7 +9,7 @@
 
 #define UNIQUE_NODE_PREFIX "%"
 // For compare speed
-
+#define SCSTR(x) ((x).operator String()).utf8().get_data()
 
 namespace lain {
 	struct StaticCString {

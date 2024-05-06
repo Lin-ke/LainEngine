@@ -180,7 +180,7 @@ namespace lain {
 		for (uint32_t i = 0; i <= group_count; i++) {
 			int order = i < group_count && process_groups[i]->owner ? process_groups[i]->owner->tickdata.process_thread_group_order : 0;
 			bool threaded = i < group_count && process_groups[i]->owner ? process_groups[i]->owner->tickdata.process_thread_group == GObject::PROCESS_THREAD_GROUP_SUB_THREAD : false;
-
+			// 结算之前的
 			if (i == group_count || current_order != order || current_threaded != threaded) {
 				if (process_count > 0) {
 					// Proceed to process the group.
@@ -228,12 +228,19 @@ namespace lain {
 				if (!pg->physics_nodes.is_empty()) {
 					process_valid = true;
 				}
+				else if (pg == &default_process_group) {
+					process_valid = true;
+				}
 				/*else if ((pg == &default_process_group || (pg->owner != nullptr && pg->owner->data.process_thread_messages.has_flag(GObject::FLAG_PROCESS_THREAD_MESSAGES_PHYSICS))) && pg->call_queue.has_messages()) {
 					process_valid = true;
 				}*/
 			}
 			else {
+
 				if (!pg->nodes.is_empty()) {
+					process_valid = true;
+				}
+				else if (pg == &default_process_group) {
 					process_valid = true;
 				}
 				/*else if ((pg == &default_process_group || (pg->owner != nullptr && pg->owner->data.process_thread_messages.has_flag(GObject::FLAG_PROCESS_THREAD_MESSAGES))) && pg->call_queue.has_messages()) {

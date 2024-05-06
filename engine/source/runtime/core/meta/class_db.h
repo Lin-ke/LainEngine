@@ -8,14 +8,75 @@
 #include "core/templates/list.h"
 
 namespace lain {
+	// 以数据库列，表的方式组织
+	struct MethodDefinition {
+		StringName name;
+		Vector<StringName> args;
+		MethodDefinition() {}
+		MethodDefinition(const char* p_name) :
+			name(p_name) {}
+		MethodDefinition(const StringName& p_name) :
+			name(p_name) {}
+	};
+
+	MethodDefinition D_METHODP(const char* p_name, const char* const** p_args, uint32_t p_argcount);
+
+	template <typename... VarArgs>
+	MethodDefinition D_METHOD(const char* p_name, const VarArgs... p_args) {
+		const char* args[sizeof...(p_args) + 1] = { p_args..., nullptr }; // +1 makes sure zero sized arrays are also supported.
+		const char* const* argptrs[sizeof...(p_args) + 1];
+		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
+			argptrs[i] = &args[i];
+		}
+
+		return D_METHODP(p_name, sizeof...(p_args) == 0 ? nullptr : (const char* const**)argptrs, sizeof...(p_args));
+	}
+	
+	struct ClassInfo {
+		ClassInfo* inherits_ptr = nullptr;
+		void* class_ptr = nullptr;
+		StringName name;
+		StringName inherits;
+		//HashMap<StringName, MethodBind*> method_map;
+
+		Object* (*creation_func)() = nullptr;
+
+		ClassInfo() {}
+		~ClassInfo() {}
+	};
+
 	class ClassDB {
 	static HashMap<StringName, StringName> resource_base_extensions;
+	static HashMap<StringName, ClassInfo> classes;
+
 	public:
 	static void add_resource_base_extension(const StringName& p_extension, const StringName& p_class);
 	static void get_resource_base_extensions(List<String>* p_extensions);
 	static StringName get_parent_class(const StringName& p_class);
 	static bool class_exists(const StringName& p_class);
+	static Object* instantiate(const StringName& cp_class, bool p_require_real_class  =  false);
+	template <typename T>
+	static void register_class(bool p_virtual = false) {
+		GLOBAL_LOCK_FUNCTION;
+		static_assert(types_are_same_v<typename T::self_type, T>, "Class not declared properly, please use GDCLASS.");
+		T::initialize_class();
+		ClassInfo* t = classes.getptr(T::get_class_static());
+		ERR_FAIL_NULL(t);
+		t->creation_func = &creator<T>;
+		t->exposed = true;
+		t->is_virtual = p_virtual;
+		t->class_ptr = T::get_class_ptr_static();
+		t->api = current_api;
+		T::register_custom_data_to_otdb();
+	}
+	template <typename T>
+	static void _add_class() {
+		_add_class2(T::get_class_static(), T::get_parent_class_static());
+	}
+	static void _add_class2(const StringName& p_class, const StringName& p_inherits);
+
 	};
+
 
 }
 #endif

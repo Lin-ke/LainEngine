@@ -1,6 +1,19 @@
 #include "class_db.h"
 namespace lain {
+
+	MethodDefinition D_METHODP(const char* p_name, const char* const** p_args, uint32_t p_argcount) {
+		MethodDefinition md;
+		md.name = StaticCString::create(p_name);
+		md.args.resize(p_argcount);
+		for (uint32_t i = 0; i < p_argcount; i++) {
+			md.args.write[i] = StaticCString::create(*p_args[i]);
+		}
+		return md;
+	}
+
 	HashMap<StringName, StringName> ClassDB::resource_base_extensions;
+	HashMap<StringName, ClassInfo> ClassDB::classes;
+
 
 	void ClassDB::add_resource_base_extension(const StringName& p_extension, const StringName& p_class) {
 		if (resource_base_extensions.has(p_extension)) {
@@ -15,5 +28,33 @@ namespace lain {
 			p_extensions->push_back(E.key);
 		}
 	}
+	// classÊý¾Ý¿â
+	static Object* instantiate(const StringName& cp_class, bool p_require_real_class = false) {
+		return static_cast<Object*>(Reflection::TypeMeta::memnewByName(SCSTR(cp_class)));
+	}
+	void ClassDB::_add_class2(const StringName& p_class, const StringName& p_inherits) {
+		//OBJTYPE_WLOCK;
+
+		const StringName& name = p_class;
+
+		ERR_FAIL_COND_MSG(classes.has(name), "Class '" + String(p_class) + "' already exists.");
+
+		classes[name] = ClassInfo();
+		ClassInfo& ti = classes[name];
+		ti.name = name;
+		ti.inherits = p_inherits;
+		//ti.api = current_api;
+
+		if (ti.inherits) {
+			ERR_FAIL_COND(!classes.has(ti.inherits)); //it MUST be registered.
+			ti.inherits_ptr = &classes[ti.inherits];
+
+		}
+		else {
+			ti.inherits_ptr = nullptr;
+		}
+	}
+
+
 
 }
