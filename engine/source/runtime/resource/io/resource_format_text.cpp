@@ -164,10 +164,10 @@ namespace lain{
 		// @TODO:sub_resource
 		// @TODO:resource
 
-		if (is_scene && packed_res.gobjects.size() > 0) {
+		if (!is_scene && packed_res.gobjects.size() > 0) {
 			error_text += "found the 'gobject' tag on a resource file!";
 			error = ERR_FILE_CORRUPT;
-			ERR_FAIL_COND_V_MSG(false, ERR_FILE_CORRUPT, error_text);
+			ERR_FAIL_COND_V_MSG(true, ERR_FILE_CORRUPT, error_text);
 		}
 
 		Dictionary dict;
@@ -184,7 +184,7 @@ namespace lain{
 			if (dict.has("name"))
 				name = packed_scene->get_state()->add_name(dict["name"]);
 			if (dict.has("type"))
-				name = packed_scene->get_state()->add_name(dict["name"]);
+				type = packed_scene->get_state()->add_name(dict["type"]);
 			else 
 				type = SceneState::TYPE_INSTANTIATED; //no type? assume this was instantiated
 
@@ -229,10 +229,7 @@ namespace lain{
 							}*/
 						}
 						else {
-	#ifdef TOOLS_ENABLED
-							//remember ID for saving
 							res->set_id_for_path(local_path, id);
-	#endif
 							r_res = res;
 						}
 					}
@@ -285,10 +282,11 @@ namespace lain{
 				}
 				packed_scene->get_state()->add_components(gobject_id, cmpts); //ref
 			}
+
+			
 			//  
 			// properties
-
-			// component
+			packed_scene->get_state()->add_instance_res(gobject_id, gobject.m_instance_res);
 			// 按他这个写法和python有啥区别，dict和variant装全部
 			// 组件里面只有一些数据，所以也不是不行吧
 			
@@ -587,6 +585,8 @@ namespace lain{
 
 					gires.m_variants["name"] = name;
 					Vector<Component*> cmpts = state->get_gobject_components(i);
+					gires.m_instance_res = state->get_gobject_insres(i);
+
 					using Reflection::ReflectionPtr;
 					Vector<ReflectionPtr<Component>> cmpts_ref; cmpts_ref.resize(cmpts.size());
 					{

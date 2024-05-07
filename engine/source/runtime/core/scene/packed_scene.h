@@ -51,9 +51,9 @@ class SceneState : public RefCounted {
 			int instance = 0;
 		};*/
 		Vector<Component*> components;
-		Vector<Property> properties;
+		Vector<Property> properties; // 
 		Vector<int> groups;
-		String node_def_res;
+		String node_ins_res;
 	};
 
 	
@@ -202,7 +202,10 @@ public:
 	bool remove_group_references(const StringName& p_name);
 	bool rename_group_references(const StringName& p_old_name, const StringName& p_new_name);
 	void add_components(int p_index, const Vector<Component*>&);
+	void add_instance_res(int p_index, const String&);
+
 	Vector<Component*> get_gobject_components(int p_index);
+	String get_gobject_insres(int p_index);
 
 	HashSet<StringName> get_all_groups();
 

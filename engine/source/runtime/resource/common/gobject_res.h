@@ -49,5 +49,6 @@ namespace lain
         Dictionary m_variants;
         //Groups 
         Vector <Reflection::ReflectionPtr<Component>> m_instanced_components;
+        String m_instance_res;
     };
 } // namespace Piccolo

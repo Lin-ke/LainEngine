@@ -2050,7 +2050,7 @@ namespace lain {
 				// We are safe that there is a reference here.
 				RefCounted* ref_counted = static_cast<RefCounted*>(_get_obj().obj);
 				if (ref_counted->unreference()) {
-					memdelete(ref_counted);
+					memdelete(ref_counted); // @PBUG 这可能导致在cache中，但是被析构，导致cache失效。需要保证这个先析构掉
 				}
 			}
 			_get_obj().obj = nullptr;

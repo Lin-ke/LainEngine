@@ -32,6 +32,7 @@ int main() {
 	char* argv[] = { "D:/LainEngine/game" }; //³¡¾°1
 	Error err = Main::Initialize(1, argv);
 	os.main_loop->initialize(); // scenetree
+	test::test_scene();
 	test::test_process();
 }
 #endif

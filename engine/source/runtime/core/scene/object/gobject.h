@@ -7,21 +7,23 @@
 #include "core/scene/scene_tree.h"
 #include "core/scene/tick_object.h"
 #include "core/scene/packed_scene.h"
+#include "core/meta/reflection/reflection_marcos.h"
 namespace lain {
     class Component;
     class Viewport;
     class GObject;
     class SceneState;
+    class Serializer;
     SAFE_FLAG_TYPE_PUN_GUARANTEES
-    SAFE_NUMERIC_TYPE_PUN_GUARANTEES(uint32_t)
-    
-    // 1. Parent; Children; Sibling的树关系
-    // 2. Owner,树上的节点，但是有保存相关
-    // 3. Grouped, 类似tag，有组关系
-    // 4. Process 部分，有ProcessGroup关系
-    
+        SAFE_NUMERIC_TYPE_PUN_GUARANTEES(uint32_t)
 
-    class GObject: public TickObject{
+        // 1. Parent; Children; Sibling的树关系
+        // 2. Owner,树上的节点，但是有保存相关
+        // 3. Grouped, 类似tag，有组关系
+        // 4. Process 部分，有ProcessGroup关系
+    REFLECTION_TYPE(GObject);
+    CLASS(GObject: public TickObject, WhiteListFields){
+        friend class Serializer;
         LCLASS(GObject, Object);
         friend class SceneState;
         friend class SceneTree;
@@ -39,7 +41,7 @@ namespace lain {
         };
         struct Data {
             String scene_file_path; // 如果场景是从文件实例化来的
-            Ref<SceneState> instance_state; // 示例场景的scenestate
+            Ref<SceneState> instance_state; // 实例场景的scenestate
             Ref<SceneState> inherited_state; // 继承场景的scenestate
 
 

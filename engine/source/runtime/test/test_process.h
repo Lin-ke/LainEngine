@@ -5,16 +5,7 @@
 #include "core/scene/component/component.h"
 namespace lain {
 	namespace test {
-		class TestNode : public GObject {
-			void _notification(int p_notification) {
-				switch (p_notification) {
-				case NOTIFICATION_PROCESS:
-					L_PRINT("node tick");
-				default:
-					return;
-				}
-			}
-		};
+		
 
 		class TestComponent : public Component{
 			void _notification(int p_notification) {
@@ -28,6 +19,13 @@ namespace lain {
 		};
 
 		void test_process() {
+			List<Ref<Resource>> resources;
+
+			ResourceCache::get_cached_resources(&resources);
+			for (auto&& i : resources) {
+				L_JSON(i->GetPath());
+				L_JSON(i->GetName());
+			}
 			auto scenetree = SceneTree::get_singleton();
 			Ref<PackedScene> s3 = ResourceLoader::load("3.tscn", "PackedScene");
 			auto new_scene = s3->instantiate();

@@ -257,7 +257,6 @@ public:
 		REFLECTION_BODY(Object);
 	public:
 		Object() { _construct_object(false); }
-		Object(ObjectID id) { m_instance_id = id; m_type_is_reference = false; }
 		Object::Object(bool p_reference) {
 			_construct_object(p_reference);
 		}

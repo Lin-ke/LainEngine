@@ -183,16 +183,18 @@ namespace lain {
 	// 复制指针 还是直接指？因为vector是有引用计数的
 	void SceneState::add_components(int p_index,const Vector<Component*>& p_components ) {
 		ERR_FAIL_INDEX(p_index, gobjects.size());
-		/*GObjectData& ptr = gobjects.write[p_index];
-		for (auto&& compt : p_components) {
-			ptr.components.push_back(compt);
-		}*/
 		gobjects.write[p_index].components = p_components;
+	}
+	void SceneState::add_instance_res(int p_index, const String& p_ins_res) {
+		ERR_FAIL_INDEX(p_index, gobjects.size());
+		gobjects.write[p_index].node_ins_res = p_ins_res;
 	}
 
 	Vector<Component*> SceneState::get_gobject_components(int p_index) {
-		//ERR_FAIL_INDEX(p_index, gobjects.size());
 		return gobjects[p_index].components;
+	}
+	String SceneState::get_gobject_insres(int p_index) {
+		return gobjects[p_index].node_ins_res;
 	}
 	GObject* SceneState::instantiate(GenEditState p_edit_state) const {
 
@@ -312,7 +314,13 @@ namespace lain {
 			else {
 				// GObject belongs to this scene and must be created. @TODO
 				//Object* obj = ClassDB::instantiate(snames[n.type]);
-				Object* obj = static_cast<Object*>(Reflection::TypeMeta::newFromNameAndJson(SCSTR(snames[n.type]),CSTR(n.node_def_res)).m_instance);
+				Object* obj = nullptr;
+				if (n.node_ins_res == "{}") {
+					obj = static_cast<Object*>(Reflection::TypeMeta::memnewByName(SCSTR(snames[n.type])));
+				}
+				else {
+					obj = static_cast<Object*>(Reflection::TypeMeta::newFromNameAndJson(SCSTR(snames[n.type]), CSTR(n.node_ins_res)).m_instance);
+				}
 				gobj = Object::cast_to<GObject>(obj);
 
 				if (!gobj) {
@@ -805,6 +813,10 @@ namespace lain {
 			}
 
 			parent_node = idx;
+			nd.node_ins_res = Reflection::TypeMeta::writeByName(CSTR(p_node->get_class()), static_cast<void*>(p_node)).dump().c_str();
+			if (nd.node_ins_res == "null") {
+				WARN_PRINT("JSON Serializer NODE ERROR");
+			}
 			gobjects.push_back(nd);
 		}
 
