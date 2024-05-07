@@ -31,7 +31,7 @@ namespace lain {
                     err = ERR_PARSE_ERROR;
                 }
                 if (variant_value.get_type() == Variant::Type::NIL) {
-					L_PWARNING(CSTR("NIL config meet: " + currentField + "/" + key));
+					L_PWARNING("NIL config meet: " + currentField + "/" + key);
                 }
                 values[currentField][key] = variant_value;
                 

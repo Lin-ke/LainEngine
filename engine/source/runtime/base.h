@@ -24,18 +24,18 @@
 #include "core/typedefs.h"
 #include <core/log/log.h>
 #include <sstream>
-#define L_CORE_TRACE(...)	lain::Log::GetCoreLogger()->trace(__VA_ARGS__)
-#define L_CORE_INFO(...)	lain::Log::GetCoreLogger()->info(__VA_ARGS__)
-#define L_CORE_WARN(...)	lain::Log::GetCoreLogger()->warn(__VA_ARGS__)
-#define L_CORE_ERROR(...)	lain::Log::GetCoreLogger()->error(__VA_ARGS__)
+#define _L_CORE_TRACE(...)	lain::Log::GetCoreLogger()->trace(__VA_ARGS__)
+#define _L_CORE_INFO(...)	lain::Log::GetCoreLogger()->info(__VA_ARGS__)
+#define _L_CORE_WARN(...)	lain::Log::GetCoreLogger()->warn(__VA_ARGS__)
+#define _L_CORE_ERROR(...)	lain::Log::GetCoreLogger()->error(__VA_ARGS__)
 
 #define CSTR(x) (x).utf8().get_data()
 
 
-#define L_TRACE(...)	lain::Log::GetClientLogger()->trace(__VA_ARGS__)
-#define L_INFO(...)	lain::Log::GetClientLogger()->info(__VA_ARGS__)
-#define L_WARN(...)	lain::Log::GetClientLogger()->warn(__VA_ARGS__)
-#define L_ERROR(...)	lain::Log::GetClientLogger()->error(__VA_ARGS__)
+#define _L_TRACE(...)	lain::Log::GetClientLogger()->trace(__VA_ARGS__)
+#define _L_INFO(...)	lain::Log::GetClientLogger()->info(__VA_ARGS__)
+#define _L_WARN(...)	lain::Log::GetClientLogger()->warn(__VA_ARGS__)
+#define _L_ERROR(...)	lain::Log::GetClientLogger()->error(__VA_ARGS__)
 
 // inline:
 // # define L_INLINE __forceinline 
@@ -49,35 +49,37 @@ enum LogLevel
 	LOGERROR,
 };
 
-
+namespace lain {
+	class String;
+}
 template <typename ... Types>
 void  L_APP_LOG(const LogLevel level = LOGINFO, const Types&... args)
 {
 	std::ostringstream  ss;
 	std::initializer_list <int> { ([&args, &ss] {
-		/*if constexpr (std::is_same_v<decltype(args), lain::String>) {
+		if constexpr (std::is_same_v<decltype(args), lain::String>) {
 			ss << CSTR(args) << " ";
 		}
-		else*/
+		else
 		{
 			ss << args << " ";
 		}
 		}(), 0)...};
 	switch (level) {
 	case LOGINFO:
-		L_INFO(ss.str());
+		_L_INFO(ss.str());
 		break;
 	case LOGWARN:
-		L_WARN(ss.str());
+		_L_WARN(ss.str());
 		break;
 	case LOGERROR:
-		L_ERROR(ss.str());
+		_L_ERROR(ss.str());
 		break;
 	case LOGTRACE:
-		L_TRACE(ss.str());
+		_L_TRACE(ss.str());
 		break;
 	default:
-		L_INFO(ss.str());
+		_L_INFO(ss.str());
 	}
 }
 
@@ -86,36 +88,45 @@ void  L_CORE_LOG(const LogLevel level = LOGINFO, const Types&... args)
 {
 	std::ostringstream  ss;
 	std::initializer_list <int> { ([&args, &ss] {
-			/*if constexpr (std::is_same_v<decltype(args), lain::String>) {
+			if constexpr (std::is_same_v<decltype(args), lain::String>) {
 				ss << CSTR(args) << " ";
 			}
-			else */
+			else 
 			{
 				ss << args << " ";
 			} 
 		}(), 0)...};
 	switch (level) {
 	case LOGINFO:
-		L_CORE_INFO(ss.str());
+		_L_CORE_INFO(ss.str());
 		break;
 	case LOGWARN:
-		L_CORE_WARN(ss.str());
+		_L_CORE_WARN(ss.str());
 		break;
 	case LOGERROR:
-		L_CORE_ERROR(ss.str());
+		_L_CORE_ERROR(ss.str());
 		break;
 	case LOGTRACE:
-		L_CORE_TRACE(ss.str());
+		_L_CORE_TRACE(ss.str());
 		break;
 	default:
-		L_CORE_INFO(ss.str());
+		_L_CORE_INFO(ss.str());
 	}
 }
+#define L_DPRINT(...) L_CORE_LOG(LOGINFO,__VA_ARGS__);
+#define L_DERROR(...)  L_CORE_LOG(LOGERROR,__VA_ARGS__);
+#define L_DWARN(...) L_CORE_LOG(LOGWARN,__VA_ARGS__);
+
 
 #define L_PRINT(...)	L_APP_LOG(LOGINFO,__FUNCTION__,"in line:",__LINE__, __VA_ARGS__);
+#define L_PINFO(...)	L_APP_LOG(LOGINFO,__FUNCTION__,"in line:",__LINE__, __VA_ARGS__);
 #define L_PERROR(...)	L_APP_LOG(LOGERROR,__FUNCTION__,"in line:",__LINE__, __VA_ARGS__);
 #define L_PWARNING(...)	L_APP_LOG(LOGWARN,__FUNCTION__,"in line:",__LINE__, __VA_ARGS__);
 #define L_CORE_PRINT(...)	L_CORE_LOG(LOGINFO,__FUNCTION__,"in line:",__LINE__, __VA_ARGS__);
+#define L_CORE_INFO(...)	L_CORE_LOG(LOGINFO,__FUNCTION__,"in line:",__LINE__, __VA_ARGS__);
+#define L_CORE_WARN(...) L_CORE_LOG(LOGWARN, __FUNCTION__, "in line:", __LINE__, __VA_ARGS__);
+#define L_CORE_ERROR(...) L_CORE_LOG(LOGERROR, __FUNCTION__, "in line:", __LINE__, __VA_ARGS__);
+
 
 
 # define L_JSON(x) L_PRINT("json of ",#x,lain::Serializer::write(x).dump());

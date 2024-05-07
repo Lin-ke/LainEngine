@@ -2,7 +2,7 @@
 namespace lain {
 	static PrintHandlerList* print_handler_list = nullptr;
 	void print_error(String p_string) {
-		L_CORE_ERROR(CSTR(p_string));
+		L_CORE_ERROR(p_string);
 
 		_global_lock();
 		PrintHandlerList* l = print_handler_list;
@@ -15,7 +15,7 @@ namespace lain {
 	}
 	void __print_line(String p_string) {
 
-		L_CORE_INFO("%s\n", CSTR(p_string));
+		L_CORE_INFO(p_string);
 
 		_global_lock();
 		PrintHandlerList* l = print_handler_list;

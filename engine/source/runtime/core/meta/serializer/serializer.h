@@ -11,7 +11,8 @@
 #include "core/variant/dictionary.h"
 #include "core/templates/hash_map.h"
 namespace lain
-{
+{   
+    class Object;
     template<typename...>
     inline constexpr bool always_false = false;
     // 应该建立一个 Map:<String(type_name), read\write> 这个是有的，然后向内部注入有关只serializer不反射的类
@@ -21,8 +22,14 @@ namespace lain
         template<typename T>
         static Json writePointer(T* instance)
         {
+            if constexpr (std::is_base_of_v<Object, T>) { 
+                return Json::object{ {"$typeName", Json {CSTR(instance->get_class())}}, {"$context", Serializer::write(*instance)} };
+            }
             return Json::object {{"$typeName", Json {"*"}}, {"$context", Serializer::write(*instance)}};
         }
+
+        template<>
+        static Json writePointer(Object* instance);
 
         template<typename T>
         static T*& readPointer(const Json& json_context, T*& instance)

@@ -22,7 +22,7 @@ namespace lain {
 				for (int i = 0; i < queue_size; ++i) {
 					GObject* node = queue.front()->get();
 					queue.pop_front();
-					L_PRINT("name", CSTR(node->get_name().operator lain::String()));
+					L_PRINT("name", CSTR(node->get_name().operator lain::String()), "type", CSTR(node->get_class()));
 					if (node->get_parent() != nullptr)
 						L_PRINT("father", CSTR(node->get_parent()->get_name().operator lain::String()));
 					if (node->get_components().size() > 0) {

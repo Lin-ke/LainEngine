@@ -57,13 +57,13 @@ void _err_print_error(const char* p_function, const char* p_file, int p_line, co
 void _err_print_error(const char* p_function, const char* p_file, int p_line, const char* p_error, const char* p_message, bool p_editor_notify, ErrorHandlerType p_type) {
 	switch(p_type) {
 	case ErrorHandlerType::ERR_HANDLER_WARNING:
-		L_PWARNING("Func:", p_function, "File:", p_file, "L:", p_line, "ERR:", p_error, "MSG:", p_message, "NTF:", p_editor_notify, "TP:", p_type);
+		L_DWARN("Func:", p_function, "File:", p_file, "L:", p_line, "ERR:", p_error, "MSG:", p_message, "NTF:", p_editor_notify, "TP:", p_type);
 		break;
 	case ErrorHandlerType::ERR_HANDLER_ERROR:
-		L_PERROR("Func:", p_function, "File:", p_file, "L:", p_line, "ERR:", p_error, "MSG:", p_message, "NTF:", p_editor_notify, "TP:", p_type);
+		L_DERROR("Func:", p_function, "File:", p_file, "L:", p_line, "ERR:", p_error, "MSG:", p_message, "NTF:", p_editor_notify, "TP:", p_type);
 		break;
 	default:
-		L_PRINT("Func:", p_function, "File:", p_file, "L:", p_line, "ERR:", p_error, "MSG:", p_message, "NTF:", p_editor_notify, "TP:", p_type);
+		L_DPRINT("Func:", p_function, "File:", p_file, "L:", p_line, "ERR:", p_error, "MSG:", p_message, "NTF:", p_editor_notify, "TP:", p_type);
 	}
 
 	_global_lock();

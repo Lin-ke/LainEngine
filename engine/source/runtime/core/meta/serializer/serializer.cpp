@@ -14,6 +14,12 @@ namespace lain
         return Json(instance);
     }
     template<>
+    static Json Serializer::writePointer(Object* instance)
+    {
+        return Json::object{ {"$typeName", Json {CSTR(instance->get_class())}}, {"$context", Serializer::write(*instance)} };
+    }
+
+    template<>
     char& Serializer::read(const Json& json_context, char& instance)
     {
         assert(json_context.is_number());

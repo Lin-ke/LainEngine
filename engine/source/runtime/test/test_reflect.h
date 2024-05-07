@@ -16,7 +16,7 @@ namespace lain {
 		void test_meta(T& instance, const char* tname, const char* fieldname, void* value) {
 			auto meta = Reflection::TypeMeta::newMetaFromName(tname);
 			if (!meta.isValid()) {
-				L_ERROR("meta is not valid");
+				L_PERROR("meta is not valid");
 				return;
 			}
 			L_PRINT("before");
@@ -24,7 +24,7 @@ namespace lain {
 
 			auto field_accessor = meta.getFieldByName(fieldname);
 			if (!field_accessor.isValid()) {
-				L_INFO("field_accessor is not valid");
+				L_PINFO("field_accessor is not valid");
 				return;
 				// set
 			}
