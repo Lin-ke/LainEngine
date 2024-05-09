@@ -33,8 +33,10 @@ namespace lain
     @par
     The coordinate system is assumed to be <b>right-handed</b>.
     */
-    class Matrix3x3
+    REFLECTION_TYPE(Matrix3x3)
+    STRUCT( _NO_DISCARD_ Matrix3x3, Fields)
     {
+        REFLECTION_BODY(Matrix3x3);
     public:
         float m_mat[3][3];
 

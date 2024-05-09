@@ -40,11 +40,11 @@ namespace lain {
 		}
 
 
-		L_INLINE ui32* _get_size() const {
+		L_INLINE uint32_t* _get_size() const {
 			if (!m_ptr) {
 				return nullptr;
 			}
-			return reinterpret_cast<ui32*>(m_ptr) - 1;
+			return reinterpret_cast<uint32_t*>(m_ptr) - 1;
 		}
 		L_INLINE s_ui32* _get_count() const {
 			if (!m_ptr) {
@@ -54,14 +54,14 @@ namespace lain {
 		}
 		// 最大支持
 		L_INLINE size_t _get_alloc_size(size_t element) const {
-			return next_power_of_2(static_cast<ui32> (element * sizeof(T)));
+			return next_power_of_2(static_cast<uint32_t> (element * sizeof(T)));
 		}
 		void _ref(const CowData<T>& p_from);
 		void _ref(const CowData<T>* p_from) {
 			_ref(*p_from);
 		}
 		void _unref(void* p_data);
-		ui32 _copy_on_write();
+		uint32_t _copy_on_write();
 	public:
 		L_INLINE const T* ptr()const {
 			return m_ptr;
@@ -77,8 +77,8 @@ namespace lain {
 		L_INLINE CowData() {}
 		L_INLINE ~CowData();
 		L_INLINE CowData(CowData<T>& p_from) { _ref(p_from); };
-		L_INLINE ui32 size() const {
-			ui32* size = (ui32*)_get_size();
+		L_INLINE uint32_t size() const {
+			uint32_t* size = (uint32_t*)_get_size();
 			if (size != nullptr) {
 				return *size;
 			}
@@ -149,7 +149,7 @@ namespace lain {
 
 		// call destructors
 		if (!std::is_trivially_destructible<T>::value) {
-			ui32* count = _get_size();
+			uint32_t* count = _get_size();
 			T* data = (T*)(count + 1);
 
 			for (uint32_t i = 0; i < *count; ++i) {
@@ -182,13 +182,13 @@ namespace lain {
 	}
 	// cow: if count <= 1, do nothing. else change m_ptr to anther one.
 	template <class T>
-	ui32 CowData<T>::_copy_on_write() {
+	uint32_t CowData<T>::_copy_on_write() {
 		if (!m_ptr) {
 			return 0;
 		}
 
 		s_ui32* refcount = _get_count();
-		ui32 rc = refcount->get();
+		uint32_t rc = refcount->get();
 		if (unlikely(rc > 1)) {
 			/* in use by more than me */
 			uint32_t current_size = *_get_size();
@@ -321,7 +321,7 @@ namespace lain {
 			return ret;
 		}
 
-		for (ui32 i = static_cast<ui32>(p_from); i < size(); i++) {
+		for (uint32_t i = static_cast<uint32_t>(p_from); i < size(); i++) {
 			if (get(i) == p_val) {
 				ret = i;
 				break;

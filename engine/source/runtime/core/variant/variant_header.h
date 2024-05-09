@@ -14,7 +14,7 @@
 #include "core/math/rect2.h"
 #include "core/math/rect2i.h"
 //#include "core/math/transform_2d.h"
-//#include "core/math/transform_3d.h"
+#include "core/math/transform3d.h"
 #include "core/math/vector2.h"
 #include "core/math/vector2i.h"
 #include "core/math/vector3.h"

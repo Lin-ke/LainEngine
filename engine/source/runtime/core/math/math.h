@@ -34,20 +34,20 @@ namespace lain
     class Angle;
     class Degree;
 
-    class Vector2;
-    class Vector3;
-    class Vector4;
-    class Matrix3x3;
-    class Matrix4x4;
-    class Quaternion;
+    struct Vector2;
+    struct Vector3;
+    struct Vector4;
+    struct Matrix3x3;
+    struct Matrix4x4;
+    struct Quaternion;
 
     class Radian
     {
         float m_rad;
 
     public:
-        explicit Radian(float r = 0) : m_rad(r) {}
-        explicit Radian(const Degree& d);
+        Radian(float r = 0) : m_rad(r) {}
+        Radian(const Degree& d);
         Radian& operator=(float f)
         {
             m_rad = f;
@@ -237,29 +237,27 @@ namespace lain
 		static float angleUnitsToDegrees(float units);
 		static float degreesToAngleUnits(float degrees);
 
-		static _ALWAYS_INLINE_ float  sin(const Radian& rad) { return std::sin(rad.valueRadians()); }
 		static _ALWAYS_INLINE_ double sin(double p_x) { return ::sin(p_x); }
-		static _ALWAYS_INLINE_ float  sin(float value) { return std::sin(value); }
-		static _ALWAYS_INLINE_ float  cos(const Radian& rad) { return std::cos(rad.valueRadians()); }
-		static _ALWAYS_INLINE_ float  cos(float value) { return std::cos(value); }
+		static _ALWAYS_INLINE_ float sin(float p_x) { return ::sinf(p_x); }
+
 		static _ALWAYS_INLINE_ double cos(double p_x) { return ::cos(p_x); }
+		static _ALWAYS_INLINE_ float cos(float p_x) { return ::cosf(p_x); }
 
-		static _ALWAYS_INLINE_ float  tan(const Radian& rad) { return std::tan(rad.valueRadians()); }
-		static _ALWAYS_INLINE_ float  tan(float value) { return std::tan(value); }
 		static _ALWAYS_INLINE_ double tan(double p_x) { return ::tan(p_x); }
+		static _ALWAYS_INLINE_ float tan(float p_x) { return ::tanf(p_x); }
+		static _ALWAYS_INLINE_ float tan(Radian p_x) { return tan(p_x.valueRadians()); }
+		static _ALWAYS_INLINE_ float sin(Radian p_x) { return sin(p_x.valueRadians()); }
+		static _ALWAYS_INLINE_ float cos(Radian p_x) { return cos(p_x.valueRadians()); }
 
-		static  Radian acos(float value);
-		static  Radian asin(float value);
-		static _ALWAYS_INLINE_ Radian atan(float value) { return Radian(std::atan(value)); }
-		static _ALWAYS_INLINE_ Radian atan2(float y_v, float x_v) { return Radian(std::atan2(y_v, x_v)); }
 
 
 		static _ALWAYS_INLINE_ double sinh(double p_x) { return ::sinh(p_x); }
+		static _ALWAYS_INLINE_ float sinh(float p_x) { return ::sinhf(p_x); }
 
 		static _ALWAYS_INLINE_ float sinc(float p_x) { return p_x == 0 ? 1 : ::sin(p_x) / p_x; }
 		static _ALWAYS_INLINE_ double sinc(double p_x) { return p_x == 0 ? 1 : ::sin(p_x) / p_x; }
 
-		static _ALWAYS_INLINE_ float sincn(float p_x) { return sinc(Math_PIF * p_x); }
+		static _ALWAYS_INLINE_ float sincn(float p_x) { return sinc((float)Math_PI * p_x); }
 		static _ALWAYS_INLINE_ double sincn(double p_x) { return sinc(Math_PI * p_x); }
 
 		static _ALWAYS_INLINE_ double cosh(double p_x) { return ::cosh(p_x); }
@@ -268,8 +266,30 @@ namespace lain
 		static _ALWAYS_INLINE_ double tanh(double p_x) { return ::tanh(p_x); }
 		static _ALWAYS_INLINE_ float tanh(float p_x) { return ::tanhf(p_x); }
 
+		// Always does clamping so always safe to use.
+		static _ALWAYS_INLINE_ double asin(double p_x) { return p_x < -1 ? (-Math_PI / 2) : (p_x > 1 ? (Math_PI / 2) : ::asin(p_x)); }
+		static _ALWAYS_INLINE_ float asin(float p_x) { return p_x < -1 ? (-Math_PI / 2) : (p_x > 1 ? (Math_PI / 2) : ::asinf(p_x)); }
+
+		// Always does clamping so always safe to use.
+		static _ALWAYS_INLINE_ double acos(double p_x) { return p_x < -1 ? Math_PI : (p_x > 1 ? 0 : ::acos(p_x)); }
+		static _ALWAYS_INLINE_ float acos(float p_x) { return p_x < -1 ? Math_PI : (p_x > 1 ? 0 : ::acosf(p_x)); }
+
+		static _ALWAYS_INLINE_ double atan(double p_x) { return ::atan(p_x); }
+		static _ALWAYS_INLINE_ float atan(float p_x) { return ::atanf(p_x); }
 
 		static _ALWAYS_INLINE_ double atan2(double p_y, double p_x) { return ::atan2(p_y, p_x); }
+		static _ALWAYS_INLINE_ float atan2(float p_y, float p_x) { return ::atan2f(p_y, p_x); }
+
+		static _ALWAYS_INLINE_ double asinh(double p_x) { return ::asinh(p_x); }
+		static _ALWAYS_INLINE_ float asinh(float p_x) { return ::asinhf(p_x); }
+
+		// Always does clamping so always safe to use.
+		static _ALWAYS_INLINE_ double acosh(double p_x) { return p_x < 1 ? 0 : ::acosh(p_x); }
+		static _ALWAYS_INLINE_ float acosh(float p_x) { return p_x < 1 ? 0 : ::acoshf(p_x); }
+
+		// Always does clamping so always safe to use.
+		static _ALWAYS_INLINE_ double atanh(double p_x) { return p_x <= -1 ? -INFINITY : (p_x >= 1 ? INFINITY : ::atanh(p_x)); }
+		static _ALWAYS_INLINE_ float atanh(float p_x) { return p_x <= -1 ? -INFINITY : (p_x >= 1 ? INFINITY : ::atanhf(p_x)); }
 
 
 		static _ALWAYS_INLINE_ double fmod(double p_x, double p_y) { return ::fmod(p_x, p_y); }
@@ -295,6 +315,7 @@ namespace lain
 
 		static _ALWAYS_INLINE_ double exp(double p_x) { return ::exp(p_x); }
 		static _ALWAYS_INLINE_ float exp(float p_x) { return ::expf(p_x); }
+
 
 		template<class T>
 		static constexpr T max(const T A, const T B)

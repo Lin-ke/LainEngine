@@ -60,7 +60,7 @@ namespace lain {
 
 		 void reverse();
 #ifdef L_DEBUG
-		 L_INLINE ui32 _refcount() {
+		 L_INLINE uint32_t _refcount() {
 			 s_ui32* rc = _cowdata._get_count();
 			 return (rc->get());
 		 }

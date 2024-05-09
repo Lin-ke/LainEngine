@@ -2,7 +2,7 @@
 #include "core/os/memory.h"
 #include <cstring>
 #include <map>
-
+#define FIELD_PREFIX "m_"
 namespace lain
 {
     namespace Reflection 
@@ -225,11 +225,25 @@ namespace lain
 
         FieldAccessor TypeMeta::getFieldByName(const char* name)const
         {
+            std::string field_name = name; 
+            bool find_with_prefix = false;
+            if(field_name.find(FIELD_PREFIX) != 0){
+                field_name = FIELD_PREFIX + field_name;
+                find_with_prefix = true;
+            }
             const auto it = std::find_if(m_fields.begin(), m_fields.end(), [&](const auto& i) {
                 return std::strcmp(i.getFieldName(), name) == 0;
             });
             if (it != m_fields.end())
                 return *it;
+            else if (find_with_prefix) {
+                const auto it = std::find_if(m_fields.begin(), m_fields.end(), [&](const auto& i) {
+                    return std::strcmp(i.getFieldName(), field_name.c_str()) == 0;
+                    });
+                if (it != m_fields.end()) {
+                    return *it;
+                }
+            }
             return FieldAccessor(nullptr);
         }
 

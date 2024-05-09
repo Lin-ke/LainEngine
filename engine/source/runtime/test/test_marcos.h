@@ -8,6 +8,8 @@
 #define TEST_CONCAT2(x,y) TEST_CONCAT(x,y)
 //TEST_STRINGIFY2(TEST_CONCAT2(x, TEST_CONCAT2(!= , y)))
 #define TEQ(x, y) if(x!=y) {L_PERROR("err find", #x, "!=", #y);}
+//#include "test/doctest.h"
+// @TODO ÕÍ…∆DocTEST
 namespace lain {
 	namespace test {
 	}

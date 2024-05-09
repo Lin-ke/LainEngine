@@ -8,9 +8,8 @@ CursorType::CursorType(const CXType& handle) : m_handle(handle) {}
 std::string CursorType::GetDisplayName(void) const
 {
     std::string display_name;
-
+    
     Utils::toString(clang_getTypeSpelling(m_handle), display_name);
-
     return display_name;
 }
 

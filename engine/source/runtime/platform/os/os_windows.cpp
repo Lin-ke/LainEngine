@@ -101,7 +101,7 @@ namespace lain {
 
 
 	uint64_t OSWindows::GetTimeUsec() const {
-		uint64_t ticks;
+		uint64_t ticks = 0;
 
 		// This is the number of clock ticks since start
 		QueryPerformanceCounter((LARGE_INTEGER*)&ticks);
@@ -156,7 +156,7 @@ namespace lain {
 		dt.dst = is_daylight;
 		return dt;
 	}
-	void OSWindows::DelayUsec(ui32 p_usec) const{
+	void OSWindows::DelayUsec(uint32_t p_usec) const{
 		if (p_usec < 1000) {
 				Sleep(1);
 		}
@@ -179,7 +179,7 @@ namespace lain {
 	}
 
 	uint64_t OSWindows::GetTicksUsec() const {
-		uint64_t ticks;
+		uint64_t ticks = 0;
 
 		// This is the number of clock ticks since start
 		QueryPerformanceCounter((LARGE_INTEGER*)&ticks);

@@ -4,7 +4,7 @@
 #include "core/object/object.h"
 #include "core/object/objectdb.h"
 namespace lain {
-	ui32 Callable::hash() const {
+	uint32_t Callable::hash() const {
 		if (is_custom()) {
 			return custom->hash();
 		}

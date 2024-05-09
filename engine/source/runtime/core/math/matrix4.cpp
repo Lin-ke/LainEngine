@@ -164,7 +164,7 @@ namespace lain
     }
 
     //-----------------------------------------------------------------------
-    void Matrix4x4::decompositionWithoutScale(class Vector3& position, class Quaternion& rotation) const
+    void Matrix4x4::decompositionWithoutScale(Vector3& position, Quaternion& rotation) const
     {
         // ASSERT(isAffine());
 

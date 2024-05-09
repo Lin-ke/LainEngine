@@ -49,32 +49,7 @@ namespace lain
         return degrees;
     }
 
-    Radian Math::acos(float value)
-    {
-        if (-1.0 < value)
-        {
-            if (value < 1.0)
-                return Radian(::acos(value));
-
-            return Radian(0.0);
-        }
-
-        return Radian(float(Math_PI));
-    }
-    //-----------------------------------------------------------------------
-    Radian Math::asin(float value)
-    {
-        if (-1.0 < value)
-        {
-            if (value < 1.0)
-                return Radian(::asin(value));
-
-            return Radian(Math_HALF_PI);
-        }
-
-        return Radian(-Math_HALF_PI);
-    }
-
+  
     Matrix4x4
     Math::makeViewMatrix(const Vector3& position, const Quaternion& orientation, const Matrix4x4* reflect_matrix)
     {

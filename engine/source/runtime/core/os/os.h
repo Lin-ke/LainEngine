@@ -58,7 +58,7 @@ public:
 	static L_INLINE  OS* GetSingleton() {
 		return p_singleton;
 	}
-	virtual void DelayUsec(ui32 p_usec) const = 0 ;
+	virtual void DelayUsec(uint32_t p_usec) const = 0 ;
 	virtual String GetDataPath() const { return "/"; }
 	
 	virtual String GetConfigPath() const { return "."; }

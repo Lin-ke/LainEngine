@@ -110,7 +110,8 @@ namespace lain {
 				}
 				else { // 没有任务，等待
 					thread_data->cond_var.wait(lock);
-					DEV_ASSERT(singleton->exit_threads || thread_data->signaled);
+					L_PRINT("notified", Thread::get_caller_id(), thread_data->index, thread_data->thread.get_id());
+					DEV_ASSERT(singleton->exit_threads || thread_data->signaled); // 虚假唤醒
 				}
 			}
 			// lock解锁
@@ -482,7 +483,7 @@ namespace lain {
 	WorkerThreadPool::GroupID WorkerThreadPool::_add_group_task(const Callable& p_callable, void (*p_func)(void*, uint32_t), void* p_userdata, BaseTemplateUserdata* p_template_userdata, int p_elements, int p_tasks, bool p_high_priority, const String& p_description) {
 		ERR_FAIL_COND_V(p_elements < 0, INVALID_TASK_ID);
 		if (p_tasks < 0) {
-			p_tasks = MAX(1u, threads.size());
+			p_tasks = MIN(p_elements, threads.size());
 		}
 
 		task_mutex.lock();

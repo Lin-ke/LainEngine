@@ -43,6 +43,6 @@ public:
     SharedPtrVector<Method> m_methods;
 
     std::string m_display_name;
-
+    bool   m_is_struct;
     bool isAccessible(void) const;
 };

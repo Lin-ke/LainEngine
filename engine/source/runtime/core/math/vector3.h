@@ -2,25 +2,24 @@
 
 #include "runtime/core/math/math.h"
 #include "runtime/core/math/quaternion.h"
-#include "runtime/core/meta/reflection/reflection.h"
+#include "runtime/core/meta/reflection/reflection_marcos.h"
 
 #include <cassert>
 
 namespace lain
 {
     class String;
-    class Vector3i;
-    REFLECTION_TYPE(Vector3)
-    CLASS(Vector3, Fields)
+    struct Vector3i;
+
+    STRUCT( _NO_DISCARD_ Vector3, Fields)
     {
-        REFLECTION_BODY(Vector3);
-        friend class Vector3i;
-    public:
         real_t x;
         real_t y;
         real_t z;
 
-    public:
+        void Vector3::zero() {
+            x = y = z = 0;
+        }
         Vector3() = default;
         Vector3(real_t x_, real_t y_, real_t z_) : x {x_}, y {y_}, z {z_} {}
         Vector3(const Vector3i& p_v);
@@ -259,6 +258,12 @@ namespace lain
         L_INLINE void normalize() {
             normalise();
         }
+        Vector3 normalized() const {
+            Vector3 v = *this;
+            v.normalize();
+            return v;
+        }
+
 
         /** Calculates the cross-product of 2 vectors, i.e. the vector that
         lies perpendicular to them both.
@@ -298,6 +303,7 @@ namespace lain
 
             return ret;
         }
+        
 
         /** Sets this vector's components to the minimum of its own and the
         ones of the passed in vector.
@@ -349,7 +355,7 @@ namespace lain
             real_t f = dot(dest) / len_product;
 
             f = Math::clamp(f, (real_t)-1.0, (real_t)1.0);
-            return Math::acos(f);
+            return Radian(Math::acos(f));
         }
         /** Gets the shortest arc quaternion to rotate this vector to the destination
         vector.
@@ -409,14 +415,21 @@ namespace lain
             return q;
         }
 
+        L_INLINE Vector3 inverse() const {
+            return Vector3(1.0f / x, 1.0f / y, 1.0f / z);
+        }
         /** Returns true if this vector is zero length. */
-        bool isZeroLength(void) const
+        L_INLINE bool isZeroLength(void) const
         {
             real_t sqlen = (x * x) + (y * y) + (z * z);
             return (sqlen < (1e-06 * 1e-06));
         }
 
-        bool isZero() const { return x == 0.f && y == 0.f && z == 0.f; }
+        L_INLINE bool isZero() const { return x == 0.f && y == 0.f && z == 0.f; }
+
+        L_INLINE bool is_zero_approx() const {
+            return Math::is_zero_approx(x) && Math::is_zero_approx(y) && Math::is_zero_approx(z);
+        }
 
         /** As normalise, except that this vector is unaffected and the
         normalised vector is returned as a copy. */
@@ -428,7 +441,14 @@ namespace lain
             return ret;
         }
 
-        L_INLINE Vector3 lerp(const Vector3& rhs, real_t alpha) { return Vector3::lerp(*this, rhs, alpha); }
+        L_INLINE Vector3 lerp(const Vector3& rhs, real_t alpha) const { return Vector3::lerp(*this, rhs, alpha); }
+        real_t Vector3::length_squared() const {
+            real_t x2 = x * x;
+            real_t y2 = y * y;
+            real_t z2 = z * z;
+
+            return x2 + y2 + z2;
+        }
 
         /** Calculates a reflection vector to the plane with the given normal .
         @remarks NB assumes 'this' is pointing AWAY FROM the plane, invert if it is not.
@@ -444,6 +464,10 @@ namespace lain
         Vector3 project(const Vector3& normal) const { return Vector3(*this - (this->dot(normal) * normal)); }
 
         Vector3 absoluteCopy() const { return Vector3(fabsf(x), fabsf(y), fabsf(z)); }
+        static Vector3 cross(const Vector3& lhs, const Vector3& rhs) {
+            return lhs.cross(rhs);
+        }
+
 
         static Vector3 lerp(const Vector3& lhs, const Vector3& rhs, real_t alpha) { return lhs + alpha * (rhs - lhs); }
 
@@ -471,6 +495,10 @@ namespace lain
             return Vector3(Math::abs(x), Math::abs(y), Math::abs(z));
         }
         
+        bool is_normalized() const {
+            return Math::is_equal_approx(length_squared(), 1, (real_t)UNIT_EPSILON); // 这里容忍的精度大一点
+
+        }
         // special points
         static const Vector3 ZERO;
         static const Vector3 UNIT_X;

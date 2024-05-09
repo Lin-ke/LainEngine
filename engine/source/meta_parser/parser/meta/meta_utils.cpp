@@ -1,7 +1,7 @@
 #include "common/precompiled.h"
 
 #include "meta_utils.h"
-
+#include <regex>
 static int parse_flag = 0;
 namespace Utils
 {
@@ -40,13 +40,18 @@ namespace Utils
     {
         return getQualifiedName(cursor.getSpelling(), current_namespace);
     }
-
+    // 这里还需要判断是否重名之类的
     std::string formatQualifiedName(std::string& source_string)
     {
         Utils::replace(source_string, '<', 'L');
         Utils::replace(source_string, ':', 'S');
         Utils::replace(source_string, '>', 'R');
         Utils::replace(source_string, '*', 'P');
+        Utils::replace(source_string, '[', 'G');
+        Utils::replace(source_string, ']', 'H');
+
+
+
         return source_string;
     }
 
@@ -164,6 +169,66 @@ namespace Utils
         {
             return nullptr;
         }
+    }
+
+    std::string getNameWithoutBracket(std::string name)
+    {
+
+        size_t left = name.find_first_of('[');
+        return name.substr(0, left);
+    }
+
+    int getNumInBracket(const std::string& name) {
+        size_t left = name.find_first_of('[') + 1;
+        size_t right = name.find_first_of(']');
+        
+        if (left >= 0 && right < name.size() && left < right)
+        {
+            return atoi(name.substr(left, right - left).c_str());
+        }
+        else
+        {
+    
+            return 1;
+            
+        }
+    }
+    std::string getFixArraySize(std::string name) {
+        int size = 1;
+        while (true) {
+            size_t left = name.find_first_of('[') + 1;
+            size_t right = name.find_first_of(']');
+
+            if (left > 0 && right < name.size() && left < right)
+            {
+                size*=atoi(name.substr(left, right - left).c_str());
+            }
+            else {
+                break;
+            }
+            name = name.substr(right + 1);
+        }
+        return std::to_string(size);
+    }
+
+    int is_name_vector(const std::string& name) {
+        static const std::string vector_prefix = "std::vector<";
+        static const std::string Vec_prefix = "Vector<";
+        static const std::regex array_reg("^[a-zA-Z_][a-zA-Z0-9_]*(\\[\\d\\])+$");
+        bool is_array = name.find(vector_prefix) == 0;
+        bool is_vec_array = name.find(Vec_prefix) == 0;
+        bool is_fixed_array = std::regex_search(name, array_reg);
+        
+        if (is_array) {
+            return 1;
+        }
+        if (is_vec_array) {
+            return 2;
+        }
+        if (is_fixed_array) {
+            return -1;
+        }
+        return 0;
     }
 
     std::string getStringWithoutQuot(std::string input)

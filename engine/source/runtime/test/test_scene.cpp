@@ -46,7 +46,7 @@ namespace lain {
 					GObject* gobj2 = memnew(TestNode);
 					GObject* gobj1_1 = memnew(TestNode);
 					scene->set_name("TestScene");
-					scene->add_component(memnew(Component));
+					scene->add_component(memnew(TestComponent));
 
 
 					gobj1->set_name("hello");
@@ -63,7 +63,7 @@ namespace lain {
 					gobj2->set_owner(scene);
 					/*SceneTree::get_singleton()->get_root()->add_child(gobj1);
 					SceneTree::get_singleton()->get_root()->add_child(gobj2);*/
-					gobj1_1->add_component(memnew(Component));
+					gobj1_1->add_component(memnew(TestComponent));
 					Ref<PackedScene> s;
 					s.instantiate();
 					s->pack(scene);

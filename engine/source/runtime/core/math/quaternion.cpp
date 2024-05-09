@@ -2,7 +2,7 @@
 #include "runtime/core/math/matrix3.h"
 #include "runtime/core/math/matrix4.h"
 #include "runtime/core/math/vector3.h"
-
+#include "core/string/ustring.h"
 namespace lain
 {
     const Quaternion Quaternion::ZERO(0, 0, 0, 0);
@@ -402,5 +402,53 @@ namespace lain
         }
         result.normalise();
         return result;
+    }
+
+    Quaternion::operator String() const {
+        return "(" + String::num_real(x, false) + ", " + String::num_real(y, false) + ", " + String::num_real(z, false) + ", " + String::num_real(w, false) + ")";
+    }
+
+    Quaternion Quaternion::slerp(const Quaternion& p_to, real_t p_weight) const
+    {
+#ifdef MATH_CHECKS
+        ERR_FAIL_COND_V_MSG(!is_normalized(), Quaternion(), "The start quaternion " + operator String() + " must be normalized.");
+        ERR_FAIL_COND_V_MSG(!p_to.is_normalized(), Quaternion(), "The end quaternion " + p_to.operator String() + " must be normalized.");
+#endif
+        Quaternion to1;
+        real_t omega, cosom, sinom, scale0, scale1;
+
+        // calc cosine
+        cosom = dot(p_to);
+
+        // adjust signs (if necessary)
+        if (cosom < 0.0f) {
+            cosom = -cosom;
+            to1 = -p_to;
+        }
+        else {
+            to1 = p_to;
+        }
+
+        // calculate coefficients
+
+        if ((1.0f - cosom) > (real_t)CMP_EPSILON) {
+            // standard case (slerp)
+            omega = Math::acos(cosom);
+            sinom = Math::sin(omega);
+            scale0 = Math::sin((1.0 - p_weight) * omega) / sinom;
+            scale1 = Math::sin(p_weight * omega) / sinom;
+        }
+        else {
+            // "from" and "to" quaternions are very close
+            //  ... so we can do a linear interpolation
+            scale0 = 1.0f - p_weight;
+            scale1 = p_weight;
+        }
+        // calculate final values
+        return Quaternion(
+            scale0 * x + scale1 * to1.x,
+            scale0 * y + scale1 * to1.y,
+            scale0 * z + scale1 * to1.z,
+            scale0 * w + scale1 * to1.w);
     }
 } // namespace lain

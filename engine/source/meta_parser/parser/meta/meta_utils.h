@@ -32,6 +32,11 @@ namespace Utils
     std::string getTypeNameWithoutNamespace(const CursorType& type);
 
     std::string getNameWithoutContainer(std::string name);
+    std::string getNameWithoutBracket(std::string name);
+    int getNumInBracket(const std::string& name);
+    std::string getFixArraySize(std::string name);
+    // -1: fixed, 0 : not, 1 : vec, 2: Vector
+    int is_name_vector(const std::string& name);
 
     std::string getStringWithoutQuot(std::string input);
 

@@ -335,7 +335,7 @@ Error DirAccess::copy(const String& p_from, const String& p_to, int p_chmod_flag
 		err = OK;
 		size_t buffer_size = MIN(size * sizeof(uint8_t), copy_buffer_limit);
 		LocalVector<uint8_t> buffer;
-		buffer.resize(static_cast<ui32>(buffer_size));
+		buffer.resize(static_cast<uint32_t>(buffer_size));
 		while (size > 0) {
 			if (fsrc->get_error() != OK) {
 				err = fsrc->get_error();
@@ -351,7 +351,7 @@ Error DirAccess::copy(const String& p_from, const String& p_to, int p_chmod_flag
 				err = FAILED;
 				break;
 			}
-			fdst->store_buffer(buffer.ptr(), static_cast<ui32>(bytes_read));
+			fdst->store_buffer(buffer.ptr(), static_cast<uint32_t>(bytes_read));
 
 			size -= bytes_read;
 		}

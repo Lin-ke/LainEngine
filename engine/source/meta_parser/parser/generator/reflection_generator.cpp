@@ -5,6 +5,10 @@
 
 #include <map>
 #include <set>
+#include <iostream>
+#include <initializer_list>
+#include <sstream>
+#include <regex>
 
 namespace Generator
 {
@@ -31,9 +35,8 @@ namespace Generator
 
     int ReflectionGenerator::generate(std::string path, SchemaMoudle schema)
     {
-        static const std::string vector_prefix = "std::vector<";
-        static const std::string Vec_prefix = "Vector<";
-
+        
+        
         std::string    file_path = processFileName(path);
 
         Mustache::data mustache_data;
@@ -55,7 +58,12 @@ namespace Generator
             class_names[class_temp->getClassName()] = true;
 
             std::vector<std::string>                                   field_names;
-            std::map<std::string, std::pair<std::string, std::string>> vector_map;
+            std::map<std::string, std::pair<std::string, std::string>> vector_map; // vector_type_name, array_useful_name, element_type
+            std::map<std::string, std::string> fixed_array_map;
+
+            // 多维数组怎么处理?
+            // 
+            std::vector<int> array_dims;
 
             Mustache::data class_def;
             Mustache::data vector_defines(Mustache::data::type::list);
@@ -63,20 +71,31 @@ namespace Generator
             genClassRenderData(class_temp, class_def);
             for (auto field : class_temp->m_fields)
             {
+            /*    L_PRINT("field_name", field->m_name);
+                L_PRINT("field_parent", field->m_parent);
+                L_PRINT("field_default", field->m_default);
+                L_PRINT("field_type", field->m_type);*/
+
+
                 if (!field->shouldCompile())
                     continue;
                 field_names.emplace_back(field->m_name);
-                bool is_array = field->m_type.find(vector_prefix) == 0;
-                bool is_vec_array = field->m_type.find(Vec_prefix) == 0;
-                if (is_array || is_vec_array)
+                
+                int array_type = Utils::is_name_vector(field->m_type);
+                if (array_type)
                 {
                     std::string array_useful_name = field->m_type;
 
                     Utils::formatQualifiedName(array_useful_name);
                     
                     std::string item_type = field->m_type;
-
-                    item_type = Utils::getNameWithoutContainer(item_type);
+                    if(array_type == -1) // fixed
+                    {
+                        item_type = Utils::getNameWithoutBracket(item_type);
+                        fixed_array_map[field->m_type] = Utils::getFixArraySize(field->m_type);
+                    }
+                    else
+                        item_type = Utils::getNameWithoutContainer(item_type);
 
                     vector_map[field->m_type] = std::make_pair(array_useful_name, item_type);
 
@@ -101,6 +120,13 @@ namespace Generator
                     vector_define.set("vector_type_name", vector_item.first);
                     vector_define.set("vector_element_type_name", item_type);
                     vector_define.set("vector_is_cow_vector", (array_useful_name.find("Vector") == 0));
+                    bool is_fixed_array = fixed_array_map.find(vector_item.first) != fixed_array_map.end();
+                    vector_define.set("vector_is_fixed_array", is_fixed_array);
+                    if(is_fixed_array)
+                        vector_define.set("vector_fixed_size", fixed_array_map[vector_item.first]);
+                    else
+                        vector_define.set("vector_fixed_size", "0");
+
                     vector_defines.push_back(vector_define);
                 }
             }

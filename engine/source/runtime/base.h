@@ -144,17 +144,14 @@ void _global_lock();
 void _global_unlock();
 
 typedef uint64_t ui64;
-typedef uint32_t ui32;
 typedef uint16_t ui16;
 typedef uint8_t ui8;
 
-typedef int32_t  i32;
 typedef uint64_t uint64;
 typedef uint32_t uint32;
 typedef uint16_t uint16;
 typedef uint8_t uint8;
 
-typedef int32_t  i32;
 // godot's devbranch mark;
 # define DEV_ENABLED
 #endif // __BASE__

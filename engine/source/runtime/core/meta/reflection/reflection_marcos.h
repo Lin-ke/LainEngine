@@ -16,6 +16,7 @@
 #define META(...)
 #define CLASS(class_name, ...) class class_name
 #define STRUCT(struct_name, ...) struct struct_name
+
 //#define CLASS(class_name,...) class class_name:public Reflection::object
 #endif // __REFLECTION_PARSER__
 

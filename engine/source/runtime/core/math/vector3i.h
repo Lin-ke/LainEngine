@@ -9,12 +9,13 @@
 
 namespace lain
 {
-    class Vector3;
+    struct Vector3;
     REFLECTION_TYPE(Vector3i)
-        CLASS(Vector3i, Fields)
+        STRUCT( _NO_DISCARD_ Vector3i, Fields)
     {
+
         REFLECTION_BODY(Vector3i);
-        friend class Vector3;
+        typedef int32_t i32;
     public:
         int32_t x{ 0 };
         int32_t y{ 0 };

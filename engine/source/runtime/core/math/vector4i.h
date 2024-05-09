@@ -1,18 +1,19 @@
 
-#ifndef VECTOR4I_H
-#define VECTOR4I_H
+#ifndef __VECTOR4I_H__
+#define __VECTOR4I_H__
 
 #include "core/error/error_macros.h"
 #include "runtime/core/math/math.h"
+#include "core/meta/reflection/reflection_marcos.h"
 namespace lain {
 
 class String;
-class Vector4;
-
-class _NO_DISCARD_ Vector4i {
-	public:
+struct Vector4;
+//STRUCT(_NO_DISCARD_ Vector4i, Fields)
+struct _NO_DISCARD_ Vector4i
+{
+	//REFLECTION_BODY(Vector4i);
 	static const int AXIS_COUNT = 4;
-
 	enum Axis {
 		AXIS_X,
 		AXIS_Y,
@@ -210,27 +211,27 @@ Vector4i& Vector4i::operator*=(int32_t p_scalar) {
 
 
 Vector4i& Vector4i::operator*=(float p_scalar) {
-	x = static_cast<i32>(p_scalar*x);
-	y = static_cast<i32>(p_scalar*y);
-	z = static_cast<i32>(p_scalar * z);
-	w = static_cast<i32>(p_scalar * w);
+	x = static_cast<int32_t>(p_scalar*x);
+	y = static_cast<int32_t>(p_scalar*y);
+	z = static_cast<int32_t>(p_scalar * z);
+	w = static_cast<int32_t>(p_scalar * w);
 }
 Vector4i& Vector4i::operator*=(double p_scalar) {
-	x = static_cast<i32>(p_scalar * x);
-	y = static_cast<i32>(p_scalar * y);
-	z = static_cast<i32>(p_scalar * z);
-	w = static_cast<i32>(p_scalar * w);
+	x = static_cast<int32_t>(p_scalar * x);
+	y = static_cast<int32_t>(p_scalar * y);
+	z = static_cast<int32_t>(p_scalar * z);
+	w = static_cast<int32_t>(p_scalar * w);
 }
 Vector4i Vector4i::operator*(int32_t p_scalar) const {
-	return Vector4i(static_cast<i32>(x * p_scalar), static_cast<i32>(y * p_scalar), static_cast<i32>(z * p_scalar), static_cast<i32>(w * p_scalar));
+	return Vector4i(static_cast<int32_t>(x * p_scalar), static_cast<int32_t>(y * p_scalar), static_cast<int32_t>(z * p_scalar), static_cast<int32_t>(w * p_scalar));
 }
 
 Vector4i Vector4i::operator*(float p_scalar) const {
-	return Vector4i(static_cast<i32>(x * p_scalar), static_cast<i32>(y * p_scalar), static_cast<i32>(z * p_scalar), static_cast<i32>(w * p_scalar));
+	return Vector4i(static_cast<int32_t>(x * p_scalar), static_cast<int32_t>(y * p_scalar), static_cast<int32_t>(z * p_scalar), static_cast<int32_t>(w * p_scalar));
 }
 
 Vector4i Vector4i::operator*(double p_scalar) const {
-	return Vector4i(static_cast<i32>(x * p_scalar), static_cast<i32>(y * p_scalar), static_cast<i32>(z * p_scalar), static_cast<i32>(w * p_scalar));
+	return Vector4i(static_cast<int32_t>(x * p_scalar), static_cast<int32_t>(y * p_scalar), static_cast<int32_t>(z * p_scalar), static_cast<int32_t>(w * p_scalar));
 }
 // Multiplication operators required to workaround issues with LLVM using implicit conversion.
 
@@ -239,7 +240,7 @@ _FORCE_INLINE_ Vector4i operator*(int32_t p_scalar, const Vector4i& p_vector) {
 }
 
 _FORCE_INLINE_ Vector4i operator*(int64_t p_scalar, const Vector4i& p_vector) {
-	return p_vector * static_cast<i32>(p_scalar);
+	return p_vector * static_cast<int32_t>(p_scalar);
 }
 
 _FORCE_INLINE_ Vector4i operator*(float p_scalar, const Vector4i& p_vector) {

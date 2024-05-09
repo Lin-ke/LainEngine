@@ -253,7 +253,7 @@ Error String::parse_url(String& r_scheme, String& r_host, int& r_port, String& r
 		if (!base.is_valid_int()) {
 			return ERR_INVALID_PARAMETER;
 		}
-		r_port = static_cast<i32>  (base.to_int());
+		r_port = static_cast<int32_t>  (base.to_int());
 		if (r_port < 1 || r_port > 65535) {
 			return ERR_INVALID_PARAMETER;
 		}
@@ -4720,7 +4720,7 @@ bool String::is_valid_ip_address() const {
 			if (!n.is_valid_int()) {
 				return false;
 			}
-			int val = static_cast<i32>(n.to_int());
+			int val = static_cast<int32_t>(n.to_int());
 			if (val < 0 || val > 255) {
 				return false;
 			}

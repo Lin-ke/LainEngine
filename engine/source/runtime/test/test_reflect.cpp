@@ -1,23 +1,38 @@
 #include "test_reflect.h"
 #include "core/string/string_name.h"
-
+#include "core/math/basis.h"
+#include "core/math/matrix3.h"
 namespace lain {
 	namespace test {
 
-		int test_StringName_reflect(){
+		int TestMeta::test_StringName_reflect(){
 			StringName p{ "hello" };
 			String value = "hi";
 			test_meta(p, "StringName", "name", &value);
 			return 0; 
 		}
-		int test_Vector3_reflect() {
+		int TestMeta::test_Vector3_reflect() {
 			Vector3 p{ 1,2,3 };
 			float value = 10;
 			test_meta(p, "Vector3", "x", &value);
 			return 0;
 		}
+
+		int TestMeta::test_Basis() {
+			Vector3 p1{ 1,2,3 };
+			Vector3 p2{ 1,2,3 };
+			Vector3 p3{ 1,2,3 };
+			Vector3 p4{ 1,2,3 };
+			Vector3 p5{ 4,5,6 };
+			Vector3 p6{ 7,8,9 };
+			Vector3 p[3]{ p4,p5,p6 };
+			auto bss = Basis(p1,p2,p3);
+			test_meta(bss, "Basis", "rows", &p);
+			
+			return 0;
+		}
 		
-		int test_accessor() {
+		int TestMeta::test_accessor() {
 			Vector2 p(1, 2);
 			Vector2 m(3, 4);
 			using Reflection::TypeMeta;
@@ -49,8 +64,21 @@ namespace lain {
 			}
 
 		}
+		int TestMeta::test_Matrix3x3() {
+			Matrix3x3 p = { 1,2,3,4,5,6,7,8,9 };
+			Matrix3x3 p1 = { 9,8,7,6,5,4,3,2,1 };
+			test_meta(p, "Matrix3x3", "mat", &p1);
+			return 0;
+		}
+		/*TEST_CASE("testing Matrix3x3") {
+			Matrix3x3 p = { 1,2,3,4,5,6,7,8,9 };
+			Matrix3x3 p1 = { 9,8,7,6,5,4,3,2,1 };
+			p = test_meta(p, "Matrix3x3", "mat", &p1);
+			CHECK(p == p1);
+		}*/
+		
 
-		int test_assign_using_serializer() {
+		int TestMeta::test_assign_using_serializer() {
 			Vector2 p(1, 2);
 			Vector2 m(3, 4);
 			using Reflection::TypeMeta;
@@ -58,8 +86,9 @@ namespace lain {
 			L_JSON(p);
 			L_JSON(m);
 			return p == m;
-
 		}
+
+		
 	}
 
 }

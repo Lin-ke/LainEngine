@@ -1,17 +1,20 @@
 #pragma once
+#ifndef QUATERNION_H
+#define QUATERNION_H
 
 #include "runtime/core/math/math.h"
-#include "runtime/core/meta/reflection/reflection.h"
+#include "runtime/core/meta/reflection/reflection_marcos.h"
 
 #include <cassert>
 
 namespace lain
 {
-    class Matrix3x3;
-    class Vector3;
+    struct Matrix3x3;
+    struct Vector3;
+    class String;
 
     REFLECTION_TYPE(Quaternion)
-    CLASS(Quaternion, Fields)
+    STRUCT(_NO_DISCARD_ Quaternion, Fields)
     {
         REFLECTION_BODY(Quaternion);
 
@@ -127,12 +130,20 @@ namespace lain
         float dot(const Quaternion& rkQ) const { return w * rkQ.w + x * rkQ.x + y * rkQ.y + z * rkQ.z; }
 
         float length() const { return std::sqrt(w * w + x * x + y * y + z * z); }
+        float length_squared() const { return w * w + x * x + y * y + z * z; }
+
 
         /// Normalizes this quaternion, and returns the previous length
         void normalise(void)
         {
-            float factor = 1.0f / this->length();
+            float factor = 1.0f / length();
             *this        = *this * factor;
+        }
+        L_INLINE void normalize(void) {
+            normalise();
+        }
+        Quaternion normalized() {
+            return *this / length();
         }
 
         Quaternion inverse() const // apply to non-zero quaternion
@@ -215,5 +226,14 @@ namespace lain
         static const Quaternion IDENTITY;
 
         static const float k_epsilon;
+
+        bool is_normalized() const {
+            return Math::is_equal_approx(length_squared(), 1, (real_t)UNIT_EPSILON); //use less epsilon
+        }
+
+        Quaternion slerp(const Quaternion& p_to, real_t p_weight) const;
+        operator String() const;
+
     };
 } // namespace lain
+#endif // !QUATERNION_H

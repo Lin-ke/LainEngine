@@ -57,8 +57,8 @@ namespace lain {
 		String str = p_str.trim();
         if (str.begins_with("Packed")) {
 
-            i32 brankpos = str.rfind("[");
-            i32 rbrankpos = str.rfind("]");
+            int32_t brankpos = str.rfind("[");
+			int32_t rbrankpos = str.rfind("]");
             if (brankpos == -1 || rbrankpos == -1 ) {
                 error = "not valid PackedString";
                 if (error_print)

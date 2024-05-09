@@ -13,7 +13,49 @@ namespace lain{
     {{#class_defines}}class {{class_name}};
     {{/class_defines}}
 namespace Reflection{
-{{#class_defines}}namespace TypeFieldReflectionOperator{
+    {{#class_defines}}
+    {{#vector_exist}}namespace ArrayReflectionOperator{
+{{#vector_defines}}#ifndef Array{{vector_useful_name}}OperatorMACRO
+#define Array{{vector_useful_name}}OperatorMACRO
+    class Array{{vector_useful_name}}Operator{
+        public:
+            static const char* getArrayTypeName(){ return "{{{vector_type_name}}}";}
+            static const char* getElementTypeName(){ return "{{{vector_element_type_name}}}";}
+            static int getSize(void* instance){
+                //todo: should check validation
+                {{^vector_is_fixed_array}}
+                return static_cast<int>(static_cast<{{{vector_type_name}}}*>(instance)->size());
+                {{/vector_is_fixed_array}}
+                 {{#vector_is_fixed_array}}
+                return {{vector_fixed_size}};
+                {{/vector_is_fixed_array}}
+            }
+            static void* get(int index,void* instance){
+                //todo: should check validation
+                 {{^vector_is_fixed_array}}
+                return static_cast<void*>(&((*static_cast<{{{vector_type_name}}}*>(instance)){{#vector_is_cow_vector}}.write{{/vector_is_cow_vector}}[index]));
+                {{/vector_is_fixed_array}}
+                 {{#vector_is_fixed_array}}
+               return static_cast<void*>(({{vector_element_type_name}}*)(instance) + index);
+                {{/vector_is_fixed_array}}
+                
+            }
+            static void set(int index, void* instance, void* element_value){
+                //todo: should check validation
+                 {{^vector_is_fixed_array}}
+                (*static_cast<{{{vector_type_name}}}*>(instance)){{#vector_is_cow_vector}}.write{{/vector_is_cow_vector}}[index] = *static_cast<{{{vector_element_type_name}}}*>(element_value);
+                {{/vector_is_fixed_array}}
+                {{#vector_is_fixed_array}}
+                *(({{vector_element_type_name}}*)(instance) + index) = *static_cast<{{{vector_element_type_name}}}*>(element_value);
+                {{/vector_is_fixed_array}}
+            
+            }
+    };
+#endif //Array{{vector_useful_name}}Operator
+{{/vector_defines}}
+}//namespace ArrayReflectionOperator{{/vector_exist}}
+
+namespace TypeFieldReflectionOperator{
     class Type{{class_name}}Operator{
     public:
         static const char* getClassName(){ return "{{class_name}}";}
@@ -49,7 +91,18 @@ namespace Reflection{
         // fields
         {{#class_field_defines}}static const char* getFieldName_{{class_field_name}}(){ return "{{class_field_name}}";}
         static const char* getFieldTypeName_{{class_field_name}}(){ return "{{{class_field_type}}}";}
-        static void set_{{class_field_name}}(void* instance, void* field_value){ static_cast<{{class_name}}*>(instance)->{{class_field_name}} = *static_cast<{{{class_field_type}}}*>(field_value);}
+        static void set_{{class_field_name}}(void* instance, void* field_value){ 
+            {{^class_field_is_fixed_array}}
+            static_cast<{{class_name}}*>(instance)->{{class_field_name}} = *static_cast<{{{class_field_type}}}*>(field_value);
+            {{/class_field_is_fixed_array}}
+            {{#class_field_is_fixed_array}}
+            {{class_field_array_base_type}}* p_temp_array = ({{class_field_array_base_type}}*)static_cast<{{class_name}}*>(instance)->{{class_field_name}};
+            {{class_field_array_base_type}}* p_field_value = ({{class_field_array_base_type}}*)(field_value);
+            for (int i = 0; i < ArrayReflectionOperator::Array{{class_field_array_useful_name}}Operator::getSize(p_temp_array); i++) {
+                ArrayReflectionOperator::Array{{class_field_array_useful_name}}Operator::set(i, p_temp_array, (void*)(&p_field_value[i]));
+            }
+            {{/class_field_is_fixed_array}}
+            }
         static void* get_{{class_field_name}}(void* instance){ return static_cast<void*>(&(static_cast<{{class_name}}*>(instance)->{{class_field_name}}));}
         static bool isArray_{{class_field_name}}(){ {{#class_field_is_vector}}return true;{{/class_field_is_vector}}{{^class_field_is_vector}}return false;{{/class_field_is_vector}} }
         {{/class_field_defines}}
@@ -61,29 +114,7 @@ namespace Reflection{
         {{/class_method_defines}}
     };
 }//namespace TypeFieldReflectionOperator
-{{#vector_exist}}namespace ArrayReflectionOperator{
-{{#vector_defines}}#ifndef Array{{vector_useful_name}}OperatorMACRO
-#define Array{{vector_useful_name}}OperatorMACRO
-    class Array{{vector_useful_name}}Operator{
-        public:
-            static const char* getArrayTypeName(){ return "{{{vector_type_name}}}";}
-            static const char* getElementTypeName(){ return "{{{vector_element_type_name}}}";}
-            static int getSize(void* instance){
-                //todo: should check validation
-                return static_cast<int>(static_cast<{{{vector_type_name}}}*>(instance)->size());
-            }
-            static void* get(int index,void* instance){
-                //todo: should check validation
-                return static_cast<void*>(&((*static_cast<{{{vector_type_name}}}*>(instance)){{#vector_is_cow_vector}}.write{{/vector_is_cow_vector}}[index]));
-            }
-            static void set(int index, void* instance, void* element_value){
-                //todo: should check validation
-                (*static_cast<{{{vector_type_name}}}*>(instance)){{#vector_is_cow_vector}}.write{{/vector_is_cow_vector}}[index] = *static_cast<{{{vector_element_type_name}}}*>(element_value);
-            }
-    };
-#endif //Array{{vector_useful_name}}Operator
-{{/vector_defines}}
-}//namespace ArrayReflectionOperator{{/vector_exist}}
+
 
     void TypeWrapperRegister_{{class_name}}(){
         {{#class_field_defines}}FieldFunctionTuple* field_function_tuple_{{class_field_name}}=memnew(FieldFunctionTuple(

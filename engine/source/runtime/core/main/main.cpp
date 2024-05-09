@@ -54,7 +54,7 @@ static ProjectManager* pmanager = nullptr;
 		 args.push_back(String::utf8(argv[i]));
 	 }
 	 // initialize workerthreadpool
-	 WorkerThreadPool::get_singleton()->init(-1, 0.75);
+	 WorkerThreadPool::get_singleton()->init(3, 0.75);
 
 
 	 // change working dir

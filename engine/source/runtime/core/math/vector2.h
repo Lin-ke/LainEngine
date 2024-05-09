@@ -10,12 +10,12 @@ namespace lain
 {
 
     REFLECTION_TYPE(Vector2)
-    CLASS(Vector2, Fields)
+    STRUCT( _NO_DISCARD_ Vector2, Fields)
     {
         REFLECTION_BODY(Vector2);
 
     public:
-        float x {0.f}, y {0.f};
+        real_t x {0.f}, y {0.f};
 
     public:
         Vector2() = default;

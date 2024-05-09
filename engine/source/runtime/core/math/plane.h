@@ -7,8 +7,9 @@
 namespace lain {
 
 class Variant;
-
-struct _NO_DISCARD_ Plane {
+REFLECTION_TYPE(Plane);
+STRUCT(_NO_DISCARD_ Plane, Fields) {
+	REFLECTION_BODY(Plane);
 	Vector3 normal;
 	real_t d = 0;
 

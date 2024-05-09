@@ -40,7 +40,7 @@ public:
 	String GetEnv(const String &name) const ;
 
 	// sleep
-	virtual void DelayUsec(ui32 p_usec) const override;
+	virtual void DelayUsec(uint32_t p_usec) const override;
 	virtual Error SetCwd(const String& p_path) override;
 };
 }

@@ -43,24 +43,37 @@ namespace Generator
     }
     void GeneratorInterface::genClassFieldRenderData(std::shared_ptr<Class> class_temp, Mustache::data& feild_defs)
     {
-        static const std::string vector_prefix = "std::vector<";
-        static const std::string Vec_prefix = "Vector<";
-
 
         for (auto& field : class_temp->m_fields)
         {
             if (!field->shouldCompile())
                 continue;
-            Mustache::data filed_define;
+            Mustache::data field_define;
 
-            filed_define.set("class_field_name", field->m_name);
-            filed_define.set("class_field_type", field->m_type);
-            filed_define.set("class_field_display_name", field->m_display_name);
-            bool is_vector = (field->m_type.find(vector_prefix) == 0) || (field->m_type.find(Vec_prefix) == 0);
-            filed_define.set("class_field_is_vector", is_vector);
-            bool is_cow_vector = (field->m_type.find(Vec_prefix) == 0);
-            filed_define.set("class_field_is_cow_vector", is_cow_vector);
-            feild_defs.push_back(filed_define);
+            field_define.set("class_field_name", field->m_name);
+            field_define.set("class_field_type", field->m_type);
+            field_define.set("class_field_display_name", field->m_display_name);
+            int is_vector = Utils::is_name_vector(field->m_type);
+            field_define.set("class_field_is_vector", is_vector != 0);
+            bool is_cow_vector = is_vector == 2;;
+            field_define.set("class_field_is_cow_vector", is_cow_vector);
+            bool is_fixed = is_vector == -1;
+            field_define.set("class_field_is_fixed_array", is_fixed);
+            if (is_fixed) {
+                std::string array_type = Utils::getNameWithoutBracket(field->m_type);
+                field_define.set("class_field_array_base_type", array_type);
+                std::string array_useful_name = field->m_type;
+                field_define.set("class_field_array_useful_name", Utils::formatQualifiedName(array_useful_name));
+                field_define.set("class_field_fixed_array_size", Utils::getFixArraySize(field->m_type));
+            }
+            else {
+                field_define.set("class_field_array_base_type", ""); // is it necessary?
+                field_define.set("class_field_array_useful_name", "");
+                field_define.set("class_field_fixed_array_size", "");
+
+            }
+
+            feild_defs.push_back(field_define);
         }
     }
 

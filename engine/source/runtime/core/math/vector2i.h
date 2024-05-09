@@ -1,20 +1,23 @@
 #pragma once
+#ifndef __VECTOR2I_H__
+#define __VECTOR2I_H__
+
 
 #include "runtime/core/math/math.h"
-#include "runtime/core/meta/reflection/reflection.h"
+#include "runtime/core/meta/reflection/reflection_marcos.h"
 #include <cassert>
 #include <cmath>
 
 namespace lain
 {
-    class Vector2;
+    struct Vector2;
     REFLECTION_TYPE(Vector2i)
-        CLASS(Vector2i, Fields)
+        STRUCT(_NO_DISCARD_ Vector2i, Fields)
     {
         REFLECTION_BODY(Vector2i);
 
     public:
-        int x{ 0}, y{ 0};
+        int32_t x{ 0}, y{ 0};
 
     public:
         Vector2i() = default;
@@ -332,3 +335,4 @@ namespace lain
     typedef Vector2i Point2i;
 
 } // namespace lain
+#endif // !VECTOR2I
