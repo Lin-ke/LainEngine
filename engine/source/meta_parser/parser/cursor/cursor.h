@@ -15,6 +15,8 @@ public:
 
     std::string getSpelling(void) const;
     std::string getDisplayName(void) const;
+    int getEnumValue(void) const;
+    std::string getEnumName(void) const;
 
     std::string getSourceFile(void) const;
 

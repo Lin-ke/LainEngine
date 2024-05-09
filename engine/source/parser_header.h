@@ -51,6 +51,7 @@
 #include  "D:/LainEngine/engine/source/runtime/core/math/vector4.h"
 #include  "D:/LainEngine/engine/source/runtime/core/math/vector4i.h"
 #include  "D:/LainEngine/engine/source/runtime/core/meta/class_db.h"
+#include  "D:/LainEngine/engine/source/runtime/core/meta/enum.h"
 #include  "D:/LainEngine/engine/source/runtime/core/meta/json.h"
 #include  "D:/LainEngine/engine/source/runtime/core/meta/meta_example.h"
 #include  "D:/LainEngine/engine/source/runtime/core/meta/type_info.h"

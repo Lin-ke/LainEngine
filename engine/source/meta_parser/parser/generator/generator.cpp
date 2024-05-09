@@ -17,6 +17,23 @@ namespace Generator
         class_def.set("class_name", class_temp->getClassName());
         class_def.set("class_base_class_size", std::to_string(class_temp->m_base_classes.size()));
         class_def.set("class_need_register", true);
+        class_def.set("class_is_struct", class_temp->m_is_struct);
+        auto& current_namespace = class_temp->getCurrentNamespace();
+        if (class_temp->m_class_namespace_start != -1) {
+            class_def.set("class_is_in_class", true);
+            class_def.set("class_father_namespace", current_namespace[current_namespace.size() - 1]);
+        }
+        else {
+            class_def.set("class_is_in_class", false);
+            class_def.set("class_father_namespace", "");
+        }
+        std::string with_father_namespace = "";
+        for (int i = 0; i < current_namespace.size(); ++i) {
+            if (i == 0 && current_namespace[i] == "lain") continue;
+            with_father_namespace = with_father_namespace + current_namespace[i] + "::";
+        }
+        with_father_namespace += class_temp->getClassName();
+        class_def.set("class_with_namespace", with_father_namespace);
 
         if (class_temp->m_base_classes.size() > 0)
         {

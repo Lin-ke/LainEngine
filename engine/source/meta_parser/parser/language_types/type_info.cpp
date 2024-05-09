@@ -14,3 +14,5 @@ std::string TypeInfo::getSourceFile(void) const { return m_root_cursor.getSource
 Namespace TypeInfo::getCurrentNamespace() const { return m_namespace; }
 
 Cursor& TypeInfo::getCurosr() { return m_root_cursor; }
+
+// @TODO: 是否可以避免修改CLASS，在内部定义META

@@ -5,12 +5,15 @@
 #include "core/math/face3.h"
 #include "core/object/refcounted.h"
 namespace lain {
-
+	// 防止重名，一般只需要最后一层
+	INNER_REFLECTION_TYPE(Triangle, TriangleMesh);
 class TriangleMesh : public RefCounted {
 	LCLASS(TriangleMesh, RefCounted);
 
 public:
-	struct Triangle {
+	
+	STRUCT(Triangle, Fields){
+		INNER_REFLECTION_BODY(Triangle, TriangleMesh);
 		Vector3 normal;
 		int indices[3];
 		int32_t surface_index;

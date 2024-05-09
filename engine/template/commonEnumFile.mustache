@@ -1,0 +1,21 @@
+#pragma once
+{{#class_defines}}
+#ifndef ENUM_STRING_{{class_name}}_H
+#define ENUM_STRING_{{class_name}}_H
+{{/class_defines}}
+#include "runtime/core/meta/enum.h"
+{{#include_headfiles}}
+#include "{{headfile_name}}"
+{{/include_headfiles}}
+
+// enum_name : Class::enum_name
+namespace lain{
+    {{#enum_defines}}template<>
+    constexpr {{enum_name}} string_to_enum(const String& p_str);
+    template<>
+    constexpr String enum_to_string(const {{enum_name}} p_enum);
+    {{/enum_defines}}
+}//namespace
+{{#class_defines}}
+#endif
+{{/class_defines}}

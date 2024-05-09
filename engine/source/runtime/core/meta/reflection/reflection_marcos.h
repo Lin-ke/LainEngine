@@ -22,7 +22,7 @@
 
 #define REFLECTION_BODY(class_name) \
     friend class Reflection::TypeFieldReflectionOperator::Type##class_name##Operator; \
-    friend class Serializer;                
+    friend class Serializer;       
 
 #define MANUAL_REFLECTION_BODY(class_name) \
     friend class Serializer;                \
@@ -37,6 +37,19 @@
             class Type##class_name##Operator; \
         } \
     };
+
+#define INNER_REFLECTION_TYPE(class_name,inner) \
+    namespace Reflection \
+    { \
+        namespace TypeFieldReflectionOperator \
+        { \
+            class Type##inner##class_name##Operator; \
+        } \
+    };
+
+#define INNER_REFLECTION_BODY(class_name,inner) \
+   friend class Reflection::TypeFieldReflectionOperator::Type##inner##class_name##Operator; \
+    friend class Serializer; 
 
 #define MANUAL_REFLECTION_TYPE(class_name) \
     namespace Reflection \

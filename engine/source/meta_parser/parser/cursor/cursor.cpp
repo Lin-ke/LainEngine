@@ -12,7 +12,6 @@ std::string Cursor::getSpelling(void) const
     std::string spelling;
 
     Utils::toString(clang_getCursorSpelling(m_handle), spelling);
-
     return spelling;
 }
 
@@ -23,6 +22,13 @@ std::string Cursor::getDisplayName(void) const
     Utils::toString(clang_getCursorDisplayName(m_handle), display_name);
 
     return display_name;
+}
+int Cursor::getEnumValue(void) const {
+    return static_cast<int>(clang_getEnumConstantDeclValue(m_handle));
+}
+
+std::string Cursor::getEnumName(void) const {
+    return getSpelling();
 }
 
 std::string Cursor::getSourceFile(void) const

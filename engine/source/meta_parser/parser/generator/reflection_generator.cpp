@@ -49,7 +49,7 @@ namespace Generator
         std::map<std::string, bool> class_names;
         // class defs
         for (auto class_temp : schema.classes)
-        {
+        {// 这里是该文件中所有的需要compile的类
             
             if (!class_temp->shouldCompile())
                 continue;
@@ -60,10 +60,6 @@ namespace Generator
             std::vector<std::string>                                   field_names;
             std::map<std::string, std::pair<std::string, std::string>> vector_map; // vector_type_name, array_useful_name, element_type
             std::map<std::string, std::string> fixed_array_map;
-
-            // 多维数组怎么处理?
-            // 
-            std::vector<int> array_dims;
 
             Mustache::data class_def;
             Mustache::data vector_defines(Mustache::data::type::list);
@@ -131,6 +127,11 @@ namespace Generator
                 }
             }
             class_def.set("vector_defines", vector_defines);
+
+            for (auto enum_ : class_temp->m_enums) {
+
+            }
+
             class_defines.push_back(class_def);
         }
 

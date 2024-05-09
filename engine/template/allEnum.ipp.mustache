@@ -1,0 +1,18 @@
+#pragma once
+#ifndef ALL_SERIALIZER_IPP
+#define ALL_SERIALIZER_IPP
+{{#include_headfiles}}
+#include "{{headfile_name}}"
+{{/include_headfiles}}
+namespace lain{
+     {{#enum_defines}}template<>
+    constexpr {{enum_name}} string_to_enum(const String& p_str){
+        
+    }
+    template<>
+    constexpr String enum_to_string(const {{enum_name}} p_enum){
+
+    }
+    {{/enum_defines}}
+}
+#endif

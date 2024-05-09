@@ -41,7 +41,7 @@ namespace lain
     </pre>
     */
     REFLECTION_TYPE(Matrix4x4_)
-    CLASS(Matrix4x4_, Fields)
+    STRUCT( _NO_DISCARD_ Matrix4x4_, Fields)
     {
         REFLECTION_BODY(Matrix4x4_);
 
@@ -64,8 +64,11 @@ namespace lain
         float v14 {0};
         float v15 {1.f};
     };
-    class Matrix4x4
+    
+    REFLECTION_TYPE(Matrix4x4)
+        STRUCT(_NO_DISCARD_ Matrix4x4, Fields)
     {
+        REFLECTION_BODY(Matrix4x4);
     public:
         /// The matrix entries, indexed by [row][col]
         float m_mat[4][4];

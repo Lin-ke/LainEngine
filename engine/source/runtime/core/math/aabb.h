@@ -12,11 +12,11 @@
 namespace lain {
 
 class Variant;
-
-struct _NO_DISCARD_ AABB {
+REFLECTION_TYPE(AABB)
+STRUCT(_NO_DISCARD_ AABB,Fields ){
+	REFLECTION_BODY(AABB);
 	Vector3 position;
 	Vector3 size;
-
 	real_t get_volume() const;
 	_FORCE_INLINE_ bool has_volume() const {
 		return size.x > 0.0f && size.y > 0.0f && size.z > 0.0f;

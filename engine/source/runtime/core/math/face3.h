@@ -218,8 +218,12 @@ bool Face3::intersects_aabb2(const AABB& p_aabb) const {
 			if (minB > maxB) {
 				SWAP(maxB, minB);
 			}
-
+#ifdef REAL_T_IS_DOUBLE
 			real_t minT = 1e20, maxT = -1e20;
+#else
+			real_t minT = static_cast<float>(1e20), maxT = static_cast<float>(- 1e20);
+#endif
+
 			for (int k = 0; k < 3; k++) {
 				real_t vert_d = axis.dot(vertex[k]);
 

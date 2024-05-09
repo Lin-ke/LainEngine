@@ -10,9 +10,15 @@ namespace lain
 {
     class String;
     struct Vector3i;
-
+    REFLECTION_TYPE(Vector3);
     STRUCT( _NO_DISCARD_ Vector3, Fields)
     {
+        REFLECTION_BODY(Vector3);
+        enum Axis {
+            AXIS_X,
+            AXIS_Y,
+            AXIS_Z,
+        };
         real_t x;
         real_t y;
         real_t z;
@@ -499,6 +505,19 @@ namespace lain
             return Math::is_equal_approx(length_squared(), 1, (real_t)UNIT_EPSILON); // 这里容忍的精度大一点
 
         }
+
+        void snap(const Vector3& p_step) {
+            x = Math::snapped(x, p_step.x);
+            y = Math::snapped(y, p_step.y);
+            z = Math::snapped(z, p_step.z);
+        }
+
+        Vector3 snapped(const Vector3& p_step) const {
+            Vector3 v = *this;
+            v.snap(p_step);
+            return v;
+        }
+
         // special points
         static const Vector3 ZERO;
         static const Vector3 UNIT_X;

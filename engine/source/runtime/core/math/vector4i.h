@@ -9,10 +9,11 @@ namespace lain {
 
 class String;
 struct Vector4;
-//STRUCT(_NO_DISCARD_ Vector4i, Fields)
-struct _NO_DISCARD_ Vector4i
+REFLECTION_TYPE(Vector4i);
+STRUCT(_NO_DISCARD_ Vector4i, Fields)
 {
-	//REFLECTION_BODY(Vector4i);
+
+	REFLECTION_BODY(Vector4i);
 	static const int AXIS_COUNT = 4;
 	enum Axis {
 		AXIS_X,
@@ -21,25 +22,19 @@ struct _NO_DISCARD_ Vector4i
 		AXIS_W,
 	};
 
-	union {
-		struct {
-			int32_t x;
-			int32_t y;
-			int32_t z;
-			int32_t w;
-		};
-
-		int32_t coord[4] = { 0 };
-	};
+	int32_t x = 0;
+	int32_t y = 0;
+	int32_t z = 0;
+	int32_t w = 0;
 
 	_FORCE_INLINE_ const int32_t& operator[](int p_axis) const {
 		DEV_ASSERT((unsigned int)p_axis < 4);
-		return coord[p_axis];
+		return *(&x + p_axis);
 	}
 
 	_FORCE_INLINE_ int32_t& operator[](int p_axis) {
 		DEV_ASSERT((unsigned int)p_axis < 4);
-		return coord[p_axis];
+		return *(&x + p_axis);
 	}
 
 	Vector4i::Axis min_axis_index() const;

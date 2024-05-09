@@ -7,9 +7,12 @@
 
 #include "parser.h"
 
+
+// 递归
+
 #define RECURSE_NAMESPACES(kind, cursor, method, namespaces) \
     { \
-        if (kind == CXCursor_Namespace) \
+        if (kind == CXCursor_Namespace ) \
         { \
             auto display_name = cursor.getDisplayName(); \
             if (!display_name.empty()) \
@@ -20,6 +23,8 @@
             } \
         } \
     }
+// should compile是判断内部是否有标记
+// 加到container中
 
 #define TRY_ADD_LANGUAGE_TYPE(handle, container) \
     { \
@@ -31,6 +36,7 @@
         } \
     }
 
+MetaParser* MetaParser::m_singleton = nullptr;
 void MetaParser::prepare(void) {}
 
 std::string MetaParser::getIncludeFile(std::string name)
@@ -49,6 +55,7 @@ MetaParser::MetaParser(const std::string project_input_file,
     m_source_include_file_name(include_file_path), m_index(nullptr), m_translation_unit(nullptr),
     m_sys_include(sys_include), m_module_name(module_name), m_is_show_errors(is_show_errors)
 {
+    m_singleton = this;
     m_work_paths = Utils::split(include_path, ";");
 
     m_generators.emplace_back(new Generator::SerializerGenerator(
@@ -192,7 +199,7 @@ void MetaParser::generateFiles(void)
     {
         for (auto& generator_iter : m_generators)
         {
-            generator_iter->generate(schema.first, schema.second);
+            generator_iter->generate(schema.first, schema.second); // @TODO add ENUM generator
         }
     }
 
@@ -218,3 +225,11 @@ void MetaParser::buildClassAST(const Cursor& cursor, Namespace& current_namespac
         }
     }
 }
+MetaParser* MetaParser::getSingleton() {
+    return m_singleton;
+}
+
+void MetaParser::addClassIntoSchema(std::shared_ptr<Class> p_class) {
+    TRY_ADD_LANGUAGE_TYPE(p_class, classes);
+}
+

@@ -12,6 +12,8 @@
 
 class Class;
 
+
+
 class MetaParser
 {
 public:
@@ -27,8 +29,11 @@ public:
     void finish(void);
     int  parse(void);
     void generateFiles(void);
+    static MetaParser* getSingleton(void);
+    void addClassIntoSchema(std::shared_ptr<Class> p_class);
 
 private:
+    static MetaParser* m_singleton;
     std::string m_project_input_file;
 
     std::vector<std::string> m_work_paths;
@@ -39,8 +44,8 @@ private:
     CXIndex           m_index;
     CXTranslationUnit m_translation_unit;
 
-    std::unordered_map<std::string, std::string>  m_type_table;
-    std::unordered_map<std::string, SchemaMoudle> m_schema_modules;
+    std::unordered_map<std::string, std::string>  m_type_table;     // class display_name, type
+    std::unordered_map<std::string, SchemaMoudle> m_schema_modules; // file, class handles
 
     std::vector<const char*>                    arguments = {{"-x",
                                            "c++",
@@ -56,7 +61,6 @@ private:
     std::vector<Generator::GeneratorInterface*> m_generators;
 
     bool m_is_show_errors;
-
 private:
     bool        parseProject(void);
     void        buildClassAST(const Cursor& cursor, Namespace& current_namespace);
