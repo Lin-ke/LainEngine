@@ -6,7 +6,6 @@
 #include "core/string/string_name.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/list.h"
-#include "core/meta/type_info.h"
 namespace lain {
 	// 以数据库列，表的方式组织
 	struct MethodDefinition {
@@ -103,7 +102,7 @@ namespace lain {
 
 	};
 
-
+	
 
 
 

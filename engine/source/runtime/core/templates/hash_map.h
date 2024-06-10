@@ -508,8 +508,8 @@ public:
 		bool exists = _lookup_pos(p_key, pos);
 		CRASH_COND(!exists);
 		return elements[pos]->data.value;
-	}
-
+	} 
+	
 	TValue& operator[](const TKey& p_key) {
 		uint32_t pos = 0;
 		bool exists = _lookup_pos(p_key, pos);

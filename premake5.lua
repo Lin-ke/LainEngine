@@ -23,6 +23,9 @@ group "Dependencies"
    include "engine/thirdparty/imgui"
    include "engine/thirdparty/json11"
    include "engine/thirdparty/mbedtls"
+   include "engine/thirdparty/spirv-reflect"
+   include "engine/thirdparty/volk"
+
 group ""
 
 group "Tools"

@@ -1,20 +1,21 @@
 #pragma once
-#ifndef AABB_H
-#define AABB_H
-
+#ifndef __AABB_H__
+#define __AABB_H__
 #include "core/math/plane.h"
-#include "core/math/vector3.h"
-
 /**
  * AABB (Axis Aligned Bounding Box)
  * This is implemented by a point (position) and the box size.
  */
+#if defined(__REFLECTION_PARSER__)
+#define META(...) __attribute__((annotate(#__VA_ARGS__)))
+#endif
+// AABB可能是太早include，会有问题
 namespace lain {
-
 class Variant;
-REFLECTION_TYPE(AABB)
-STRUCT(_NO_DISCARD_ AABB,Fields ){
-	REFLECTION_BODY(AABB);
+struct Vector3;
+
+struct _NO_DISCARD_ AABB {
+	META(Fields)
 	Vector3 position;
 	Vector3 size;
 	real_t get_volume() const;

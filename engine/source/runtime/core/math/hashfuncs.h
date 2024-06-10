@@ -10,7 +10,7 @@
 #include "core/math/vector3i.h"
 
 #include "core/math/vector4.h"
-//#include "core/math/vector4i.h"
+#include "core/math/vector4i.h"
 #include "core/math/rect2.h"
 #include "core/math/rect2i.h"
 #include "core/math/aabb.h"
@@ -19,6 +19,8 @@
 #include "core/string/ustring.h"
 #include "core/typedefs.h"
 #include "core/io/rid.h"
+#include "core/scene/object/gobject_path.h"
+
 namespace lain {
 
 /**
@@ -291,7 +293,7 @@ struct HashMapHasherDefault {
 	static _FORCE_INLINE_ uint32_t hash(const RID& p_rid) { return hash_one_uint64(p_rid.get_id()); }
 	static _FORCE_INLINE_ uint32_t hash(const CharString& p_char_string) { return hash_djb2(p_char_string.ptr()); }
 	static _FORCE_INLINE_ uint32_t hash(const StringName& p_string_name) { return p_string_name.hash(); }
-	//static _FORCE_INLINE_ uint32_t hash(const GObjectPath& p_path) { return p_path.hash(); }
+	static _FORCE_INLINE_ uint32_t hash(const GObjectPath& p_path) { return p_path.hash(); }
 	static _FORCE_INLINE_ uint32_t hash(const ObjectID& p_id) { return hash_one_uint64(p_id); }
 
 	static _FORCE_INLINE_ uint32_t hash(const uint64_t p_int) { return hash_one_uint64(p_int); }
@@ -315,13 +317,13 @@ struct HashMapHasherDefault {
 		h = hash_murmur3_one_32(p_vec.z, h);
 		return hash_fmix32(h);
 	}
-	/*static _FORCE_INLINE_ uint32_t hash(const Vector4i& p_vec) {
+	static _FORCE_INLINE_ uint32_t hash(const Vector4i& p_vec) {
 		uint32_t h = hash_murmur3_one_32(p_vec.x);
 		h = hash_murmur3_one_32(p_vec.y, h);
 		h = hash_murmur3_one_32(p_vec.z, h);
 		h = hash_murmur3_one_32(p_vec.w, h);
 		return hash_fmix32(h);
-	}*/
+	}
 	static _FORCE_INLINE_ uint32_t hash(const Vector2& p_vec) {
 		uint32_t h = hash_murmur3_one_real(p_vec.x);
 		h = hash_murmur3_one_real(p_vec.y, h);
@@ -364,7 +366,19 @@ struct HashMapHasherDefault {
 		return hash_fmix32(h);
 	}
 };
+struct HashMapHasherEnum {
+	template <class T>
+	static _FORCE_INLINE_ uint32_t hash(const T& p_key) { 
+		if constexpr (std::is_enum<T>::value) {
+			return HashMapHasherDefault::hash((int32_t)p_key);
+		}
+		else {
+			// 
+			static_assert(always_false<T>, __FUNCSIG__);
+		}
+	}
 
+};
 // TODO: Fold this into HashMapHasherDefault once C++20 concepts are allowed
 // duck type
 template <class T>

@@ -26,10 +26,21 @@ except Exception as e:
 # sending
 premakefilePath = ".\setup\premake\premakefile"
 thirdPartyPath = "./engine/thirdparty/"
-thirdPartyFolders = os.listdir(thirdPartyPath)
 
+# try:
+#     if(not os.path.exists(os.path.join(thirdPartyPath,"volk"))):
+#         #makedir
+#         os.makedirs(os.path.join(thirdPartyPath,"volk"))
+#     vulkanSDK = os.environ.get("VULKAN_SDK")
+#     shutil.copyfile(f"{vulkanSDK}/include/Volk/volk.c",os.path.join(os.path.join(thirdPartyPath,"volk"), "volk.c"))
+#     shutil.copyfile(f"{vulkanSDK}/include/Volk/volk.h",os.path.join(os.path.join(thirdPartyPath, "volk"), "volk.h"))
+# except Exception as e:
+#     print("error when copying {}".format("volk"))
+#     print(e)
+thirdPartyFolders = os.listdir(thirdPartyPath)
 for premakeName in os.listdir(premakefilePath):
-    name = premakeName.split("-")[0]
+    name = premakeName[:-len("-premake5.lua")]
+    print(name)
     if name in thirdPartyFolders:
         # EXAMPLE: name:glad, path:glad/premake5.lua
         try:
@@ -39,6 +50,9 @@ for premakeName in os.listdir(premakefilePath):
             print("error when copying {}".format(premakeName))
             print(e)
             continue
+
+
+
 premakeInstalled = True
 
 if (premakeInstalled):

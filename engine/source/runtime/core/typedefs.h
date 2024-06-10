@@ -52,7 +52,6 @@
 #ifndef _ALLOW_DISCARD_
 #define _ALLOW_DISCARD_ (void)
 #endif
-
 // Windows badly defines a lot of stuff we'll never use. Undefine it.
 #ifdef _WIN32
 #undef min // override standard definition
@@ -63,6 +62,8 @@
 #undef Error
 #undef OK
 #undef CONNECT_DEFERRED // override from Windows SDK, clashes with Object enum
+#undef MemoryBarrier
+#undef MONO_FONT
 #endif
 
 // Make room for our constexpr's below by overriding potential system-specific macros.

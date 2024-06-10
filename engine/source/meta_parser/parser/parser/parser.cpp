@@ -1,9 +1,15 @@
 #include "common/precompiled.h"
 
 #include "language_types/class.h"
+#include "language_types/enum.h"
+
 
 #include "generator/reflection_generator.h"
 #include "generator/serializer_generator.h"
+#include "generator/enum_generator.h"
+#include "generator/typename_generator.h"
+
+
 
 #include "parser.h"
 
@@ -36,6 +42,7 @@
         } \
     }
 
+
 MetaParser* MetaParser::m_singleton = nullptr;
 void MetaParser::prepare(void) {}
 
@@ -61,6 +68,10 @@ MetaParser::MetaParser(const std::string project_input_file,
     m_generators.emplace_back(new Generator::SerializerGenerator(
         m_work_paths[0], std::bind(&MetaParser::getIncludeFile, this, std::placeholders::_1)));
     m_generators.emplace_back(new Generator::ReflectionGenerator(
+        m_work_paths[0], std::bind(&MetaParser::getIncludeFile, this, std::placeholders::_1)));
+    m_generators.emplace_back(new Generator::EnumGenerator(
+        m_work_paths[0], std::bind(&MetaParser::getIncludeFile, this, std::placeholders::_1)));
+    m_generators.emplace_back(new Generator::TypenameGenerator(
         m_work_paths[0], std::bind(&MetaParser::getIncludeFile, this, std::placeholders::_1)));
 }
 
@@ -218,6 +229,7 @@ void MetaParser::buildClassAST(const Cursor& cursor, Namespace& current_namespac
             auto class_ptr = std::make_shared<Class>(child, current_namespace);
 
             TRY_ADD_LANGUAGE_TYPE(class_ptr, classes);
+            // 其实这里也需要继续遍历
         }
         else
         {
@@ -233,3 +245,6 @@ void MetaParser::addClassIntoSchema(std::shared_ptr<Class> p_class) {
     TRY_ADD_LANGUAGE_TYPE(p_class, classes);
 }
 
+void MetaParser::addEnumIntoSchema(std::shared_ptr<ENUM_> p_enums) {
+    TRY_ADD_LANGUAGE_TYPE(p_enums, enums); // 使用m_qualified_name为displayname，给无名p_enum赋名
+}

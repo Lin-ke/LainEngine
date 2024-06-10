@@ -3,7 +3,7 @@
 #define __VECTOR3I_H__
 #include "runtime/core/math/math.h"
 #include "runtime/core/math/quaternion.h"
-#include "runtime/core/meta/reflection/reflection.h"
+#include "runtime/core/meta/reflection/reflection_marcos.h"
 
 #include <cassert>
 

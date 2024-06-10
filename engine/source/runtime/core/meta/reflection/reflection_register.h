@@ -10,6 +10,7 @@ namespace lain
         public:
             static void metaRegister();
             static void metaUnregister();
+            static void EnumMetaRegister();
         };
     } // namespace Reflection
 } // namespace lain

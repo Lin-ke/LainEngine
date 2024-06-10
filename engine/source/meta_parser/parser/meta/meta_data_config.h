@@ -6,14 +6,14 @@ namespace NativeProperty
 
     const auto Fields = "Fields";
     const auto Methods = "Methods";
-    const auto Subclass = "Subclass";
+    //const auto Enums = "Enum";
 
     const auto Enable  = "Enable";
     const auto Disable = "Disable";
 
     const auto WhiteListFields = "WhiteListFields";
     const auto WhiteListMethods = "WhiteListMethods";
-    const auto WhiteListSubclass= "WhiteListSubclass";
+    //const auto WhiteListEnums= "WhiteListEnums";
 
     // 不支持运算符重载的method
 } // namespace NativeProperty

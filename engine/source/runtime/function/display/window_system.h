@@ -2,15 +2,15 @@
 #ifndef __WINDOW_SYSTEM_H__
 #define __WINDOW_SYSTEM_H__
 
-
 #define GLFW_INCLUDE_VULKAN
 #define GLFW_EXPOSE_NATIVE_WIN32
+#include "function/render/vulkan/vulkan_header.h"
+#include "core/math/vector2i.h"
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 #include "window.h"
 #include <array>
 #include <functional>
-#include "core/math/vector2.h"
 #include "core/templates/vector.h"
 #include "core/templates/rb_map.h"
 #include "core/os/thread_safe.h"
@@ -79,12 +79,12 @@ namespace lain
         Vector2 last_tilt;
         bool last_pen_inverted = false;*/
 
-        Size2 min_size;
-        Size2 max_size;
+        Size2i min_size;
+        Size2i max_size;
         int width = 0, height = 0;
 
-        Size2 window_rect;
-        Point2 last_pos;
+        Size2i window_rect;
+        Point2i last_pos;
 
 
         // IME
@@ -97,6 +97,7 @@ namespace lain
         bool layered_window = false;*/
         // 把这里变成vector的可以降低耦合
         // 这样不同的函数可以承担不同的任务
+        // 执行列表
         Vector<onResetFunc>       m_onResetFunc;
         Vector < onKeyFunc>        m_onKeyFunc;
         Vector < onCharFunc>     m_onCharFunc;
@@ -115,17 +116,43 @@ namespace lain
         //bool is_popup = false;
         //Rect2i parent_safe_rect;
     };
-    
+    namespace graphics {
+        class RenderingContextDriver;
+    }
     class WindowSystem
     {
-        typedef int WindowID;
 
         _THREAD_SAFE_CLASS_
-    public:
+        String rendering_driver;
+        graphics::RenderingContextDriver* rendering_context = nullptr;
 
-        WindowSystem() {
-            p_singleton = this;
+
+    public:
+        typedef int WindowID;
+
+        enum VSyncMode {
+            VSYNC_DISABLED,
+            VSYNC_ENABLED,
+            VSYNC_ADAPTIVE,
+            VSYNC_MAILBOX
         };
+
+        enum WindowMode {
+            WINDOW_MODE_WINDOWED,
+            WINDOW_MODE_MINIMIZED,
+            WINDOW_MODE_MAXIMIZED,
+            WINDOW_MODE_FULLSCREEN,
+            WINDOW_MODE_EXCLUSIVE_FULLSCREEN,
+        };
+
+        enum {
+            SCREEN_WITH_MOUSE_FOCUS = -4,
+            SCREEN_WITH_KEYBOARD_FOCUS = -3,
+            SCREEN_PRIMARY = -2,
+            SCREEN_OF_MAIN_WINDOW = -1, // Note: for the main window, determine screen from position.
+        };
+
+        WindowSystem(const String& p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i* p_position, const Vector2i& p_resolution, int p_screen, Error& r_error);
         ~WindowSystem();
         L_INLINE static WindowSystem* GetSingleton() {
             return p_singleton;
@@ -200,7 +227,7 @@ namespace lain
         }
         void setFocusMode(bool mode) {};
 
-        WindowID GetWindowAtPos(const Point2& point) const;
+        WindowID GetWindowAtPos(const Point2i& point) const;
 
         bool CanAnyWindowDraw() {
             for (const KeyValue<WindowID, WindowData>& E : m_windows) {
@@ -326,7 +353,7 @@ namespace lain
             }
         }
         Vector<int> get_window_list() const;
-        
+       
     private:
         RBMap<int, WindowData> m_windows;
         static WindowSystem* p_singleton;
@@ -337,8 +364,8 @@ namespace lain
             INVALID_WINDOW_ID = -1
         };
 
-
     };
+
 
     
 

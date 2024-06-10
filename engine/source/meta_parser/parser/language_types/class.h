@@ -28,12 +28,14 @@ public:
 
     bool shouldCompileFields(void) const;
     bool shouldCompileMethods(void) const;
-    bool shouldCompileSubclass(void) const;
+    bool shouldCompileEnum(void) const;
 
     template<typename T>
     using SharedPtrVector = std::vector<std::shared_ptr<T>>;
 
     std::string getClassName(void);
+    std::string getNamespace(void);
+
 
     SharedPtrVector<BaseClass> m_base_classes;
 
@@ -41,6 +43,12 @@ public:
     std::string m_name;
 
     std::string m_qualified_name;
+
+    std::string m_name_with_namespace;
+    
+    bool should_compile_fields;
+    bool should_compile_methods;
+
     
     int m_class_namespace_start = -1; // namespace[m_class_namespace_start] = class_namespace
 

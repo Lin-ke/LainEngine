@@ -11,6 +11,7 @@
 #include "template_manager/template_manager.h"
 
 class Class;
+class ENUM_;
 
 
 
@@ -31,6 +32,8 @@ public:
     void generateFiles(void);
     static MetaParser* getSingleton(void);
     void addClassIntoSchema(std::shared_ptr<Class> p_class);
+    void addEnumIntoSchema( std::shared_ptr<ENUM_>);
+
 
 private:
     static MetaParser* m_singleton;

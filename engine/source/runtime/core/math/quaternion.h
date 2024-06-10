@@ -14,11 +14,12 @@ namespace lain
     class String;
 
     REFLECTION_TYPE(Quaternion)
-    STRUCT(_NO_DISCARD_ Quaternion, Fields)
+    struct _NO_DISCARD_ Quaternion
     {
         REFLECTION_BODY(Quaternion);
 
     public:
+        META(Fields)
         float w {1.f}, x {0.f}, y {0.f}, z {0.f};
 
     public:

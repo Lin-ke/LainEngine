@@ -32,6 +32,8 @@ namespace Generator
         Mustache::data muatache_data;
         Mustache::data include_headfiles(Mustache::data::type::list);
         Mustache::data class_defines(Mustache::data::type::list);
+        Mustache::data enum_defines(Mustache::data::type::list);
+        bool need_generate = false;
 
         include_headfiles.push_back(
             Mustache::data("headfile_name", Utils::makeRelativePath(m_root_path, path).string()));
@@ -39,6 +41,7 @@ namespace Generator
         {
             if (!class_temp->shouldCompileFields())
                 continue;
+            need_generate = true;
 
             Mustache::data class_def;
             genClassRenderData(class_temp, class_def);
@@ -65,9 +68,11 @@ namespace Generator
                 // deal vector
                 if ((field->m_type.find("std::vector") == 0)||(field->m_type.find("Vector<") == 0))
                 {
+                    
                     auto include_file = m_get_include_func(field->m_name);
                     if (!include_file.empty())
                     {
+                        L_PRINT("no way, this is impossible");
                         auto include_file_base = processFileName(include_file);
                         if (file_path != include_file_base)
                         {
@@ -81,15 +86,29 @@ namespace Generator
             class_defines.push_back(class_def);
             m_class_defines.push_back(class_def);
         }
+        for (auto enum_temp : schema.enums) {
+            if (!enum_temp->shouldCompile() || enum_temp->m_name == "") continue;
+            need_generate = true;
+            Mustache::data enum_def;
+            enum_temp->generateData(enum_def);
 
-        muatache_data.set("class_defines", class_defines);
-        muatache_data.set("include_headfiles", include_headfiles);
-        std::string render_string =
-            TemplateManager::getInstance()->renderByTemplate("commonSerializerGenFile", muatache_data);
-        Utils::saveFile(render_string, file_path);
+            enum_defines.push_back(enum_def);
+            m_enum_defines.push_back(enum_def);
+        }
+        if (need_generate) {
 
-        m_include_headfiles.push_back(
-            Mustache::data("headfile_name", Utils::makeRelativePath(m_root_path, file_path).string()));
+            muatache_data.set("class_defines", class_defines);
+            muatache_data.set("enum_defines", enum_defines);
+
+            muatache_data.set("include_headfiles", include_headfiles);
+            std::string render_string =
+                TemplateManager::getInstance()->renderByTemplate("commonSerializerGenFile", muatache_data);
+            Utils::saveFile(render_string, file_path);
+
+            m_include_headfiles.push_back(
+                Mustache::data("headfile_name", Utils::makeRelativePath(m_root_path, file_path).string())); // add into the whole
+        }
+
         return 0;
     }
 
@@ -97,6 +116,7 @@ namespace Generator
     {
         Mustache::data mustache_data;
         mustache_data.set("class_defines", m_class_defines);
+        mustache_data.set("enum_defines", m_enum_defines);
         mustache_data.set("include_headfiles", m_include_headfiles);
 
         std::string render_string = TemplateManager::getInstance()->renderByTemplate("allSerializer.h", mustache_data);

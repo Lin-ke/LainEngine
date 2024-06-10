@@ -1,5 +1,7 @@
 #include "reflection.h"
 #include "core/os/memory.h"
+#include "core/string/string_name.h"
+#include "core/templates/hash_map.h"
 #include <cstring>
 #include <map>
 #define FIELD_PREFIX "m_"
@@ -11,11 +13,13 @@ namespace lain
 
         const char* k_unknown_type = "UnknownType";
         const char* k_unknown      = "Unknown";
-
+        // 只能在这个文件里写
         static std::map<std::string, ClassFunctionTuple*>       m_class_map;
         static std::multimap<std::string, FieldFunctionTuple*>  m_field_map;
         static std::multimap<std::string, MethodFunctionTuple*> m_method_map;
         static std::map<std::string, ArrayFunctionTuple*>       m_array_map;
+        static HashMap<StringName, HashMap<StringName, int>>    m_enums;
+        static HashMap<StringName, HashMap<StringName, int>>    m_anoymous_enums;
 
         void TypeMetaRegisterinterface::registerToFieldMap(const char* name, FieldFunctionTuple* value)
         {
@@ -25,6 +29,16 @@ namespace lain
         {
             m_method_map.insert(std::make_pair(name, value));
         }
+        void TypeMetaRegisterinterface::registerToEnumMap(const char* name, const HashMap<StringName, int>& value) {
+            m_enums[name] = value;
+        }
+        void TypeMetaRegisterinterface::registerToAnounymousEnumMap(const char* name, const HashMap<StringName, int>& value) {
+            HashMap<StringName, int>& hash_map = m_anoymous_enums[name];
+            for (auto& item : value) {
+                hash_map[item.key] = item.value;
+            }
+        }
+
         void TypeMetaRegisterinterface::registerToArrayMap(const char* name, ArrayFunctionTuple* value)
         {
             if (m_array_map.find(name) == m_array_map.end())
@@ -187,6 +201,15 @@ namespace lain
             }
             return false;
         }
+
+        StringName TypeMeta::GetEnumString(const StringName& p_class, int value) {
+            return "";
+        }
+        int TypeMeta::GetEnumValue(const StringName& p_class, const StringName& p_name) {
+            return 1;
+        }
+
+
 
         std::string TypeMeta::getTypeName() const { return m_type_name; }
         int TypeMeta::getFieldsList(FieldAccessor*& out_list)const

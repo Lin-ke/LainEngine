@@ -1,4 +1,5 @@
 #include "print_string.h"
+#include "_generated/serializer/all_serializer.h"
 namespace lain {
 	static PrintHandlerList* print_handler_list = nullptr;
 	void print_error(String p_string) {
@@ -113,9 +114,12 @@ namespace lain {
 
 		_global_unlock();
 	}
-
+	// 如果以命令行--verbose启用
 	bool is_print_verbose_enabled() {
 		return true;
 	}
 
+	String stringify_variants(Variant p_var) {
+		return Serializer::write(p_var).dump();
+	}
 }

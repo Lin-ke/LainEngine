@@ -455,4 +455,6 @@ FodyWeavers.xsd
 !engine/thirdparty/LLVM/bin/
 !engine/thirdparty/LLVM/lib/
 
+engine/thirdparty/volk/
+engine/thirdparty/vma/
 

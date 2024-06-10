@@ -11,7 +11,7 @@ namespace lain
     class String;
     struct Vector3i;
     REFLECTION_TYPE(Vector3);
-    STRUCT( _NO_DISCARD_ Vector3, Fields)
+    struct _NO_DISCARD_ Vector3
     {
         REFLECTION_BODY(Vector3);
         enum Axis {
@@ -19,6 +19,7 @@ namespace lain
             AXIS_Y,
             AXIS_Z,
         };
+        META(Fields)
         real_t x;
         real_t y;
         real_t z;

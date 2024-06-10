@@ -50,6 +50,32 @@ namespace lain{
         }{{/class_field_defines}}
         return instance;
     }{{/class_defines}}
-
+    {{#enum_defines}}
+    template<>
+    Json Serializer::write(const {{enum_with_namespace}}& instance){
+        String enum_name;
+        switch (instance){
+            {{#enum_values_define}}
+            case {{enum_value}}:
+                enum_name = "{{enum_value_name}}";
+                break;
+            {{/enum_values_define}}
+            default:
+                static_assert("unknown enum value");
+        }
+        return Serializer::write(enum_name);
+    }
+    template<>
+    {{enum_with_namespace}}& Serializer::read(const Json& json_context, {{enum_with_namespace}}& instance){
+        String enum_name;
+        Serializer::read(json_context, enum_name);
+        {{#enum_values_define}}
+        if (enum_name == "{{enum_value_name}}"){
+            instance = {{enum_with_namespace}}::{{enum_value_name}};
+        }
+        {{/enum_values_define}}
+        return instance;
+    }
+    {{/enum_defines}}
 }
 #endif

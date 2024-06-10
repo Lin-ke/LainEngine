@@ -80,14 +80,13 @@ namespace Generator
                 std::string array_type = Utils::getNameWithoutBracket(field->m_type);
                 field_define.set("class_field_array_base_type", array_type);
                 std::string array_useful_name = field->m_type;
-                field_define.set("class_field_array_useful_name", Utils::formatQualifiedName(array_useful_name));
+                field_define.set("class_field_array_useful_name", Utils::formatQualifiedName(field->m_name_with_namespace));
                 field_define.set("class_field_fixed_array_size", Utils::getFixArraySize(field->m_type));
             }
             else {
                 field_define.set("class_field_array_base_type", ""); // is it necessary?
                 field_define.set("class_field_array_useful_name", "");
                 field_define.set("class_field_fixed_array_size", "");
-
             }
 
             feild_defs.push_back(field_define);

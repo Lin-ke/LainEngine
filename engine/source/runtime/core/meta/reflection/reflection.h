@@ -6,6 +6,7 @@
 #include "core/string/ustring.h"
 #include "reflection_marcos.h"
 #include "core/os/memory.h"
+#include "core/templates/hash_map.h"
 #include <functional>
 #include <string>
 #include <unordered_map>
@@ -58,9 +59,12 @@ namespace lain
     typedef std::tuple<GetBaseClassReflectionInstanceListFunc, ConstructorWithJson, WriteJsonByName, SerialRead, AllocMemFunc, AllocMemArrFunc, GetSizeOfFunc> ClassFunctionTuple;
 
     typedef std::tuple<SetArrayFunc, GetArrayFunc, GetSizeFunc, GetNameFuncion, GetNameFuncion>      ArrayFunctionTuple;
-
+    
+    class StringName;
     namespace Reflection
     {
+        
+        
         class TypeMetaRegisterinterface
         {
         public:
@@ -70,6 +74,9 @@ namespace lain
 
             static void registerToMethodMap(const char* name, MethodFunctionTuple* value);
             static void registerToArrayMap(const char* name, ArrayFunctionTuple* value);
+            static void registerToEnumMap(const char* name, const HashMap<StringName, int>& value);
+            static void registerToAnounymousEnumMap(const char* name, const HashMap<StringName, int>& value);
+
 
             static void unregisterAll();
         };
@@ -93,6 +100,8 @@ namespace lain
             static size_t getSizeOfByName(const char* name);
             static void* memnewByName(const char* name, void* target = nullptr);
             static void* memnewarrByName(const char* name, int num);
+            static StringName GetEnumString(const StringName& p_class, int value);
+            static int GetEnumValue(const StringName& p_class, const StringName& p_name);
 
 
             std::string getTypeName() const;
@@ -108,6 +117,8 @@ namespace lain
             bool isValid() const { return m_is_valid; }
 
             TypeMeta& operator=(const TypeMeta& dest);
+            
+           
             
         private:
             TypeMeta(std::string type_name);

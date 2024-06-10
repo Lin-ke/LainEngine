@@ -1,0 +1,18 @@
+#pragma once
+#ifndef __ALL_ENUMS_H__
+#define __ALL_ENUMS_H__
+#include "runtime/core/meta/reflection/reflection.h"
+{{#include_headfiles}}
+#include "{{headfile_name}}"
+{{/include_headfiles}}
+
+
+namespace lain{
+namespace Reflection{
+    void TypeMetaRegister::EnumMetaRegister(){
+        {{#sourefile_names}}TypeWrappersRegister::enum_{{sourefile_name_upper_camel_case}}();
+        {{/sourefile_names}}
+    }
+}
+}
+#endif

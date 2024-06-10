@@ -15,6 +15,11 @@ namespace lain{
     template<>
     {{class_with_namespace}}& Serializer::read(const Json& json_context, {{class_with_namespace}}& instance);
     {{/class_defines}}
+    {{#enum_defines}}template<>
+    Json Serializer::write(const {{enum_with_namespace}}& instance);
+    template<>
+    {{enum_with_namespace}}& Serializer::read(const Json& json_context, {{enum_with_namespace}}& instance);
+    {{/enum_defines}}
 }//namespace
 {{#class_defines}}
 #endif

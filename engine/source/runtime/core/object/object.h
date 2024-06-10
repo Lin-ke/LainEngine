@@ -168,10 +168,10 @@ namespace lain {
 	class Viewport;
 	// signal mechanism
 	REFLECTION_TYPE(Connection)
-		CLASS(Connection, WhiteListFields) {
+		class Connection {
 		REFLECTION_BODY(Connection);
 public:
-	META(Enable)
+		META(WhiteListFields)
 		Signal signal;
 	Callable callable; // 什么类型的什么方法
 
@@ -252,15 +252,16 @@ public:
 	};
 
 	REFLECTION_TYPE(Object)
-		CLASS(Object, WhiteListFields)
+		class Object
 	{
 		REFLECTION_BODY(Object);
 	public:
 		Object() { _construct_object(false); }
-		Object::Object(bool p_reference) {
+		Object(bool p_reference) {
 			_construct_object(p_reference);
 		}
 		// META
+		META(WhiteListFields)
 		HashMap<StringName, Variant> metadata;
 		HashMap<StringName, Variant*> metadata_properties;
 		mutable const StringName* _class_name_ptr = nullptr;

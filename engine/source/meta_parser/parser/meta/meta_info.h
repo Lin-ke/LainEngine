@@ -10,8 +10,10 @@ public:
     std::string getProperty(const std::string& key) const;
 
     bool getFlag(const std::string& key) const;
+    void setFlag(const std::string& key);
 
-private:
+
+
     typedef std::pair<std::string, std::string> Property;
 
     std::unordered_map<std::string, std::string> m_properties;

@@ -197,7 +197,7 @@ namespace lain
 	class RandomPCG;
 	class Math
 	{
-	private:
+	public:
 		enum class AngleUnit
 		{
 			AU_DEGREE,

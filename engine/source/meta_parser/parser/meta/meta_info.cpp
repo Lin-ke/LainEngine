@@ -11,7 +11,11 @@ MetaInfo::MetaInfo(const Cursor& cursor)
         if (child.getKind() != CXCursor_AnnotateAttr)
             continue;
         for (auto& prop : extractProperties(child))
+        {
             m_properties[prop.first] = prop.second;
+        }
+
+        
     }
 }
 
@@ -25,6 +29,10 @@ std::string MetaInfo::getProperty(const std::string& key) const
 }
 
 bool MetaInfo::getFlag(const std::string& key) const { return m_properties.find(key) != m_properties.end(); }
+void MetaInfo::setFlag(const std::string& key) {
+    m_properties[key] = ""; // hack here
+}
+
 
 std::vector<MetaInfo::Property> MetaInfo::extractProperties(const Cursor& cursor) const
 {

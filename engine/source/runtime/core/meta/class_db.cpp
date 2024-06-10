@@ -1,4 +1,5 @@
 #include "class_db.h"
+#include "reflection/reflection.h"
 namespace lain {
 
 	MethodDefinition D_METHODP(const char* p_name, const char* const** p_args, uint32_t p_argcount) {

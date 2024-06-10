@@ -1,0 +1,28 @@
+#pragma once
+{{#class_defines}}
+#ifndef TYPENAME_{{class_better_name}}_H
+#define TYPENAME_{{class_better_name}}_H
+{{/class_defines}}
+#include "runtime/core/meta/type_info.h"
+{{#include_headfiles}}
+#include "{{headfile_name}}"
+{{/include_headfiles}}
+
+
+namespace lain{
+    namespace Reflection{
+    {{#class_defines}}
+    template<>
+    L_INLINE String to_string<{{class_with_namespace}}>(){
+        return "{{class_with_namespace}}";
+    }
+    template<>
+    L_INLINE String get_class<{{class_with_namespace}}>(const {{class_with_namespace}}& elem){
+        return "{{class_with_namespace}}";
+    }
+    {{/class_defines}}
+    } // namespace reflection
+}//namespace lain
+{{#class_defines}}
+#endif
+{{/class_defines}}

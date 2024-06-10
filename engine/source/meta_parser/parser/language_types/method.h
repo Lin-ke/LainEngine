@@ -6,7 +6,7 @@ class Class;
 
 class Method : public TypeInfo
 {
-
+    friend class Class;
 public:
     Method(const Cursor& cursor, const Namespace& current_namespace, Class* parent = nullptr);
 

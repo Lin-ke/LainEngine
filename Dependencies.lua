@@ -8,13 +8,16 @@ prjprefix = "%{wks.location}/engine/source"
 vdrprefix = "%{wks.location}/engine/thirdparty"
 IncludeDir["spdlog"]    =   (vdrprefix .. "/spdlog/include")
 IncludeDir["glfw"]      =   (vdrprefix .. "/glfw/include")
-IncludeDir["glad"]      =   (vdrprefix .. "/Glad/include")
 IncludeDir["imgui"]     =   (vdrprefix .. "/imgui")
 IncludeDir["llvm"]      =   (vdrprefix .. "/LLVM/include")
 IncludeDir["mustache"]  =   (vdrprefix .. "/mustache")
 IncludeDir["json11"]  =   (vdrprefix .. "/json11")
 IncludeDir["mbedtls"] = (vdrprefix .. "/mbedtls/include")
 IncludeDir["stb_image"]  =   (vdrprefix .. "/stb_image")
+IncludeDir["spirv_reflect"]  =   (vdrprefix .. "/spirv-reflect")
+IncludeDir["vma"]  =   (vdrprefix .. "/vma/include")
+
+
 IncludeDir["tinyobj"]  =   (vdrprefix .. "/tinyobjloader")
 
 IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/Include"
@@ -31,15 +34,19 @@ Library = {}
 -- Vulkan
 Library["Vulkan"] = "%{LibraryDir.VulkanSDK}/vulkan-1.lib"
 Library["VulkanUtils"] = "%{LibraryDir.VulkanSDK}/VkLayer_utils.lib"
+Library["volk"] = "%{LibraryDir.VulkanSDK}/volk.lib"
 
 Library["ShaderC_Debug"] = "%{LibraryDir.VulkanSDK}/shaderc_sharedd.lib"
 Library["SPIRV_Cross_Debug"] = "%{LibraryDir.VulkanSDK}/spirv-cross-cored.lib"
 Library["SPIRV_Cross_GLSL_Debug"] = "%{LibraryDir.VulkanSDK}/spirv-cross-glsld.lib"
+
 Library["SPIRV_Tools_Debug"] = "%{LibraryDir.VulkanSDK}/SPIRV-Toolsd.lib"
 
 Library["ShaderC_Release"] = "%{LibraryDir.VulkanSDK}/shaderc_shared.lib"
 Library["SPIRV_Cross_Release"] = "%{LibraryDir.VulkanSDK}/spirv-cross-core.lib"
 Library["SPIRV_Cross_GLSL_Release"] = "%{LibraryDir.VulkanSDK}/spirv-cross-glsl.lib"
+Library["SPIRV_Tools_Release"] = "%{LibraryDir.VulkanSDK}/SPIRV-Tools.lib"
+
 -- Windows
 Library["WinSock"] = "Ws2_32.lib"
 Library["WinMM"] = "Winmm.lib"

@@ -7,6 +7,7 @@
 #include "test/test_marcos.h"
 namespace lain {
 	namespace test {
+
 		class TestMeta {
 
 		static int test_StringName_reflect();

@@ -6,15 +6,17 @@
     friend class Serializer;
 
 
-
 #if defined(__REFLECTION_PARSER__)
 #define META(...) __attribute__((annotate(#__VA_ARGS__)))
 #define CLASS(class_name, ...) class __attribute__((annotate(#__VA_ARGS__))) class_name
 #define STRUCT(struct_name, ...) struct __attribute__((annotate(#__VA_ARGS__))) struct_name
-//#define CLASS(class_name,...) class __attribute__((annotate(#__VA_ARGS__))) class_name:public Reflection::object
+#define ENUM(enum_name, ...) enum __attribute__((annotate(#__VA_ARGS__))) enum_name
+
 #else
 #define META(...)
 #define CLASS(class_name, ...) class class_name
+#define ENUM(enum_name, ...) enum enum_name
+
 #define STRUCT(struct_name, ...) struct struct_name
 
 //#define CLASS(class_name,...) class class_name:public Reflection::object
@@ -86,6 +88,10 @@
 #define REGISTER_BASE_CLASS_TO_MAP(name, value) TypeMetaRegisterinterface::registerToClassMap(name, value);
 #define REGISTER_SERIAL_TO_MAP(name, value) TypeMetaRegisterinterface::registerToSerialMap(name, value);
 #define REGISTER_ARRAY_TO_MAP(name, value) TypeMetaRegisterinterface::registerToArrayMap(name, value);
+#define REGISTER_ENUM_TO_MAP(name, value) TypeMetaRegisterinterface::registerToEnumMap(name, value);
+#define REGISTER_ANONY_ENUM_TO_MAP(name, value) TypeMetaRegisterinterface::registerToAnounymousEnumMap(name, value);
+
+
 #define UNREGISTER_ALL TypeMetaRegisterinterface::unregisterAll();
 
 #define Lain_REFLECTION_NEW(name, ...) Reflection::ReflectionPtr(#name, new name(__VA_ARGS__));

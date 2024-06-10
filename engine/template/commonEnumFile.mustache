@@ -1,21 +1,48 @@
 #pragma once
-{{#class_defines}}
-#ifndef ENUM_STRING_{{class_name}}_H
-#define ENUM_STRING_{{class_name}}_H
-{{/class_defines}}
-#include "runtime/core/meta/enum.h"
+{{#enum_defines}}
+#ifndef ENUM_{{enum_useful_name}}_H
+#define ENUM_{{enum_useful_name}}_H
+{{/enum_defines}}
 {{#include_headfiles}}
-#include "{{headfile_name}}"
-{{/include_headfiles}}
 
-// enum_name : Class::enum_name
+#include "{{headfile_name}}"
+
+{{/include_headfiles}}
+#include "core/templates/hash_map.h"
+#include "core/string/string_name.h"
 namespace lain{
-    {{#enum_defines}}template<>
-    constexpr {{enum_name}} string_to_enum(const String& p_str);
-    template<>
-    constexpr String enum_to_string(const {{enum_name}} p_enum);
+    namespace Reflection{
+
+{{#enum_exists}}
+namespace EnumReflectionOperator{
+    {{#enum_defines}}
+    #ifndef Enum{{enum_useful_name}}OperatorMACRO
+    #define Enum{{enum_useful_name}}OperatorMACRO
+    class Enum{{enum_useful_name}}Operator{
+    public:
+        static void register_to_map(){
+            HashMap<StringName,int> enum_map;
+            {{#enum_values_define}}
+            enum_map["{{enum_value_name}}"] = {{enum_value}};
+            {{/enum_values_define}}
+            {{^enum_is_anonymous}}REGISTER_ENUM_TO_MAP("{{enum_with_namespace}}", enum_map);{{/enum_is_anonymous}}
+            {{#enum_is_anonymous}}REGISTER_ANONY_ENUM_TO_MAP("{{enum_with_namespace}}", enum_map);{{/enum_is_anonymous}}
+        }
+    };
+    #endif
     {{/enum_defines}}
-}//namespace
-{{#class_defines}}
+} // namespace EnumReflectionOperator
+{{/enum_exists}}
+
+
+namespace TypeWrappersRegister{
+    void enum_{{sourefile_name_upper_camel_case}}()
+    {
+         {{#enum_exists}}{{#enum_defines}}EnumReflectionOperator::Enum{{enum_useful_name}}Operator::register_to_map();{{/enum_defines}}{{/enum_exists}}
+    }
+}//namespace TypeWrappersRegister
+    } // namespace reflection
+} // namespace lain
+{{#enum_defines}}
 #endif
-{{/class_defines}}
+{{/enum_defines}}

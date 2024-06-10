@@ -33,32 +33,102 @@
 #define TYPE_INFO_H
 
 #include "core/typedefs.h"
+#include "core/string/ustring.h"
+namespace lain{
+	template <bool C, typename T = void>
+	struct EnableIf {
+		typedef T type;
+	};
 
-template <bool C, typename T = void>
-struct EnableIf {
-	typedef T type;
-};
+	template <typename T>
+	struct EnableIf<false, T> {
+	};
 
-template <typename T>
-struct EnableIf<false, T> {
-};
+	template <typename, typename>
+	inline constexpr bool types_are_same_v = false;
 
-template <typename, typename>
-inline constexpr bool types_are_same_v = false;
+	template <typename T>
+	inline constexpr bool types_are_same_v<T, T> = true;
 
-template <typename T>
-inline constexpr bool types_are_same_v<T, T> = true;
+	template <typename B, typename D>
+	struct TypeInherits {
+		static D* get_d();
 
-template <typename B, typename D>
-struct TypeInherits {
-	static D *get_d();
+		static char(&test(B*))[1];
+		static char(&test(...))[2];
 
-	static char (&test(B *))[1];
-	static char (&test(...))[2];
-
-	static bool const value = sizeof(test(get_d())) == sizeof(char) &&
+		static bool const value = sizeof(test(get_d())) == sizeof(char) &&
 			!types_are_same_v<B volatile const, void volatile const>;
-};
+	};
+
+	namespace Reflection {
+		template<typename T>
+		constexpr static String to_string() {
+			return "unknown";
+		}
+		template<typename T>
+		constexpr static String get_class(const T& elem) {
+			return "unknown";
+		}
+
+	} // namespace reflection
+	// 64位bits的封装，只能用对应T类的
+	// @Learn
+	template <typename T>
+	class BitField {
+		int64_t value = 0;
+
+	public:
+		_FORCE_INLINE_ BitField<T>& set_flag(T p_flag) {
+			value |= (int64_t)p_flag;
+			return *this;
+		}
+		_FORCE_INLINE_ bool has_flag(T p_flag) const { return value & (int64_t)p_flag; }
+		_FORCE_INLINE_ bool is_empty() const { return value == 0; }
+		_FORCE_INLINE_ void clear_flag(T p_flag) { value &= ~(int64_t)p_flag; }
+		_FORCE_INLINE_ void clear() { value = 0; }
+		_FORCE_INLINE_ constexpr BitField() = default;
+		_FORCE_INLINE_ constexpr BitField(int64_t p_value) { value = p_value; }
+		_FORCE_INLINE_ constexpr BitField(T p_value) { value = (int64_t)p_value; }
+		_FORCE_INLINE_ operator int64_t() const { return value; }
+		_FORCE_INLINE_ operator Variant() const { return value; }
+		_FORCE_INLINE_ BitField<T> operator^(const BitField<T>& p_b) const { return BitField<T>(value ^ p_b.value); }
+	};
+	template <typename T>
+	struct ZeroInitializer {
+		static void initialize(T& value) {} //no initialization by default
+	};
+
+	template <>
+	struct ZeroInitializer<bool> {
+		static void initialize(bool& value) { value = false; }
+	};
+
+	template <typename T>
+	struct ZeroInitializer<T*> {
+		static void initialize(T*& value) { value = nullptr; }
+	};
+
+#define ZERO_INITIALIZER_NUMBER(m_type)                      \
+	template <>                                              \
+	struct ZeroInitializer<m_type> {                         \
+		static void initialize(m_type &value) { value = 0; } \
+	};
+
+	ZERO_INITIALIZER_NUMBER(uint8_t)
+		ZERO_INITIALIZER_NUMBER(int8_t)
+		ZERO_INITIALIZER_NUMBER(uint16_t)
+		ZERO_INITIALIZER_NUMBER(int16_t)
+		ZERO_INITIALIZER_NUMBER(uint32_t)
+		ZERO_INITIALIZER_NUMBER(int32_t)
+		ZERO_INITIALIZER_NUMBER(uint64_t)
+		ZERO_INITIALIZER_NUMBER(int64_t)
+		ZERO_INITIALIZER_NUMBER(char16_t)
+		ZERO_INITIALIZER_NUMBER(char32_t)
+		ZERO_INITIALIZER_NUMBER(float)
+		ZERO_INITIALIZER_NUMBER(double)
+
+} // namespace reflection
 //
 //namespace GodotTypeInfo {
 //enum Metadata {
@@ -335,38 +405,5 @@ struct TypeInherits {
 //}
 //#define CLASS_INFO(m_type) (GetTypeInfo<m_type *>::get_class_info())
 //
-template <typename T>
-struct ZeroInitializer {
-	static void initialize(T &value) {} //no initialization by default
-};
-
-template <>
-struct ZeroInitializer<bool> {
-	static void initialize(bool &value) { value = false; }
-};
-
-template <typename T>
-struct ZeroInitializer<T *> {
-	static void initialize(T *&value) { value = nullptr; }
-};
-
-#define ZERO_INITIALIZER_NUMBER(m_type)                      \
-	template <>                                              \
-	struct ZeroInitializer<m_type> {                         \
-		static void initialize(m_type &value) { value = 0; } \
-	};
-
-ZERO_INITIALIZER_NUMBER(uint8_t)
-ZERO_INITIALIZER_NUMBER(int8_t)
-ZERO_INITIALIZER_NUMBER(uint16_t)
-ZERO_INITIALIZER_NUMBER(int16_t)
-ZERO_INITIALIZER_NUMBER(uint32_t)
-ZERO_INITIALIZER_NUMBER(int32_t)
-ZERO_INITIALIZER_NUMBER(uint64_t)
-ZERO_INITIALIZER_NUMBER(int64_t)
-ZERO_INITIALIZER_NUMBER(char16_t)
-ZERO_INITIALIZER_NUMBER(char32_t)
-ZERO_INITIALIZER_NUMBER(float)
-ZERO_INITIALIZER_NUMBER(double)
 
 #endif // TYPE_INFO_H

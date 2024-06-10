@@ -12,9 +12,9 @@
 #include "core/templates/self_list.h"
 #include "core/io/rid.h"
 #include "core/object/safe_refcount.h"
-class CommandQueueMT;
 
 namespace lain {
+	class CommandQueueMT;
 	class WorkerThreadPool : public Object {
 		LCLASS(WorkerThreadPool, Object);
 	public:

@@ -31,6 +31,7 @@ public:
 	// requires projectsettings.singleton
 	virtual String GetUserDataDir() const override;
 	virtual Error GetEntropy(uint8_t* r_buffer, size_t p_bytes) const override;
+	virtual void SetEnvironment(const String&, const String&) const override;
 
 	OSWindows() {
 		Log::Initialize();

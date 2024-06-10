@@ -36,7 +36,6 @@ namespace Generator
     int ReflectionGenerator::generate(std::string path, SchemaMoudle schema)
     {
         
-        
         std::string    file_path = processFileName(path);
 
         Mustache::data mustache_data;
@@ -47,22 +46,24 @@ namespace Generator
             Mustache::data("headfile_name", Utils::makeRelativePath(m_root_path, path).string()));
 
         std::map<std::string, bool> class_names;
+        bool need_generate = false;
         // class defs
         for (auto class_temp : schema.classes)
         {// 这里是该文件中所有的需要compile的类
             
             if (!class_temp->shouldCompile())
                 continue;
-
+            need_generate = true;
             class_names.insert_or_assign(class_temp->getClassName(), false);
             class_names[class_temp->getClassName()] = true;
 
             std::vector<std::string>                                   field_names;
-            std::map<std::string, std::pair<std::string, std::string>> vector_map; // vector_type_name, array_useful_name, element_type
+            std::map<std::string, std::tuple<std::string,std::string, std::string>> vector_map; // vector_type_name, array_useful_name, element_type
             std::map<std::string, std::string> fixed_array_map;
 
             Mustache::data class_def;
             Mustache::data vector_defines(Mustache::data::type::list);
+
 
             genClassRenderData(class_temp, class_def);
             for (auto field : class_temp->m_fields)
@@ -80,7 +81,7 @@ namespace Generator
                 int array_type = Utils::is_name_vector(field->m_type);
                 if (array_type)
                 {
-                    std::string array_useful_name = field->m_type;
+                    std::string array_useful_name = field->m_name_with_namespace;
 
                     Utils::formatQualifiedName(array_useful_name);
                     
@@ -93,12 +94,12 @@ namespace Generator
                     else
                         item_type = Utils::getNameWithoutContainer(item_type);
 
-                    vector_map[field->m_type] = std::make_pair(array_useful_name, item_type);
+                    vector_map[field->m_type] = std::tuple(array_useful_name, item_type, field->m_type);
 
                     //L_PRINT("ADD PAIR", array_useful_name, item_type);
                 }
             }
-
+            
             if (vector_map.size() > 0)
             {
                 if (nullptr == class_def.get("vector_exist"))
@@ -109,13 +110,14 @@ namespace Generator
                 
                 for (auto vector_item : vector_map)
                 {
-                    std::string    array_useful_name = vector_item.second.first;
-                    std::string    item_type         = vector_item.second.second;
+                    std::string    array_useful_name = std::get<0>(vector_item.second);
+                    std::string    item_type         = std::get<1>(vector_item.second);
+                    std::string    array_type = std::get<2>(vector_item.second);
                     Mustache::data vector_define;
                     vector_define.set("vector_useful_name", array_useful_name);
                     vector_define.set("vector_type_name", vector_item.first);
                     vector_define.set("vector_element_type_name", item_type);
-                    vector_define.set("vector_is_cow_vector", (array_useful_name.find("Vector") == 0));
+                    vector_define.set("vector_is_cow_vector", (array_type.find("Vector") == 0));
                     bool is_fixed_array = fixed_array_map.find(vector_item.first) != fixed_array_map.end();
                     vector_define.set("vector_is_fixed_array", is_fixed_array);
                     if(is_fixed_array)
@@ -127,29 +129,34 @@ namespace Generator
                 }
             }
             class_def.set("vector_defines", vector_defines);
-
-            for (auto enum_ : class_temp->m_enums) {
-
+            if (!class_temp->m_enums.empty()) {
+                if (nullptr == class_def.get("enum_exists"))
+                    class_def.set("enum_exists", true);
             }
-
+           
+            
             class_defines.push_back(class_def);
         }
+        if (need_generate) {
 
-        mustache_data.set("class_defines", class_defines);
-        mustache_data.set("include_headfiles", include_headfiles);
+            mustache_data.set("class_defines", class_defines);
+            mustache_data.set("include_headfiles", include_headfiles);
 
-        std::string tmp = Utils::convertNameToUpperCamelCase(fs::path(path).stem().string(), "_");
-        mustache_data.set("sourefile_name_upper_camel_case", tmp);
+            std::string tmp = Utils::convertNameToUpperCamelCase(fs::path(path).stem().string(), "_");
+            mustache_data.set("sourefile_name_upper_camel_case", tmp);
 
-        std::string render_string =
-            TemplateManager::getInstance()->renderByTemplate("commonReflectionFile", mustache_data);
-        Utils::saveFile(render_string, file_path);
+            std::string render_string =
+                TemplateManager::getInstance()->renderByTemplate("commonReflectionFile", mustache_data);
+            Utils::saveFile(render_string, file_path);
 
-        m_sourcefile_list.emplace_back(tmp);
+            m_sourcefile_list.emplace_back(tmp);
 
-        m_head_file_list.emplace_back(Utils::makeRelativePath(m_root_path, file_path).string());
+            m_head_file_list.emplace_back(Utils::makeRelativePath(m_root_path, file_path).string());
+        }
+
         return 0;
     }
+
     void ReflectionGenerator::finish()
     {
         Mustache::data mustache_data;

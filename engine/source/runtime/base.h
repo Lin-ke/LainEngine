@@ -5,6 +5,11 @@
 #define VERSION_BRANCH "0.1"
 #define LAINDIRNAME "Lain"
 #define BASENAMESPACE lain
+#define ENGINE_NAME "Engine"
+#define VERSION_MAJOR 0
+#define VERSION_MINOR 1
+#define VERSION_PATCH 0
+
 //#define PROJECT_FILE_NAME "prj.txt"
 //#define PROJECT_DATA_DIR_NAME_SUFFIX "prjdata"
 #ifdef L_DEBUG

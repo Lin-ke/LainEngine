@@ -224,4 +224,13 @@ namespace lain {
 
 		return (double)(ticks_time - TICKS_TO_UNIX_EPOCH) / WINDOWS_TICKS_PER_SECOND;
 	}
+
+	void OSWindows::SetEnvironment(const String& p_var, const String& p_value) const {
+		ERR_FAIL_COND_MSG(p_var.is_empty() || p_var.contains("="), vformat("Invalid environment variable name '%s', cannot be empty or include '='.", p_var));
+		Char16String var = p_var.utf16();
+		Char16String value = p_value.utf16();
+		ERR_FAIL_COND_MSG(var.length() + value.length() + 2 > 32767, vformat("Invalid definition for environment variable '%s', cannot exceed 32767 characters.", p_var));
+		SetEnvironmentVariableW((LPCWSTR)(var.get_data()), (LPCWSTR)(value.get_data()));
+	}
+
 }

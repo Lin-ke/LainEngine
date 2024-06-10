@@ -19,8 +19,8 @@ private:
 //
 //The RID Variant type is used to access a low - level resource by its unique ID.RIDs are opaque, which means they do not grant access to the resource by themselves.They are used by the low - level server classes, such as DisplayServer, RenderingServer, TextServer, etc.
 class RID {
+	friend class RID_AllocBase;
 	uint64_t _id = 0;
-
 public:
 	_ALWAYS_INLINE_ bool operator==(const RID& p_rid) const {
 		return _id == p_rid._id;

@@ -7,6 +7,8 @@
 
 #include "{{headfile_name}}"
 #include "core/os/memory.h"
+#include "core/string/ustring.h"
+
 {{/include_headfiles}}
 
 namespace lain{
@@ -115,7 +117,6 @@ namespace TypeFieldReflectionOperator{
     };
 }//namespace TypeFieldReflectionOperator
 
-
     void TypeWrapperRegister_{{#class_is_in_class}}{{class_father_namespace}}{{/class_is_in_class}}{{class_name}}(){
         {{#class_field_defines}}FieldFunctionTuple* field_function_tuple_{{class_field_name}}=memnew(FieldFunctionTuple(
             &TypeFieldReflectionOperator::Type{{#class_is_in_class}}{{class_father_namespace}}{{/class_is_in_class}}{{class_name}}Operator::set_{{class_field_name}},
@@ -152,6 +153,7 @@ namespace TypeFieldReflectionOperator{
 	&TypeFieldReflectionOperator::Type{{#class_is_in_class}}{{class_father_namespace}}{{/class_is_in_class}}{{class_name}}Operator::get_size_of));
         REGISTER_BASE_CLASS_TO_MAP("{{class_with_namespace}}", class_function_tuple_{{class_name}});
         {{/class_need_register}}
+       
     }{{/class_defines}}
 namespace TypeWrappersRegister{
     void {{sourefile_name_upper_camel_case}}()

@@ -22,7 +22,7 @@ namespace lain {
         // 3. Grouped, 类似tag，有组关系
         // 4. Process 部分，有ProcessGroup关系
     REFLECTION_TYPE(GObject);
-    CLASS(GObject: public TickObject, WhiteListFields){
+    class GObject: public TickObject{
         friend class Serializer;
         LCLASS(GObject, Object);
         friend class SceneState;
@@ -39,6 +39,7 @@ namespace lain {
             bool persistent = false;
             SceneTree::Group* group = nullptr;
         };
+        META(WhiteListFields)
         struct Data {
             String scene_file_path; // 如果场景是从文件实例化来的
             Ref<SceneState> instance_state; // 实例场景的scenestate

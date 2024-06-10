@@ -15,8 +15,10 @@ project "Editor"
 
 	includedirs
 	{
-		"%{IncludeDir.json11}",
 		"%{IncludeDir.spdlog}",
+         "%{IncludeDir.glfw}",
+         "%{IncludeDir.json11}",
+         "%{IncludeDir.VulkanSDK}",
 		prjprefix,
 		(prjprefix .. "/editor"),
       	(prjprefix .. "/runtime"),
@@ -25,8 +27,6 @@ project "Editor"
 
 	links
 	{
-		"spdlog",
-		"imgui",
 		"LainRuntime"
 	}
 
@@ -36,15 +36,12 @@ project "Editor"
 
 	filter "configurations:Debug"
 		defines "L_DEBUG"
-		runtime "Debug"
 		symbols "on"
+		staticruntime "off"
+		runtime "Debug"
 
 	filter "configurations:Release"
 		defines "L_RELEASE"
-		runtime "Release"
 		optimize "on"
-
-	filter "configurations:Dist"
-		defines "L_DIST"
+		staticruntime "off"
 		runtime "Release"
-		optimize "on"

@@ -6,6 +6,7 @@ class Class;
 
 class Field : public TypeInfo
 {
+    friend class Class;
 
 public:
     Field(const Cursor& cursor, const Namespace& current_namespace, Class* parent = nullptr);
@@ -24,6 +25,7 @@ public:
     std::string m_type;
 
     std::string m_default;
+    std::string m_name_with_namespace; // 用这个能找到他
 
     bool isAccessible(void) const;
 };

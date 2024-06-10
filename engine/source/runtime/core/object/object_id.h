@@ -3,7 +3,7 @@
 
 #include "core/typedefs.h"
 
-#include "runtime/core/meta/reflection/reflection.h"
+#include "runtime/core/meta/reflection/reflection_marcos.h"
 
 // Class to store an object ID (int64)
 // needs to be compatile with int64 because this is what Variant uses

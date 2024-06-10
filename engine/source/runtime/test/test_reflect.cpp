@@ -2,6 +2,7 @@
 #include "core/string/string_name.h"
 #include "core/math/basis.h"
 #include "core/math/matrix3.h"
+#include "_generated/typename/all_typename.h"
 namespace lain {
 	namespace test {
 
@@ -85,6 +86,9 @@ namespace lain {
 			m = Serializer::read(Serializer::write(p), m);
 			L_JSON(p);
 			L_JSON(m);
+			L_PRINT(Reflection::to_string<Vector2>());
+			L_PRINT(Reflection::get_class(p));
+
 			return p == m;
 		}
 

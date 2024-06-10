@@ -26,7 +26,19 @@ static ProjectManager* pmanager = nullptr;
  uint64_t Main::last_ticks = 0;
  uint32_t Main::frames = 0;
  int Main::iterating = 0;
-
+ // --- main window
+ static WindowSystem::WindowMode window_mode = WindowSystem::WINDOW_MODE_WINDOWED;
+ static WindowSystem::VSyncMode window_vsync_mode = WindowSystem::VSYNC_ENABLED;
+ static uint32_t window_flags = 0;
+ static Size2i window_size = Size2i(1152, 648);
+ static int init_screen = WindowSystem::SCREEN_PRIMARY;
+ static bool init_fullscreen = false;
+ static bool init_maximized = false;
+ static bool init_windowed = false;
+ static bool init_always_on_top = false;
+ static bool init_use_custom_pos = false;
+ static bool init_use_custom_screen = false;
+ static Vector2 init_custom_pos;
 
  /// <summary>
  /// Main initialization.
@@ -42,8 +54,8 @@ static ProjectManager* pmanager = nullptr;
 	 register_core_types();
 	
 	 Reflection::TypeMetaRegister::metaRegister();
-	 window_system = memnew(WindowSystem);
-	 render_system = memnew(RenderingSystem);
+	 Reflection::TypeMetaRegister::EnumMetaRegister();
+
 	 globals = memnew(ProjectSettings);
 	 EditorPaths::create(); // editor需要在global之后，在ProjectManager之前
 	 //L_PRINT(EditorPaths::GetSingleton()->GetDataDir(), EditorPaths::GetSingleton()->GetConfigDir());
@@ -97,11 +109,16 @@ static ProjectManager* pmanager = nullptr;
 	 }
 
 
+
+	 Vector2i* window_position = nullptr;
+	 if (init_use_custom_pos) {
+		Vector2i position = init_custom_pos;
+		 window_position = &position;
+	 }
 	 MainLoop* main_loop = memnew(SceneTree);
+	 Error err;
+	 window_system = memnew(WindowSystem("vulkan", window_mode, window_vsync_mode, window_flags, window_position, window_size, init_screen, err));
 
-
-	 window_system->Initialize();
-	 window_system->NewWindow(lain::WindowCreateInfo(1280, 720, GLOBAL_GET("application/config/name"), false));
 
 	 if (main_scene != "") {
 
@@ -122,7 +139,7 @@ bool Main::Loop() {
 	ui64 delta_time_usec = time - last_ticks;
 	last_ticks = time;
 	// start time
-	Engine::GetSingleton()->m_frame_ticks = time;
+	Engine::GetSingleton()->set_frame_ticks(time);
 	
 	// do all the ticks
 	if (window_system->CanAnyWindowDraw() && render_system->IsLoopEnabled()) {

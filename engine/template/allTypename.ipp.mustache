@@ -1,0 +1,21 @@
+#pragma once
+#ifndef ALL_TYPENAME_IPP
+#define ALL_TYPENAME_IPP
+{{#include_headfiles}}
+#include "{{headfile_name}}"
+{{/include_headfiles}}
+namespace lain{
+    namespace Reflection{
+    {{#class_defines}}
+    //template<>
+    //L_INLINE String to_string<{{class_with_namespace}}>(){
+    //   return "{{class_with_namespace}}";
+    //}
+    //template<>
+    //L_INLINE String get_class<{{class_with_namespace}}>(const {{class_with_namespace}}& elem){
+    //   return "{{class_with_namespace}}";
+    //}
+    {{/class_defines}}
+    }
+}
+#endif

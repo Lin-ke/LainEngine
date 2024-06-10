@@ -4,20 +4,18 @@
 #define COLOR_H
 
 #include "core/math/math.h"
-
+#include "core/meta/reflection/reflection_marcos.h"
 namespace lain {
 	class String;
-
+	REFLECTION_TYPE(Color);
 struct _NO_DISCARD_ Color {
-	union {
-		struct {
-			float r;
-			float g;
-			float b;
-			float a;
-		};
-		float components[4] = { 0, 0, 0, 1.0 };
-	};
+	REFLECTION_BODY(Color);
+
+	META(Fields)
+	float r;
+	float g;
+	float b;
+	float a;
 
 	uint32_t to_rgba32() const;
 	uint32_t to_argb32() const;
@@ -36,10 +34,32 @@ struct _NO_DISCARD_ Color {
 	void set_ok_hsl(float p_h, float p_s, float p_l, float p_alpha = 1.0f);
 
 	_FORCE_INLINE_ float& operator[](int p_idx) {
-		return components[p_idx];
+		switch (p_idx) {
+		case 0:
+			return r;
+		case 1:
+			return g;
+		case 2:
+			return b;
+		case 3:
+			return a;
+		default:
+			return r;
+		}
 	}
 	_FORCE_INLINE_ const float& operator[](int p_idx) const {
-		return components[p_idx];
+		switch (p_idx) {
+		case 0:
+			return r;
+		case 1:
+			return g;
+		case 2:
+			return b;
+		case 3:
+			return a;
+		default:
+			return r;
+		}
 	}
 
 	bool operator==(const Color& p_color) const {

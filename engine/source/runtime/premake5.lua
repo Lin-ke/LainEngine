@@ -15,7 +15,10 @@ project "LainRuntime"
       }
       defines{
          "_CRT_SECURE_NO_WARNINGS",
-		"GLFW_INCLUDE_NONE"
+		"GLFW_INCLUDE_NONE",
+      "USE_VOLK",
+      "VULKAN_ENABLED",
+      "VK_NO_PROTOTYPES"
       }
       includedirs
       {
@@ -28,7 +31,7 @@ project "LainRuntime"
          "%{IncludeDir.VulkanSDK}",
          "%{IncludeDir.stb_image}",
          "%{IncludeDir.tinyobj}",
-
+         "%{IncludeDir.spirv_reflect}",
       }
       -- the links aligns with the project names in premakes.lua
       links
@@ -37,17 +40,17 @@ project "LainRuntime"
          "glfw",
          "json11",
          "mbedtls",
-         "PreCompile"
-
-		}
+         "spirv-reflect",
+         "PreCompile",
+         "volk",
+         -- "%{Library.volk}",
+      }
       
       filter "system:windows"
          systemversion "latest"
-         defines {"L_PLATFORM_WINDOWS"}
-         defines
-         {
-         }
-
+         defines {"L_PLATFORM_WINDOWS",
+      "_WIN32"}
+        
          links
          {
             "%{Library.WinSock}",
@@ -62,9 +65,12 @@ project "LainRuntime"
       filter "configurations:Debug"
          defines { "L_DEBUG" }
          symbols "On"
-
+         staticruntime "off"
+         runtime "Debug"
 
       
       filter "configurations:Release"
          defines { "L_RELEASE" }
          optimize "On"
+         staticruntime "off"
+         runtime "Release"
