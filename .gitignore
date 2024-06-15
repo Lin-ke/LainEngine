@@ -3,7 +3,8 @@
 bin/
 bin-int/
 x64/
-
+Makefile
+*.make
 __pycache__/
 **/bin/
 **/bin-int/
