@@ -9,9 +9,17 @@
 
 namespace lain::graphics {
 	/// --- physical device management ---///
+	// 多GPU的情况下的设备管理和基础拓展的启用
+
 class RenderingContextDriverVulkan : public RenderingContextDriver {
 public:
+	/// <summary>
+	/// get physical device; surface;
+	/// debug
+	/// </summary>
 	struct Functions {
+		// Instance
+		PFN_vkGetInstanceProcAddr GetInstanceProcAddr = nullptr;
 		// Physical device.
 		PFN_vkGetPhysicalDeviceFeatures2 GetPhysicalDeviceFeatures2 = nullptr;
 		PFN_vkGetPhysicalDeviceProperties2 GetPhysicalDeviceProperties2 = nullptr;

@@ -1,6 +1,6 @@
 #ifdef L_PLATFORM_WINDOWS
 #ifdef L_DEBUG
-#define _TEST_
+//#define _TEST_
 
 #endif
 #include <base.h>

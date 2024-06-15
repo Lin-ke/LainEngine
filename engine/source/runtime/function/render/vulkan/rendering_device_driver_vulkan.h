@@ -8,12 +8,6 @@
 #include "function/render/common/rendering_device_driver.h"
 #include "rendering_context_driver_vulkan.h"
 #include "core/templates/hash_set.h"
-#ifdef DEBUG_ENABLED
-#ifndef _MSC_VER
-#define _DEBUG
-#endif
-#endif
-#include <vma/vk_mem_alloc.h>
 
 
 namespace lain::graphics {
@@ -23,6 +17,9 @@ namespace lain::graphics {
 class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
 public:
 	/// ---apis
+	struct CommandQueue;
+	struct SwapChain;
+
 	/*****************/
 	/**** TEXTURE ****/
 	/*****************/
@@ -45,6 +42,21 @@ public:
 private:
 	VkSampleCountFlagBits _ensure_supported_sample_count(TextureSamples p_requested_sample_count);
 public:
+	/****************/
+	/**** FENCES ****/
+	/****************/
+
+private:
+	struct Fence {
+		VkFence vk_fence = VK_NULL_HANDLE;
+		CommandQueue* queue_signaled_from = nullptr;
+	};
+
+public:
+	/*virtual FenceID fence_create() override final;
+	virtual Error fence_wait(FenceID p_fence) override final;
+	virtual void fence_free(FenceID p_fence) override final;*/
+
 	/******************/
 	/**** COMMANDS ****/
 	/******************/
@@ -54,24 +66,58 @@ public:
 	 virtual CommandQueueFamilyID command_queue_family_get(BitField<CommandQueueFamilyBits> p_cmd_queue_family_bits, RenderingContextDriver::SurfaceID p_surface = 0) override final;
 
 	 // ----- QUEUE -----
-//private:
-//	struct CommandQueue {
-//		LocalVector<VkSemaphore> present_semaphores;
-//		LocalVector<VkSemaphore> image_semaphores;
-//		LocalVector<SwapChain*> image_semaphores_swap_chains;
-//		LocalVector<uint32_t> pending_semaphores_for_execute;
-//		LocalVector<uint32_t> pending_semaphores_for_fence;
-//		LocalVector<uint32_t> free_image_semaphores;
-//		LocalVector<Pair<Fence*, uint32_t>> image_semaphores_for_fences;
-//		uint32_t queue_family = 0;
-//		uint32_t queue_index = 0;
-//		uint32_t present_semaphore_index = 0;
-//	};
+private:
+	struct CommandQueue {
+		LocalVector<VkSemaphore> present_semaphores;
+		LocalVector<VkSemaphore> image_semaphores;
+		LocalVector<SwapChain*> image_semaphores_swap_chains; // --- image semaphore的index 到 swap chain
+		LocalVector<uint32_t> pending_semaphores_for_execute;
+		LocalVector<uint32_t> pending_semaphores_for_fence;
+		LocalVector<uint32_t> free_image_semaphores; // --- ？
+		LocalVector<Pair<Fence*, uint32_t>> image_semaphores_for_fences;
+		uint32_t queue_family = 0;
+		uint32_t queue_index = 0;
+		uint32_t present_semaphore_index = 0;
+	};
 //
 //public:
-//	virtual CommandQueueID command_queue_create(CommandQueueFamilyID p_cmd_queue_family, bool p_identify_as_main_queue = false) override final;
+	virtual CommandQueueID command_queue_create(CommandQueueFamilyID p_cmd_queue_family, bool p_identify_as_main_queue) override final;
 //	virtual Error command_queue_execute_and_present(CommandQueueID p_cmd_queue, VectorView<SemaphoreID> p_wait_semaphores, VectorView<CommandBufferID> p_cmd_buffers, VectorView<SemaphoreID> p_cmd_semaphores, FenceID p_cmd_fence, VectorView<SwapChainID> p_swap_chains) override final;
 //	virtual void command_queue_free(CommandQueueID p_cmd_queue) override final;
+// 
+// 		
+	/********************/
+	/**** SWAP CHAIN ****/
+	/********************/
+
+private:
+	// FrameBuffer和VKImage都是屏幕所用的z
+	// FrameBuffer hold the Images, Renderpass use the format
+	struct SwapChain {
+		VkSwapchainKHR vk_swapchain = VK_NULL_HANDLE;
+		RenderingContextDriver::SurfaceID surface = RenderingContextDriver::SurfaceID();
+		VkFormat format = VK_FORMAT_UNDEFINED;
+		VkColorSpaceKHR color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+		TightLocalVector<VkImage> images;
+		TightLocalVector<VkImageView> image_views;
+		TightLocalVector<FramebufferID> framebuffers;
+		LocalVector<CommandQueue*> command_queues_acquired; //
+		LocalVector<uint32_t> command_queues_acquired_semaphores; // semaphore in command queue index
+		uint32_t image_index = 0;
+		RenderPassID render_pass;
+		VkPresentModeKHR active_present_mode = VK_PRESENT_MODE_FIFO_KHR;
+	};
+public:
+	virtual SwapChainID swap_chain_create(RenderingContextDriver::SurfaceID p_surface) override final;
+	virtual Error swap_chain_resize(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain, uint32_t p_desired_framebuffer_count) override final;
+	/*********************/
+	/**** FRAMEBUFFER ****/
+	/*********************/
+
+	virtual FramebufferID framebuffer_create(RenderPassID p_render_pass, VectorView<TextureID> p_attachments, uint32_t p_width, uint32_t p_height) override final;
+	virtual void framebuffer_free(FramebufferID p_framebuffer) override final;
+
+
 //	/*********************/
 	/**** UNIFORM SET ****/
 	/*********************/
@@ -200,7 +246,7 @@ private:
 	DeviceFunctions device_functions;
 	/// --- memory ---
 	VmaAllocator allocator = nullptr;
-	HashMap<uint32_t, VmaPool> small_allocs_pools;
+	HashMap<uint32_t, VmaPool> small_allocs_pools; // index to pool
 	VmaPool _find_or_create_small_allocs_pool(uint32_t p_mem_type_index);
 
 	/// --extensions ---
@@ -208,23 +254,27 @@ private:
 	HashSet<CharString> enabled_device_extension_names;
 	HashMap<CharString, bool> requested_device_extensions;
 
-
+	// 我觉得这个形式比较好
+	struct QueueFamilyInfo {
+		TightLocalVector<Queue> physical_queue;
+		VkQueueFamilyProperties properties;
+	};
 	/// --- queue ---
 	TightLocalVector<TightLocalVector<Queue>> queue_families; // --- each queue family may have more than one queue.
 	TightLocalVector<VkQueueFamilyProperties> queue_family_properties;
-	HashMap <CommandQueueFamilyID, BitField<CommandQueueFamilyBits>, HashMapHasherID> queueid_to_family;
-	HashMap < CommandQueueFamilyBits, Vector<CommandQueueFamilyID>, HashMapHasherEnum> queuefamily_to_ids;
 
 	/// --- frame ---
 	uint32_t frame_count = 1;
+	uint32_t present_frame_latency = 0;
 
 
-	Error initialize(uint32_t p_device_index, uint32_t p_frame_count);
+	virtual Error initialize(uint32_t p_device_index, uint32_t p_frame_count);
 	void finatialize();
 
 	
 
 	virtual void set_object_name(ObjectType p_type, ID p_driver_id, const String& p_name) override;
+	
 
 private:
 	/// ---tools function ---
@@ -239,6 +289,12 @@ private:
 	Error _initialize_allocator();
 	Error _initialize_pipeline_cache();
 	void _set_object_name(VkObjectType p_object_type, uint64_t p_object_handle, String p_object_name);
+	void _swap_chain_release(SwapChain* swap_chain);
+	VkResult _create_render_pass(VkDevice p_device, const VkRenderPassCreateInfo2* p_create_info, const VkAllocationCallbacks* p_allocator, VkRenderPass* p_render_pass);
+	// used in swap_chain recreate.
+	bool _release_image_semaphore(CommandQueue* p_command_queue, uint32_t p_semaphore_index, bool p_release_on_swap_chain);
+	bool _recreate_image_semaphore(CommandQueue* p_command_queue, uint32_t p_semaphore_index, bool p_release_on_swap_chain);
+
 	public:
 		RenderingDeviceDriverVulkan(RenderingContextDriverVulkan* p_context_driver);
 		virtual ~RenderingDeviceDriverVulkan();

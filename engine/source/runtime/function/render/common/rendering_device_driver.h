@@ -375,7 +375,7 @@ namespace lain {
 
 		// ----- QUEUE -----
 
-		// virtual CommandQueueID command_queue_create(CommandQueueFamilyID p_cmd_queue_family, bool p_identify_as_main_queue = false) = 0;
+		 virtual CommandQueueID command_queue_create(CommandQueueFamilyID p_cmd_queue_family, bool p_identify_as_main_queue = false) = 0;
 		// virtual Error command_queue_execute_and_present(CommandQueueID p_cmd_queue, VectorView<SemaphoreID> p_wait_semaphores, VectorView<CommandBufferID> p_cmd_buffers, VectorView<SemaphoreID> p_cmd_semaphores, FenceID p_cmd_fence, VectorView<SwapChainID> p_swap_chains) = 0;
 		// virtual void command_queue_free(CommandQueueID p_cmd_queue) = 0;
 
@@ -401,10 +401,10 @@ namespace lain {
 		/********************/
 
 	// The swap chain won't be valid for use until it is resized at least once.
-		// virtual SwapChainID swap_chain_create(RenderingContextDriver::SurfaceID p_surface) = 0;
+		 virtual SwapChainID swap_chain_create(RenderingContextDriver::SurfaceID p_surface) = 0;
 
 		// The swap chain must not be in use when a resize is requested. Wait until all rendering associated to the swap chain is finished before resizing it.
-		// virtual Error swap_chain_resize(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain, uint32_t p_desired_framebuffer_count) = 0;
+		 virtual Error swap_chain_resize(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain, uint32_t p_desired_framebuffer_count) = 0;
 
 		// Acquire the framebuffer that can be used for drawing. This must be called only once every time a new frame will be rendered.
 		// virtual FramebufferID swap_chain_acquire_framebuffer(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain, bool& r_resize_required) = 0;
@@ -422,8 +422,8 @@ namespace lain {
 		/**** FRAMEBUFFER ****/
 		/*********************/
 		// compatible renderpass; renderpass 中指定了attachment的格式，在这里和实际的image view绑定。
-		// virtual FramebufferID framebuffer_create(RenderPassID p_render_pass, VectorView<TextureID> p_attachments, uint32_t p_width, uint32_t p_height) = 0;
-		// virtual void framebuffer_free(FramebufferID p_framebuffer) = 0;
+		 virtual FramebufferID framebuffer_create(RenderPassID p_render_pass, VectorView<TextureID> p_attachments, uint32_t p_width, uint32_t p_height) = 0;
+		 virtual void framebuffer_free(FramebufferID p_framebuffer) = 0;
 
 		/****************/
 		/**** SHADER ****/
@@ -750,6 +750,7 @@ namespace lain {
 	/******************/
 	public:
 	virtual ~RenderingDeviceDriver();
+	virtual Error initialize(uint32_t p_device_index, uint32_t p_frame_count) = 0;
 
 	};
 

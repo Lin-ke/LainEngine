@@ -4,6 +4,8 @@
 /*****************/
 /**** GENERIC ****/
 /*****************/
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+
 namespace lain{
 	namespace graphics {
 // 不要离开这个文件
@@ -353,7 +355,8 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(const TextureFormat& 
 			};
 		for(auto &m : RD_TEXTURE_QUEUE_TYPE_TO_VK_QUEUE_TYPE)
 			if ((queue_flags & m.flags) != 0) {
-				add_unique_family(sharing_indices, create_info.queueFamilyIndexCount, queuefamily_to_ids[m.index] );
+				//add_unique_family(sharing_indices, create_info.queueFamilyIndexCount, queuefamily_to_ids[m.index] ); // @TODO 多队列共用
+				//
 			}
 		if (create_info.queueFamilyIndexCount > 1)
 			create_info.pQueueFamilyIndices = sharing_indices.ptr();
@@ -449,7 +452,12 @@ uint64_t RenderingDeviceDriverVulkan::texture_get_allocation_size(TextureID p_te
 	const TextureInfo* tex_info = (const TextureInfo*)p_texture.id;
 	return tex_info->allocation.info.size;
 }
-
+/// <summary>
+/// Command QUEUE
+/// </summary>
+/// <param name="p_cmd_queue_family_bits"></param>
+/// <param name="p_surface"></param>
+/// <returns></returns>
 RDD::CommandQueueFamilyID RenderingDeviceDriverVulkan::command_queue_family_get(BitField<RDD::CommandQueueFamilyBits> p_cmd_queue_family_bits, RenderingContextDriver::SurfaceID p_surface) {
 	// Pick the queue with the least amount of bits that can fulfill the requirements.
 	VkQueueFlags picked_queue_flags = VK_QUEUE_FLAG_BITS_MAX_ENUM;
@@ -460,6 +468,7 @@ RDD::CommandQueueFamilyID RenderingDeviceDriverVulkan::command_queue_family_get(
 			continue;
 		}
 
+		// -- if p_surface == 0, pass this
 		if (p_surface != 0 && !context_driver->queue_family_supports_present(physical_device, i, p_surface)) {
 			// Present is not an actual bit but something that must be queried manually.
 			continue;
@@ -480,6 +489,40 @@ RDD::CommandQueueFamilyID RenderingDeviceDriverVulkan::command_queue_family_get(
 
 	// Since 0 is a valid index and we use 0 as the error case, we make the index start from 1 instead.
 	return CommandQueueFamilyID(picked_family_index + 1); // 
+}
+
+// ----- QUEUE -----
+
+RDD::CommandQueueID RenderingDeviceDriverVulkan::command_queue_create(CommandQueueFamilyID p_cmd_queue_family, bool p_identify_as_main_queue) {
+	DEV_ASSERT(p_cmd_queue_family.id != 0);
+
+	// Make a virtual queue on top of a real queue. Use the queue from the family with the least amount of virtual queues created.
+	uint32_t family_index = p_cmd_queue_family.id - 1;
+	TightLocalVector<Queue>& queue_family = queue_families[family_index];
+	uint32_t picked_queue_index = UINT_MAX;
+	uint32_t picked_virtual_count = UINT_MAX;
+	print_verbose(queue_family.size()); // 实际上只有一条队列,max_queue_count_per_family
+	for (uint32_t i = 0; i < queue_family.size(); i++) {
+		if (queue_family[i].virtual_count < picked_virtual_count) {
+			picked_queue_index = i;
+			picked_virtual_count = queue_family[i].virtual_count;
+		}
+	}
+
+	ERR_FAIL_COND_V_MSG(picked_queue_index >= queue_family.size(), CommandQueueID(), "A queue in the picked family could not be found.");
+
+	// Create the virtual queue.
+	CommandQueue* command_queue = memnew(CommandQueue);
+	command_queue->queue_family = family_index;
+	command_queue->queue_index = picked_queue_index;
+	queue_family[picked_queue_index].virtual_count++;
+
+	//// If is was identified as the main queue and a hook is active, indicate it as such to the hook.
+	//if (p_identify_as_main_queue && (VulkanHooks::get_singleton() != nullptr)) {
+	//	VulkanHooks::get_singleton()->set_direct_queue_family_and_index(family_index, picked_queue_index);
+	//}
+
+	return CommandQueueID(command_queue);
 }
 
 /// <summary>
@@ -527,6 +570,7 @@ Error RenderingDeviceDriverVulkan::initialize(uint32_t p_device_index, uint32_t 
 	ERR_FAIL_COND_V(err != OK, err);
 
 	max_descriptor_sets_per_pool = GLOBAL_GET("rendering/rendering_device/vulkan/max_descriptors_per_pool");
+	present_frame_latency = GLOBAL_GET("rendering/rendering_device/vulkan/present_wait_latency");
 
 	return OK;
 }
@@ -542,7 +586,7 @@ void RenderingDeviceDriverVulkan::_register_requested_device_extension(const Cha
 /// <returns></returns>
 Error RenderingDeviceDriverVulkan::_initialize_device_extensions() {
 	enabled_device_extension_names.clear();
-
+	// false means optical
 	_register_requested_device_extension(VK_KHR_SWAPCHAIN_EXTENSION_NAME, true);
 	_register_requested_device_extension(VK_KHR_MULTIVIEW_EXTENSION_NAME, false);
 	_register_requested_device_extension(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME, false);
@@ -555,6 +599,11 @@ Error RenderingDeviceDriverVulkan::_initialize_device_extensions() {
 	_register_requested_device_extension(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME, false);
 	_register_requested_device_extension(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, false);
 	_register_requested_device_extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, true);
+	// vulkan hdr support ?
+	_register_requested_device_extension(VK_EXT_HDR_METADATA_EXTENSION_NAME, false);
+	// vulkan wait_delay support?
+	_register_requested_device_extension(VK_KHR_PRESENT_ID_EXTENSION_NAME, false);
+	_register_requested_device_extension(VK_KHR_PRESENT_WAIT_EXTENSION_NAME, false);
 
 	uint32_t device_extension_count = 0;
 	VkResult err = vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &device_extension_count, nullptr);
@@ -572,6 +621,27 @@ Error RenderingDeviceDriverVulkan::_initialize_device_extensions() {
 	}
 #endif
 
+	// Enable all extensions that are supported and requested.
+	for (uint32_t i = 0; i < device_extension_count; i++) {
+		CharString extension_name(device_extensions[i].extensionName);
+		if (requested_device_extensions.has(extension_name)) {
+			enabled_device_extension_names.insert(extension_name);
+		}
+	}
+
+	// Now check our requested extensions.
+	for (KeyValue<CharString, bool>& requested_extension : requested_device_extensions) {
+		if (!enabled_device_extension_names.has(requested_extension.key)) {
+			if (requested_extension.value) {
+				ERR_FAIL_V_MSG(ERR_BUG, String("Required extension ") + String::utf8(requested_extension.key) + String(" not found."));
+			}
+			else {
+				print_verbose(String("Optional extension ") + String::utf8(requested_extension.key) + String(" not found"));
+			}
+		}
+	}
+
+	return OK;
 }
 
 /// <summary>
@@ -680,6 +750,7 @@ Error RenderingDeviceDriverVulkan::_check_device_features() {
 	VK_DEVICEFEATURE_ENABLE_IF(shaderInt16);
 	VK_DEVICEFEATURE_ENABLE_IF(shaderResourceMinLod);
 	VK_DEVICEFEATURE_ENABLE_IF(variableMultisampleRate);
+
 
 	return OK;
 }
@@ -909,7 +980,7 @@ Error RenderingDeviceDriverVulkan::_add_queue_create_info(LocalVector<VkDeviceQu
 		VkDeviceQueueCreateInfo create_info = {};
 		create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 		create_info.queueFamilyIndex = i;
-		create_info.queueCount = MIN(queue_family_properties[i].queueCount, max_queue_count_per_family);
+		create_info.queueCount = MIN(queue_family_properties[i].queueCount, max_queue_count_per_family);  // 每个队列族最多1个【为什么？】
 		create_info.pQueuePriorities = queue_priorities;
 		r_queue_create_info.push_back(create_info);
 
@@ -1014,7 +1085,7 @@ Error RenderingDeviceDriverVulkan::_initialize_device(const LocalVector<VkDevice
 		}
 	}
 
-	for (size_t i = 0; i < queue_family_properties.size(); queue_family_properties) {
+	/*for (size_t i = 0; i < queue_family_properties.size(); queue_family_properties) {
 		auto index = CommandQueueFamilyID(i + 1);
 		queueid_to_family[index] = (CommandQueueFamilyBits) queue_family_properties[i].queueFlags;
 		static const auto _add_ids =  [&](CommandQueueFamilyBits bit) {
@@ -1024,7 +1095,7 @@ Error RenderingDeviceDriverVulkan::_initialize_device(const LocalVector<VkDevice
 		_add_ids(COMMAND_QUEUE_FAMILY_GRAPHICS_BIT);
 		_add_ids(COMMAND_QUEUE_FAMILY_COMPUTE_BIT);
 		_add_ids(COMMAND_QUEUE_FAMILY_TRANSFER_BIT);
-	}
+	}*/
 	
 
 	const RenderingContextDriverVulkan::Functions& functions = context_driver->functions_get();
@@ -1049,6 +1120,12 @@ Error RenderingDeviceDriverVulkan::_initialize_allocator() {
 	allocator_info.physicalDevice = physical_device;
 	allocator_info.device = vk_device;
 	allocator_info.instance = context_driver->instance_get();
+	static auto& funcs = context_driver->functions_get();
+	static const VmaVulkanFunctions p_funcs = {
+		vkGetInstanceProcAddr = ::vkGetInstanceProcAddr,
+		vkGetDeviceProcAddr = funcs.GetDeviceProcAddr,
+	};
+	allocator_info.pVulkanFunctions = &p_funcs;
 	VkResult err = vmaCreateAllocator(&allocator_info, &allocator);
 	ERR_FAIL_COND_V_MSG(err, ERR_CANT_CREATE, "vmaCreateAllocator failed with error " + itos(err) + ".");
 
@@ -1316,6 +1393,490 @@ void RenderingDeviceDriverVulkan::_set_object_name(VkObjectType p_object_type, u
 
 		return pool;
 	}
+	/****************/
+	/**** Swap Chain ****/
+	/****************/
+	// create swap chain对象
+	RDD::SwapChainID RenderingDeviceDriverVulkan::swap_chain_create(RenderingContextDriver::SurfaceID p_surface) {
+		DEV_ASSERT(p_surface != 0);
+
+		RenderingContextDriverVulkan::Surface* surface = (RenderingContextDriverVulkan::Surface*)(p_surface);
+		const RenderingContextDriverVulkan::Functions& functions = context_driver->functions_get();
+
+		// Retrieve the formats supported by the surface.
+		uint32_t format_count = 0;
+		VkResult err = functions.GetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface->vk_surface, &format_count, nullptr);
+		ERR_FAIL_COND_V(err != VK_SUCCESS, SwapChainID());
+
+		TightLocalVector<VkSurfaceFormatKHR> formats;
+		formats.resize(format_count);
+		err = functions.GetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface->vk_surface, &format_count, formats.ptr());
+		ERR_FAIL_COND_V(err != VK_SUCCESS, SwapChainID());
+
+		VkFormat format = VK_FORMAT_UNDEFINED;
+		VkColorSpaceKHR color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+		// surface具有format
+		if (format_count == 1 && formats[0].format == VK_FORMAT_UNDEFINED) {
+			// If the format list includes just one entry of VK_FORMAT_UNDEFINED, the surface has no preferred format.
+			format = VK_FORMAT_B8G8R8A8_UNORM;
+			color_space = formats[0].colorSpace;
+		}
+		else if (format_count > 0) {
+			// Use one of the supported formats, prefer B8G8R8A8_UNORM.
+			// @TODO 修改这里的逻辑
+			const VkFormat preferred_format = VK_FORMAT_B8G8R8A8_UNORM;
+			const VkFormat second_format = VK_FORMAT_R8G8B8A8_UNORM;
+			for (uint32_t i = 0; i < format_count; i++) {
+				if (formats[i].format == preferred_format || formats[i].format == second_format) {
+					format = formats[i].format;
+					if (formats[i].format == preferred_format) {
+						// This is the preferred format, stop searching.
+						break;
+					}
+				}
+			}
+		}
+
+		// No formats are supported.
+		ERR_FAIL_COND_V_MSG(format == VK_FORMAT_UNDEFINED, SwapChainID(), "Surface did not return any valid formats.");
+
+		// Create the render pass for the chosen format.
+		// --- display render pass ---
+		VkAttachmentDescription2KHR attachment = {};
+		attachment.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2_KHR;
+		attachment.format = format;
+		attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+		VkAttachmentReference2KHR color_reference = {};
+		color_reference.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2_KHR;
+		color_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		VkSubpassDescription2KHR subpass = {};
+		subpass.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2_KHR;
+		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpass.colorAttachmentCount = 1;
+		subpass.pColorAttachments = &color_reference;
+
+		VkRenderPassCreateInfo2KHR pass_info = {};
+		pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2_KHR;
+		pass_info.attachmentCount = 1;
+		pass_info.pAttachments = &attachment;
+		pass_info.subpassCount = 1;
+		pass_info.pSubpasses = &subpass;
+
+		VkRenderPass render_pass = VK_NULL_HANDLE;
+		err = _create_render_pass(vk_device, &pass_info, nullptr, &render_pass);
+		ERR_FAIL_COND_V(err != VK_SUCCESS, SwapChainID());
+
+		SwapChain* swap_chain = memnew(SwapChain);
+		swap_chain->surface = p_surface;
+		swap_chain->format = format;
+		swap_chain->color_space = color_space;
+		swap_chain->render_pass = RenderPassID(render_pass);
+		return SwapChainID(swap_chain);
+	}
+
+
+	void RenderingDeviceDriverVulkan::_swap_chain_release(SwapChain* swap_chain) {
+		// Destroy views and framebuffers associated to the swapchain's images.
+		for (FramebufferID framebuffer : swap_chain->framebuffers) {
+			framebuffer_free(framebuffer);
+		}
+
+		for (VkImageView view : swap_chain->image_views) {
+			vkDestroyImageView(vk_device, view, nullptr);
+		}
+
+		swap_chain->image_index = UINT_MAX;
+		swap_chain->images.clear();
+		swap_chain->image_views.clear();
+		swap_chain->framebuffers.clear();
+
+		if (swap_chain->vk_swapchain != VK_NULL_HANDLE) {
+			device_functions.DestroySwapchainKHR(vk_device, swap_chain->vk_swapchain, nullptr);
+			swap_chain->vk_swapchain = VK_NULL_HANDLE;
+		}
+
+		for (uint32_t i = 0; i < swap_chain->command_queues_acquired.size(); i++) {
+			_recreate_image_semaphore(swap_chain->command_queues_acquired[i], swap_chain->command_queues_acquired_semaphores[i], false);
+		}
+
+		swap_chain->command_queues_acquired.clear();
+		swap_chain->command_queues_acquired_semaphores.clear();
+	}
+
+	bool RenderingDeviceDriverVulkan::_recreate_image_semaphore(CommandQueue* p_command_queue, uint32_t p_semaphore_index, bool p_release_on_swap_chain) {
+		_release_image_semaphore(p_command_queue, p_semaphore_index, p_release_on_swap_chain);
+
+		VkSemaphore semaphore;
+		VkSemaphoreCreateInfo create_info = {};
+		create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		VkResult err = vkCreateSemaphore(vk_device, &create_info, nullptr, &semaphore);
+		ERR_FAIL_COND_V(err != VK_SUCCESS, false);
+
+		// Indicate the semaphore is free again and destroy the previous one before storing the new one.
+		vkDestroySemaphore(vk_device, p_command_queue->image_semaphores[p_semaphore_index], nullptr);
+
+		p_command_queue->image_semaphores[p_semaphore_index] = semaphore;
+		p_command_queue->free_image_semaphores.push_back(p_semaphore_index);
+
+		return true;
+	}
+
+	Error RenderingDeviceDriverVulkan::swap_chain_resize(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain, uint32_t p_desired_framebuffer_count) {
+		DEV_ASSERT(p_cmd_queue.id != 0);
+		DEV_ASSERT(p_swap_chain.id != 0);
+
+		CommandQueue* command_queue = (CommandQueue*)(p_cmd_queue.id);
+		SwapChain* swap_chain = (SwapChain*)(p_swap_chain.id);
+
+		// Release all current contents of the swap chain.
+		_swap_chain_release(swap_chain);
+
+		// Validate if the command queue being used supports creating the swap chain for this surface.
+		const RenderingContextDriverVulkan::Functions& functions = context_driver->functions_get();
+		if (!context_driver->queue_family_supports_present(physical_device, command_queue->queue_family, swap_chain->surface)) {
+			ERR_FAIL_V_MSG(ERR_CANT_CREATE, "Surface is not supported by device. Did the GPU go offline? Was the window created on another monitor? Check"
+				"previous errors & try launching with --gpu-validation.");
+		}
+
+		// Retrieve the surface's capabilities.
+		RenderingContextDriverVulkan::Surface* surface = (RenderingContextDriverVulkan::Surface*)(swap_chain->surface);
+		VkSurfaceCapabilitiesKHR surface_capabilities = {};
+		VkResult err = functions.GetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface->vk_surface, &surface_capabilities);
+		ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
+
+		VkExtent2D extent;
+		if (surface_capabilities.currentExtent.width == 0xFFFFFFFF) {
+			// The current extent is currently undefined, so the current surface width and height will be clamped to the surface's capabilities.
+			extent.width = CLAMP(surface->width, surface_capabilities.minImageExtent.width, surface_capabilities.maxImageExtent.width);
+			extent.height = CLAMP(surface->height, surface_capabilities.minImageExtent.height, surface_capabilities.maxImageExtent.height);
+		}
+		else {
+			// Grab the dimensions from the current extent.
+			extent = surface_capabilities.currentExtent;
+			surface->width = extent.width;
+			surface->height = extent.height;
+		}
+
+		if (surface->width == 0 || surface->height == 0) {
+			// The surface doesn't have valid dimensions, so we can't create a swap chain.
+			return ERR_SKIP;
+		}
+
+		// Find what present modes are supported.
+		TightLocalVector<VkPresentModeKHR> present_modes;
+		uint32_t present_modes_count = 0;
+		err = functions.GetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface->vk_surface, &present_modes_count, nullptr);
+		ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
+
+		present_modes.resize(present_modes_count);
+		err = functions.GetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface->vk_surface, &present_modes_count, present_modes.ptr());
+		ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
+
+		// Choose the present mode based on the display server setting.
+		VkPresentModeKHR present_mode = VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR;
+		String present_mode_name = "Enabled";
+		switch (surface->vsync_mode) {
+		case WindowSystem::VSYNC_MAILBOX:
+			present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
+			present_mode_name = "Mailbox";
+			break;
+		case WindowSystem::VSYNC_ADAPTIVE:
+			present_mode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+			present_mode_name = "Adaptive";
+			break;
+		case WindowSystem::VSYNC_ENABLED:
+			present_mode = VK_PRESENT_MODE_FIFO_KHR;
+			present_mode_name = "Enabled";
+			break;
+		case WindowSystem::VSYNC_DISABLED:
+			present_mode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+			present_mode_name = "Disabled";
+			break;
+		}
+
+		bool present_mode_available = present_modes.find(present_mode) >= 0;
+		if (present_mode_available) {
+			print_verbose("Using present mode: " + present_mode_name);
+		}
+		else {
+			// Present mode is not available, fall back to FIFO which is guaranteed to be supported.
+			WARN_PRINT(vformat("The requested V-Sync mode %s is not available. Falling back to V-Sync mode Enabled.", present_mode_name));
+			surface->vsync_mode = WindowSystem::VSYNC_ENABLED;
+			present_mode = VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR;
+		}
+
+		// Clamp the desired image count to the surface's capabilities.
+		uint32_t desired_swapchain_images = MAX(p_desired_framebuffer_count, surface_capabilities.minImageCount);
+		if (surface_capabilities.maxImageCount > 0) {
+			// Only clamp to the max image count if it's defined. A max image count of 0 means there's no upper limit to the amount of images.
+			desired_swapchain_images = MIN(desired_swapchain_images, surface_capabilities.maxImageCount);
+		}
+
+		// Prefer identity transform if it's supported, use the current transform otherwise.
+		// This behavior is intended as Godot does not supported *native rotation in platforms that use these bits.*
+		// Refer to the comment in command_queue_present() for more details.
+		VkSurfaceTransformFlagBitsKHR surface_transform_bits;
+		if (surface_capabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
+			surface_transform_bits = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+		}
+		else {
+			surface_transform_bits = surface_capabilities.currentTransform;
+		}
+
+		VkCompositeAlphaFlagBitsKHR composite_alpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+		if (OS::get_singleton()->is_layered_allowed() || !(surface_capabilities.supportedCompositeAlpha & composite_alpha)) {
+			// Find a supported composite alpha mode - one of these is guaranteed to be set.
+			VkCompositeAlphaFlagBitsKHR composite_alpha_flags[4] = {
+				VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR,
+				VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR,
+				VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR,
+				VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
+			};
+
+			for (uint32_t i = 0; i < ARRAY_SIZE(composite_alpha_flags); i++) {
+				if (surface_capabilities.supportedCompositeAlpha & composite_alpha_flags[i]) {
+					composite_alpha = composite_alpha_flags[i];
+					break;
+				}
+			}
+		}
+
+		//VkSwapchainCreateInfoKHR swap_create_info = {};
+		//swap_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+		//swap_create_info.surface = surface->vk_surface;
+		//swap_create_info.minImageCount = desired_swapchain_images;
+		//swap_create_info.imageFormat = swap_chain->format;
+		//swap_create_info.imageColorSpace = swap_chain->color_space;
+		//swap_create_info.imageExtent = extent;
+		//swap_create_info.imageArrayLayers = 1;
+		//swap_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		//swap_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		//swap_create_info.preTransform = surface_transform_bits;
+		//swap_create_info.compositeAlpha = composite_alpha;
+		//swap_create_info.presentMode = present_mode;
+		//swap_create_info.clipped = true;
+		//err = device_functions.CreateSwapchainKHR(vk_device, &swap_create_info, nullptr, &swap_chain->vk_swapchain);
+		//ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
+
+		//uint32_t image_count = 0;
+		//err = device_functions.GetSwapchainImagesKHR(vk_device, swap_chain->vk_swapchain, &image_count, nullptr);
+		//ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
+
+		//swap_chain->images.resize(image_count);
+		//err = device_functions.GetSwapchainImagesKHR(vk_device, swap_chain->vk_swapchain, &image_count, swap_chain->images.ptr());
+		//ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
+
+		//VkImageViewCreateInfo view_create_info = {};
+		//view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		//view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		//view_create_info.format = swap_chain->format;
+		//view_create_info.components.r = VK_COMPONENT_SWIZZLE_R;
+		//view_create_info.components.g = VK_COMPONENT_SWIZZLE_G;
+		//view_create_info.components.b = VK_COMPONENT_SWIZZLE_B;
+		//view_create_info.components.a = VK_COMPONENT_SWIZZLE_A;
+		//view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		//view_create_info.subresourceRange.levelCount = 1;
+		//view_create_info.subresourceRange.layerCount = 1;
+
+		//swap_chain->image_views.reserve(image_count);
+
+		//VkImageView image_view;
+		//for (uint32_t i = 0; i < image_count; i++) {
+		//	view_create_info.image = swap_chain->images[i];
+		//	err = vkCreateImageView(vk_device, &view_create_info, nullptr, &image_view);
+		//	ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
+
+		//	swap_chain->image_views.push_back(image_view);
+		//}
+
+		//swap_chain->framebuffers.reserve(image_count);
+
+		//VkFramebufferCreateInfo fb_create_info = {};
+		//fb_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		//fb_create_info.renderPass = VkRenderPass(swap_chain->render_pass.id);
+		//fb_create_info.attachmentCount = 1;
+		//fb_create_info.width = surface->width;
+		//fb_create_info.height = surface->height;
+		//fb_create_info.layers = 1;
+
+		//VkFramebuffer framebuffer;
+		//for (uint32_t i = 0; i < image_count; i++) {
+		//	fb_create_info.pAttachments = &swap_chain->image_views[i];
+		//	err = vkCreateFramebuffer(vk_device, &fb_create_info, nullptr, &framebuffer);
+		//	ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
+
+		//	swap_chain->framebuffers.push_back(RDD::FramebufferID(framebuffer));
+		//}
+
+		//// Once everything's been created correctly, indicate the surface no longer needs to be resized.
+		//context_driver->surface_set_needs_resize(swap_chain->surface, false);
+
+		//return OK;
+	}
+
+	RDD::FramebufferID RenderingDeviceDriverVulkan::framebuffer_create(RenderPassID p_render_pass, VectorView<TextureID> p_attachments, uint32_t p_width, uint32_t p_height) {
+		VkImageView* vk_img_views = ALLOCA_ARRAY(VkImageView, p_attachments.size());
+		for (uint32_t i = 0; i < p_attachments.size(); i++) {
+			vk_img_views[i] = ((const TextureInfo*)p_attachments[i].id)->vk_view;
+		}
+
+		VkFramebufferCreateInfo framebuffer_create_info = {};
+		framebuffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebuffer_create_info.renderPass = (VkRenderPass)p_render_pass.id;
+		framebuffer_create_info.attachmentCount = p_attachments.size();
+		framebuffer_create_info.pAttachments = vk_img_views;
+		framebuffer_create_info.width = p_width;
+		framebuffer_create_info.height = p_height;
+		framebuffer_create_info.layers = 1;
+
+		VkFramebuffer vk_framebuffer = VK_NULL_HANDLE;
+		VkResult err = vkCreateFramebuffer(vk_device, &framebuffer_create_info, nullptr, &vk_framebuffer);
+		ERR_FAIL_COND_V_MSG(err, FramebufferID(), "vkCreateFramebuffer failed with error " + itos(err) + ".");
+
+#if PRINT_NATIVE_COMMANDS
+		print_line(vformat("vkCreateFramebuffer 0x%uX with %d attachments", uint64_t(vk_framebuffer), p_attachments.size()));
+		for (uint32_t i = 0; i < p_attachments.size(); i++) {
+			const TextureInfo* attachment_info = (const TextureInfo*)p_attachments[i].id;
+			print_line(vformat("  Attachment #%d: IMAGE 0x%uX VIEW 0x%uX", i, uint64_t(attachment_info->vk_view_create_info.image), uint64_t(attachment_info->vk_view)));
+		}
+#endif
+
+		return FramebufferID(vk_framebuffer);
+	}
+
+	void RenderingDeviceDriverVulkan::framebuffer_free(FramebufferID p_framebuffer) {
+		vkDestroyFramebuffer(vk_device, (VkFramebuffer)p_framebuffer.id, nullptr);
+	}
+	
+	bool RenderingDeviceDriverVulkan::_release_image_semaphore(CommandQueue* p_command_queue, uint32_t p_semaphore_index, bool p_release_on_swap_chain) {
+		SwapChain* swap_chain = p_command_queue->image_semaphores_swap_chains[p_semaphore_index];
+		if (swap_chain != nullptr) {
+			// Clear the swap chain from the command queue's vector.
+			p_command_queue->image_semaphores_swap_chains[p_semaphore_index] = nullptr;
+
+			if (p_release_on_swap_chain) {
+				// Remove the acquired semaphore from the swap chain's vectors.
+				for (uint32_t i = 0; i < swap_chain->command_queues_acquired.size(); i++) {
+					if (swap_chain->command_queues_acquired[i] == p_command_queue && swap_chain->command_queues_acquired_semaphores[i] == p_semaphore_index) {
+						swap_chain->command_queues_acquired.remove_at(i);
+						swap_chain->command_queues_acquired_semaphores.remove_at(i);
+						break;
+					}
+				}
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+	static void _convert_subpass_attachments(const VkAttachmentReference2* p_attachment_references_2, uint32_t p_attachment_references_count, TightLocalVector<VkAttachmentReference>& r_attachment_references) {
+		r_attachment_references.resize(p_attachment_references_count);
+		for (uint32_t i = 0; i < p_attachment_references_count; i++) {
+			// Ignore sType, pNext and aspectMask (which is currently unused).
+			r_attachment_references[i].attachment = p_attachment_references_2[i].attachment;
+			r_attachment_references[i].layout = p_attachment_references_2[i].layout;
+		}
+	}
+
+	VkResult RenderingDeviceDriverVulkan::_create_render_pass(VkDevice p_device, const VkRenderPassCreateInfo2* p_create_info, const VkAllocationCallbacks* p_allocator, VkRenderPass* p_render_pass) {
+		if (device_functions.CreateRenderPass2KHR != nullptr) {
+			return device_functions.CreateRenderPass2KHR(p_device, p_create_info, p_allocator, p_render_pass);
+		}
+		else {
+			// Compatibility fallback with regular create render pass but by converting the inputs from the newer version to the older one.
+			TightLocalVector<VkAttachmentDescription> attachments;
+			attachments.resize(p_create_info->attachmentCount);
+			for (uint32_t i = 0; i < p_create_info->attachmentCount; i++) {
+				// Ignores sType and pNext from the attachment.
+				const VkAttachmentDescription2& src = p_create_info->pAttachments[i];
+				VkAttachmentDescription& dst = attachments[i];
+				dst.flags = src.flags;
+				dst.format = src.format;
+				dst.samples = src.samples;
+				dst.loadOp = src.loadOp;
+				dst.storeOp = src.storeOp;
+				dst.stencilLoadOp = src.stencilLoadOp;
+				dst.stencilStoreOp = src.stencilStoreOp;
+				dst.initialLayout = src.initialLayout;
+				dst.finalLayout = src.finalLayout;
+			}
+
+			const uint32_t attachment_vectors_per_subpass = 4; // input color resolve depth
+			TightLocalVector<TightLocalVector<VkAttachmentReference>> subpasses_attachments;
+			TightLocalVector<VkSubpassDescription> subpasses;
+			subpasses_attachments.resize(p_create_info->subpassCount * attachment_vectors_per_subpass);
+			subpasses.resize(p_create_info->subpassCount);
+
+			for (uint32_t i = 0; i < p_create_info->subpassCount; i++) {
+				const uint32_t vector_base_index = i * attachment_vectors_per_subpass;
+				const uint32_t input_attachments_index = vector_base_index + 0;
+				const uint32_t color_attachments_index = vector_base_index + 1;
+				const uint32_t resolve_attachments_index = vector_base_index + 2;
+				const uint32_t depth_attachment_index = vector_base_index + 3;
+				_convert_subpass_attachments(p_create_info->pSubpasses[i].pInputAttachments, p_create_info->pSubpasses[i].inputAttachmentCount, subpasses_attachments[input_attachments_index]);
+				_convert_subpass_attachments(p_create_info->pSubpasses[i].pColorAttachments, p_create_info->pSubpasses[i].colorAttachmentCount, subpasses_attachments[color_attachments_index]);
+				_convert_subpass_attachments(p_create_info->pSubpasses[i].pResolveAttachments, (p_create_info->pSubpasses[i].pResolveAttachments != nullptr) ? p_create_info->pSubpasses[i].colorAttachmentCount : 0, subpasses_attachments[resolve_attachments_index]);
+				_convert_subpass_attachments(p_create_info->pSubpasses[i].pDepthStencilAttachment, (p_create_info->pSubpasses[i].pDepthStencilAttachment != nullptr) ? 1 : 0, subpasses_attachments[depth_attachment_index]);
+
+				// Ignores sType and pNext from the subpass.
+				const VkSubpassDescription2& src_subpass = p_create_info->pSubpasses[i];
+				VkSubpassDescription& dst_subpass = subpasses[i]; // 这里的pInputAttachment是VkAttachmentReference
+				// 而不是VkAttachmentReference2
+				dst_subpass.flags = src_subpass.flags;
+				dst_subpass.pipelineBindPoint = src_subpass.pipelineBindPoint;
+				dst_subpass.inputAttachmentCount = src_subpass.inputAttachmentCount;
+				dst_subpass.pInputAttachments = subpasses_attachments[input_attachments_index].ptr();
+				dst_subpass.colorAttachmentCount = src_subpass.colorAttachmentCount;
+				dst_subpass.pColorAttachments = subpasses_attachments[color_attachments_index].ptr();
+				dst_subpass.pResolveAttachments = subpasses_attachments[resolve_attachments_index].ptr();
+				dst_subpass.pDepthStencilAttachment = subpasses_attachments[depth_attachment_index].ptr();
+				dst_subpass.preserveAttachmentCount = src_subpass.preserveAttachmentCount;
+				dst_subpass.pPreserveAttachments = src_subpass.pPreserveAttachments;
+			}
+
+			TightLocalVector<VkSubpassDependency> dependencies;
+			dependencies.resize(p_create_info->dependencyCount);
+
+			for (uint32_t i = 0; i < p_create_info->dependencyCount; i++) {
+				// Ignores sType and pNext from the dependency, and viewMask which is currently unused.
+				const VkSubpassDependency2& src_dependency = p_create_info->pDependencies[i];
+				VkSubpassDependency& dst_dependency = dependencies[i];
+				dst_dependency.srcSubpass = src_dependency.srcSubpass;
+				dst_dependency.dstSubpass = src_dependency.dstSubpass;
+				dst_dependency.srcStageMask = src_dependency.srcStageMask;
+				dst_dependency.dstStageMask = src_dependency.dstStageMask;
+				dst_dependency.srcAccessMask = src_dependency.srcAccessMask;
+				dst_dependency.dstAccessMask = src_dependency.dstAccessMask;
+				dst_dependency.dependencyFlags = src_dependency.dependencyFlags; 
+			}// 差一个viewoffset的字段
+
+			VkRenderPassCreateInfo create_info = {};
+			create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+			create_info.pNext = p_create_info->pNext;
+			create_info.flags = p_create_info->flags;
+			create_info.attachmentCount = attachments.size();
+			create_info.pAttachments = attachments.ptr();
+			create_info.subpassCount = subpasses.size();
+			create_info.pSubpasses = subpasses.ptr();
+			create_info.dependencyCount = dependencies.size();
+			create_info.pDependencies = dependencies.ptr();
+			return vkCreateRenderPass(vk_device, &create_info, p_allocator, p_render_pass);
+		}
+		
+		return VK_SUCCESS;
+	}
+
+
+
 } // namespace graphics
 
 }// namespace lain

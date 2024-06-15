@@ -108,9 +108,41 @@ static ProjectManager* pmanager = nullptr;
 		 }
 	 }
 
-
+	 /// --- windows related ----
 
 	 Vector2i* window_position = nullptr;
+	 int initial_position_type = GLOBAL_GET("display/window/size/initial_position_type").operator int();
+	 if (initial_position_type == 0) { // Absolute.
+		 if (!init_use_custom_pos) {
+			 init_custom_pos = GLOBAL_GET("display/window/size/initial_position").operator Vector2i();
+			 init_use_custom_pos = true;
+		 }
+	 }
+	 else if (initial_position_type == 1) { // Center of Primary Screen.
+		 if (!init_use_custom_screen) {
+			 init_screen = WindowSystem::SCREEN_PRIMARY;
+			 init_use_custom_screen = true;
+		 }
+	 }
+	 else if (initial_position_type == 2) { // Center of Other Screen.
+		 if (!init_use_custom_screen) {
+			 init_screen = GLOBAL_GET("display/window/size/initial_screen").operator int();
+			 init_use_custom_screen = true;
+		 }
+	 }
+	 else if (initial_position_type == 3) { // Center of Screen With Mouse Pointer.
+		 if (!init_use_custom_screen) {
+			 init_screen = WindowSystem::SCREEN_WITH_MOUSE_FOCUS;
+			 init_use_custom_screen = true;
+		 }
+	 }
+	 else if (initial_position_type == 4) { // Center of Screen With Keyboard Focus.
+		 if (!init_use_custom_screen) {
+			 init_screen = WindowSystem::SCREEN_WITH_KEYBOARD_FOCUS;
+			 init_use_custom_screen = true;
+		 }
+	 }
+
 	 if (init_use_custom_pos) {
 		Vector2i position = init_custom_pos;
 		 window_position = &position;
@@ -118,7 +150,7 @@ static ProjectManager* pmanager = nullptr;
 	 MainLoop* main_loop = memnew(SceneTree);
 	 Error err;
 	 window_system = memnew(WindowSystem("vulkan", window_mode, window_vsync_mode, window_flags, window_position, window_size, init_screen, err));
-
+	 render_system = memnew(RenderingSystem);
 
 	 if (main_scene != "") {
 

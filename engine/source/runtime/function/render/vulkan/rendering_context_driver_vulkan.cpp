@@ -11,6 +11,7 @@ const RenderingContextDriver::Device& RenderingContextDriverVulkan::device_get(u
 	return driver_devices[p_device_index];
 }
 
+// context driver is a bad name. It is just "context"
 /// --- debug call
 
 VKAPI_ATTR VkBool32 VKAPI_CALL RenderingContextDriverVulkan::_debug_messenger_callback(VkDebugUtilsMessageSeverityFlagBitsEXT p_message_severity, VkDebugUtilsMessageTypeFlagsEXT p_message_type, const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data) {
@@ -129,7 +130,7 @@ bool RenderingContextDriverVulkan::device_supports_present(uint32_t p_device_ind
 	return false;
 }
 /// <summary>
-/// device driver create here!
+/// device driver create by vulkan context.
 /// </summary>
 /// <returns></returns>
 RenderingDeviceDriver* RenderingContextDriverVulkan::driver_create() {
@@ -490,7 +491,8 @@ Error RenderingContextDriverVulkan::_initialize_instance() {
 			functions.GetPhysicalDeviceProperties2 = PFN_vkGetPhysicalDeviceProperties2(vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2KHR"));
 		}
 	}
-
+	// Instance
+	functions.GetInstanceProcAddr = (vkGetInstanceProcAddr);
 	// Device.
 	functions.GetDeviceProcAddr = PFN_vkGetDeviceProcAddr(vkGetInstanceProcAddr(instance, "vkGetDeviceProcAddr"));
 
@@ -592,7 +594,6 @@ Error RenderingContextDriverVulkan::_initialize_devices() {
 		driver_device.name = String::utf8(props.deviceName);
 		driver_device.vendor = Vendor(props.vendorID);
 		driver_device.type = DeviceType(props.deviceType);
-
 		uint32_t queue_family_properties_count = 0;
 		vkGetPhysicalDeviceQueueFamilyProperties(physical_devices[i], &queue_family_properties_count, nullptr);
 
@@ -600,9 +601,21 @@ Error RenderingContextDriverVulkan::_initialize_devices() {
 			device_queue_families[i].properties.resize(queue_family_properties_count);
 			vkGetPhysicalDeviceQueueFamilyProperties(physical_devices[i], &queue_family_properties_count, device_queue_families[i].properties.ptr());
 		}
+
+		print_verbose(String("find queue family properites in device") + driver_device.name );
+		for (int j = 0; j < device_queue_families[i].properties.size(); j++) {
+			static const auto flag_to_string = [&](VkQueueFlags p_flag) {
+				String p = "";
+				if (p_flag & VK_QUEUE_GRAPHICS_BIT) p += "graphics family";
+				if (p_flag & VK_QUEUE_COMPUTE_BIT) p += "compute family";
+				if (p_flag & VK_QUEUE_TRANSFER_BIT) p += "transfer family";
+				return p;
+				};
+			print_verbose("index " + itos(j) + " queue flags" + flag_to_string(device_queue_families[i].properties[j].queueFlags) + "count " + itos(device_queue_families[i].properties[j].queueCount));
+		}
 	}
 
-	
+	return OK;
 }
 
 

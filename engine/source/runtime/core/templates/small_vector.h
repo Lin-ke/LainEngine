@@ -53,7 +53,8 @@ public:
 	SmallVector& operator=(SmallVector&& other) noexcept
 	{
 		clear();
-		if (other.ptr != other.stack_storage.data())
+		if (other.ptr
+			!= other.stack_storage.data())
 		{
 			// Pilfer allocated pointer.
 			if (this->ptr != stack_storage.data())

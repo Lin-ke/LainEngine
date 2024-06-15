@@ -14,19 +14,13 @@
 #include "core/templates/vector.h"
 #include "core/templates/rb_map.h"
 #include "core/os/thread_safe.h"
+#include "core/math/rect2i.h"
 namespace lain
 {
-    struct WindowCreateInfo
-    {
-        int         width{ 1280 };
-        int         height{ 720 };
-        String      title{ "Window" };
-        bool        is_fullscreen{ false };
-        WindowCreateInfo(int p_width, int p_height, const String &p_title, bool p_is_fullscreen) :
-       width(p_width), height(p_height), title(p_title), is_fullscreen(p_is_fullscreen) {
-        }
-        WindowCreateInfo() {}
-    };
+    // @ TODO 把他做成接口和实现的类型
+
+    struct WindowCreateInfo;
+
     typedef std::function<void()>                   onResetFunc;
     typedef std::function<void(int, int, int, int)> onKeyFunc;
     typedef std::function<void(unsigned int)>       onCharFunc;
@@ -81,10 +75,10 @@ namespace lain
 
         Size2i min_size;
         Size2i max_size;
-        int width = 0, height = 0;
 
         Size2i window_rect;
         Point2i last_pos;
+        int width = 0, height = 0;
 
 
         // IME
@@ -116,8 +110,12 @@ namespace lain
         //bool is_popup = false;
         //Rect2i parent_safe_rect;
     };
+
+
+
     namespace graphics {
         class RenderingContextDriver;
+        class RenderingDevice;
     }
     class WindowSystem
     {
@@ -125,7 +123,7 @@ namespace lain
         _THREAD_SAFE_CLASS_
         String rendering_driver;
         graphics::RenderingContextDriver* rendering_context = nullptr;
-
+        graphics::RenderingDevice* rendering_device = nullptr;
 
     public:
         typedef int WindowID;
@@ -160,12 +158,27 @@ namespace lain
         void               Initialize();
         void               PollEvents() const;
         bool               ShouldClose() const;
-        void               SetTitle(const char* title) {};
+        void window_set_vsync_mode(VSyncMode p_vsync_mode, WindowID p_window);
         GLFWwindow* getWindow() const {};
         std::array<int, 2> getWindowsize() const {};
 
+        Point2i mouse_get_position() const;
+        int get_screen_count() const;
+        Point2i screen_get_position(int p_screen) const;
+        int get_screen_from_rect(const Rect2& p_rect) const;
+        Size2i screen_get_size(int p_screen) const;
+        int get_keyboard_focus_screen() const;
+        int get_primary_screen() const;
+        int window_get_current_screen(WindowID) const;
+
+    private:
+        
 
 
+        Point2i _get_screens_origin() const;
+        Rect2i  screen_get_usable_rect(int p_screen) const;
+        int     _get_screen_index(int p_screen) const;
+    public:
         void registerOnResetFunc(onResetFunc func, int wid) {
             ERR_FAIL_COND(!m_windows.has(wid));
             m_windows[wid].m_onResetFunc.push_back(func);
@@ -210,7 +223,7 @@ namespace lain
             ERR_FAIL_COND(!m_windows.has(wid));
             m_windows[wid].m_onWindowCloseFunc.push_back(func);
         }
-        int NewWindow(WindowCreateInfo create_info);
+        WindowID NewWindow(const WindowCreateInfo* create_info);
 
         bool isMouseButtonDown(int button, int wid = MAIN_WINDOW_ID) const
         {
@@ -248,7 +261,7 @@ namespace lain
 
             }
         }
-    protected:
+
 
         // window event callbacks
         // 这些glfw绑定keycallback，然后发生这一事件后调用在vector里的callback。
@@ -321,14 +334,13 @@ namespace lain
                 for (auto& func : app->m_onDropFunc) { func(count, paths); }
             }
         }
-        // we just resize here. Further we will using so
         static void windowSizeCallback(GLFWwindow* window, int width, int height)
         {
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
                 app->width = width;
-                app->height = height;
+                app->height =height ;
                 for (auto& func : app->m_onWindowSizeFunc) { func(width, height); }
             }
 
@@ -358,7 +370,7 @@ namespace lain
         RBMap<int, WindowData> m_windows;
         static WindowSystem* p_singleton;
         static int m_windowid; // windows_counter
-
+    public:
         enum {
             MAIN_WINDOW_ID = 0,
             INVALID_WINDOW_ID = -1
@@ -367,9 +379,16 @@ namespace lain
     };
 
 
-    
+    struct WindowCreateInfo
+    {
+        Rect2i      rect{ {0,0}, {720,640} };
+        String      title{ "Window" };
+        WindowSystem::WindowMode mode  = WindowSystem::WindowMode::WINDOW_MODE_WINDOWED;
+        WindowSystem::VSyncMode  vsync = WindowSystem::VSyncMode::VSYNC_ADAPTIVE;
+        uint32_t    flags = 0; // flags: 在哪个屏幕；是否全屏
 
-    
+        WindowCreateInfo() {}
+    };
 
 } // namespace lain
 

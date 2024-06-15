@@ -9,14 +9,28 @@
 #include "rendering_device_driver.h"
 #include "core/templates/rb_map.h"
 
+
 namespace lain::graphics {
 
 	class RenderingDevice : public RenderingDeviceCommons {
 		LCLASS(RenderingDevice, Object)
 		_THREAD_SAFE_CLASS_
 		RenderingDeviceDriver* driver = nullptr;
-	public:
+		RenderingContextDriver* context = nullptr;
+		RenderingContextDriver::Device device;
 
+	private:
+		HashMap<WindowSystem::WindowID, RDD::SwapChainID> screen_swap_chains;
+		HashMap<WindowSystem::WindowID, RDD::FramebufferID> screen_framebuffers;
+
+	public:
+		/****************/
+		/**** SCREEN ****/
+		/****************/
+		Error screen_create(WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID);
+	private:
+		uint32_t _get_swap_chain_desired_count() const;
+	public:
 		/***************************/
 		/**** BUFFER MANAGEMENT ****/
 		/***************************/
@@ -198,12 +212,11 @@ namespace lain::graphics {
 		};
 		
 
-private:
 		/**************************/
 		/**** QUEUE MANAGEMENT ****/
 		/**************************/
 
-		RDD::CommandQueueFamilyID main_queue_family;
+		RDD::CommandQueueFamilyID main_queue_family; // family index with graphics bit and compute bit
 		RDD::CommandQueueFamilyID present_queue_family;
 		RDD::CommandQueueID main_queue;
 		RDD::CommandQueueID present_queue;
@@ -280,6 +293,7 @@ private:
 
 		static RenderingDevice* singleton;
 		static RenderingDevice* get_singleton() { return singleton; }
+		Error initialize(RenderingContextDriver* p_driver, WindowSystem::WindowID p_main_window);
 		RenderingDevice() { if (singleton == nullptr) singleton = this; }
 		~RenderingDevice() {}
 	};

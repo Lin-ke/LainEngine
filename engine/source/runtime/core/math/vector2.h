@@ -348,6 +348,7 @@ namespace lain
             return Vector2(Math::abs(x), Math::abs(y));
         }
 
+        operator String() const;
         // special points
         static const Vector2 ZERO;
         static const Vector2 UNIT_X;

@@ -13,7 +13,6 @@ struct Transform2D;
 struct _NO_DISCARD_ Rect2 {
 	Vector2 position;
 	Vector2 size;
-
 	const Vector2& get_position() const { return position; }
 	void set_position(const Vector2& p_pos) { position = p_pos; }
 	const Vector2& get_size() const { return size; }
