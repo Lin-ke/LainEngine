@@ -501,7 +501,7 @@ RDD::CommandQueueID RenderingDeviceDriverVulkan::command_queue_create(CommandQue
 	TightLocalVector<Queue>& queue_family = queue_families[family_index];
 	uint32_t picked_queue_index = UINT_MAX;
 	uint32_t picked_virtual_count = UINT_MAX;
-	print_verbose(queue_family.size()); // 实际上只有一条队列,max_queue_count_per_family
+	print_verbose("queue_family count", queue_family.size()); // 实际上只有一条队列,max_queue_count_per_family
 	for (uint32_t i = 0; i < queue_family.size(); i++) {
 		if (queue_family[i].virtual_count < picked_virtual_count) {
 			picked_queue_index = i;
@@ -1632,7 +1632,7 @@ void RenderingDeviceDriverVulkan::_set_object_name(VkObjectType p_object_type, u
 		}
 
 		VkCompositeAlphaFlagBitsKHR composite_alpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-		if (OS::get_singleton()->is_layered_allowed() || !(surface_capabilities.supportedCompositeAlpha & composite_alpha)) {
+		if (GLOBAL_GET("display/window/per_pixel_transparency/allowed").operator bool()|| !(surface_capabilities.supportedCompositeAlpha & composite_alpha)) {
 			// Find a supported composite alpha mode - one of these is guaranteed to be set.
 			VkCompositeAlphaFlagBitsKHR composite_alpha_flags[4] = {
 				VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR,
@@ -1641,7 +1641,7 @@ void RenderingDeviceDriverVulkan::_set_object_name(VkObjectType p_object_type, u
 				VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
 			};
 
-			for (uint32_t i = 0; i < ARRAY_SIZE(composite_alpha_flags); i++) {
+			for (uint32_t i = 0; i < 4; i++) { // 找第一个匹配的
 				if (surface_capabilities.supportedCompositeAlpha & composite_alpha_flags[i]) {
 					composite_alpha = composite_alpha_flags[i];
 					break;
@@ -1649,77 +1649,77 @@ void RenderingDeviceDriverVulkan::_set_object_name(VkObjectType p_object_type, u
 			}
 		}
 
-		//VkSwapchainCreateInfoKHR swap_create_info = {};
-		//swap_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		//swap_create_info.surface = surface->vk_surface;
-		//swap_create_info.minImageCount = desired_swapchain_images;
-		//swap_create_info.imageFormat = swap_chain->format;
-		//swap_create_info.imageColorSpace = swap_chain->color_space;
-		//swap_create_info.imageExtent = extent;
-		//swap_create_info.imageArrayLayers = 1;
-		//swap_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-		//swap_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		//swap_create_info.preTransform = surface_transform_bits;
-		//swap_create_info.compositeAlpha = composite_alpha;
-		//swap_create_info.presentMode = present_mode;
-		//swap_create_info.clipped = true;
-		//err = device_functions.CreateSwapchainKHR(vk_device, &swap_create_info, nullptr, &swap_chain->vk_swapchain);
-		//ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
+		VkSwapchainCreateInfoKHR swap_create_info = {};
+		swap_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+		swap_create_info.surface = surface->vk_surface;
+		swap_create_info.minImageCount = desired_swapchain_images;
+		swap_create_info.imageFormat = swap_chain->format;
+		swap_create_info.imageColorSpace = swap_chain->color_space;
+		swap_create_info.imageExtent = extent;
+		swap_create_info.imageArrayLayers = 1;
+		swap_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		swap_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		swap_create_info.preTransform = surface_transform_bits;
+		swap_create_info.compositeAlpha = composite_alpha;
+		swap_create_info.presentMode = present_mode;
+		swap_create_info.clipped = true;
+		err = device_functions.CreateSwapchainKHR(vk_device, &swap_create_info, nullptr, &swap_chain->vk_swapchain);
+		ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
 
-		//uint32_t image_count = 0;
-		//err = device_functions.GetSwapchainImagesKHR(vk_device, swap_chain->vk_swapchain, &image_count, nullptr);
-		//ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
+		uint32_t image_count = 0; // 交换链 image
+		err = device_functions.GetSwapchainImagesKHR(vk_device, swap_chain->vk_swapchain, &image_count, nullptr);
+		ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
+		print_verbose("swap chain contains " , itos(image_count), "images")
+		swap_chain->images.resize(image_count);
+		err = device_functions.GetSwapchainImagesKHR(vk_device, swap_chain->vk_swapchain, &image_count, swap_chain->images.ptr());
+		ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
 
-		//swap_chain->images.resize(image_count);
-		//err = device_functions.GetSwapchainImagesKHR(vk_device, swap_chain->vk_swapchain, &image_count, swap_chain->images.ptr());
-		//ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
+		VkImageViewCreateInfo view_create_info = {};
+		view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		view_create_info.format = swap_chain->format;
+		view_create_info.components.r = VK_COMPONENT_SWIZZLE_R; // 什么都不设置
+		view_create_info.components.g = VK_COMPONENT_SWIZZLE_G;
+		view_create_info.components.b = VK_COMPONENT_SWIZZLE_B;
+		view_create_info.components.a = VK_COMPONENT_SWIZZLE_A;
+		view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		view_create_info.subresourceRange.levelCount = 1;
+		view_create_info.subresourceRange.layerCount = 1;
 
-		//VkImageViewCreateInfo view_create_info = {};
-		//view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		//view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		//view_create_info.format = swap_chain->format;
-		//view_create_info.components.r = VK_COMPONENT_SWIZZLE_R;
-		//view_create_info.components.g = VK_COMPONENT_SWIZZLE_G;
-		//view_create_info.components.b = VK_COMPONENT_SWIZZLE_B;
-		//view_create_info.components.a = VK_COMPONENT_SWIZZLE_A;
-		//view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		//view_create_info.subresourceRange.levelCount = 1;
-		//view_create_info.subresourceRange.layerCount = 1;
+		swap_chain->image_views.reserve(image_count);
 
-		//swap_chain->image_views.reserve(image_count);
+		VkImageView image_view;
+		for (uint32_t i = 0; i < image_count; i++) {
+			view_create_info.image = swap_chain->images[i];
+			err = vkCreateImageView(vk_device, &view_create_info, nullptr, &image_view);
+			ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
 
-		//VkImageView image_view;
-		//for (uint32_t i = 0; i < image_count; i++) {
-		//	view_create_info.image = swap_chain->images[i];
-		//	err = vkCreateImageView(vk_device, &view_create_info, nullptr, &image_view);
-		//	ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
+			swap_chain->image_views.push_back(image_view);
+		}
 
-		//	swap_chain->image_views.push_back(image_view);
-		//}
+		swap_chain->framebuffers.reserve(image_count);
 
-		//swap_chain->framebuffers.reserve(image_count);
+		VkFramebufferCreateInfo fb_create_info = {};
+		fb_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		fb_create_info.renderPass = VkRenderPass(swap_chain->render_pass.id);
+		fb_create_info.attachmentCount = 1;
+		fb_create_info.width = surface->width;
+		fb_create_info.height = surface->height;
+		fb_create_info.layers = 1;
 
-		//VkFramebufferCreateInfo fb_create_info = {};
-		//fb_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		//fb_create_info.renderPass = VkRenderPass(swap_chain->render_pass.id);
-		//fb_create_info.attachmentCount = 1;
-		//fb_create_info.width = surface->width;
-		//fb_create_info.height = surface->height;
-		//fb_create_info.layers = 1;
+		VkFramebuffer framebuffer;
+		for (uint32_t i = 0; i < image_count; i++) {
+			fb_create_info.pAttachments = &swap_chain->image_views[i];
+			err = vkCreateFramebuffer(vk_device, &fb_create_info, nullptr, &framebuffer);
+			ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
 
-		//VkFramebuffer framebuffer;
-		//for (uint32_t i = 0; i < image_count; i++) {
-		//	fb_create_info.pAttachments = &swap_chain->image_views[i];
-		//	err = vkCreateFramebuffer(vk_device, &fb_create_info, nullptr, &framebuffer);
-		//	ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
-
-		//	swap_chain->framebuffers.push_back(RDD::FramebufferID(framebuffer));
-		//}
+			swap_chain->framebuffers.push_back(RDD::FramebufferID(framebuffer));
+		}
 
 		//// Once everything's been created correctly, indicate the surface no longer needs to be resized.
-		//context_driver->surface_set_needs_resize(swap_chain->surface, false);
+		context_driver->surface_set_needs_resize(swap_chain->surface, false);
 
-		//return OK;
+		return OK;
 	}
 
 	RDD::FramebufferID RenderingDeviceDriverVulkan::framebuffer_create(RenderPassID p_render_pass, VectorView<TextureID> p_attachments, uint32_t p_width, uint32_t p_height) {

@@ -36,10 +36,10 @@ extern void print_error(String p_string);
 extern bool is_print_verbose_enabled();
 
 // This version avoids processing the text to be printed until it actually has to be printed, saving some CPU usage.
-#define print_verbose(m_text)             \
+#define print_verbose(...)             \
 	{                                     \
 		if (is_print_verbose_enabled()) { \
-			L_DPRINT(m_text);           \
+			L_DPRINT(__VA_ARGS__);           \
 		}                                 \
 	}
 

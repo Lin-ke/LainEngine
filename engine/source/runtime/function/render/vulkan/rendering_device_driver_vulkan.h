@@ -91,7 +91,7 @@ private:
 	/********************/
 
 private:
-	// FrameBuffer和VKImage都是屏幕所用的z
+	// FrameBuffer和VKImage都是屏幕所用的
 	// FrameBuffer hold the Images, Renderpass use the format
 	struct SwapChain {
 		VkSwapchainKHR vk_swapchain = VK_NULL_HANDLE;
