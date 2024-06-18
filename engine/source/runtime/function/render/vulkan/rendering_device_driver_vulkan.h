@@ -53,10 +53,16 @@ private:
 	};
 
 public:
-	/*virtual FenceID fence_create() override final;
+	virtual FenceID fence_create() override final;
 	virtual Error fence_wait(FenceID p_fence) override final;
-	virtual void fence_free(FenceID p_fence) override final;*/
+	virtual void fence_free(FenceID p_fence) override final;
 
+	/********************/
+	/**** SEMAPHORES ****/
+	/********************/
+
+	virtual SemaphoreID semaphore_create() override final;
+	virtual void semaphore_free(SemaphoreID p_semaphore) override final;
 	/******************/
 	/**** COMMANDS ****/
 	/******************/
@@ -72,18 +78,18 @@ private:
 		LocalVector<VkSemaphore> image_semaphores;
 		LocalVector<SwapChain*> image_semaphores_swap_chains; // --- image semaphore的index 到 swap chain
 		LocalVector<uint32_t> pending_semaphores_for_execute;
-		LocalVector<uint32_t> pending_semaphores_for_fence;
-		LocalVector<uint32_t> free_image_semaphores; // --- ？
-		LocalVector<Pair<Fence*, uint32_t>> image_semaphores_for_fences;
-		uint32_t queue_family = 0;
+		LocalVector<uint32_t> pending_semaphores_for_fence; // 需要给fence信号的信号量
+		LocalVector<uint32_t> free_image_semaphores; // --- 等待清理
+		LocalVector<Pair<Fence*, uint32_t>> image_semaphores_for_fences; // fence to image_semaphores index，需要给fence的信号量加入这里
+		uint32_t queue_family = 0; // 通过这个索引到vkqueue
 		uint32_t queue_index = 0;
 		uint32_t present_semaphore_index = 0;
 	};
 //
 //public:
 	virtual CommandQueueID command_queue_create(CommandQueueFamilyID p_cmd_queue_family, bool p_identify_as_main_queue) override final;
-//	virtual Error command_queue_execute_and_present(CommandQueueID p_cmd_queue, VectorView<SemaphoreID> p_wait_semaphores, VectorView<CommandBufferID> p_cmd_buffers, VectorView<SemaphoreID> p_cmd_semaphores, FenceID p_cmd_fence, VectorView<SwapChainID> p_swap_chains) override final;
-//	virtual void command_queue_free(CommandQueueID p_cmd_queue) override final;
+	virtual Error command_queue_execute_and_present(CommandQueueID p_cmd_queue, VectorView<SemaphoreID> p_wait_semaphores, VectorView<CommandBufferID> p_cmd_buffers, VectorView<SemaphoreID> p_cmd_semaphores, FenceID p_cmd_fence, VectorView<SwapChainID> p_swap_chains) override final;
+	virtual void command_queue_free(CommandQueueID p_cmd_queue) override final;
 // 
 // 		
 	/********************/
@@ -172,7 +178,7 @@ private:
 private:
 	struct Queue {
 		VkQueue queue = VK_NULL_HANDLE;
-		uint32_t virtual_count = 0;
+		uint32_t virtual_count = 0; // 这个队列被使用的次数 ，暂不用
 		BinaryMutex submit_mutex;
 	};
 	struct ShaderCapabilities {

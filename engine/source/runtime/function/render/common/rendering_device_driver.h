@@ -332,16 +332,16 @@ namespace lain {
 		/**** FENCES ****/
 		/****************/
 
-		// virtual FenceID fence_create() = 0;
-		// virtual Error fence_wait(FenceID p_fence) = 0;
-		// virtual void fence_free(FenceID p_fence) = 0;
+		 virtual FenceID fence_create() = 0;
+		 virtual Error fence_wait(FenceID p_fence) = 0;
+		 virtual void fence_free(FenceID p_fence) = 0;
 
 		/********************/
 		/**** SEMAPHORES ****/
 		/********************/
 
-		// virtual SemaphoreID semaphore_create() = 0;
-		// virtual void semaphore_free(SemaphoreID p_semaphore) = 0;
+		 virtual SemaphoreID semaphore_create() = 0;
+		 virtual void semaphore_free(SemaphoreID p_semaphore) = 0;
 
 
 		/*************************/
@@ -376,8 +376,8 @@ namespace lain {
 		// ----- QUEUE -----
 
 		 virtual CommandQueueID command_queue_create(CommandQueueFamilyID p_cmd_queue_family, bool p_identify_as_main_queue = false) = 0;
-		// virtual Error command_queue_execute_and_present(CommandQueueID p_cmd_queue, VectorView<SemaphoreID> p_wait_semaphores, VectorView<CommandBufferID> p_cmd_buffers, VectorView<SemaphoreID> p_cmd_semaphores, FenceID p_cmd_fence, VectorView<SwapChainID> p_swap_chains) = 0;
-		// virtual void command_queue_free(CommandQueueID p_cmd_queue) = 0;
+		 virtual Error command_queue_execute_and_present(CommandQueueID p_cmd_queue, VectorView<SemaphoreID> p_wait_semaphores, VectorView<CommandBufferID> p_cmd_buffers, VectorView<SemaphoreID> p_cmd_semaphores, FenceID p_cmd_fence, VectorView<SwapChainID> p_swap_chains) = 0;
+		 virtual void command_queue_free(CommandQueueID p_cmd_queue) = 0;
 
 		// ----- POOL -----
 		// 主命令缓冲区，可以执行辅助命令缓冲区，并且提交到队列；辅助命令缓冲区，可以由主命令缓冲区执行，并且不直接提交到队列。
