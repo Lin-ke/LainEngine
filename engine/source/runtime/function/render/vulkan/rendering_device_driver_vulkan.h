@@ -15,10 +15,10 @@ namespace lain::graphics {
 // Design principles:
 // - Vulkan structs are zero-initialized and fields not requiring a non-zero value are omitted (except in cases where expresivity reasons apply).
 class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
-public:
 	/// ---apis
 	struct CommandQueue;
 	struct SwapChain;
+public:
 
 	/*****************/
 	/**** TEXTURE ****/
@@ -41,6 +41,71 @@ public:
 
 private:
 	VkSampleCountFlagBits _ensure_supported_sample_count(TextureSamples p_requested_sample_count);
+
+	/**********************/
+	/**** VERTEX ARRAY ****/
+	/**********************/
+private:
+	struct VertexFormatInfo {
+		TightLocalVector<VkVertexInputBindingDescription> vk_bindings;
+		TightLocalVector<VkVertexInputAttributeDescription> vk_attributes;
+		VkPipelineVertexInputStateCreateInfo vk_create_info = {};
+	};
+
+public:
+	virtual VertexFormatID vertex_format_create(VectorView<VertexAttribute> p_vertex_attribs) override final;
+	virtual void vertex_format_free(VertexFormatID p_vertex_format) override final;
+	/*****************/
+	/**** BUFFERS ****/
+	/*****************/
+private:
+	struct BufferInfo {
+		VkBuffer vk_buffer = VK_NULL_HANDLE;
+		struct {
+			VmaAllocation handle = nullptr;
+			uint64_t size = UINT64_MAX;
+		} allocation;
+		uint64_t size = 0;
+		VkBufferView vk_view = VK_NULL_HANDLE; // For texel buffers.
+	};
+public:
+	virtual BufferID buffer_create(uint64_t p_size, BitField<BufferUsageBits> p_usage, MemoryAllocationType p_allocation_type) override final;
+	virtual bool buffer_set_texel_format(BufferID p_buffer, DataFormat p_format) override final;
+	virtual void buffer_free(BufferID p_buffer) override final;
+	virtual uint64_t buffer_get_allocation_size(BufferID p_buffer) override final;
+	virtual uint8_t* buffer_map(BufferID p_buffer) override final;
+	virtual void buffer_unmap(BufferID p_buffer) override final;
+	/****************/
+	/**** SHADER ****/
+	/****************/
+private:
+	struct ShaderInfo {
+		VkShaderStageFlags vk_push_constant_stages = 0;
+		TightLocalVector<VkPipelineShaderStageCreateInfo> vk_stages_create_info;
+		TightLocalVector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
+		VkPipelineLayout vk_pipeline_layout = VK_NULL_HANDLE;
+	};
+	/*********************/
+	/**** UNIFORM SET ****/
+	/*********************/
+	
+	static const uint32_t MAX_UNIFORM_POOL_ELEMENT = 65535;
+	// 为每个描述符集类型创建一个池
+	struct DescriptorSetPoolKey {
+		uint16_t uniform_type[UNIFORM_TYPE_MAX] = {};
+
+		bool operator<(const DescriptorSetPoolKey& p_other) const {
+			return memcmp(uniform_type, p_other.uniform_type, sizeof(uniform_type)) < 0;
+		}
+	};
+	uint32_t max_descriptor_sets_per_pool = 0; 
+	using DescriptorSetPools = RBMap<DescriptorSetPoolKey, HashMap<VkDescriptorPool, uint32_t>>;
+
+	struct UniformSetInfo {
+		VkDescriptorSet vk_descriptor_set = VK_NULL_HANDLE;
+		VkDescriptorPool vk_descriptor_pool = VK_NULL_HANDLE;
+		DescriptorSetPools::Iterator pool_sets_it = {};
+	};
 public:
 	/****************/
 	/**** FENCES ****/
@@ -122,29 +187,6 @@ public:
 
 	virtual FramebufferID framebuffer_create(RenderPassID p_render_pass, VectorView<TextureID> p_attachments, uint32_t p_width, uint32_t p_height) override final;
 	virtual void framebuffer_free(FramebufferID p_framebuffer) override final;
-
-
-//	/*********************/
-	/**** UNIFORM SET ****/
-	/*********************/
-
-	// Descriptor sets require allocation from a pool.
-	// The documentation on how to use pools properly
-	// is scarce, and the documentation is strange.
-	//
-	// Basically, you can mix and match pools as you
-	// like, but you'll run into fragmentation issues.
-	// Because of this, the recommended approach is to
-	// create a pool for every descriptor set type, as
-	// this prevents fragmentation.
-	//
-	// This is implemented here as a having a list of
-	// pools (each can contain up to 64 sets) for each
-	// set layout. The amount of sets for each type
-	// is used as the key.
-private:
-	static const uint32_t MAX_UNIFORM_POOL_ELEMENT = 65535;
-	uint32_t max_descriptor_sets_per_pool = 0;
 
 	/******************/
 	/**** PIPELINE ****/
@@ -304,7 +346,15 @@ private:
 	public:
 		RenderingDeviceDriverVulkan(RenderingContextDriverVulkan* p_context_driver);
 		virtual ~RenderingDeviceDriverVulkan();
-
+	private:
+		using VersatileResource = VersatileResourceTemplate<
+			BufferInfo,
+			TextureInfo,
+			VertexFormatInfo,
+			ShaderInfo,
+			UniformSetInfo>;
+		PagedAllocator<VersatileResource> resources_allocator;
+		// VersatileResource::allocate<Type>(resource_allocator)
 };
 
 

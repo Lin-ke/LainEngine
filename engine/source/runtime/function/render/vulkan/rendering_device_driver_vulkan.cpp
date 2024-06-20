@@ -1,6 +1,7 @@
 #include "rendering_device_driver_vulkan.h"
 #include "core/config/project_settings.h"
 #include "core/string/print_string.h"
+#define PRINT_NATIVE_COMMANDS 1
 /*****************/
 /**** GENERIC ****/
 /*****************/
@@ -389,7 +390,48 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(const TextureFormat& 
 	VmaAllocationInfo alloc_info = {};
 	VkResult err = vmaCreateImage(allocator, &create_info, &alloc_create_info, &vk_image, &allocation, &alloc_info);
 	ERR_FAIL_COND_V_MSG(err, TextureID(), "vmaCreateImage failed with error " + itos(err) + ".");
+	
+	// Create view.
+	VkImageViewCreateInfo image_view_create_info = {};
+	image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	image_view_create_info.image = vk_image;
+	image_view_create_info.viewType = (VkImageViewType)p_format.texture_type;
+	image_view_create_info.format = RD_TO_VK_FORMAT[p_view.format];
+	image_view_create_info.components.r = (VkComponentSwizzle)p_view.swizzle_r;
+	image_view_create_info.components.g = (VkComponentSwizzle)p_view.swizzle_g;
+	image_view_create_info.components.b = (VkComponentSwizzle)p_view.swizzle_b;
+	image_view_create_info.components.a = (VkComponentSwizzle)p_view.swizzle_a;
+	image_view_create_info.subresourceRange.levelCount = create_info.mipLevels;
+	image_view_create_info.subresourceRange.layerCount = create_info.arrayLayers;
+	if ((p_format.usage_bits & TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+		image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	}
+	else {
+		image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	}
 
+	VkImageView vk_image_view = VK_NULL_HANDLE;
+	err = vkCreateImageView(vk_device, &image_view_create_info, nullptr, &vk_image_view);
+	if (err) {
+		vmaDestroyImage(allocator, vk_image, allocation);
+		ERR_FAIL_COND_V_MSG(err, TextureID(), "vkCreateImageView failed with error " + itos(err) + ".");
+	}
+
+	// Bookkeep.
+
+	TextureInfo* tex_info = VersatileResource::allocate<TextureInfo>(resources_allocator);
+	tex_info->vk_view = vk_image_view;
+	tex_info->rd_format = p_format.format;
+	tex_info->vk_create_info = create_info;
+	tex_info->vk_view_create_info = image_view_create_info;
+	tex_info->allocation.handle = allocation;
+	vmaGetAllocationInfo(allocator, tex_info->allocation.handle, &tex_info->allocation.info);
+
+#if PRINT_NATIVE_COMMANDS
+	print_line(vformat("vkCreateImageView: 0x%uX for 0x%uX", uint64_t(vk_image_view), uint64_t(vk_image)));
+#endif
+
+	return TextureID(tex_info);
 }
 
 VkSampleCountFlagBits RenderingDeviceDriverVulkan::_ensure_supported_sample_count(TextureSamples p_requested_sample_count) {
@@ -524,6 +566,17 @@ RDD::CommandQueueID RenderingDeviceDriverVulkan::command_queue_create(CommandQue
 
 	return CommandQueueID(command_queue);
 }
+
+/// <summary>
+/// execute和present
+/// </summary>
+/// <param name="p_cmd_queue"></param>
+/// <param name="p_wait_semaphores"></param>
+/// <param name="p_cmd_buffers"></param>
+/// <param name="p_cmd_semaphores"></param>
+/// <param name="p_cmd_fence"></param>
+/// <param name="p_swap_chains"></param>
+/// <returns></returns>
 Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueueID p_cmd_queue, VectorView<SemaphoreID> p_wait_semaphores, VectorView<CommandBufferID> p_cmd_buffers, VectorView<SemaphoreID> p_cmd_semaphores, FenceID p_cmd_fence, VectorView<SwapChainID> p_swap_chains) {
 	
 	VkResult err;
@@ -532,7 +585,15 @@ Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueu
 
 	Fence* fence = (Fence*)(p_cmd_fence.id);
 	VkFence vk_fence = (fence != nullptr) ? fence->vk_fence : VK_NULL_HANDLE;
-	thread_local LocalVector<VkSemaphore> wait_semaphores; // 为什么这个是thread local的？
+	// 需要waiting：
+	// pending for execute;
+	// 传入的p_wait_semaphores
+	// 也许应该分开execute与present@TODO
+	// 需要signal：
+	// present
+	// 传入的cmd semaphore
+
+	thread_local LocalVector<VkSemaphore> wait_semaphores; // 为什么这个是thread local的？@？
 	thread_local LocalVector<VkPipelineStageFlags> wait_semaphores_stages;
 	if (!command_queue->pending_semaphores_for_execute.is_empty()) {
 		for (uint32_t i = 0; i < command_queue->pending_semaphores_for_execute.size(); i++) {
@@ -563,6 +624,7 @@ Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueu
 
 		VkSemaphore present_semaphore = VK_NULL_HANDLE;
 		if (p_swap_chains.size() > 0) {
+			// present semaphore可空
 			if (command_queue->present_semaphores.is_empty()) {
 				// Create the semaphores used for presentation if they haven't been created yet.
 				VkSemaphore semaphore = VK_NULL_HANDLE;
@@ -685,7 +747,7 @@ Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueu
 /// <summary>
 /// extensions, features, capabilities, queue,
 /// allocator, pipeline cache
-/// 我觉得使用类变量会给开发者一个不太清楚的感觉
+/// 类变量标记不明确
 /// </summary>
 /// <param name="p_device_index"></param>
 /// <param name="p_frame_count"></param>
@@ -1841,7 +1903,7 @@ void RenderingDeviceDriverVulkan::_set_object_name(VkObjectType p_object_type, u
 		view_create_info.components.a = VK_COMPONENT_SWIZZLE_A;
 		view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		view_create_info.subresourceRange.levelCount = 1;
-		view_create_info.subresourceRange.layerCount = 1;
+		view_create_info.subresourceRange.layerCount = 1; // 渲染目标，只有一个图层
 
 		swap_chain->image_views.reserve(image_count);
 
@@ -2124,7 +2186,141 @@ void RenderingDeviceDriverVulkan::_set_object_name(VkObjectType p_object_type, u
 	void RenderingDeviceDriverVulkan::semaphore_free(SemaphoreID p_semaphore) {
 		vkDestroySemaphore(vk_device, VkSemaphore(p_semaphore.id), nullptr);
 	}
+	/**********************/
+	/**** VERTEX ARRAY ****/
+	/**********************/
+	RDD::VertexFormatID RenderingDeviceDriverVulkan::vertex_format_create(VectorView<VertexAttribute> p_vertex_attribs) {
+		VertexFormatInfo* vf_info = VersatileResource::allocate<VertexFormatInfo>(resources_allocator);
+		// 有几个attrib就搞几个绑定
+		vf_info->vk_bindings.resize(p_vertex_attribs.size());
+		vf_info->vk_attributes.resize(p_vertex_attribs.size());
+		for (uint32_t i = 0; i < p_vertex_attribs.size(); i++) {
+			vf_info->vk_bindings[i] = {};
+			vf_info->vk_bindings[i].binding = i;
+			vf_info->vk_bindings[i].stride = p_vertex_attribs[i].stride;
+			vf_info->vk_bindings[i].inputRate = p_vertex_attribs[i].frequency == VERTEX_FREQUENCY_INSTANCE ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
+			vf_info->vk_attributes[i] = {};
+			vf_info->vk_attributes[i].binding = i;
+			vf_info->vk_attributes[i].location = p_vertex_attribs[i].location;
+			vf_info->vk_attributes[i].format = RD_TO_VK_FORMAT[p_vertex_attribs[i].format];
+			vf_info->vk_attributes[i].offset = p_vertex_attribs[i].offset;
+		}
+		vf_info->vk_create_info = {};
+		vf_info->vk_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		vf_info->vk_create_info.vertexBindingDescriptionCount = vf_info->vk_bindings.size();
+		vf_info->vk_create_info.pVertexBindingDescriptions = vf_info->vk_bindings.ptr();
+		vf_info->vk_create_info.vertexAttributeDescriptionCount = vf_info->vk_attributes.size();
+		vf_info->vk_create_info.pVertexAttributeDescriptions = vf_info->vk_attributes.ptr();
+		return VertexFormatID(vf_info);
 
+	}
+	void RenderingDeviceDriverVulkan::vertex_format_free(VertexFormatID p_vertex_format) {
+		VertexFormatInfo* vf_info = (VertexFormatInfo*)p_vertex_format.id;
+		VersatileResource::free(resources_allocator, vf_info);
+	}
+
+	/*****************/
+	/**** BUFFERS ****/
+	/*****************/
+
+
+	RDD::BufferID RenderingDeviceDriverVulkan::buffer_create(uint64_t p_size, BitField<BufferUsageBits> p_usage, MemoryAllocationType p_allocation_type) {
+		VkBufferCreateInfo create_info = {};
+		create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		create_info.size = p_size;
+		create_info.usage = p_usage;
+		create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // 这一项可以开放一点@TODO做一个标准的允许多种队列访问接口
+
+		VmaAllocationCreateInfo alloc_create_info = {};
+		switch (p_allocation_type) {
+		case MEMORY_ALLOCATION_TYPE_CPU: {
+			bool is_src = p_usage.has_flag(BUFFER_USAGE_TRANSFER_FROM_BIT);
+			bool is_dst = p_usage.has_flag(BUFFER_USAGE_TRANSFER_TO_BIT);
+			if (is_src && !is_dst) {
+				// Looks like a staging buffer: CPU maps, writes sequentially, then GPU copies to VRAM.
+				alloc_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+			}
+			if (is_dst && !is_src) {
+				// Looks like a readback buffer: GPU copies from VRAM, then CPU maps and reads.
+				alloc_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+			}
+			alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
+			alloc_create_info.requiredFlags = (VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+		} break;
+		case MEMORY_ALLOCATION_TYPE_GPU: {
+			alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+			if (p_size <= SMALL_ALLOCATION_MAX_SIZE) {
+				uint32_t mem_type_index = 0;
+				vmaFindMemoryTypeIndexForBufferInfo(allocator, &create_info, &alloc_create_info, &mem_type_index);
+				alloc_create_info.pool = _find_or_create_small_allocs_pool(mem_type_index);
+			}
+		} break;
+		}
+
+		VkBuffer vk_buffer = VK_NULL_HANDLE;
+		VmaAllocation allocation = nullptr;
+		VmaAllocationInfo alloc_info = {};
+		VkResult err = vmaCreateBuffer(allocator, &create_info, &alloc_create_info, &vk_buffer, &allocation, &alloc_info);
+		ERR_FAIL_COND_V_MSG(err, BufferID(), "Can't create buffer of size: " + itos(p_size) + ", error " + itos(err) + ".");
+
+		// Bookkeep.
+
+		BufferInfo* buf_info = VersatileResource::allocate<BufferInfo>(resources_allocator);
+		buf_info->vk_buffer = vk_buffer;
+		buf_info->allocation.handle = allocation;
+		buf_info->allocation.size = alloc_info.size;
+		buf_info->size = p_size;
+
+		return BufferID(buf_info);
+	}
+	/// <summary>
+	/// buffer view
+	/// </summary>
+	/// <param name="p_buffer"></param>
+	/// <param name="p_format"></param>
+	/// <returns></returns>
+	bool RenderingDeviceDriverVulkan::buffer_set_texel_format(BufferID p_buffer, DataFormat p_format) {
+		BufferInfo* buf_info = (BufferInfo*)p_buffer.id;
+
+		DEV_ASSERT(!buf_info->vk_view);
+
+		VkBufferViewCreateInfo view_create_info = {};
+		view_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
+		view_create_info.buffer = buf_info->vk_buffer;
+		view_create_info.format = RD_TO_VK_FORMAT[p_format];
+		view_create_info.range = buf_info->allocation.size;
+
+		VkResult res = vkCreateBufferView(vk_device, &view_create_info, nullptr, &buf_info->vk_view);
+		ERR_FAIL_COND_V_MSG(res, false, "Unable to create buffer view, error " + itos(res) + ".");
+
+		return true;
+	}
+	void RenderingDeviceDriverVulkan::buffer_free(BufferID p_buffer) {
+		BufferInfo* buf_info = (BufferInfo*)p_buffer.id;
+		if (buf_info->vk_view) {
+			vkDestroyBufferView(vk_device, buf_info->vk_view, nullptr);
+
+		}
+		vmaDestroyBuffer(allocator, buf_info->vk_buffer, buf_info->allocation.handle);
+		VersatileResource::free(resources_allocator, buf_info);
+	}
+	uint64_t RenderingDeviceDriverVulkan::buffer_get_allocation_size(BufferID p_buffer) {
+		const BufferInfo* buf_info = (const BufferInfo*)p_buffer.id;
+		return buf_info->allocation.size;
+	}
+
+	uint8_t* RenderingDeviceDriverVulkan::buffer_map(BufferID p_buffer) { 
+		const BufferInfo* buf_info = (const BufferInfo*)p_buffer.id;
+		void* data_ptr = nullptr;
+		VkResult err = vmaMapMemory(allocator, buf_info->allocation.handle, &data_ptr);
+		ERR_FAIL_COND_V_MSG(err, nullptr, "vmaMapMemory failed with error " + itos(err) + ".");
+		return (uint8_t*)data_ptr;
+	}
+
+	void RenderingDeviceDriverVulkan::buffer_unmap(BufferID p_buffer) {
+		const BufferInfo* buf_info = (const BufferInfo*)p_buffer.id;
+		vmaUnmapMemory(allocator, buf_info->allocation.handle);
+	}
 } // namespace graphics
 
 }// namespace lain

@@ -49,7 +49,7 @@ namespace lain {
 	struct VersatileResourceTemplate {
 		static constexpr size_t RESOURCE_SIZES[] = { sizeof(RESOURCE_TYPES)... };
 		static constexpr size_t MAX_RESOURCE_SIZE = std::max_element(RESOURCE_SIZES, RESOURCE_SIZES + sizeof...(RESOURCE_TYPES))[0];
-		uint8_t data[MAX_RESOURCE_SIZE];
+		uint8_t data[MAX_RESOURCE_SIZE]; // sizeof(VersatileResourceTemplate)
 
 		template <typename T>
 		static T* allocate(PagedAllocator<VersatileResourceTemplate>& p_allocator) {
@@ -61,7 +61,7 @@ namespace lain {
 		template <typename T>
 		static void free(PagedAllocator<VersatileResourceTemplate>& p_allocator, T* p_object) {
 			p_object->~T();
-			p_allocator.free((VersatileResourceTemplate*)p_object);
+			p_allocator.free((VersatileResourceTemplate*)p_object); // 这里会调用VersatileResourceTemplate的析构函数，不会析构两次
 		}
 	};
 	class RenderingDeviceDriver : public RenderingDeviceCommons {
@@ -146,12 +146,12 @@ namespace lain {
 			BUFFER_WHOLE_SIZE = ~0ULL
 		};
 
-		// virtual BufferID buffer_create(uint64_t p_size, BitField<BufferUsageBits> p_usage, MemoryAllocationType p_allocation_type) = 0;
-		// virtual bool buffer_set_texel_format(BufferID p_buffer, DataFormat p_format) = 0;
-		// virtual void buffer_free(BufferID p_buffer) = 0;
-		// virtual uint64_t buffer_get_allocation_size(BufferID p_buffer) = 0;
-		// virtual uint8_t* buffer_map(BufferID p_buffer) = 0;
-		// virtual void buffer_unmap(BufferID p_buffer) = 0;
+		 virtual BufferID buffer_create(uint64_t p_size, BitField<BufferUsageBits> p_usage, MemoryAllocationType p_allocation_type) = 0;
+		 virtual bool buffer_set_texel_format(BufferID p_buffer, DataFormat p_format) = 0;
+		 virtual void buffer_free(BufferID p_buffer) = 0;
+		 virtual uint64_t buffer_get_allocation_size(BufferID p_buffer) = 0;
+		 virtual uint8_t* buffer_map(BufferID p_buffer) = 0;
+		 virtual void buffer_unmap(BufferID p_buffer) = 0;
 		/*****************/
 		/**** TEXTURE ****/
 		/*****************/
@@ -250,9 +250,8 @@ namespace lain {
 		/**********************/
 		/**** VERTEX ARRAY ****/
 		/**********************/
-		// not used
-		// virtual VertexFormatID vertex_format_create(VectorView<VertexAttribute> p_vertex_attribs) = 0;
-		// virtual void vertex_format_free(VertexFormatID p_vertex_format) = 0;
+		 virtual VertexFormatID vertex_format_create(VectorView<VertexAttribute> p_vertex_attribs) = 0;
+		 virtual void vertex_format_free(VertexFormatID p_vertex_format) = 0;
 		/******************/
 		/**** BARRIERS ****/
 		/******************/
@@ -751,6 +750,8 @@ namespace lain {
 	public:
 	virtual ~RenderingDeviceDriver();
 	virtual Error initialize(uint32_t p_device_index, uint32_t p_frame_count) = 0;
+
+	
 
 	};
 

@@ -566,6 +566,7 @@ Error RenderingContextDriverVulkan::_create_vulkan_instance(const VkInstanceCrea
 		"Do you have a compatible Vulkan installable client driver (ICD) installed?\n"
 		"Please look at the Getting Started guide for additional information.\n"
 		"vkCreateInstance Failure");
+	return OK;
 }
 /// <summary>
 /// vkEnumeratePhysicalDevices;
