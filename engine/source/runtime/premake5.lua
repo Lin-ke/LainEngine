@@ -42,8 +42,7 @@ project "LainRuntime"
          "mbedtls",
          "spirv-reflect",
          "PreCompile",
-         "volk",
-         -- "%{Library.volk}",
+         "%{Library.volk}",
       }
       
       filter "system:windows"

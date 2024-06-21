@@ -134,6 +134,7 @@
 #include  "D:/LainEngine/engine/source/runtime/core/variant/variant_parser.h"
 #include  "D:/LainEngine/engine/source/runtime/function/script.h"
 #include  "D:/LainEngine/engine/source/runtime/function/display/display_event.h"
+#include  "D:/LainEngine/engine/source/runtime/function/display/display_server.h"
 #include  "D:/LainEngine/engine/source/runtime/function/display/viewport.h"
 #include  "D:/LainEngine/engine/source/runtime/function/display/window.h"
 #include  "D:/LainEngine/engine/source/runtime/function/display/window_system.h"
@@ -152,7 +153,6 @@
 #include  "D:/LainEngine/engine/source/runtime/function/render/vulkan/rendering_context_driver_vulkan.h"
 #include  "D:/LainEngine/engine/source/runtime/function/render/vulkan/rendering_device_driver_vulkan.h"
 #include  "D:/LainEngine/engine/source/runtime/function/render/vulkan/vulkan_header.h"
-#include  "D:/LainEngine/engine/source/runtime/function/render/vulkan/vulkan_hooks.h"
 #include  "D:/LainEngine/engine/source/runtime/function/shader/shader_language.h"
 #include  "D:/LainEngine/engine/source/runtime/function/shader/spirv/spirv_cross.h"
 #include  "D:/LainEngine/engine/source/runtime/function/shader/spirv/spirv_parser.h"
@@ -187,4 +187,5 @@
 #include  "D:/LainEngine/engine/source/runtime/test/test_reflect.h"
 #include  "D:/LainEngine/engine/source/runtime/test/test_scene.h"
 #include  "D:/LainEngine/engine/source/runtime/test/test_tree.h"
+#include  "D:/LainEngine/engine/source/runtime/test/test_vulkan.h"
 #endif
