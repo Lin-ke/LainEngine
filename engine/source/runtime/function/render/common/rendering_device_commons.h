@@ -399,7 +399,7 @@ namespace lain {
 			bool enable_compare = false;
 			CompareOperator compare_op = COMPARE_OP_ALWAYS;
 			float min_lod = 0.0f;
-			float max_lod = 1e20; // Something very large should do.
+			float max_lod = static_cast<float>(1e20); // Something very large should do.
 			SamplerBorderColor border_color = SAMPLER_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
 			bool unnormalized_uvw = false;
 		};

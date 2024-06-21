@@ -27,16 +27,16 @@ except Exception as e:
 premakefilePath = ".\setup\premake\premakefile"
 thirdPartyPath = "./engine/thirdparty/"
 
-# try:
-#     if(not os.path.exists(os.path.join(thirdPartyPath,"volk"))):
-#         #makedir
-#         os.makedirs(os.path.join(thirdPartyPath,"volk"))
-#     vulkanSDK = os.environ.get("VULKAN_SDK")
-#     shutil.copyfile(f"{vulkanSDK}/include/Volk/volk.c",os.path.join(os.path.join(thirdPartyPath,"volk"), "volk.c"))
-#     shutil.copyfile(f"{vulkanSDK}/include/Volk/volk.h",os.path.join(os.path.join(thirdPartyPath, "volk"), "volk.h"))
-# except Exception as e:
-#     print("error when copying {}".format("volk"))
-#     print(e)
+try:
+    if(not os.path.exists(os.path.join(thirdPartyPath,"volk"))):
+        #makedir
+        os.makedirs(os.path.join(thirdPartyPath,"volk"))
+    vulkanSDK = os.environ.get("VULKAN_SDK")
+    shutil.copyfile(f"{vulkanSDK}/include/Volk/volk.c",os.path.join(os.path.join(thirdPartyPath,"volk"), "volk.c"))
+    shutil.copyfile(f"{vulkanSDK}/include/Volk/volk.h",os.path.join(os.path.join(thirdPartyPath, "volk"), "volk.h"))
+except Exception as e:
+    print("error when copying {}".format("volk"))
+    print(e)
 thirdPartyFolders = os.listdir(thirdPartyPath)
 for premakeName in os.listdir(premakefilePath):
     name = premakeName[:-len("-premake5.lua")]

@@ -81,13 +81,13 @@ project "GLFW"
 
 		files
 		{
+			"src/win32_window.c",
 			"src/win32_init.c",
 			"src/win32_joystick.c",
 			"src/win32_module.c",
 			"src/win32_monitor.c",
 			"src/win32_time.c",
 			"src/win32_thread.c",
-			"src/win32_window.c",
 			"src/wgl_context.c",
 			"src/egl_context.c",
 			"src/osmesa_context.c"
@@ -95,6 +95,8 @@ project "GLFW"
 
 		defines 
 		{ 
+			"WIN32",
+			"_WIN32",
 			"_GLFW_WIN32",
 			"_CRT_SECURE_NO_WARNINGS",
 			"GLFW_EXPOSE_NATIVE_WIN32"

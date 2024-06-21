@@ -48,15 +48,6 @@ namespace lain
         //t11.set(1, t12);
         //t11.set(2, t12);
 
-        
-        //test3_in.m_test_base_array.resize(3);
-        //test3_in.m_test_base_array.set(0, t2);
-        //test3_in.m_test_base_array.set(1, t2);
-        //test3_in.m_test_base_array.set(2, t2);
-        // push_back push����ֵ�����Ի��ȵ��ÿ�������const&��������һ�����ü����������Ϊ��ʱ����������ʧ��
-        // ��������ԭ�ȵ����ü���Ϊ1�����Ǵ�Ҷ�ָ������һ���ڴ档
-
-        // ���� push_backӦ������ȷ��
      
 
         auto        Test2_json_in = Serializer::write(test2_in);

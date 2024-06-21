@@ -32,6 +32,7 @@ project "LainRuntime"
          "%{IncludeDir.stb_image}",
          "%{IncludeDir.tinyobj}",
          "%{IncludeDir.spirv_reflect}",
+         "%{IncludeDir.volk}",
       }
       -- the links aligns with the project names in premakes.lua
       links

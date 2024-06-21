@@ -5,6 +5,6 @@
 #endif
 #ifdef L_PLATFORM_WINDOWS
 #define VK_USE_PLATFORM_WIN32_KHR
-#include <Volk/volk.h>
+#include <volk.h>
 #include <vma/vk_mem_alloc.h>
 #endif

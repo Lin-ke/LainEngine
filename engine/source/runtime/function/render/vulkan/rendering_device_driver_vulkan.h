@@ -2,7 +2,6 @@
 #ifndef RENDERING_DEVICE_DRIVER_VULKAN_H
 #define RENDERING_DEVICE_DRIVER_VULKAN_H
 #include "vulkan_header.h"
-
 #include "core/templates/hash_map.h"
 #include "core/templates/paged_allocator.h"
 #include "function/render/common/rendering_device_driver.h"

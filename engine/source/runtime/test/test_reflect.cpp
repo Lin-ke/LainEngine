@@ -15,7 +15,7 @@ namespace lain {
 		int TestMeta::test_Vector3_reflect() {
 			Vector3 p{ 1,2,3 };
 			float value = 10;
-			test_meta(p, "Vector3", "x", &value);
+			auto _ = test_meta(p, "Vector3", "x", &value);
 			return 0;
 		}
 
@@ -28,7 +28,7 @@ namespace lain {
 			Vector3 p6{ 7,8,9 };
 			Vector3 p[3]{ p4,p5,p6 };
 			auto bss = Basis(p1,p2,p3);
-			test_meta(bss, "Basis", "rows", &p);
+			auto _ = test_meta(bss, "Basis", "rows", &p);
 			
 			return 0;
 		}
@@ -68,7 +68,7 @@ namespace lain {
 		int TestMeta::test_Matrix3x3() {
 			Matrix3x3 p = { 1,2,3,4,5,6,7,8,9 };
 			Matrix3x3 p1 = { 9,8,7,6,5,4,3,2,1 };
-			test_meta(p, "Matrix3x3", "mat", &p1);
+			auto _ = test_meta(p, "Matrix3x3", "mat", &p1);
 			return 0;
 		}
 		/*TEST_CASE("testing Matrix3x3") {

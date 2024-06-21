@@ -18,7 +18,7 @@ namespace Generator
         class_def.set("class_base_class_size", std::to_string(class_temp->m_base_classes.size()));
         class_def.set("class_need_register", true);
         class_def.set("class_is_struct", class_temp->m_is_struct);
-        auto& current_namespace = class_temp->getCurrentNamespace();
+        auto current_namespace = class_temp->getCurrentNamespace();
         if (class_temp->m_class_namespace_start != -1) {
             class_def.set("class_is_in_class", true);
             class_def.set("class_father_namespace", current_namespace[current_namespace.size() - 1]);

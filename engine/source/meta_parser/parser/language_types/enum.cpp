@@ -24,7 +24,7 @@ m_qualified_name(Utils::getTypeNameWithoutNamespace(cursor.getType())), m_parent
         L_PRINT(m_name, shouldCompile());
     }*/
 
-	auto& children = cursor.getChildren();
+	auto children = cursor.getChildren();
 	for (auto& child : children) {
 		switch (child.getKind()) {
 		case CXCursor_EnumConstantDecl:

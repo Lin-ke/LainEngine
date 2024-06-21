@@ -244,6 +244,7 @@ publish/
 # in these scripts will be unencrypted
 PublishScripts/
 xmake/
+.xmake/
 # NuGet Packages
 *.nupkg
 # NuGet Symbol Packages

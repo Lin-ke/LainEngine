@@ -349,7 +349,7 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(const TextureFormat& 
 
 		static auto add_unique_family = [](TightLocalVector<uint32_t>& sharing_indices, uint32_t& count, Vector<CommandQueueFamilyID>& family ) {
 			for (auto family_id: family) {
-				uint32_t id = family_id.id - 1;
+				uint32_t id = static_cast<uint32_t> (family_id.id - 1);
 				if (sharing_indices.find(id) == -1)
 					sharing_indices.push_back(id);
 			}
@@ -539,7 +539,7 @@ RDD::CommandQueueID RenderingDeviceDriverVulkan::command_queue_create(CommandQue
 	DEV_ASSERT(p_cmd_queue_family.id != 0);
 
 	// Make a virtual queue on top of a real queue. Use the queue from the family with the least amount of virtual queues created.
-	uint32_t family_index = p_cmd_queue_family.id - 1;
+	uint32_t family_index = static_cast<uint32_t>(p_cmd_queue_family.id - 1);
 	TightLocalVector<Queue>& queue_family = queue_families[family_index];
 	uint32_t picked_queue_index = UINT_MAX;
 	uint32_t picked_virtual_count = UINT_MAX;
