@@ -27,7 +27,7 @@ project "Editor"
 
 	links
 	{
-		"LainRuntime"
+		"LainRuntime",
 	}
 
 	filter "system:windows"

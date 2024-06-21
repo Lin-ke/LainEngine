@@ -290,7 +290,7 @@ Error RenderingContextDriverVulkan::_initialize_instance_extensions() {
 	// The surface extension and the platform-specific surface extension are core requirements.
 	_register_requested_instance_extension(VK_KHR_SURFACE_EXTENSION_NAME, true);
 
-	// platform-related
+	// platform-related 实际就是surfaceKHR
 	if (_get_platform_surface_extension()) {
 		_register_requested_instance_extension(_get_platform_surface_extension(), true);
 	}
@@ -566,6 +566,7 @@ Error RenderingContextDriverVulkan::_create_vulkan_instance(const VkInstanceCrea
 		"Do you have a compatible Vulkan installable client driver (ICD) installed?\n"
 		"Please look at the Getting Started guide for additional information.\n"
 		"vkCreateInstance Failure");
+	return OK;
 }
 /// <summary>
 /// vkEnumeratePhysicalDevices;
