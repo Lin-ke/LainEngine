@@ -18,7 +18,8 @@ project "LainRuntime"
 		"GLFW_INCLUDE_NONE",
       "USE_VOLK",
       "VULKAN_ENABLED",
-      "VK_NO_PROTOTYPES"
+      "VK_NO_PROTOTYPES",
+      "_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING"
       }
       includedirs
       {

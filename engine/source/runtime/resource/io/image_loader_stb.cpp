@@ -6,7 +6,6 @@ namespace lain {
 
 	Error StbLoader::load_image(Ref<Image> p_image, Ref<FileAccess> f, ImageLoader::LoaderFlags p_flags, float p_scale) {
 		int width, height, channels;
-		// 等号运算符是错误的
 		ui8* img = stbi_load(CSTR(f->get_path_absolute()), & width, & height, & channels, 0);
 		ERR_FAIL_NULL_V_MSG(img, ERR_FILE_CORRUPT, "stbi_load failed");
 		Image::Format fmt;
@@ -31,7 +30,6 @@ namespace lain {
 			ERR_FAIL_COND_V_MSG(false, Image::FORMAT_MAX, "wrong jpeg?");
 		}
 		else if (p_ext == "bmp") {
-			// bmp和png是一样的吗
 			switch (p_channels) {
 			case 1:
 				return Image::FORMAT_L8;
@@ -59,6 +57,8 @@ namespace lain {
 				ERR_FAIL_COND_V_MSG(false, Image::FORMAT_MAX, "wrong png?");
 			}
 		}
+		ERR_FAIL_COND_V_MSG(false, Image::FORMAT_MAX, "unknown format");
+
 	}
 
 }

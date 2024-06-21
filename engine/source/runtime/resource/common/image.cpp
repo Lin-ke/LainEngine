@@ -2116,7 +2116,7 @@ Error Image::generate_mipmap_roughness(RoughnessChannel p_roughness_channel, con
 					variance = 0.25f / kappa;
 				}
 
-				float threshold = 0.4;
+				float threshold = static_cast<float>(0.4);
 				roughness = Math::sqrt(roughness * roughness + MIN(3.0f * variance, threshold * threshold));
 
 				switch (p_roughness_channel) {
@@ -2545,8 +2545,8 @@ Error Image::load(const String& p_path) {
 	}
 #endif
 	
-	// image的引用计数和image.data的引用计数是不一样的，不能随便delete
-	// 这里用这个中介
+	// image?????ü?????image.data?????ü???????????????????delete
+	// ??????????н?
 	return ImageLoader::load_image(p_path, this);
 }
 
@@ -2556,7 +2556,7 @@ Ref<Image> Image::load_from_file(const String& p_path) {
 		WARN_PRINT("Loaded resource as image file, this will not work on export: '" + p_path + "'. Instead, import the image file as an Image resource and load it normally as a resource.");
 	}
 #endif
-	// @TODO 这个缓存能正常用吗
+	// @TODO ?????????????????
 	/*Error err = OK;
 	Ref<Image> image = ResourceLoader::load(p_path, "Image", ResourceFormatLoader::CACHE_MODE_REUSE, &err);*/
 	Ref<Image> image;
