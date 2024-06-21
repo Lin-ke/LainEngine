@@ -290,7 +290,7 @@ Error RenderingContextDriverVulkan::_initialize_instance_extensions() {
 	// The surface extension and the platform-specific surface extension are core requirements.
 	_register_requested_instance_extension(VK_KHR_SURFACE_EXTENSION_NAME, true);
 
-	// platform-related
+	// platform-related 实际就是surfaceKHR
 	if (_get_platform_surface_extension()) {
 		_register_requested_instance_extension(_get_platform_surface_extension(), true);
 	}

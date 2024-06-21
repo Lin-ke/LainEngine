@@ -37,13 +37,12 @@ project "LainRuntime"
       links
 		{
          "spdlog",
+         "%{Library.volk}",
          "glfw",
          "json11",
          "mbedtls",
          "spirv-reflect",
          "PreCompile",
-         "volk",
-         -- "%{Library.volk}",
       }
       
       filter "system:windows"

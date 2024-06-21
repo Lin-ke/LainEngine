@@ -2,7 +2,6 @@
 #include "core/os/os.h"
 using namespace lain::graphics;
 // 这里是于surface创建相关的代码
-using namespace lain::graphics;
 const char* RenderingContextDriverVulkanWindows::_get_platform_surface_extension() const {
 	return VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 }
@@ -28,7 +27,9 @@ RenderingContextDriver::SurfaceID RenderingContextDriverVulkanWindows::surface_c
 	create_info.hwnd = wpd->window;
 
 	VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
-	VkResult err = vkCreateWin32SurfaceKHR(instance_get(), &create_info, nullptr, &vk_surface);
+	auto win32_create_surface = PFN_vkCreateWin32SurfaceKHR(vkGetInstanceProcAddr(instance_get(), "vkCreateWin32SurfaceKHR"));
+	vkCreateWin32SurfaceKHR(instance_get(), &create_info, nullptr, &vk_surface);
+	VkResult err = win32_create_surface(instance_get(), &create_info, nullptr, &vk_surface);
 	ERR_FAIL_COND_V(err != VK_SUCCESS, SurfaceID());
 
 	Surface* surface = memnew(Surface);
