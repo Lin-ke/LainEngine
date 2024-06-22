@@ -22,7 +22,6 @@ build/
 **.vcxproj.filters
 **.vcxproj.user
 **.csproj
-
 *.filters
 *log*.txt
 # Compiled Object files

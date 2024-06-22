@@ -51,7 +51,7 @@ project "LainRuntime"
          systemversion "latest"
          defines {"L_PLATFORM_WINDOWS",
       "_WIN32"}
-        
+        buildoptions {"/Zi"}
          links
          {
             "%{Library.WinSock}",

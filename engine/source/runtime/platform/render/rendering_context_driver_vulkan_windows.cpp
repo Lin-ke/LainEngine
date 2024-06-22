@@ -28,7 +28,6 @@ RenderingContextDriver::SurfaceID RenderingContextDriverVulkanWindows::surface_c
 
 	VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
 	auto win32_create_surface = PFN_vkCreateWin32SurfaceKHR(vkGetInstanceProcAddr(instance_get(), "vkCreateWin32SurfaceKHR"));
-	vkCreateWin32SurfaceKHR(instance_get(), &create_info, nullptr, &vk_surface);
 	VkResult err = win32_create_surface(instance_get(), &create_info, nullptr, &vk_surface);
 	ERR_FAIL_COND_V(err != VK_SUCCESS, SurfaceID());
 

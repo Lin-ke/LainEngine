@@ -31,8 +31,11 @@ project "Editor"
 	}
 
 	filter "system:windows"
+	buildoptions {"/Zi"}
 		systemversion "latest"
-		defines "L_PLATFORM_WINDOWS"
+		defines {"L_PLATFORM_WINDOWS",
+	"_SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS"}
+
 
 	filter "configurations:Debug"
 		defines "L_DEBUG"
