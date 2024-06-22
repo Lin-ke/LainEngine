@@ -2,14 +2,28 @@
 include "./setup/premake/premakefile/solution_items.lua"
 include "Dependencies.lua"
 
+--- NOTES: TO GAIN ARM64 SUPPORT @TODO
+-- 1. Add ARM64 to the architecture
+-- 2. Add ARM64 to the outputdir
+-- 3. ADD VULKAN SDK ARM64 AND LLVM ARM64
+-- 4. visual studio need to have ARM64 开发工具
+
+
 workspace "Lain"
-   configurations { "Debug", "Release" }
-   architecture "x86_64"
+   configurations { "Debug", "Release","DebugArm64" }
    startproject "Editor"
    flags
 	{
 		"MultiProcessorCompile"
 	}
+   filter "configurations:Debug"
+      architecture "x86_64"
+   filter "configurations:Release"
+      architecture "x86_64"
+   filter "configurations:DebugArm64"
+      architecture "ARM64"
+   
+
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 parser_path = "%{wks.location}engine/bin"
 

@@ -1,0 +1,13 @@
+[application]
+
+config/name="default_project"
+config/description="this is a default project"
+
+[display]
+window/size/initial_position_type=1
+window/size/initial_screen=1
+window/size/initial_position=1
+
+[rendering]
+rendering_device/vulkan/max_descriptors_per_pool=64
+rendering_device/vulkan/present_wait_latency=1

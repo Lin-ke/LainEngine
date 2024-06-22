@@ -257,7 +257,7 @@ xmake/
 # NuGet v3's project.json files produces more ignorable files
 *.nuget.props
 *.nuget.targets
-
+!game/prj.txt
 # Microsoft Azure Build Output
 csx/
 *.build.csdef
@@ -459,4 +459,5 @@ FodyWeavers.xsd
 
 engine/thirdparty/volk/
 engine/thirdparty/vma/
-
+!.vscode/launch.json
+!.vscode/tasks.json

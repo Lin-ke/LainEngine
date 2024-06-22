@@ -25,7 +25,7 @@ project "Parser"
       }
 
       
-      
+      --- @TODO add arm64 support
       filter "system:windows"
          links
          {
