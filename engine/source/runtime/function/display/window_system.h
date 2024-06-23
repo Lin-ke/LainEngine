@@ -2,7 +2,6 @@
 #ifndef __WINDOW_SYSTEM_H__
 #define __WINDOW_SYSTEM_H__
 
-#define GLFW_INCLUDE_VULKAN
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include "function/render/vulkan/vulkan_header.h"
 #include "core/math/vector2i.h"

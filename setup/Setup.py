@@ -37,6 +37,15 @@ try:
 except Exception as e:
     print("error when copying {}".format("volk"))
     print(e)
+try:
+    if(not os.path.exists(os.path.join(thirdPartyPath,"vma"))):
+        #makedir
+        os.makedirs(os.path.join(thirdPartyPath,"vma"))
+    vulkanSDK = os.environ.get("VULKAN_SDK")
+    shutil.copyfile(f"{vulkanSDK}/include/vma/vk_mem_alloc.h", os.path.join(os.path.join(thirdPartyPath,"vma"), "vk_mem_alloc.h"))
+except Exception as e:
+    print("error when copying {}".format("vma"))
+    print(e)
 thirdPartyFolders = os.listdir(thirdPartyPath)
 for premakeName in os.listdir(premakefilePath):
     name = premakeName[:-len("-premake5.lua")]
