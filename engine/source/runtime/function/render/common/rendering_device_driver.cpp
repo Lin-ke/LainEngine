@@ -37,6 +37,7 @@ namespace lain {
 	namespace graphics {
 
 	// 并没有读id，只是得到了description里的东西
+	// @todo readit
 Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_spirv, ShaderReflection& r_reflection) {
 	r_reflection = {};
 	// spriv是一组

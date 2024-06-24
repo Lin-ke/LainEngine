@@ -29,7 +29,6 @@
 /**************************************************************************/
 
 #include "rendering_device_commons.h"
-#define STEPIFY(m_number, m_alignment) ((((m_number) + ((m_alignment)-1)) / (m_alignment)) * (m_alignment))
 // ¶ÔÆë
 
 namespace lain::graphics {

@@ -16,6 +16,9 @@
                 "${workspaceFolder}/engine/thirdparty/tinyobjloader",
                 "${workspaceFolder}/engine/thirdparty/volk",
                 "${workspaceFolder}/engine/thirdparty/vma",
+                "${workspaceFolder}/engine/thirdparty",
+                "${workspaceFolder}/engine/thirdparty/smol-v",
+
                 "${workspaceFolder}/engine/source",
                 "${workspaceFolder}/engine/source/runtime",
                 "${workspaceFolder}/engine/source/editor",
@@ -31,7 +34,8 @@
               "VULKAN_ENABLED",
               "VK_NO_PROTOTYPES",
               "L_PLATFORM_WINDOWS",
-                "_WIN32"
+                "_WIN32",
+                "DEV_ENABLED"
             ],
             "windowsSdkVersion": "10.0.22621.0",
             "compilerPath": "cl.exe",

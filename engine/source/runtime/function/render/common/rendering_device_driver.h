@@ -14,6 +14,14 @@
 #define ALLOCA(m_size) ((m_size != 0) ? alloca(m_size) : nullptr)
 #define ALLOCA_ARRAY(m_type, m_count) ((m_type *)ALLOCA(sizeof(m_type) * (m_count)))
 #define ALLOCA_SINGLE(m_type) ALLOCA_ARRAY(m_type, 1)
+// This helps forwarding certain arrays to the API with confidence.
+#define ARRAYS_COMPATIBLE(m_type_a, m_type_b) (sizeof(m_type_a) == sizeof(m_type_b) && alignof(m_type_a) == alignof(m_type_b))
+// This is used when you also need to ensure structured types are compatible field-by-field.
+// TODO: The fieldwise check is unimplemented, but still this one is useful, as a strong annotation about the needs.
+#define ARRAYS_COMPATIBLE_FIELDWISE(m_type_a, m_type_b) ARRAYS_COMPATIBLE(m_type_a, m_type_b)
+// Another utility, to make it easy to compare members of different enums, which is not fine with some compilers.
+#define ENUM_MEMBERS_EQUAL(m_a, m_b) ((int64_t)m_a == (int64_t)m_b)
+
 namespace lain {
 	namespace graphics {
 
@@ -165,17 +173,21 @@ namespace lain {
 		};
 		// Texture create info 里还包括 subresourceRange
 		// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkImageLayout.html
-		enum TextureLayout {
+		enum TextureLayout
+		{
 			TEXTURE_LAYOUT_UNDEFINED,
-			TEXTURE_LAYOUT_GENERAL,
+			TEXTURE_LAYOUT_STORAGE_OPTIMAL,
 			TEXTURE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			TEXTURE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 			TEXTURE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
 			TEXTURE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-			TEXTURE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-			TEXTURE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			TEXTURE_LAYOUT_COPY_SRC_OPTIMAL,
+			TEXTURE_LAYOUT_COPY_DST_OPTIMAL,
+			TEXTURE_LAYOUT_RESOLVE_SRC_OPTIMAL,
+			TEXTURE_LAYOUT_RESOLVE_DST_OPTIMAL,
+			TEXTURE_LAYOUT_VRS_ATTACHMENT_OPTIMAL,
 			TEXTURE_LAYOUT_PREINITIALIZED,
-			TEXTURE_LAYOUT_VRS_ATTACHMENT_OPTIMAL = 1000164003,
+			TEXTURE_LAYOUT_MAX
 		};
 		// https://registry.khronos.org/VulkanSC/specs/1.0-extensions/man/html/VkImageAspectFlagBits.html
 		// specifying which aspects of an image are included in a view
@@ -268,10 +280,12 @@ namespace lain {
 			PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT = (1 << 9),
 			PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT = (1 << 10),
 			PIPELINE_STAGE_COMPUTE_SHADER_BIT = (1 << 11),
-			PIPELINE_STAGE_TRANSFER_BIT = (1 << 12),
+			PIPELINE_STAGE_COPY_BIT = (1 << 12),
 			PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT = (1 << 13),
+			PIPELINE_STAGE_RESOLVE_BIT = (1 << 14),
 			PIPELINE_STAGE_ALL_GRAPHICS_BIT = (1 << 15),
 			PIPELINE_STAGE_ALL_COMMANDS_BIT = (1 << 16),
+			PIPELINE_STAGE_CLEAR_STORAGE_BIT = (1 << 17),
 			PIPELINE_STAGE_NONE = 0,// vulkan 1.3 @?
 		};
 		// same with vulkan https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkAccessFlagBits.html
@@ -287,14 +301,16 @@ namespace lain {
 			BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT = (1 << 8),
 			BARRIER_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT = (1 << 9),
 			BARRIER_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT = (1 << 10),
-			BARRIER_ACCESS_TRANSFER_READ_BIT = (1 << 11),
-			BARRIER_ACCESS_TRANSFER_WRITE_BIT = (1 << 12),
+			BARRIER_ACCESS_COPY_READ_BIT = (1 << 11),
+			BARRIER_ACCESS_COPY_WRITE_BIT = (1 << 12),
 			BARRIER_ACCESS_HOST_READ_BIT = (1 << 13),
 			BARRIER_ACCESS_HOST_WRITE_BIT = (1 << 14),
 			BARRIER_ACCESS_MEMORY_READ_BIT = (1 << 15),
 			BARRIER_ACCESS_MEMORY_WRITE_BIT = (1 << 16),
-			BARRIER_ACCESS_NONE = 0,
 			BARRIER_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT = (1 << 23),
+			BARRIER_ACCESS_RESOLVE_READ_BIT = (1 << 24),
+			BARRIER_ACCESS_RESOLVE_WRITE_BIT = (1 << 25),
+			BARRIER_ACCESS_STORAGE_CLEAR_BIT = (1 << 27),
 		};
 
 		struct MemoryBarrier {
@@ -430,16 +446,15 @@ namespace lain {
 
 		// virtual String shader_get_binary_cache_key() = 0;
 		// 使用Vector<u8int>表示Blob
-		// virtual Vector<uint8_t> shader_compile_binary_from_spirv(VectorView<ShaderStageSPIRVData> p_spirv, const String& p_shader_name) = 0;
-		// 
-		// virtual ShaderID shader_create_from_bytecode(const Vector<uint8_t>& p_shader_binary, ShaderDescription& r_shader_desc, String& r_name) = 0;
+		virtual Vector<uint8_t> shader_compile_binary_from_spirv(VectorView<ShaderStageSPIRVData> p_spirv, const String& p_shader_name) = 0;
+		virtual ShaderID shader_create_from_bytecode(const Vector<uint8_t>& p_shader_binary, ShaderDescription& r_shader_desc, String& r_name) = 0;
 		// Only meaningful if API_TRAIT_SHADER_CHANGE_INVALIDATION is SHADER_CHANGE_INVALIDATION_ALL_OR_NONE_ACCORDING_TO_LAYOUT_HASH.
 		virtual uint32_t shader_get_layout_hash(ShaderID p_shader) { return 0; }
 		// virtual void shader_free(ShaderID p_shader) = 0;
 		protected:
 		Error _reflect_spirv(VectorView<ShaderStageSPIRVData> p_spirv, ShaderReflection &r_reflection);
 		
-
+		public:
 		/*********************/
 		/**** UNIFORM SET ****/
 		/*********************/
@@ -451,8 +466,8 @@ namespace lain {
 		};
 
 		// bindless: 1个set，多个binding
-		// virtual UniformSetID uniform_set_create(VectorView<BoundUniform> p_uniforms, ShaderID p_shader, uint32_t p_set_index) = 0;
-		// virtual void uniform_set_free(UniformSetID p_uniform_set) = 0;
+		virtual UniformSetID uniform_set_create(VectorView<BoundUniform> p_uniforms, ShaderID p_shader, uint32_t p_set_index) = 0;
+		virtual void uniform_set_free(UniformSetID p_uniform_set) = 0;
 
 			/******************/
 		/**** TRANSFER ****/
@@ -495,14 +510,14 @@ namespace lain {
 		/**** PIPELINE ****/
 		/******************/
 
-		// virtual void pipeline_free(PipelineID p_pipeline) = 0;
+		virtual void pipeline_free(PipelineID p_pipeline) = 0;
 		// ----- BINDING -----
 		// push constants
 		// virtual void command_bind_push_constants(CommandBufferID p_cmd_buffer, ShaderID p_shader, uint32_t p_first_index, VectorView<uint32_t> p_data) = 0;
 		// ----- CACHE -----
 		// 这是pipeline cache https://docs.vulkan.org/guide/latest/pipeline_cache.html
-		// virtual bool pipeline_cache_create(const Vector<uint8_t>& p_data) = 0;
-		// virtual void pipeline_cache_free() = 0;
+		virtual bool pipeline_cache_create(const Vector<uint8_t>& p_data) = 0;
+		virtual void pipeline_cache_free() = 0;
 		// virtual size_t pipeline_cache_query_size() = 0;
 		// virtual Vector<uint8_t> pipeline_cache_serialize() = 0;
 		/*******************/
@@ -567,8 +582,8 @@ namespace lain {
 			// Dependency flag
 		};
 		
-		// virtual RenderPassID render_pass_create(VectorView<Attachment> p_attachments, VectorView<Subpass> p_subpasses, VectorView<SubpassDependency> p_subpass_dependencies, uint32_t p_view_count) = 0;
-		// virtual void render_pass_free(RenderPassID p_render_pass) = 0;
+		virtual RenderPassID render_pass_create(VectorView<Attachment> p_attachments, VectorView<Subpass> p_subpasses, VectorView<SubpassDependency> p_subpass_dependencies, uint32_t p_view_count) = 0;
+		virtual void render_pass_free(RenderPassID p_render_pass) = 0;
 	
 		// ----- COMMANDS -----
 
@@ -623,7 +638,7 @@ namespace lain {
 		// ----- PIPELINE -----
 		// pipelinecreate需要传入：
 		// Shader; Vertex format; Primitive(IA); state(RR(TS),MS,DS,CB);dynamic(vulkan); attachments; constants.
-		/*virtual PipelineID render_pipeline_create(
+		virtual PipelineID render_pipeline_create(
 			ShaderID p_shader,
 			VertexFormatID p_vertex_format,
 			RenderPrimitive p_render_primitive,
@@ -635,7 +650,7 @@ namespace lain {
 			BitField<PipelineDynamicStateFlags> p_dynamic_state,
 			RenderPassID p_render_pass,
 			uint32_t p_render_subpass,
-			VectorView<PipelineSpecializationConstant> p_specialization_constants) = 0;*/
+			VectorView<PipelineSpecializationConstant> p_specialization_constants) = 0;
 		
 	/*****************/
 	/**** COMPUTE ****/

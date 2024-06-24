@@ -78,18 +78,57 @@ public:
 	/**** SHADER ****/
 	/****************/
 private:
+// @TODO 光追
+struct ShaderBinary {
+
+	struct DataBinding {
+		uint32_t type = 0;
+		uint32_t binding = 0;
+		uint32_t stages = 0;
+		uint32_t length = 0; // Size of arrays (in total elements), or UBOs (in bytes * total elements).
+		uint32_t writable = 0;
+	};
+
+	struct SpecializationConstant {
+		uint32_t type = 0;
+		uint32_t constant_id = 0;
+		uint32_t int_value = 0;
+		uint32_t stage_flags = 0;
+	};
+
+	struct Data {
+		uint64_t vertex_input_mask = 0;
+		uint32_t fragment_output_mask = 0;
+		uint32_t specialization_constants_count = 0;
+		uint32_t is_compute = 0;
+		uint32_t compute_local_size[3] = {};
+		uint32_t set_count = 0;
+		uint32_t push_constant_size = 0;
+		uint32_t vk_push_constant_stages_mask = 0;
+		uint32_t stage_count = 0;
+		uint32_t shader_name_len = 0;
+	};
+};
+
 	struct ShaderInfo {
 		VkShaderStageFlags vk_push_constant_stages = 0;
 		TightLocalVector<VkPipelineShaderStageCreateInfo> vk_stages_create_info;
 		TightLocalVector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
-		VkPipelineLayout vk_pipeline_layout = VK_NULL_HANDLE;
+		VkPipelineLayout vk_pipeline_layout = VK_NULL_HANDLE; // pipeline layout是由shader控制的
 	};
+public:
+	virtual Vector<uint8_t> shader_compile_binary_from_spirv(VectorView<ShaderStageSPIRVData> p_spirv, const String& p_shader_name) override final;
+	virtual ShaderID shader_create_from_bytecode(const Vector<uint8_t>& p_shader_binary, ShaderDescription& r_shader_desc, String& r_name) override final;
+
+	void shader_free(ShaderID p_shader);
+	
 	/*********************/
 	/**** UNIFORM SET ****/
 	/*********************/
 	
 	static const uint32_t MAX_UNIFORM_POOL_ELEMENT = 65535;
-	// 为每个描述符集类型创建一个池
+	// 为每个描述符集=[描述符类型+数量]创建一个池
+
 	struct DescriptorSetPoolKey {
 		uint16_t uniform_type[UNIFORM_TYPE_MAX] = {};
 
@@ -98,14 +137,20 @@ private:
 		}
 	};
 	uint32_t max_descriptor_sets_per_pool = 0; 
-	using DescriptorSetPools = RBMap<DescriptorSetPoolKey, HashMap<VkDescriptorPool, uint32_t>>;
-
+	using DescriptorSetPools = RBMap<DescriptorSetPoolKey, HashMap<VkDescriptorPool, uint32_t>>; // 池和引用次数，超过Max则需要新的（相同的）池
 	struct UniformSetInfo {
 		VkDescriptorSet vk_descriptor_set = VK_NULL_HANDLE;
 		VkDescriptorPool vk_descriptor_pool = VK_NULL_HANDLE;
 		DescriptorSetPools::Iterator pool_sets_it = {};
 	};
+	DescriptorSetPools descriptor_set_pools;
+	VkDescriptorPool _descriptor_set_pool_find_or_create(const DescriptorSetPoolKey &p_key, DescriptorSetPools::Iterator *r_pool_sets_it);
+	void _descriptor_set_pool_unreference(DescriptorSetPools::Iterator p_pool_sets_it, VkDescriptorPool p_vk_descriptor_pool);
+
 public:
+	virtual UniformSetID uniform_set_create(VectorView<BoundUniform> p_uniforms, ShaderID p_shader, uint32_t p_set_index) override final;
+	virtual void uniform_set_free(UniformSetID p_uniform_set) override final;
+
 	/****************/
 	/**** FENCES ****/
 	/****************/
@@ -212,7 +257,33 @@ private:
 	static int caching_instance_count;
 	PipelineCache pipelines_cache;
 	String pipeline_cache_id;
+	virtual void pipeline_free(PipelineID p_pipeline) override final;
+	// --- cache ---
+	virtual bool pipeline_cache_create(const Vector<uint8_t>& p_data) override final;
+	virtual void pipeline_cache_free() override final;
+	/*******************/
+	/**** RENDERING ****/
+	/*******************/
+	// ----- SUBPASS -----
+	// 这里封装的十分如封
+	virtual RenderPassID render_pass_create(VectorView<Attachment> p_attachments, VectorView<Subpass> p_subpasses, VectorView<SubpassDependency> p_subpass_dependencies, uint32_t p_view_count) override final;
+	virtual void render_pass_free(RenderPassID p_render_pass) override final;
 
+	// ----- PIPELINE -----
+
+	virtual PipelineID render_pipeline_create(
+			ShaderID p_shader,
+			VertexFormatID p_vertex_format,
+			RenderPrimitive p_render_primitive,
+			PipelineRasterizationState p_rasterization_state,
+			PipelineMultisampleState p_multisample_state,
+			PipelineDepthStencilState p_depth_stencil_state,
+			PipelineColorBlendState p_blend_state,
+			VectorView<int32_t> p_color_attachments,
+			BitField<PipelineDynamicStateFlags> p_dynamic_state,
+			RenderPassID p_render_pass,
+			uint32_t p_render_subpass,
+			VectorView<PipelineSpecializationConstant> p_specialization_constants) override final;
 	/*****************/
 	/**** GENERIC ****/
 	/*****************/

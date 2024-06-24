@@ -15,7 +15,9 @@ IncludeDir["json11"]  =   (vdrprefix .. "/json11")
 IncludeDir["mbedtls"] = (vdrprefix .. "/mbedtls/include")
 IncludeDir["stb_image"]  =   (vdrprefix .. "/stb_image")
 IncludeDir["spirv_reflect"]  =   (vdrprefix .. "/spirv-reflect")
-IncludeDir["vma"]  =   (vdrprefix .. "/vma/include")
+IncludeDir["vma"]  =   (vdrprefix .. "/vma")
+IncludeDir["volk"]  =   (vdrprefix .. "/volk")
+
 
 
 IncludeDir["tinyobj"]  =   (vdrprefix .. "/tinyobjloader")

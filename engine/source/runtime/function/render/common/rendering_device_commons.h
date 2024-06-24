@@ -4,6 +4,7 @@
 #include "core/typedefs.h"
 #include "core/object/object.h"
 #include "core/meta/type_info.h"
+#define STEPIFY(m_number, m_alignment) ((((m_number) + ((m_alignment)-1)) / (m_alignment)) * (m_alignment))
 namespace lain {
 	namespace graphics {
 
@@ -462,7 +463,7 @@ namespace lain {
 		/*********************/
 
 		static const uint32_t MAX_UNIFORM_SETS = 16;
-
+		// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkDescriptorType.html
 		enum UniformType {
 			UNIFORM_TYPE_SAMPLER, // For sampling only (sampler GLSL type).
 			UNIFORM_TYPE_SAMPLER_WITH_TEXTURE, // For sampling only, but includes a texture, (samplerXX GLSL type), first a sampler then a texture.
@@ -899,6 +900,7 @@ public:
 
 		bool operator<(const ShaderSpecializationConstant& p_other) const { return constant_id < p_other.constant_id; }
 	};
+	// @todo 加入光追的部分
 	struct ShaderDescription{
 		uint64_t vertex_input_mask = 0; // layout(location)的location
 		uint32_t fragment_output_mask = 0;
@@ -911,10 +913,10 @@ public:
 		Vector<ShaderStage> stages;
 	};
 	protected:
-		struct ShaderReflection : public ShaderDescription {
-			BitField<ShaderStage> stages;
-			BitField<ShaderStage> push_constant_stages;
-		};
+	struct ShaderReflection : public ShaderDescription {
+		BitField<ShaderStage> stages;
+		BitField<ShaderStage> push_constant_stages;
+	}; // 可能说reflection的部分是个内部的东西，不应该暴露给用户
 
 	};
 	}// namespace graphic

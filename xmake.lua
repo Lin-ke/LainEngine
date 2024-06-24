@@ -84,6 +84,7 @@ target("Renderer")
     add_includedirs("engine/source","engine/source/runtime", "engine/source/editor")
     -- stb_img
     -- json 11
+    add_includedirs("engine/thirdparty")
     add_includedirs("engine/thirdparty/stb_image")
     add_headerfiles("engine/thirdparty/json11/json11.hpp")
     add_files("engine/thirdparty/json11/json11.cpp")
@@ -99,7 +100,7 @@ target("Renderer")
     "_CRT_SECURE_NO_WARNINGS",
      "VULKAN_ENABLED",
       "USE_VOLK",
-     "_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING",
+     "_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING"
      }
     
     if is_plat("windows") then

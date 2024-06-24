@@ -69,6 +69,8 @@ public:
 	typedef KeyValue<K, V> ValueType;
 
 	struct Iterator {
+		template<class K, class V, class C, class A>
+		friend class RBMap;
 		_FORCE_INLINE_ KeyValue<K, V>& operator*() const {
 			return E->key_value();
 		}

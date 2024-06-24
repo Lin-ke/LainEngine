@@ -19,7 +19,7 @@ project "LainRuntime"
       "USE_VOLK",
       "VULKAN_ENABLED",
       "VK_NO_PROTOTYPES",
-      "_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING"
+      "_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING",
       }
       includedirs
       {
@@ -34,6 +34,8 @@ project "LainRuntime"
          "%{IncludeDir.tinyobj}",
          "%{IncludeDir.spirv_reflect}",
          "%{IncludeDir.volk}",
+         "%{IncludeDir.vma}",
+         vdrprefix,
       }
       -- the links aligns with the project names in premakes.lua
       links
