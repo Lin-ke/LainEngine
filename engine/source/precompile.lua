@@ -1,7 +1,7 @@
 function precompile()
     local p = string.sub(path.getabsolute("runtime"), 1 ,-8)
     Runtime_headers = os.matchfiles("runtime/**.h")
-    -- 涓嶈鍐嶈繖閲屽啓editor鐨勶紝
+    -- 不要再这里写editor的，
     All_headers = {}
     for _, v in ipairs(Runtime_headers) do
         table.insert(All_headers, ( p .. v))

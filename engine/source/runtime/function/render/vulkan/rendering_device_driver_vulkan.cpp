@@ -307,7 +307,7 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(const TextureFormat& 
 		TEXTURE_MISC_CONCURRENT_QUEUE_VIDEO_DUPLEX);
 	/*bool concurrent_queue = queue_flags != 0 ||
 		staging_buffer != nullptr ||
-		create_info.initial_layout != VK_IMAGE_LAYOUT_UNDEFINED;*/
+		create_info.initial_layout != VK_IMAGE_LAYOUT_UNDEFINED;*/ //@TODO
 	create_info.mipLevels = p_format.mipmaps;
 	create_info.arrayLayers = p_format.array_layers;
 
@@ -377,7 +377,7 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(const TextureFormat& 
 
 	VmaAllocationCreateInfo alloc_create_info = {};
 	alloc_create_info.flags = (p_format.usage_bits & TEXTURE_USAGE_CPU_READ_BIT) ? VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT : 0;
-	alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+	alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE; // @todo 如果是只有GPU是否应该GPU ONLY VMA_MEMORY_USAGE_GPU_ONLY
 	if (image_size <= SMALL_ALLOCATION_MAX_SIZE) { // 小的分配用這個
 		uint32_t mem_type_index = 0;
 		vmaFindMemoryTypeIndexForImageInfo(allocator, &create_info, &alloc_create_info, &mem_type_index);

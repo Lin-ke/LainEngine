@@ -363,11 +363,11 @@ namespace lain {
 			LocalVector<Barrier> history;
 			Vector< KeyValue<uint32_t, uint32_t> > alias_transfer;
 
-			RDD::RenderPassInfo render_pass_info;
+			// RDD::RenderPassInfo render_pass_info;
 			Vector<unsigned> physical_color_attachment;
 			unsigned physical_color_attachment;
 		};
-		Vector
+		// Vector
 
 	};
 

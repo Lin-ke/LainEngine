@@ -104,7 +104,6 @@ bool MetaParser::parseProject()
     std::cout << "Parsing project file: " << m_project_input_file << std::endl;
 
     std::fstream include_txt_file(m_project_input_file, std::ios::in);
-
     if (include_txt_file.fail())
     {
         std::cout << "Could not load file: " << m_project_input_file << std::endl;
@@ -115,7 +114,6 @@ bool MetaParser::parseProject()
     buffer << include_txt_file.rdbuf();
 
     std::string context = buffer.str();
-
     auto         inlcude_files = Utils::split(context, ";");
     std::fstream include_file;
 
@@ -142,7 +140,6 @@ bool MetaParser::parseProject()
     }
     include_file << "#ifndef __" << output_filename << "__" << std::endl;
     include_file << "#define __" << output_filename << "__" << std::endl;
-
     for (auto include_item : inlcude_files)
     {
         std::string temp_string(include_item);

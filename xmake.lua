@@ -1,73 +1,7 @@
+add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
 add_rules("mode.debug", "mode.release")
-add_requires( "vulkansdk","assimp", "vulkan-memory-allocator","volk" ,"glfw","imgui", "mbedtls", "zlib", "spdlog","tinyobjloader", "vulkan-headers")
-
--- target("glfw")
-    -- set_kind("static")
-    -- set_languages("c99")
-    -- add_deps("volk")
-    -- add_includedirs("engine/thirdparty/volk")
-    -- add_headerfiles("engine/thirdparty/glfw/include/GLFW/glfw3.h",
-	-- 	"engine/thirdparty/glfw/include/GLFW/glfw3native.h",
-	-- 	"engine/thirdparty/glfw/src/glfw_config.h")
-    -- add_files
-	-- (
-	-- 	"engine/thirdparty/glfw/src/context.c",
-	-- 	"engine/thirdparty/glfw/src/init.c",
-	-- 	"engine/thirdparty/glfw/src/input.c",
-	-- 	"engine/thirdparty/glfw/src/monitor.c",
-	-- 	"engine/thirdparty/glfw/src/null_init.c",
-	-- 	"engine/thirdparty/glfw/src/null_joystick.c",
-	-- 	"engine/thirdparty/glfw/src/null_monitor.c",
-	-- 	"engine/thirdparty/glfw/src/null_window.c",
-	-- 	"engine/thirdparty/glfw/src/platform.c",
-	-- 	"engine/thirdparty/glfw/src/vulkan.c",
-	-- 	"engine/thirdparty/glfw/src/window.c"    )
-    -- if is_plat("linux") then
-    --     add_files(
-    --         "engine/thirdparty/glfw/src/x11_init.c",
-    --         "engine/thirdparty/glfw/src/x11_monitor.c",
-    --         "engine/thirdparty/glfw/src/x11_window.c",
-    --         "engine/thirdparty/glfw/src/xkb_unicode.c",
-    --         "engine/thirdparty/glfw/src/posix_module.c",
-    --         "engine/thirdparty/glfw/src/posix_time.c",
-    --         "engine/thirdparty/glfw/src/posix_thread.c",
-    --         "engine/thirdparty/glfw/src/posix_module.c",
-    --         "engine/thirdparty/glfw/src/glx_context.c",
-    --         "engine/thirdparty/glfw/src/egl_context.c",
-    --         "engine/thirdparty/glfw/src/osmesa_context.c",
-    --         "engine/thirdparty/glfw/src/linux_joystick.c"
-        
-    --     )
-    --     add_defines("_GLFW_X11")
-    -- end
-    -- if is_plat("macosx") then
-    --     add_files(
-    --         "engine/thirdparty/glfw/src/cocoa_init.m",
-    --         "engine/thirdparty/glfw/src/cocoa_monitor.m",
-    --         "engine/thirdparty/glfw/src/cocoa_window.m",
-    --         "engine/thirdparty/glfw/src/cocoa_joystick.m",
-    --         "engine/thirdparty/glfw/src/cocoa_time.c",
-    --         "engine/thirdparty/glfw/src/nsgl_context.m",
-    --         "engine/thirdparty/glfw/src/posix_thread.c"
-    --     )
-    -- end
-    -- if is_plat("windows") then
-    --     add_files(
-    --         "engine/thirdparty/glfw/src/win32_window.c",
-	-- 		"engine/thirdparty/glfw/src/win32_init.c",
-	-- 		"engine/thirdparty/glfw/src/win32_joystick.c",
-	-- 		"engine/thirdparty/glfw/src/win32_module.c",
-	-- 		"engine/thirdparty/glfw/src/win32_monitor.c",
-	-- 		"engine/thirdparty/glfw/src/win32_time.c",
-	-- 		"engine/thirdparty/glfw/src/win32_thread.c",
-	-- 		"engine/thirdparty/glfw/src/wgl_context.c",
-	-- 		"engine/thirdparty/glfw/src/egl_context.c",
-	-- 		"engine/thirdparty/glfw/src/osmesa_context.c"
-    --     )
-    --     add_defines("_GLFW_WIN32", "WIN32","GLFW_EXPOSE_NATIVE_WIN32", "_WIN32", "NoRuntimeChecks", {public=true} )
-
-    -- end
-
+add_requires( "assimp", "vulkan-memory-allocator","volk" ,"glfw","imgui",  "zlib", "spdlog","tinyobjloader", "vulkan-headers")
+add_requires("mustache")
 target("Spirv-Reflect")
     set_kind("static")
     set_languages("cxx17")
@@ -76,7 +10,65 @@ target("Spirv-Reflect")
     add_headerfiles("engine/thirdparty/spirv-reflect/**.h")
     add_includedirs("engine/thirdparty/spirv-reflect/include")
     target_end()
+target("mbedtls")
+    set_kind("static")
+    add_files("engine/thirdparty/mbedtls/library/*.c")
+    add_headerfiles("engine/thirdparty/mbedtls/include/**.h")
+    add_includedirs("engine/thirdparty/mbedtls/include", {public = true})
+    add_includedirs("engine/thirdparty/zlib", {public = true})
+    add_defines("MBEDTLS_ZLIB_SUPPORT")
+    target_end()
+target("Parser")
+    set_kind("binary")
+    set_languages("cxx17")
+    add_files(("engine/source/meta_parser/parser/**.cpp"))
+    add_headerfiles("engine/source/meta_parser/parser/**.h")
+    add_includedirs("engine/thirdparty/LLVM/include")
+    add_includedirs("engine/source/meta_parser/parser")
+    add_packages("mustache")
+    if is_plat("windows") then
+        if is_arch("x64") then
+            add_linkdirs("engine/thirdparty/LLVM/lib/x64")
+        end
+        if is_arch("arm64") then
+            add_linkdirs("engine/thirdparty/LLVM/lib/arm64")
+        end
+        add_links("libclang.lib")
+    end
+    after_build(function(target)
+        os.cp(target:targetfile(), "$(projectdir)/engine/bin")
+        -- 判断dll是否存在
+        local clangdll = target:targetdir().."/libclang.dll"
+        if not os.exists(clangdll) then
+            if is_arch("x64") then
+                os.cp("engine/thirdparty/LLVM/bin/x64/libclang.dll", "$(projectdir)/engine/bin")
+            end
+            if is_arch("arm64") then
+                os.cp("engine/thirdparty/LLVM/bin/arm64/libclang.dll", "$(projectdir)/engine/bin")
+            end
+        end
+    end)
+    
+target_end()
 
+target("MetaParser")
+    set_kind("phony")
+    add_headerfiles("engine/source/_generated/**.h")
+    add_headerfiles("engine/source/_generated/**.ipp")
+    add_deps(("Parser"))
+    after_build(
+       function(target)
+        import("core.base.process")
+        import ("setup.precompile_xmake",{alias = "precompile"})
+        
+        precompile()
+        proc = process.open((os.projectdir()) .. "/engine/bin/Parser.exe" .. " " .. precompile.get_parser_order())
+        if proc then
+            proc:wait()
+            proc:close()
+        end
+    end
+    )
 target("Renderer")
     set_kind("binary")
     set_languages("cxx17", "c99")
@@ -87,7 +79,8 @@ target("Renderer")
     add_files("engine/source/runtime/**.cpp")
     add_files("engine/source/editor/**.cpp")
     add_headerfiles("engine/source/_generated/**.h")
-    add_packages("vulkansdk", "assimp","glfw", "imgui", "mbedtls", "zlib", "spdlog","tinyobjloader","vulkan-headers" )
+    add_deps("mbedtls")
+    add_packages("assimp","glfw", "imgui",  "zlib", "spdlog","tinyobjloader","vulkan-headers" )
     add_includedirs("engine/source","engine/source/runtime", "engine/source/editor")
     -- stb_img
     -- json 11
@@ -97,15 +90,8 @@ target("Renderer")
     add_includedirs("engine/thirdparty/json11")
     -- others
     add_includedirs("engine/thirdparty")
-    -- llvm headers
-    -- add_includedirs("engine/thirdparty/LLVM/include")
-    -- llvm libs
-    -- add_linkdirs("engine/thirdparty/LLVM/lib/x64")
-    -- add_links("libclang.lib")
     -- spirv-reflect 用自己的
     add_includedirs("engine/thirdparty/spirv-reflect")
-    -- 疑似bug：
-    add_includedirs("engine/thirdparty/spdlog/include")
     -- vulkan
     add_includedirs("$(env VULKAN_SDK)/Include")
     add_linkdirs("$(env VULKAN_SDK)/Lib")
@@ -115,6 +101,7 @@ target("Renderer")
       "USE_VOLK",
      "_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING",
      }
+    
     if is_plat("windows") then
         add_links("Ws2_32.lib")
         add_links("Winmm.lib")
