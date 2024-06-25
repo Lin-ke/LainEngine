@@ -18,7 +18,8 @@ namespace lain {
 	class VariantInternal;
 	class RID;
 	class Serializer;
-	// variant的实现和lua是一样的，但是多一些类
+	// variant的实现和lua是一样的，但是多一些基本类，如果只有数学类和table就是lua了
+	// 注意有一些引用计数的情况可能会导致问题
 	class Variant {
 		friend class VariantInternal;
 		friend class Serializer;
@@ -71,16 +72,20 @@ namespace lain {
 			PACKED_VECTOR2_ARRAY,
 			PACKED_VECTOR3_ARRAY,
 			PACKED_COLOR_ARRAY,
+			PACKED_VECTOR4_ARRAY,
 
 			// reflect
-			REFLECTIONINSTANCE,
+			REFLECTIONINSTANCE, //Reflection instance真的有必要吗？
 			VARIANT_MAX,
 
 
 
 		};
 
-
+		enum {
+			// Maximum recursion depth allowed when serializing variants.
+			MAX_RECURSION_DEPTH = 1024,
+		};
 	private:
 
 		Type type = NIL;
@@ -157,7 +162,8 @@ namespace lain {
 			double _float;
 			void* _ptr; //generic pointer
 			lain::AABB* _aabb;
-
+			Basis *_basis;
+			Transform3D *_transform3d;
 			PackedArrayRefBase* packed_array;
 			uint8_t _mem[sizeof(ObjData) > (sizeof(real_t) * 4) ? sizeof(ObjData) : (sizeof(real_t) * 4)]{ 0 };
 		} _data alignas(8);
@@ -167,7 +173,29 @@ namespace lain {
 		Variant(const Variant*);
 		Variant(const Variant**);
 
+	struct Pools { // 使用这个Allocator分配这几种类型资源的内存
+		union BucketSmall {
+			BucketSmall() {}
+			~BucketSmall() {}
+			// Transform2D _transform2d;
+			lain::AABB _aabb;
+		};
+		union BucketMedium {
+			BucketMedium() {}
+			~BucketMedium() {}
+			Basis _basis;
+			Transform3D _transform3d;
+		};
+		union BucketLarge {
+			BucketLarge() {}
+			~BucketLarge() {}
+			// Projection _projection;
+		};
 
+		static PagedAllocator<BucketSmall, true> _bucket_small;
+		static PagedAllocator<BucketMedium, true> _bucket_medium;
+		static PagedAllocator<BucketLarge, true> _bucket_large;
+	};
 	public:
 		String stringify(int recursion_count) const;
 		_FORCE_INLINE_ Type get_type() const {
@@ -207,6 +235,11 @@ namespace lain {
 		Variant(const Vector<int32_t>& p_int32_array);
 		Variant(const Vector<double>& p_double_array);
 		Variant(const Vector<ui8>& p_ui8_array);
+		Variant(const Vector<Vector2>& p_vector2_array);
+		Variant(const Vector<Vector3>& p_vector3_array);
+		Variant(const Vector<Color>& p_color_array);
+		Variant(const Vector<Vector4>& p_vector4_array);
+		Variant(const Vector<Variant>& p_variant_array);
 
 		Variant(const Dictionary& p_dictionary);
 
@@ -228,12 +261,29 @@ namespace lain {
 		//other class
 		Variant(const Vector2& p_vector2);
 		Variant(const Vector3& p_vector3);
+		Variant(const Vector4& p_vector4);
+		Variant(const Vector2i& p_vector2);
+		Variant(const Vector3i& p_vector3);
+		Variant(const Vector4i& p_vector4);
 		Variant(const String& p_string);
 		Variant(const StringName& p_string);
 		Variant(const GObjectPath& p_string);
+		Variant(const Rect2& p_rect2);
+		Variant(const Rect2i& p_rect2);
+		Variant(const Plane &p_plane);
+		Variant(const lain::AABB &);
+		Variant(const lain::RID &);
+		Variant(const Signal &);
+		Variant(const Quaternion &);
+		Variant(const Basis &);
+		// Variant(const Transform2D &);
+		Variant(const Transform3D &);
+
 
 		Variant(const char* const p_cstring);
 		Variant(const Color& p_cstring);
+
+
 
 		// copy construct
 		Variant(const Variant& p_variant);
@@ -271,14 +321,14 @@ namespace lain {
 		operator Vector3() const;
 		operator Vector3i() const;
 		operator Vector4() const;
-		/*operator Vector4i() const;
+		operator Vector4i() const;
 		operator Plane() const;
-		operator ::AABB() const;*/
+		operator lain::AABB() const;
 		operator Quaternion() const;
-		/*operator Basis() const;
-		operator Transform2D() const;
+		operator Basis() const;
 		operator Transform3D() const;
-		operator Projection() const;*/
+		// operator Transform2D() const;
+		// operator Projection() const;
 
 		operator Color() const;
 		operator GObjectPath() const;
@@ -302,9 +352,9 @@ namespace lain {
 		operator PackedVector2Array() const;
 		operator PackedColorArray() const;
 
-		/*operator Vector<::RID>() const;
+		operator Vector<lain::RID>() const;
 		operator Vector<Plane>() const;
-		operator Vector<Face3>() const;*/
+		// operator Vector<Face3>() const;
 		operator Vector<Variant>() const;
 		operator Vector<StringName>() const;
 
@@ -361,6 +411,7 @@ namespace lain {
 				true, //PACKED_VECTOR2_ARRAY,
 				true, //PACKED_VECTOR3_ARRAY,
 				true, //PACKED_COLOR_ARRAY,
+				true, // PACKED_VECTOR4_ARRAY
 				false, //ReflecionInstance
 			};
 

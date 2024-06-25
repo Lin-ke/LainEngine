@@ -33,6 +33,36 @@ namespace lain {
 	Object* ClassDB::instantiate(const StringName& cp_class, bool p_require_real_class) {
 		return static_cast<Object*>(Reflection::TypeMeta::memnewByName(SCSTR(cp_class)));
 	}
+
+	bool ClassDB::can_instantiate(const StringName& cp_class) {
+		Reflection::TypeMeta meta = Reflection::TypeMeta::newMetaFromName(SCSTR(cp_class));
+		return meta.isValid();
+	}
+	// 这个json格式不一定正确
+	void* ClassDB::instantiate_with_name_json(const StringName& cp_class, const Json& p_json ){
+		std::string err;
+		Reflection::ReflectionInstance instance = Reflection::TypeMeta::newFromNameAndJson(SCSTR(cp_class),p_json);
+		if(instance.m_instance == nullptr){
+			return nullptr;
+		}
+		else {
+			return instance.m_instance;
+		}
+	}
+	void* ClassDB::instantiate_with_json(const Json& p_json ){
+		std::string err;
+		Reflection::ReflectionInstance instance = Reflection::ReflectionInstance(p_json);
+		if(instance.m_instance == nullptr){
+			return nullptr;
+		}
+		else {
+			return instance.m_instance;
+		}
+		
+	}
+
+
+
 	void ClassDB::_add_class2(const StringName& p_class, const StringName& p_inherits) {
 		//OBJTYPE_WLOCK;
 

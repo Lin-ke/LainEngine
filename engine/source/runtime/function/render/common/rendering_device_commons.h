@@ -895,6 +895,7 @@ public:
 			return false;
 		}
 	};
+	// 除了这里还有哪里需要管道特化常量？
 	struct ShaderSpecializationConstant : public PipelineSpecializationConstant {
 		BitField<ShaderStage> stages;
 

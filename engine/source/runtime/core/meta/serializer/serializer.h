@@ -169,7 +169,6 @@ namespace lain
             return ret_context;
         }
     };
-
     // implementation of base types
     template<>
     Json Serializer::write(const char& instance);

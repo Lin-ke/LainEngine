@@ -6,14 +6,14 @@
 #include "core/io/resource.h"
 
 namespace lain {
-    class VariantWriter {
-    public:
-        typedef Error(*StoreStringFunc)(void* ud, const String& p_string);
-        typedef String(*EncodeResourceFunc)(void* ud, const Ref<Resource>& p_resource);
+    // class VariantWriter {
+    // public:
+    //     typedef Error(*StoreStringFunc)(void* ud, const String& p_string);
+    //     typedef String(*EncodeResourceFunc)(void* ud, const Ref<Resource>& p_resource);
 
-        static Error write(const Variant& p_variant, StoreStringFunc p_store_string_func, void* p_store_string_ud, EncodeResourceFunc p_encode_res_func, void* p_encode_res_ud, int p_recursion_count = 0);
-        static Error write_to_string(const Variant& p_variant, String& r_string, EncodeResourceFunc p_encode_res_func = nullptr, void* p_encode_res_ud = nullptr);
-    };
+    //     static Error write(const Variant& p_variant, StoreStringFunc p_store_string_func, void* p_store_string_ud, EncodeResourceFunc p_encode_res_func, void* p_encode_res_ud, int p_recursion_count = 0);
+    //     static Error write_to_string(const Variant& p_variant, String& r_string, EncodeResourceFunc p_encode_res_func = nullptr, void* p_encode_res_ud = nullptr);
+    // };
     class ConfigFile: public RefCounted {
     public:
         Error ParseFile(Ref<FileAccess> f);
@@ -70,7 +70,7 @@ namespace lain {
             int equalpos = line.find_char('=');
             if (equalpos == -1) return false;
             int firstquote = line.find_char('"');
-            if (firstquote < equalpos) return false;
+            if (firstquote != -1 && firstquote < equalpos) return false;
             return true;
 
         }

@@ -11,6 +11,7 @@
 
 using namespace lain::graphics;
 using namespace lain;
+using RDDV  = lain::graphics::RenderingDeviceDriverVulkan ;
 // 不要离开这个文件
 static const uint32_t SMALL_ALLOCATION_MAX_SIZE = 4096;
 
@@ -3576,7 +3577,7 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::shader_compile_binary_from_spirv(Ve
 						"Number of uniform sets is larger than what is supported by the hardware (" + itos(physical_device_properties.limits.maxBoundDescriptorSets) + ").");
 
 	// Collect reflection data into binary data.
-	ShaderBinary::Data binary_data;
+	ShaderBinary::Data binary_data; // 填这里
 	Vector<Vector<ShaderBinary::DataBinding>> uniforms; // Set bindings.
 	Vector<ShaderBinary::SpecializationConstant> specialization_constants;
 	{
@@ -3589,7 +3590,7 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::shader_compile_binary_from_spirv(Ve
 		binary_data.compute_local_size[2] = shader_refl.compute_local_size[2];
 		binary_data.set_count = shader_refl.uniform_sets.size();
 		binary_data.push_constant_size = shader_refl.push_constant_size;
-		for (uint32_t i = 0; i < SHADER_STAGE_MAX; i++)
+		for (uint32_t i = 0; i < SHADER_STAGE_MAX; i++) // push constants
 		{
 			if (shader_refl.push_constant_stages.has_flag((ShaderStage)(1 << i)))
 			{
@@ -3599,6 +3600,7 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::shader_compile_binary_from_spirv(Ve
 
 		for (const Vector<ShaderUniform> &set_refl : shader_refl.uniform_sets)
 		{
+			// in set
 			Vector<ShaderBinary::DataBinding> set_bindings;
 			for (const ShaderUniform &uniform_refl : set_refl)
 			{
@@ -3624,14 +3626,14 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::shader_compile_binary_from_spirv(Ve
 		}
 	}
 
-	Vector<Vector<uint8_t>> compressed_stages;
+	Vector<Vector<uint8_t>> compressed_stages; // compressed spir-vs
 	Vector<uint32_t> smolv_size;
 	Vector<uint32_t> zstd_size; // If 0, zstd not used.
 
 	uint32_t stages_binary_size = 0;
 
 	bool strip_debug = false;
-
+	// 用smolv压缩spirv
 	for (uint32_t i = 0; i < p_spirv.size(); i++)
 	{
 		smolv::ByteArray smolv;
@@ -3675,7 +3677,7 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::shader_compile_binary_from_spirv(Ve
 
 	binary_data.shader_name_len = shader_name_utf.length();
 
-	uint32_t total_size = sizeof(uint32_t) * 3; // Header + version + main datasize;.
+	uint32_t total_size = sizeof(uint32_t) * 3; // Header length + version + main datasize;.
 	total_size += sizeof(ShaderBinary::Data);
 
 	total_size += STEPIFY(binary_data.shader_name_len, 4);
@@ -3696,18 +3698,18 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::shader_compile_binary_from_spirv(Ve
 	{
 		uint32_t offset = 0;
 		uint8_t *binptr = ret.ptrw();
-		binptr[0] = 'G';
+		binptr[0] = 'L';
 		binptr[1] = 'S';
 		binptr[2] = 'B';
-		binptr[3] = 'D'; // Godot Shader Binary Data.
+		binptr[3] = 'D'; // Shader Binary Data.
 		offset += 4;
-		encode_uint32(4, binptr + offset);
+		encode_uint32(ShaderBinary::VERSION, binptr + offset); // version
 		offset += sizeof(uint32_t);
-		encode_uint32(sizeof(ShaderBinary::Data), binptr + offset);
+		encode_uint32(sizeof(ShaderBinary::Data), binptr + offset); // header length
 		offset += sizeof(uint32_t);
 		memcpy(binptr + offset, &binary_data, sizeof(ShaderBinary::Data));
 		offset += sizeof(ShaderBinary::Data);
-
+// 用这个宏来保证对齐
 #define ADVANCE_OFFSET_WITH_ALIGNMENT(m_bytes)                         \
 	{                                                                  \
 		offset += m_bytes;                                             \
@@ -3740,7 +3742,7 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::shader_compile_binary_from_spirv(Ve
 			offset += sizeof(ShaderBinary::SpecializationConstant) * specialization_constants.size();
 		}
 
-		for (int i = 0; i < compressed_stages.size(); i++)
+		for (int i = 0; i < compressed_stages.size(); i++) // smolv data
 		{
 			encode_uint32(p_spirv[i].shader_stage, binptr + offset);
 			offset += sizeof(uint32_t);
@@ -3757,3 +3759,281 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::shader_compile_binary_from_spirv(Ve
 
 	return ret;
 }
+// 都是为了压缩大小
+// 解析二进制spirv
+RDD::ShaderID RDDV::shader_create_from_bytecode(const Vector<uint8_t>& p_shader_binary, ShaderDescription& r_shader_desc, String& r_name){
+		r_shader_desc = {}; // Driver-agnostic.
+	ShaderInfo shader_info; // Driver-specific.
+
+	const uint8_t *binptr = p_shader_binary.ptr();
+	uint32_t binsize = p_shader_binary.size();
+
+	uint32_t read_offset = 0;
+
+	// Consistency check.
+	ERR_FAIL_COND_V(binsize < sizeof(uint32_t) * 3 + sizeof(ShaderBinary::Data), ShaderID());
+	ERR_FAIL_COND_V(binptr[0] != 'L' || binptr[1] != 'S' || binptr[2] != 'B' || binptr[3] != 'D', ShaderID());
+
+	uint32_t bin_version = decode_uint32(binptr + 4);
+	ERR_FAIL_COND_V(bin_version != ShaderBinary::VERSION, ShaderID());
+
+	uint32_t bin_data_size = decode_uint32(binptr + 8);
+
+	const ShaderBinary::Data &binary_data = *(reinterpret_cast<const ShaderBinary::Data *>(binptr + 12));
+
+	r_shader_desc.push_constant_size = binary_data.push_constant_size;
+	shader_info.vk_push_constant_stages = binary_data.vk_push_constant_stages_mask;
+
+	r_shader_desc.vertex_input_mask = binary_data.vertex_input_mask;
+	r_shader_desc.fragment_output_mask = binary_data.fragment_output_mask;
+
+	r_shader_desc.is_compute = binary_data.is_compute;
+	r_shader_desc.compute_local_size[0] = binary_data.compute_local_size[0];
+	r_shader_desc.compute_local_size[1] = binary_data.compute_local_size[1];
+	r_shader_desc.compute_local_size[2] = binary_data.compute_local_size[2];
+
+	read_offset += sizeof(uint32_t) * 3 + bin_data_size;
+
+	if (binary_data.shader_name_len) {
+		r_name.parse_utf8((const char *)(binptr + read_offset), binary_data.shader_name_len);
+		read_offset += STEPIFY(binary_data.shader_name_len, 4);
+	}
+
+	Vector<Vector<VkDescriptorSetLayoutBinding>> vk_set_bindings;
+
+	r_shader_desc.uniform_sets.resize(binary_data.set_count);
+	vk_set_bindings.resize(binary_data.set_count);
+
+	for (uint32_t i = 0; i < binary_data.set_count; i++) {
+		ERR_FAIL_COND_V(read_offset + sizeof(uint32_t) >= binsize, ShaderID());
+		uint32_t set_count = decode_uint32(binptr + read_offset);
+		read_offset += sizeof(uint32_t);
+		const ShaderBinary::DataBinding *set_ptr = reinterpret_cast<const ShaderBinary::DataBinding *>(binptr + read_offset);
+		uint32_t set_size = set_count * sizeof(ShaderBinary::DataBinding);
+		ERR_FAIL_COND_V(read_offset + set_size >= binsize, ShaderID());
+
+		for (uint32_t j = 0; j < set_count; j++) {
+			ShaderUniform info;
+			info.type = UniformType(set_ptr[j].type);
+			info.writable = set_ptr[j].writable;
+			info.length = set_ptr[j].length;
+			info.binding = set_ptr[j].binding;
+			info.stages = set_ptr[j].stages;
+
+			VkDescriptorSetLayoutBinding layout_binding = {};
+			layout_binding.binding = set_ptr[j].binding;
+			layout_binding.descriptorCount = 1;
+			for (uint32_t k = 0; k < SHADER_STAGE_MAX; k++) {
+				if ((set_ptr[j].stages & (1 << k))) {
+					layout_binding.stageFlags |= RD_STAGE_TO_VK_SHADER_STAGE_BITS[k];
+				}
+			}
+
+			switch (info.type) {
+				case UNIFORM_TYPE_SAMPLER: {
+					layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+					layout_binding.descriptorCount = set_ptr[j].length;
+				} break;
+				case UNIFORM_TYPE_SAMPLER_WITH_TEXTURE: {
+					layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+					layout_binding.descriptorCount = set_ptr[j].length;
+				} break;
+				case UNIFORM_TYPE_TEXTURE: {
+					layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+					layout_binding.descriptorCount = set_ptr[j].length;
+				} break;
+				case UNIFORM_TYPE_IMAGE: {
+					layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+					layout_binding.descriptorCount = set_ptr[j].length;
+				} break;
+				case UNIFORM_TYPE_TEXTURE_BUFFER: {
+					layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+					layout_binding.descriptorCount = set_ptr[j].length;
+				} break;
+				case UNIFORM_TYPE_IMAGE_BUFFER: {
+					layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+				} break;
+				case UNIFORM_TYPE_UNIFORM_BUFFER: {
+					layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				} break;
+				case UNIFORM_TYPE_STORAGE_BUFFER: {
+					layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+				} break;
+				case UNIFORM_TYPE_INPUT_ATTACHMENT: {
+					layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+				} break;
+				default: {
+					DEV_ASSERT(false);
+				}
+			}
+
+			r_shader_desc.uniform_sets.write[i].push_back(info);
+			vk_set_bindings.write[i].push_back(layout_binding);
+		}
+
+		read_offset += set_size;
+	}
+
+	ERR_FAIL_COND_V(read_offset + binary_data.specialization_constants_count * sizeof(ShaderBinary::SpecializationConstant) >= binsize, ShaderID());
+
+	r_shader_desc.specialization_constants.resize(binary_data.specialization_constants_count);
+	for (uint32_t i = 0; i < binary_data.specialization_constants_count; i++) {
+		const ShaderBinary::SpecializationConstant &src_sc = *(reinterpret_cast<const ShaderBinary::SpecializationConstant *>(binptr + read_offset));
+		ShaderSpecializationConstant sc;
+		sc.type = PipelineSpecializationConstantType(src_sc.type);
+		sc.constant_id = src_sc.constant_id;
+		sc.int_value = src_sc.int_value;
+		sc.stages = src_sc.stage_flags;
+		r_shader_desc.specialization_constants.write[i] = sc;
+
+		read_offset += sizeof(ShaderBinary::SpecializationConstant);
+	}
+
+	Vector<Vector<uint8_t>> stages_spirv;
+	stages_spirv.resize(binary_data.stage_count);
+	r_shader_desc.stages.resize(binary_data.stage_count);
+
+	for (uint32_t i = 0; i < binary_data.stage_count; i++) {
+		ERR_FAIL_COND_V(read_offset + sizeof(uint32_t) * 3 >= binsize, ShaderID());
+
+		uint32_t stage = decode_uint32(binptr + read_offset);
+		read_offset += sizeof(uint32_t);
+		uint32_t smolv_size = decode_uint32(binptr + read_offset);
+		read_offset += sizeof(uint32_t);
+		uint32_t zstd_size = decode_uint32(binptr + read_offset);
+		read_offset += sizeof(uint32_t);
+
+		uint32_t buf_size = (zstd_size > 0) ? zstd_size : smolv_size;
+
+		Vector<uint8_t> smolv;
+		const uint8_t *src_smolv = nullptr;
+
+		if (zstd_size > 0) {
+			// Decompress to smolv.
+			smolv.resize(smolv_size);
+			int dec_smolv_size = Compression::decompress(smolv.ptrw(), smolv.size(), binptr + read_offset, zstd_size, Compression::MODE_ZSTD);
+			ERR_FAIL_COND_V(dec_smolv_size != (int32_t)smolv_size, ShaderID());
+			src_smolv = smolv.ptr();
+		} else {
+			src_smolv = binptr + read_offset;
+		}
+
+		Vector<uint8_t> &spirv = stages_spirv.ptrw()[i];
+		uint32_t spirv_size = smolv::GetDecodedBufferSize(src_smolv, smolv_size);
+		spirv.resize(spirv_size);
+		if (!smolv::Decode(src_smolv, smolv_size, spirv.ptrw(), spirv_size)) {
+			ERR_FAIL_V_MSG(ShaderID(), "Malformed smolv input uncompressing shader stage:" + String(SHADER_STAGE_NAMES[stage]));
+		}
+
+		r_shader_desc.stages.set(i, ShaderStage(stage));
+
+		buf_size = STEPIFY(buf_size, 4);
+		read_offset += buf_size;
+		ERR_FAIL_COND_V(read_offset > binsize, ShaderID());
+	}
+
+	ERR_FAIL_COND_V(read_offset != binsize, ShaderID());
+
+	// Modules.
+
+	String error_text;
+
+	for (int i = 0; i < r_shader_desc.stages.size(); i++) {
+		VkShaderModuleCreateInfo shader_module_create_info = {};
+		shader_module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		shader_module_create_info.codeSize = stages_spirv[i].size();
+		shader_module_create_info.pCode = (const uint32_t *)stages_spirv[i].ptr();
+
+		VkShaderModule vk_module = VK_NULL_HANDLE;
+		VkResult res = vkCreateShaderModule(vk_device, &shader_module_create_info, nullptr, &vk_module);
+		if (res) {
+			error_text = "Error (" + itos(res) + ") creating shader module for stage: " + String(SHADER_STAGE_NAMES[r_shader_desc.stages[i]]);
+			break;
+		}
+
+		VkPipelineShaderStageCreateInfo create_info = {};
+		create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		create_info.stage = RD_STAGE_TO_VK_SHADER_STAGE_BITS[r_shader_desc.stages[i]];
+		create_info.module = vk_module;
+		create_info.pName = "main";
+
+		shader_info.vk_stages_create_info.push_back(create_info);
+	}
+
+	// Descriptor sets.
+
+	if (error_text.is_empty()) {
+		DEV_ASSERT((uint32_t)vk_set_bindings.size() == binary_data.set_count);
+		for (uint32_t i = 0; i < binary_data.set_count; i++) {
+			// Empty ones are fine if they were not used according to spec (binding count will be 0).
+			VkDescriptorSetLayoutCreateInfo layout_create_info = {};
+			layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+			layout_create_info.bindingCount = vk_set_bindings[i].size();
+			layout_create_info.pBindings = vk_set_bindings[i].ptr();
+
+			VkDescriptorSetLayout layout = VK_NULL_HANDLE;
+			VkResult res = vkCreateDescriptorSetLayout(vk_device, &layout_create_info, nullptr, &layout);
+			if (res) {
+				error_text = "Error (" + itos(res) + ") creating descriptor set layout for set " + itos(i);
+				break;
+			}
+
+			shader_info.vk_descriptor_set_layouts.push_back(layout);
+		}
+	}
+
+	if (error_text.is_empty()) {
+		// Pipeline layout.
+
+		VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
+		pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		pipeline_layout_create_info.setLayoutCount = binary_data.set_count;
+		pipeline_layout_create_info.pSetLayouts = shader_info.vk_descriptor_set_layouts.ptr();
+
+		if (binary_data.push_constant_size) {
+			VkPushConstantRange *push_constant_range = ALLOCA_SINGLE(VkPushConstantRange);
+			*push_constant_range = {};
+			push_constant_range->stageFlags = binary_data.vk_push_constant_stages_mask;
+			push_constant_range->size = binary_data.push_constant_size;
+			pipeline_layout_create_info.pushConstantRangeCount = 1;
+			pipeline_layout_create_info.pPushConstantRanges = push_constant_range;
+		}
+
+		VkResult err = vkCreatePipelineLayout(vk_device, &pipeline_layout_create_info, nullptr, &shader_info.vk_pipeline_layout);
+		if (err) {
+			error_text = "Error (" + itos(err) + ") creating pipeline layout.";
+		}
+	}
+
+	if (!error_text.is_empty()) {
+		// Clean up if failed.
+		for (uint32_t i = 0; i < shader_info.vk_stages_create_info.size(); i++) {
+			vkDestroyShaderModule(vk_device, shader_info.vk_stages_create_info[i].module, nullptr);
+		}
+		for (uint32_t i = 0; i < binary_data.set_count; i++) {
+			vkDestroyDescriptorSetLayout(vk_device, shader_info.vk_descriptor_set_layouts[i], nullptr);
+		}
+
+		ERR_FAIL_V_MSG(ShaderID(), error_text);
+	}
+
+	// Bookkeep.
+
+	ShaderInfo *shader_info_ptr = VersatileResource::allocate<ShaderInfo>(resources_allocator);
+	*shader_info_ptr = shader_info;
+	return ShaderID(shader_info_ptr);
+}
+
+void RenderingDeviceDriverVulkan::shader_free(ShaderID p_shader) {
+	ShaderInfo *shader_info = (ShaderInfo*) p_shader.id;
+	for (uint32_t i = 0; i < shader_info->vk_stages_create_info.size(); i++) {
+		vkDestroyShaderModule(vk_device, shader_info->vk_stages_create_info[i].module, nullptr);
+	}
+	vkDestroyPipelineLayout(vk_device, shader_info->vk_pipeline_layout, nullptr);
+	for (uint32_t i = 0; i < shader_info->vk_descriptor_set_layouts.size(); i++) {
+		vkDestroyDescriptorSetLayout(vk_device, shader_info->vk_descriptor_set_layouts[i], nullptr);
+	}
+
+	VersatileResource::free(resources_allocator, shader_info);
+}
+

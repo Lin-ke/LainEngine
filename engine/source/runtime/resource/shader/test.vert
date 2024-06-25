@@ -1,5 +1,3 @@
-#type vertex
-
 #version 330 core
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec2 aTex;
@@ -24,27 +22,4 @@ void main()
 	v_TexIndex = aTexIndex;
 	v_TilingFactor = aTilingFactor;
 	v_InstanceId = aInstanceId;
-}
-
-#type fragment
-
-#version 330 core
-
-in vec2 v_TexCoord;
-in vec4 v_Color;
-flat in int v_TexIndex;
-in float v_TilingFactor;
-flat in int v_InstanceId;
-
-
-layout (location = 0) out vec4 out_color;
-layout (location = 1) out int out_InstanceId;
-
-
-uniform sampler2D u_Texture[32];
-
-void main()
-{
-	out_color = texture(u_Texture[v_TexIndex], v_TexCoord * v_TilingFactor) * v_Color;
-	out_InstanceId = v_InstanceId;
 }

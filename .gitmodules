@@ -7,3 +7,6 @@
 [submodule "engine/thirdparty/imgui"]
 	path = engine/thirdparty/imgui
 	url = https://github.com/ocornut/imgui
+[submodule "engine/thirdparty/zstd"]
+	path = engine/thirdparty/zstd
+	url = https://github.com/facebook/zstd

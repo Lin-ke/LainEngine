@@ -293,6 +293,7 @@ namespace lain::graphics {
 
 		static RenderingDevice* singleton;
 		static RenderingDevice* get_singleton() { return singleton; }
+		RenderingDeviceDriver* get_driver() { return driver; } // test usage
 		Error initialize(RenderingContextDriver* p_driver, WindowSystem::WindowID p_main_window);
 		RenderingDevice() { if (singleton == nullptr) singleton = this; }
 		~RenderingDevice() {}

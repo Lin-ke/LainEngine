@@ -35,7 +35,9 @@ project "LainRuntime"
          "%{IncludeDir.spirv_reflect}",
          "%{IncludeDir.volk}",
          "%{IncludeDir.vma}",
+         "%{IncludeDir.misc}",
          vdrprefix,
+
       }
       -- the links aligns with the project names in premakes.lua
       links

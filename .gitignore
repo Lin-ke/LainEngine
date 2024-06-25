@@ -461,3 +461,5 @@ engine/thirdparty/volk/
 engine/thirdparty/vma/
 !.vscode/launch.json
 !.vscode/tasks.json
+
+vs2022/

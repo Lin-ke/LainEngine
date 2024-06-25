@@ -252,7 +252,7 @@ namespace lain {
 		char32_t c = get_8();
 
 		while (!eof_reached()) {
-			if (c == '\n' || c == '\0') {
+			if (c == '\n' || c == '\0') { // ц╩сп/n
 				line.push_back(0);
 				return String::utf8(line.get_data());
 			}

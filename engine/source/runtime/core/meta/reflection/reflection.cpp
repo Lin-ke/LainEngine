@@ -2,6 +2,7 @@
 #include "core/os/memory.h"
 #include "core/string/string_name.h"
 #include "core/templates/hash_map.h"
+#include "core/meta/serializer/serializer.h"
 #include <cstring>
 #include <map>
 #define FIELD_PREFIX "m_"
@@ -179,6 +180,13 @@ namespace lain
             return ReflectionInstance();
         }
 
+        ReflectionInstance TypeMeta::newFromJson(const Json& json_context){
+            // 要求格式必须正确
+            std::string type_name = json_context["$typeName"].string_value();
+            return newFromNameAndJson(type_name, json_context["$context"]);
+        }
+
+
         Json TypeMeta::writeByName(std::string type_name, void* instance)
         {
             auto iter = m_class_map.find(type_name);
@@ -279,6 +287,7 @@ namespace lain
                 return *it;
             return MethodAccessor(nullptr);
         }
+
 
         TypeMeta& TypeMeta::operator=(const TypeMeta& dest)
         {

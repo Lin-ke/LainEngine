@@ -92,6 +92,7 @@ namespace lain
             // static void Register();
 
             static TypeMeta newMetaFromName(std::string type_name);
+            static ReflectionInstance newFromJson(const Json& json_context);
             static bool     writeToInstanceFromNameAndJson(std::string type_name, const Json& json_context, void* instance);
             static bool               newArrayAccessorFromName(std::string array_type_name, ArrayAccessor& accessor);
             static ReflectionInstance newFromNameAndJson(std::string type_name, const Json& json_context);
@@ -117,7 +118,6 @@ namespace lain
             bool isValid() const { return m_is_valid; }
 
             TypeMeta& operator=(const TypeMeta& dest);
-            
            
             
         private:
@@ -216,14 +216,17 @@ namespace lain
             const char*         m_element_type_name;
         };
 
-        // @TODO 怎么才能避免void析构
+        // @TODO 怎么正确管理reflection instance的生命周期
         class ReflectionInstance
         {
         public:
-            ReflectionInstance(TypeMeta meta, void* instance) : m_meta(meta), m_instance(instance) {}
+            ReflectionInstance(TypeMeta meta, void* instance) : m_meta(meta), m_instance(instance) {} // 带一个指针的类型信息 @TODO可以看看Java这种语言是怎么做的
             //@TODO vector是cow的；还有个指针，应该没有额外开销，这里以后看看
             ReflectionInstance (ReflectionInstance&& r_val) noexcept: m_meta(r_val.m_meta), m_instance(r_val.m_instance) {
                 r_val.m_instance = nullptr; // is it necessary?
+            }
+            ReflectionInstance(Json json_context) : m_meta(), m_instance(nullptr) {
+                *this = TypeMeta::newFromJson(json_context);
             }
             ReflectionInstance(const ReflectionInstance& l_val) : m_meta(l_val.m_meta), m_instance(l_val.m_instance){}
 
@@ -233,6 +236,15 @@ namespace lain
             ReflectionInstance& operator=(ReflectionInstance& dest);
 
             ReflectionInstance& operator=(ReflectionInstance&& dest);
+            String writeByName(void * p_instance) {
+                auto json =  TypeMeta::writeByName(m_meta.getTypeName(), p_instance);
+                return json.dump().c_str();
+            }
+            void* ptr() { return m_instance; }
+            StringName get_name(){
+                return StringName(m_meta.getTypeName().c_str());
+            }
+            
 
         public:
             TypeMeta m_meta;

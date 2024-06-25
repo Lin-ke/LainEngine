@@ -7,7 +7,9 @@ config/description="this is a default project"
 window/size/initial_position_type=1
 window/size/initial_screen=1
 window/size/initial_position=1
-
+window/per_pixel_transparency/allowed=true
 [rendering]
 rendering_device/vulkan/max_descriptors_per_pool=64
 rendering_device/vulkan/present_wait_latency=1
+rendering_device/vsync/frame_queue_size=3
+rendering_device/vsync/swapchain_image_count=3

@@ -80,7 +80,9 @@ public:
 private:
 // @TODO 光追
 struct ShaderBinary {
-
+	enum {
+		VERSION =1 
+	};
 	struct DataBinding {
 		uint32_t type = 0;
 		uint32_t binding = 0;
@@ -102,18 +104,20 @@ struct ShaderBinary {
 		uint32_t specialization_constants_count = 0;
 		uint32_t is_compute = 0;
 		uint32_t compute_local_size[3] = {};
-		uint32_t set_count = 0;
+		uint32_t set_count = 0; // uniform set count
 		uint32_t push_constant_size = 0;
-		uint32_t vk_push_constant_stages_mask = 0;
+		uint32_t vk_push_constant_stages_mask = 0; // push constants的shader stage
 		uint32_t stage_count = 0;
 		uint32_t shader_name_len = 0;
 	};
 };
 
+
+
 	struct ShaderInfo {
 		VkShaderStageFlags vk_push_constant_stages = 0;
 		TightLocalVector<VkPipelineShaderStageCreateInfo> vk_stages_create_info;
-		TightLocalVector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
+		TightLocalVector<VkDescriptorSetLayout> vk_descriptor_set_layouts; // 需要根据ShaderReflectionData创建
 		VkPipelineLayout vk_pipeline_layout = VK_NULL_HANDLE; // pipeline layout是由shader控制的
 	};
 public:

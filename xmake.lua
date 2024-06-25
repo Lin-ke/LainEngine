@@ -1,6 +1,6 @@
 add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
 add_rules("mode.debug", "mode.release")
-add_requires( "assimp", "vulkan-memory-allocator","volk" ,"glfw","imgui",  "zlib", "spdlog","tinyobjloader", "vulkan-headers")
+add_requires( "assimp", "vulkan-memory-allocator", "zstd", "volk" ,"glfw","imgui",  "zlib", "spdlog","tinyobjloader", "vulkan-headers")
 add_requires("mustache")
 target("Spirv-Reflect")
     set_kind("static")
@@ -17,6 +17,12 @@ target("mbedtls")
     add_includedirs("engine/thirdparty/mbedtls/include", {public = true})
     add_includedirs("engine/thirdparty/zlib", {public = true})
     add_defines("MBEDTLS_ZLIB_SUPPORT")
+    target_end()
+target("smol-v")
+    set_kind("static")
+    add_files("engine/thirdparty/smol-v/**.cpp")
+    add_headerfiles("engine/thirdparty/smol-v/**.h")
+    add_includedirs("engine/thirdparty/smol-v", {public = true})
     target_end()
 target("Parser")
     set_kind("binary")
@@ -69,18 +75,38 @@ target("MetaParser")
         end
     end
     )
+target("CompileShader")
+    set_kind("phony")
+    before_build(
+        function (target) 
+            import("core.base.process")
+            import ("setup.compileshader",{alias = "compileshader"})
+            print("--Compile ShaderFiles--")
+            local err_name = "./shader_compile_error.log" 
+            os.rm(err_name)
+            vert = os.files("$(projectdir)/engine/**.vert")
+            frag = os.files("$(projectdir)/engine/**.frag")
+            for _, v in ipairs(vert) do
+                os.execv("glslangValidator.exe", {"-V", v}, {stdout = err_name, stderr = err_name})
+            end
+            for _, v in ipairs(frag) do
+                os.execv("glslangValidator.exe", {"-V", v}, {stdout = err_name, stderr = err_name})
+            end
+        end
+    )
 target("Renderer")
     set_kind("binary")
     set_languages("cxx17", "c99")
-    add_deps("Spirv-Reflect")
+    add_deps("Spirv-Reflect", "mbedtls", "smol-v")
+    
     add_includedirs("engine/thirdparty/volk")
     add_includedirs("engine/thirdparty/vma")
+    add_includedirs("engine/thirdparty/misc")
     add_headerfiles("engine/source/**.h")
     add_files("engine/source/runtime/**.cpp")
     add_files("engine/source/editor/**.cpp")
     add_headerfiles("engine/source/_generated/**.h")
-    add_deps("mbedtls")
-    add_packages("assimp","glfw", "imgui",  "zlib", "spdlog","tinyobjloader","vulkan-headers" )
+    add_packages("assimp","glfw", "imgui", "zstd",  "zlib", "spdlog","tinyobjloader","vulkan-headers" )
     add_includedirs("engine/source","engine/source/runtime", "engine/source/editor")
     -- stb_img
     -- json 11
@@ -96,6 +122,13 @@ target("Renderer")
     -- vulkan
     add_includedirs("$(env VULKAN_SDK)/Include")
     add_linkdirs("$(env VULKAN_SDK)/Lib")
+    -- fastlz
+    add_includedirs("engine/thirdparty/misc")
+    add_files("engine/thirdparty/misc/*.c")
+    -- add_files("engine/thirdparty/misc/*.cpp")
+    add_headerfiles(("engine/thirdparty/misc/*.h"))
+ 
+
     add_defines{
     "_CRT_SECURE_NO_WARNINGS",
      "VULKAN_ENABLED",

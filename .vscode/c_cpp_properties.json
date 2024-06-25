@@ -17,7 +17,7 @@
                 "${workspaceFolder}/engine/thirdparty/volk",
                 "${workspaceFolder}/engine/thirdparty/vma",
                 "${workspaceFolder}/engine/thirdparty",
-                "${workspaceFolder}/engine/thirdparty/smol-v",
+                "${workspaceFolder}/engine/thirdparty/misc",
 
                 "${workspaceFolder}/engine/source",
                 "${workspaceFolder}/engine/source/runtime",

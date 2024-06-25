@@ -6,6 +6,7 @@
 #include "core/string/string_name.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/list.h"
+#include "core/meta/json.h"
 namespace lain {
 	// 以数据库列，表的方式组织
 	struct MethodDefinition {
@@ -60,7 +61,10 @@ namespace lain {
 	static StringName get_parent_class(const StringName& p_class);
 	static bool class_exists(const StringName& p_class);
 	static Object* instantiate(const StringName& cp_class, bool p_require_real_class  =  false);
-	static void* instantiate_with_json(const StringName& cp_class, bool p_require_real_class = false);
+	static bool can_instantiate(const StringName& cp_class);
+	static void* instantiate_with_name_json(const StringName& cp_class,const Json& json);
+	static void* instantiate_with_json(const Json& json);
+
 
 	template <typename T>
 	static void register_class(bool p_virtual = false) {

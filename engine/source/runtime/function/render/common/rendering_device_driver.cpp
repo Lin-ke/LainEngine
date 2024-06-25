@@ -36,11 +36,9 @@
 namespace lain {
 	namespace graphics {
 
-	// 并没有读id，只是得到了description里的东西
-	// @todo readit
 Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_spirv, ShaderReflection& r_reflection) {
 	r_reflection = {};
-	// spriv是一组
+	// 对不同stage
 	for (uint32_t i = 0; i < p_spirv.size(); i++) {
 		ShaderStage stage = p_spirv[i].shader_stage;
 		ShaderStage stage_flag = (ShaderStage) (1 << p_spirv[i].shader_stage);
@@ -144,6 +142,7 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 					} break;
 					}
 					// 多维数组
+					
 					if (need_array_dimensions) {
 						if (binding.array.dims_count == 0) {
 							uniform.length = 1;
@@ -160,6 +159,7 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 						}
 
 					}
+					// @? block_size似乎是对自定义struct的
 					else if (need_block_size) {
 						uniform.length = binding.block.size;
 					}
@@ -198,7 +198,7 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 									"On shader stage '" + String(SHADER_STAGE_NAMES[stage]) + "', uniform '" + binding.name + "' trying to reuse location for set=" + itos(set) + ", binding=" + itos(uniform.binding) + " with different writability.");
 
 								// Just append stage mask and return.
-								r_reflection.uniform_sets.write[set].write[k].stages.set_flag(stage_flag);
+								r_reflection.uniform_sets.write[set].write[k].stages.set_flag(stage_flag); // 只是在另一个阶段也出现
 								exists = true;
 								break;
 							}
@@ -212,7 +212,7 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 					uniform.stages.set_flag(stage_flag);
 
 					if (set >= (uint32_t)r_reflection.uniform_sets.size()) {
-						r_reflection.uniform_sets.resize(set + 1);
+						r_reflection.uniform_sets.resize(set + 1); // 添加到
 					}
 
 					r_reflection.uniform_sets.write[set].push_back(uniform);
@@ -258,7 +258,7 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 						}
 						sconst.stages.set_flag(stage_flag);
 
-						for (int k = 0; k < r_reflection.specialization_constants.size(); k++) {
+						for (int k = 0; k < r_reflection.specialization_constants.size(); k++) { // 如果这个特殊化常量已经存在
 							if (r_reflection.specialization_constants[k].constant_id == sconst.constant_id) {
 								ERR_FAIL_COND_V_MSG(r_reflection.specialization_constants[k].type != sconst.type, FAILED, "More than one specialization constant used for id (" + itos(sconst.constant_id) + "), but their types differ.");
 								ERR_FAIL_COND_V_MSG(r_reflection.specialization_constants[k].int_value != sconst.int_value, FAILED, "More than one specialization constant used for id (" + itos(sconst.constant_id) + "), but their default values differ.");
@@ -279,7 +279,7 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 				}
 			}
 
-			if (stage == SHADER_STAGE_VERTEX) {
+			if (stage == SHADER_STAGE_VERTEX) { // 顶点着色器需要读入InputVariables
 				uint32_t iv_count = 0;
 				result = spvReflectEnumerateInputVariables(&module, &iv_count, nullptr);
 				ERR_FAIL_COND_V_MSG(result != SPV_REFLECT_RESULT_SUCCESS, FAILED,
@@ -301,7 +301,7 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 				}
 			}
 
-			if (stage == SHADER_STAGE_FRAGMENT) {
+			if (stage == SHADER_STAGE_FRAGMENT) { // Fragment需要outlocation，与vertex相反
 				uint32_t ov_count = 0;
 				result = spvReflectEnumerateOutputVariables(&module, &ov_count, nullptr);
 				ERR_FAIL_COND_V_MSG(result != SPV_REFLECT_RESULT_SUCCESS, FAILED,
@@ -323,7 +323,7 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 					}
 				}
 			}
-
+			// push constants
 			uint32_t pc_count = 0;
 			result = spvReflectEnumeratePushConstantBlocks(&module, &pc_count, nullptr);
 			ERR_FAIL_COND_V_MSG(result != SPV_REFLECT_RESULT_SUCCESS, FAILED,

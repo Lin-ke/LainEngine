@@ -167,7 +167,7 @@ namespace lain
          case Variant::ARRAY:   // vector<variant>
              return Serializer::write(instance.operator Array());
          case Variant::STRING:
-             return Serializer::write(instance.operator String());
+            return Json(CSTR(*reinterpret_cast<const String *>(instance._data._mem)));
          case Variant::OBJECT:
          {
              
