@@ -80,18 +80,41 @@ target("CompileShader")
     before_build(
         function (target) 
             import("core.base.process")
-            import ("setup.compileshader",{alias = "compileshader"})
             print("--Compile ShaderFiles--")
-            local err_name = "./shader_compile_error.log" 
+            local err_name = "./setup/shader_compile_error.log" 
             os.rm(err_name)
-            vert = os.files("$(projectdir)/engine/**.vert")
-            frag = os.files("$(projectdir)/engine/**.frag")
-            for _, v in ipairs(vert) do
-                os.execv("glslangValidator.exe", {"-V", v}, {stdout = err_name, stderr = err_name})
+            vert = os.files("$(projectdir)/**.vert")
+            frag = os.files("$(projectdir)/**.frag")
+            file = io.open(err_name, "w")
+            files = {}
+            files["vert"] = vert
+            files["frag"] = frag
+            for k, v1 in pairs(files) do
+                file:write("Compile " .. k .. "\n")
+                print("Compile " .. k)
+                for _, v in ipairs(v1) do
+                try {
+                    function ()
+                        print("glslangValidator.exe -o " .. v ..".spv -V ".. v)
+                        os.run("glslangValidator.exe -o " .. v ..".spv -V ".. v)
+                    end,
+                    catch {
+                        function (v) 
+                            file:write(v)
+                        end
+                    },
+                    finally{
+                        function (ok, errors)
+                            
+                        end
+                    }
+
+                }
+                end
             end
-            for _, v in ipairs(frag) do
-                os.execv("glslangValidator.exe", {"-V", v}, {stdout = err_name, stderr = err_name})
-            end
+            
+            file:close()
+            -- lock:unlock()
         end
     )
 target("Renderer")
