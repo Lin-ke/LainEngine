@@ -316,9 +316,7 @@ static VkAccessFlags _rd_to_vk_access_flags(BitField<RDD::BarrierAccessBits> p_a
 	// The rest of the flags have compatible numeric values with Vulkan.
 	return VkAccessFlags(p_access) | vk_flags;
 }
-/*****************/
-/**** TEXTURE ****/
-/*****************/
+
 
 static const VkImageType RD_TEX_TYPE_TO_VK_IMG_TYPE[RDD::TEXTURE_TYPE_MAX] = {
 	VK_IMAGE_TYPE_1D,
@@ -348,6 +346,33 @@ struct
 	{RDD::TextureMisc::TEXTURE_MISC_CONCURRENT_QUEUE_ASYNC_COMPUTE_BIT, RDD::CommandQueueFamilyBits::COMMAND_QUEUE_FAMILY_COMPUTE_BIT},
 	{RDD::TextureMisc::TEXTURE_MISC_CONCURRENT_QUEUE_ASYNC_TRANSFER_BIT, RDD::CommandQueueFamilyBits::COMMAND_QUEUE_FAMILY_TRANSFER_BIT},
 };
+
+/*****************/
+/**** TEXTURE ****/
+/*****************/
+// RDD::TextureType == VkImageViewType.
+static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_TYPE_1D, VK_IMAGE_VIEW_TYPE_1D));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_TYPE_2D, VK_IMAGE_VIEW_TYPE_2D));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_TYPE_3D, VK_IMAGE_VIEW_TYPE_3D));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_TYPE_CUBE, VK_IMAGE_VIEW_TYPE_CUBE));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_TYPE_1D_ARRAY, VK_IMAGE_VIEW_TYPE_1D_ARRAY));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_TYPE_2D_ARRAY, VK_IMAGE_VIEW_TYPE_2D_ARRAY));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_TYPE_CUBE_ARRAY, VK_IMAGE_VIEW_TYPE_CUBE_ARRAY));
+
+// RDD::TextureSwizzle == VkComponentSwizzle.
+static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_SWIZZLE_ZERO, VK_COMPONENT_SWIZZLE_ZERO));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_SWIZZLE_ONE, VK_COMPONENT_SWIZZLE_ONE));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_SWIZZLE_R, VK_COMPONENT_SWIZZLE_R));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_SWIZZLE_G, VK_COMPONENT_SWIZZLE_G));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_SWIZZLE_B, VK_COMPONENT_SWIZZLE_B));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_SWIZZLE_A, VK_COMPONENT_SWIZZLE_A));
+
+// RDD::TextureAspectBits == VkImageAspectFlagBits.
+static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_ASPECT_COLOR_BIT, VK_IMAGE_ASPECT_COLOR_BIT));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_ASPECT_DEPTH_BIT, VK_IMAGE_ASPECT_DEPTH_BIT));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::TEXTURE_ASPECT_STENCIL_BIT, VK_IMAGE_ASPECT_STENCIL_BIT));
+
 
 RDD::TextureID RenderingDeviceDriverVulkan::texture_create(const TextureFormat &p_format, const TextureView &p_view)
 {
@@ -541,6 +566,41 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(const TextureFormat &
 	return TextureID(tex_info);
 }
 
+
+RDD::TextureID RenderingDeviceDriverVulkan::texture_create_from_extension(uint64_t p_native_texture, TextureType p_type, DataFormat p_format, uint32_t p_array_layers, bool p_depth_stencil) {
+	VkImage vk_image = (VkImage)p_native_texture;
+
+	// We only need to create a view into the already existing natively-provided texture.
+
+	VkImageViewCreateInfo image_view_create_info = {};
+	image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	image_view_create_info.image = vk_image;
+	image_view_create_info.viewType = (VkImageViewType)p_type;
+	image_view_create_info.format = RD_TO_VK_FORMAT[p_format];
+	image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_R;
+	image_view_create_info.components.g = VK_COMPONENT_SWIZZLE_G;
+	image_view_create_info.components.b = VK_COMPONENT_SWIZZLE_B;
+	image_view_create_info.components.a = VK_COMPONENT_SWIZZLE_A;
+	image_view_create_info.subresourceRange.levelCount = 1;
+	image_view_create_info.subresourceRange.layerCount = p_array_layers;
+	image_view_create_info.subresourceRange.aspectMask = p_depth_stencil ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+
+	VkImageView vk_image_view = VK_NULL_HANDLE;
+	VkResult err = vkCreateImageView(vk_device, &image_view_create_info, nullptr, &vk_image_view);
+	if (err) {
+		ERR_FAIL_COND_V_MSG(err, TextureID(), "vkCreateImageView failed with error " + itos(err) + ".");
+	}
+
+	// Bookkeep.
+
+	TextureInfo *tex_info = VersatileResource::allocate<TextureInfo>(resources_allocator);
+	tex_info->vk_view = vk_image_view;
+	tex_info->rd_format = p_format;
+	tex_info->vk_view_create_info = image_view_create_info;
+
+	return TextureID(tex_info);
+}
+
 VkSampleCountFlagBits RenderingDeviceDriverVulkan::_ensure_supported_sample_count(TextureSamples p_requested_sample_count)
 {
 	VkSampleCountFlags sample_count_flags = (physical_device_properties.limits.framebufferColorSampleCounts & physical_device_properties.limits.framebufferDepthSampleCounts);
@@ -614,6 +674,79 @@ uint64_t RenderingDeviceDriverVulkan::texture_get_allocation_size(TextureID p_te
 	const TextureInfo *tex_info = (const TextureInfo *)p_texture.id;
 	return tex_info->allocation.info.size;
 }
+
+/*****************/
+/**** SAMPLER ****/
+/*****************/
+
+// RDD::SamplerRepeatMode == VkSamplerAddressMode.
+static_assert(ENUM_MEMBERS_EQUAL(RDD::SAMPLER_REPEAT_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_REPEAT));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::SAMPLER_REPEAT_MODE_MIRRORED_REPEAT, VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::SAMPLER_REPEAT_MODE_CLAMP_TO_BORDER, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::SAMPLER_REPEAT_MODE_MIRROR_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE));
+
+// RDD::SamplerBorderColor == VkBorderColor.
+static_assert(ENUM_MEMBERS_EQUAL(RDD::SAMPLER_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::SAMPLER_BORDER_COLOR_INT_TRANSPARENT_BLACK, VK_BORDER_COLOR_INT_TRANSPARENT_BLACK));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::SAMPLER_BORDER_COLOR_FLOAT_OPAQUE_BLACK, VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::SAMPLER_BORDER_COLOR_INT_OPAQUE_BLACK, VK_BORDER_COLOR_INT_OPAQUE_BLACK));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::SAMPLER_BORDER_COLOR_FLOAT_OPAQUE_WHITE, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE));
+static_assert(ENUM_MEMBERS_EQUAL(RDD::SAMPLER_BORDER_COLOR_INT_OPAQUE_WHITE, VK_BORDER_COLOR_INT_OPAQUE_WHITE));
+
+RDD::SamplerID RenderingDeviceDriverVulkan::sampler_create(const SamplerState &p_state) {
+	VkSamplerCreateInfo sampler_create_info = {};
+	sampler_create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	sampler_create_info.pNext = nullptr;
+	sampler_create_info.flags = 0;
+	sampler_create_info.magFilter = p_state.mag_filter == SAMPLER_FILTER_LINEAR ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+	sampler_create_info.minFilter = p_state.min_filter == SAMPLER_FILTER_LINEAR ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+	sampler_create_info.mipmapMode = p_state.mip_filter == SAMPLER_FILTER_LINEAR ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
+	sampler_create_info.addressModeU = (VkSamplerAddressMode)p_state.repeat_u;
+	sampler_create_info.addressModeV = (VkSamplerAddressMode)p_state.repeat_v;
+	sampler_create_info.addressModeW = (VkSamplerAddressMode)p_state.repeat_w;
+	sampler_create_info.mipLodBias = p_state.lod_bias;
+	sampler_create_info.anisotropyEnable = p_state.use_anisotropy && (physical_device_features.samplerAnisotropy == VK_TRUE);
+	sampler_create_info.maxAnisotropy = p_state.anisotropy_max;
+	sampler_create_info.compareEnable = p_state.enable_compare;
+	sampler_create_info.compareOp = (VkCompareOp)p_state.compare_op;
+	sampler_create_info.minLod = p_state.min_lod;
+	sampler_create_info.maxLod = p_state.max_lod;
+	sampler_create_info.borderColor = (VkBorderColor)p_state.border_color;
+	sampler_create_info.unnormalizedCoordinates = p_state.unnormalized_uvw;
+
+	VkSampler vk_sampler = VK_NULL_HANDLE;
+	VkResult res = vkCreateSampler(vk_device, &sampler_create_info, nullptr, &vk_sampler);
+	ERR_FAIL_COND_V_MSG(res, SamplerID(), "vkCreateSampler failed with error " + itos(res) + ".");
+
+	return SamplerID(vk_sampler);
+}
+
+void RenderingDeviceDriverVulkan::sampler_free(SamplerID p_sampler) {
+	vkDestroySampler(vk_device, (VkSampler)p_sampler.id, nullptr);
+}
+
+// 判断Linear Filter是否支持
+bool RenderingDeviceDriverVulkan::sampler_is_format_supported_for_filter(DataFormat p_format, SamplerFilter p_filter) {
+	switch (p_filter) {
+		case SAMPLER_FILTER_NEAREST: {
+			return true;
+		}
+		case SAMPLER_FILTER_LINEAR: {
+			VkFormatProperties properties = {};
+			vkGetPhysicalDeviceFormatProperties(physical_device, RD_TO_VK_FORMAT[p_format], &properties);
+			return (properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT);
+		}
+		case SAMPLER_FILTER_CUBIC: {
+			VkFormatProperties properties = {};
+			vkGetPhysicalDeviceFormatProperties(physical_device, RD_TO_VK_FORMAT[p_format], &properties);
+			return (properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT);
+		}
+	}
+	return false;
+}
+
+
 /// <summary>
 /// Command QUEUE
 /// </summary>
@@ -696,7 +829,7 @@ RDD::CommandQueueID RenderingDeviceDriverVulkan::command_queue_create(CommandQue
 }
 
 /// <summary>
-/// execute和present
+/// 提交commandqueue execute和present
 /// </summary>
 /// <param name="p_cmd_queue"></param>
 /// <param name="p_wait_semaphores"></param>
@@ -2163,7 +2296,7 @@ Error RenderingDeviceDriverVulkan::swap_chain_resize(CommandQueueID p_cmd_queue,
 	swap_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	swap_create_info.preTransform = surface_transform_bits;
 	swap_create_info.compositeAlpha = composite_alpha;
-	swap_create_info.presentMode = present_mode;
+	swap_create_info.presentMode = present_mode; // present mode可以传到这里
 	swap_create_info.clipped = true;
 	err = device_functions.CreateSwapchainKHR(vk_device, &swap_create_info, nullptr, &swap_chain->vk_swapchain);
 	ERR_FAIL_COND_V(err != VK_SUCCESS, ERR_CANT_CREATE);
@@ -2210,7 +2343,7 @@ Error RenderingDeviceDriverVulkan::swap_chain_resize(CommandQueueID p_cmd_queue,
 	fb_create_info.height = surface->height;
 	fb_create_info.layers = 1;
 
-	VkFramebuffer framebuffer;
+	VkFramebuffer framebuffer; // 保存framebuffer
 	for (uint32_t i = 0; i < image_count; i++)
 	{
 		fb_create_info.pAttachments = &swap_chain->image_views[i];
@@ -2226,6 +2359,17 @@ Error RenderingDeviceDriverVulkan::swap_chain_resize(CommandQueueID p_cmd_queue,
 	return OK;
 }
 
+RDD::RenderPassID RenderingDeviceDriverVulkan::swap_chain_get_render_pass(SwapChainID p_swap_chain) {
+	DEV_ASSERT(p_swap_chain.id != 0);
+
+	SwapChain *swap_chain = (SwapChain *)(p_swap_chain.id);
+	return swap_chain->render_pass;
+}
+
+
+	/*********************/
+	/**** FRAMEBUFFER ****/
+	/*********************/
 RDD::FramebufferID RenderingDeviceDriverVulkan::framebuffer_create(RenderPassID p_render_pass, VectorView<TextureID> p_attachments, uint32_t p_width, uint32_t p_height)
 {
 	VkImageView *vk_img_views = ALLOCA_ARRAY(VkImageView, p_attachments.size());
@@ -2426,6 +2570,33 @@ void RenderingDeviceDriverVulkan::command_queue_free(CommandQueueID p_cmd_queue)
 	// Destroy the virtual queue structure.
 	memdelete(command_queue);
 }
+
+RDD::CommandPoolID RenderingDeviceDriverVulkan::command_pool_create(CommandQueueFamilyID p_cmd_queue_family, CommandBufferType p_cmd_buffer_type) {
+	DEV_ASSERT(p_cmd_queue_family.id != 0);
+
+	uint32_t family_index = p_cmd_queue_family.id - 1; // 内部映射是从1开始的
+	VkCommandPoolCreateInfo cmd_pool_info = {};
+	cmd_pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	cmd_pool_info.queueFamilyIndex = family_index;
+	cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+	VkCommandPool vk_command_pool = VK_NULL_HANDLE;
+	VkResult res = vkCreateCommandPool(vk_device, &cmd_pool_info, nullptr, &vk_command_pool);
+	ERR_FAIL_COND_V_MSG(res, CommandPoolID(), "vkCreateCommandPool failed with error " + itos(res) + ".");
+
+	CommandPool *command_pool = memnew(CommandPool);
+	command_pool->vk_command_pool = vk_command_pool;
+	command_pool->buffer_type = p_cmd_buffer_type; // 只记录，没有区别
+	return CommandPoolID(command_pool);
+}
+void RenderingDeviceDriverVulkan::command_pool_free(CommandPoolID p_cmd_pool) {
+	DEV_ASSERT(p_cmd_pool);
+
+	CommandPool *command_pool = (CommandPool *)(p_cmd_pool.id);
+	vkDestroyCommandPool(vk_device, command_pool->vk_command_pool, nullptr);
+	memdelete(command_pool);
+}
+
 /*********************/
 /**** UNIFORM SET ****/
 /*********************/
@@ -4037,3 +4208,65 @@ void RenderingDeviceDriverVulkan::shader_free(ShaderID p_shader) {
 	VersatileResource::free(resources_allocator, shader_info);
 }
 
+/*****************/
+/**** QUERIES ****/
+/*****************/
+
+// ----- TIMESTAMP -----
+RDD::QueryPoolID RenderingDeviceDriverVulkan::timestamp_query_pool_create(uint32_t p_query_count) {
+	VkQueryPoolCreateInfo query_pool_create_info = {};
+	query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+	query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+	query_pool_create_info.queryCount = p_query_count;
+
+	VkQueryPool vk_query_pool = VK_NULL_HANDLE;
+	vkCreateQueryPool(vk_device, &query_pool_create_info, nullptr, &vk_query_pool);
+	return RDD::QueryPoolID(vk_query_pool);
+}
+
+void RenderingDeviceDriverVulkan::timestamp_query_pool_free(QueryPoolID p_pool_id) {
+	vkDestroyQueryPool(vk_device, (VkQueryPool)p_pool_id.id, nullptr);
+}
+
+void RenderingDeviceDriverVulkan::timestamp_query_pool_get_results(QueryPoolID p_pool_id, uint32_t p_query_count, uint64_t *r_results) {
+	vkGetQueryPoolResults(vk_device, (VkQueryPool)p_pool_id.id, 0, p_query_count, sizeof(uint64_t) * p_query_count, r_results, sizeof(uint64_t), VK_QUERY_RESULT_64_BIT);
+}
+uint64_t RenderingDeviceDriverVulkan::timestamp_query_result_to_time(uint64_t p_result) {
+	// This sucks because timestampPeriod multiplier is a float, while the timestamp is 64 bits nanosecs.
+	// So, in cases like nvidia which give you enormous numbers and 1 as multiplier, multiplying is next to impossible.
+	// Need to do 128 bits fixed point multiplication to get the right value.
+
+	// 执行64bit乘法，并将结果存储在128bit中
+	// 每32位执行计算和进位
+	//           t[-k--|-w3--]
+	//		t[-w1-|-k--]
+	// 		t[--k-|---]
+	// [ h        |         l]
+	static auto mult64to128 = [](uint64_t u, uint64_t v, uint64_t &h, uint64_t &l) {
+		// 0-32位：w3，进位k
+		uint64_t u1 = (u & 0xffffffff);; // a2
+		uint64_t v1 = (v & 0xffffffff); // b2
+		uint64_t t = (u1 * v1);
+		uint64_t w3 = (t & 0xffffffff); // a2b2的低于32位的部分
+		uint64_t k = (t >> 32); // 超出32位的部分加到a1*b2中
+		// 32-64位：k，进位w1
+		u >>= 32; // a1
+		t = (u * v1) + k; // a1*b2*2^32 + a2*b2的高位
+		k = (t & 0xffffffff); 
+		uint64_t w1 = (t >> 32);
+		// 同样是32-64为，进位k
+		v >>= 32; // b1
+		t = (u1 * v) + k; // a2*b1*2^32 + 上述结果的低32位（32-64位）
+		k = (t >> 32); 
+		h = (u * v) + w1 + k; 
+		l = (t << 32) + w3; 
+	};
+
+	uint64_t shift_bits = 16; 
+	uint64_t h = 0, l = 0;
+	mult64to128(p_result, uint64_t(double(physical_device_properties.limits.timestampPeriod) * double(1 << shift_bits)), h, l);
+	l >>= shift_bits;
+	l |= h << (64 - shift_bits);
+
+	return l;
+}

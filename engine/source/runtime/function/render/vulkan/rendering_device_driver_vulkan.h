@@ -37,9 +37,18 @@ public:
 	virtual uint64_t texture_get_allocation_size(TextureID p_texture) override final;
 
 	virtual TextureID texture_create(const TextureFormat& p_format, const TextureView& p_view) override final;
+	// 已有VKimage,创建view
+	virtual TextureID texture_create_from_extension(uint64_t p_native_texture, TextureType p_type, DataFormat p_format, uint32_t p_array_layers, bool p_depth_stencil) override final;
 
 private:
 	VkSampleCountFlagBits _ensure_supported_sample_count(TextureSamples p_requested_sample_count);
+	/*****************/
+	/**** SAMPLER ****/
+	/*****************/
+public:
+	virtual SamplerID sampler_create(const SamplerState &p_state) final override;
+	virtual void sampler_free(SamplerID p_sampler) final override;
+	virtual bool sampler_is_format_supported_for_filter(DataFormat p_format, SamplerFilter p_filter) override final;
 
 	/**********************/
 	/**** VERTEX ARRAY ****/
@@ -176,9 +185,23 @@ public:
 
 	virtual SemaphoreID semaphore_create() override final;
 	virtual void semaphore_free(SemaphoreID p_semaphore) override final;
+	/*****************/
+	/**** QUERIES ****/
+	/*****************/
+	// ----- TIMESTAMP -----
+
+	// Basic.
+	virtual QueryPoolID timestamp_query_pool_create(uint32_t p_query_count) override final;
+	virtual void timestamp_query_pool_free(QueryPoolID p_pool_id) override final;
+	virtual void timestamp_query_pool_get_results(QueryPoolID p_pool_id, uint32_t p_query_count, uint64_t *r_results) override final;
+	virtual uint64_t timestamp_query_result_to_time(uint64_t p_result) override final;
+
+
 	/******************/
-	/**** COMMANDS ****/
+	/**** COMMAND BUFFERS ****/
 	/******************/
+
+
 
 	// ----- QUEUE FAMILY -----
 
@@ -198,13 +221,31 @@ private:
 		uint32_t queue_index = 0;
 		uint32_t present_semaphore_index = 0;
 	};
-//
-//public:
+public:
 	virtual CommandQueueID command_queue_create(CommandQueueFamilyID p_cmd_queue_family, bool p_identify_as_main_queue) override final;
 	virtual Error command_queue_execute_and_present(CommandQueueID p_cmd_queue, VectorView<SemaphoreID> p_wait_semaphores, VectorView<CommandBufferID> p_cmd_buffers, VectorView<SemaphoreID> p_cmd_semaphores, FenceID p_cmd_fence, VectorView<SwapChainID> p_swap_chains) override final;
 	virtual void command_queue_free(CommandQueueID p_cmd_queue) override final;
-// 
-// 		
+
+	// ----- POOL -----
+	struct CommandPool {
+		VkCommandPool vk_command_pool = VK_NULL_HANDLE;
+		CommandBufferType buffer_type = COMMAND_BUFFER_TYPE_PRIMARY;
+	};
+
+	virtual CommandPoolID command_pool_create(CommandQueueFamilyID p_cmd_queue_family, CommandBufferType p_cmd_buffer_type) override final;
+	virtual void command_pool_free(CommandPoolID p_cmd_pool) override final;
+
+	/*****************/
+	/**** QUERIES ****/
+	/*****************/
+
+	// ----- TIMESTAMP -----
+
+	// Basic.
+	virtual QueryPoolID timestamp_query_pool_create(uint32_t p_query_count) override final;
+	virtual void timestamp_query_pool_free(QueryPoolID p_pool_id) override final;
+	virtual void timestamp_query_pool_get_results(QueryPoolID p_pool_id, uint32_t p_query_count, uint64_t *r_results) override final;
+	virtual uint64_t timestamp_query_result_to_time(uint64_t p_result) override final;
 	/********************/
 	/**** SWAP CHAIN ****/
 	/********************/
@@ -228,7 +269,13 @@ private:
 	};
 public:
 	virtual SwapChainID swap_chain_create(RenderingContextDriver::SurfaceID p_surface) override final;
+	// VKFramebuffer create in resize..
 	virtual Error swap_chain_resize(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain, uint32_t p_desired_framebuffer_count) override final;
+	// acquire next image
+	virtual FramebufferID swap_chain_acquire_framebuffer(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain, bool& r_resize_required) override final;
+	virtual RenderPassID swap_chain_get_render_pass(SwapChainID p_swap_chain) override final;
+	
+	
 	/*********************/
 	/**** FRAMEBUFFER ****/
 	/*********************/

@@ -5,7 +5,7 @@
 #include "rendering_context_driver.h"
 #include "core/templates/local_vector.h"
 // Driver的接口类
-// 
+// 实际上的RHI。执行具体的API相关命令，与RenderingDevice不同。并且，Graph是基于RenderingDevice的，并不执行命令。
 
 // 指针大小，无所有权，轻便。使代码几乎独立于拥有序列的内容，并保留模板容器的所有细节
 // span; .._view; 或者slice
@@ -242,6 +242,9 @@ namespace lain {
 			uint64_t layer_pitch = 0;
 		};
 		 virtual TextureID texture_create(const TextureFormat& p_format, const TextureView& p_view) = 0;
+		 // already have image, create imageview
+		virtual TextureID texture_create_from_extension(uint64_t p_native_texture, TextureType p_type, DataFormat p_format, uint32_t p_array_layers, bool p_depth_stencil)=0;
+
 		// virtual TextureID texture_create_shared_from_slice(TextureID p_original_texture, const TextureView& p_view, TextureSliceType p_slice_type, uint32_t p_layer, uint32_t p_layers, uint32_t p_mipmap, uint32_t p_mipmaps) = 0;
 		// virtual void texture_free(TextureID p_texture) = 0;
 		 virtual uint64_t texture_get_allocation_size(TextureID p_texture) = 0;
@@ -255,9 +258,9 @@ namespace lain {
 		/**** SAMPLER ****/
 		/*****************/
 
-		// virtual SamplerID sampler_create(const SamplerState& p_state) = 0;
-		// virtual void sampler_free(SamplerID p_sampler) = 0;
-		// virtual bool sampler_is_format_supported_for_filter(DataFormat p_format, SamplerFilter p_filter) = 0;
+		virtual SamplerID sampler_create(const SamplerState& p_state) = 0;
+		virtual void sampler_free(SamplerID p_sampler) = 0;
+		virtual bool sampler_is_format_supported_for_filter(DataFormat p_format, SamplerFilter p_filter) = 0;
 
 		/**********************/
 		/**** VERTEX ARRAY ****/
@@ -397,12 +400,12 @@ namespace lain {
 		// ----- POOL -----
 		// 主命令缓冲区，可以执行辅助命令缓冲区，并且提交到队列；辅助命令缓冲区，可以由主命令缓冲区执行，并且不直接提交到队列。
 		enum CommandBufferType {
-			COMMAND_BUFFER_TYPE_PRIMARY,
+			assasCOMMAND_BUFFER_TYPE_PRIMARY,
 			COMMAND_BUFFER_TYPE_SECONDARY,
 		};
 
-		// virtual CommandPoolID command_pool_create(CommandQueueFamilyID p_cmd_queue_family, CommandBufferType p_cmd_buffer_type) = 0;
-		// virtual void command_pool_free(CommandPoolID p_cmd_pool) = 0;
+		virtual CommandPoolID command_pool_create(CommandQueueFamilyID p_cmd_queue_family, CommandBufferType p_cmd_buffer_type) = 0;
+		virtual void command_pool_free(CommandPoolID p_cmd_pool) = 0;
 		// Command pool 一般类似vector<CommandPool> cmd_pools[QUEUE_INDEX_COUNT];而且多线程每个都得单独分配
 		// ----- BUFFER -----
 
@@ -422,10 +425,10 @@ namespace lain {
 		 virtual Error swap_chain_resize(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain, uint32_t p_desired_framebuffer_count) = 0;
 
 		// Acquire the framebuffer that can be used for drawing. This must be called only once every time a new frame will be rendered.
-		// virtual FramebufferID swap_chain_acquire_framebuffer(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain, bool& r_resize_required) = 0;
+		virtual FramebufferID swap_chain_acquire_framebuffer(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain, bool& r_resize_required) = 0;
 
 		// Retrieve the render pass that can be used to draw on the swap chain's framebuffers.
-		// virtual RenderPassID swap_chain_get_render_pass(SwapChainID p_swap_chain) = 0;
+		virtual RenderPassID swap_chain_get_render_pass(SwapChainID p_swap_chain) = 0;
 
 		// Retrieve the format used by the swap chain's framebuffers.
 		// virtual DataFormat swap_chain_get_format(SwapChainID p_swap_chain) = 0;
@@ -677,10 +680,10 @@ namespace lain {
 	// ----- TIMESTAMP -----
 
 	// Basic.
-	// virtual QueryPoolID timestamp_query_pool_create(uint32_t p_query_count) = 0;
-	// virtual void timestamp_query_pool_free(QueryPoolID p_pool_id) = 0;
-	// virtual void timestamp_query_pool_get_results(QueryPoolID p_pool_id, uint32_t p_query_count, uint64_t* r_results) = 0;
-	// virtual uint64_t timestamp_query_result_to_time(uint64_t p_result) = 0;
+	virtual QueryPoolID timestamp_query_pool_create(uint32_t p_query_count) = 0;
+	virtual void timestamp_query_pool_free(QueryPoolID p_pool_id) = 0;
+	virtual void timestamp_query_pool_get_results(QueryPoolID p_pool_id, uint32_t p_query_count, uint64_t* r_results) = 0;
+	virtual uint64_t timestamp_query_result_to_time(uint64_t p_result) = 0;
 
 	// Commands.
 	// virtual void command_timestamp_query_pool_reset(CommandBufferID p_cmd_buffer, QueryPoolID p_pool_id, uint32_t p_query_count) = 0;
