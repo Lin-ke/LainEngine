@@ -2359,6 +2359,68 @@ Error RenderingDeviceDriverVulkan::swap_chain_resize(CommandQueueID p_cmd_queue,
 	return OK;
 }
 
+RDD::FramebufferID RenderingDeviceDriverVulkan::swap_chain_acquire_framebuffer(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain, bool &r_resize_required) {
+	DEV_ASSERT(p_cmd_queue);
+	DEV_ASSERT(p_swap_chain);
+
+	CommandQueue *command_queue = (CommandQueue *)(p_cmd_queue.id);
+	SwapChain *swap_chain = (SwapChain *)(p_swap_chain.id);
+	if ((swap_chain->vk_swapchain == VK_NULL_HANDLE) || context_driver->surface_get_needs_resize(swap_chain->surface)) {
+		// The surface does not have a valid swap chain or it indicates it requires a resize.
+		r_resize_required = true;
+		return FramebufferID();
+	}
+
+	VkResult err;
+	VkSemaphore semaphore = VK_NULL_HANDLE;
+	uint32_t semaphore_index = 0;
+	if (command_queue->free_image_semaphores.is_empty()) {
+		// Add a new semaphore if none are free.
+		VkSemaphoreCreateInfo create_info = {};
+		create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		err = vkCreateSemaphore(vk_device, &create_info, nullptr, &semaphore);
+		ERR_FAIL_COND_V(err != VK_SUCCESS, FramebufferID());
+
+		semaphore_index = command_queue->image_semaphores.size();
+		command_queue->image_semaphores.push_back(semaphore);
+		command_queue->image_semaphores_swap_chains.push_back(swap_chain);
+	} else {
+		// Pick a free semaphore.
+		uint32_t free_index = command_queue->free_image_semaphores.size() - 1;
+		semaphore_index = command_queue->free_image_semaphores[free_index];
+		command_queue->image_semaphores_swap_chains[semaphore_index] = swap_chain;
+		command_queue->free_image_semaphores.remove_at(free_index);
+		semaphore = command_queue->image_semaphores[semaphore_index];
+	}
+
+	// Store in the swap chain the acquired semaphore.
+	swap_chain->command_queues_acquired.push_back(command_queue);
+	swap_chain->command_queues_acquired_semaphores.push_back(semaphore_index);
+
+	err = device_functions.AcquireNextImageKHR(vk_device, swap_chain->vk_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &swap_chain->image_index);
+	if (err == VK_ERROR_OUT_OF_DATE_KHR) {
+		// Out of date leaves the semaphore in a signaled state that will never finish, so it's necessary to recreate it.
+		bool semaphore_recreated = _recreate_image_semaphore(command_queue, semaphore_index, true);
+		ERR_FAIL_COND_V(!semaphore_recreated, FramebufferID());
+
+		// Swap chain is out of date and must be recreated.
+		r_resize_required = true;
+		return FramebufferID();
+	} else if (err != VK_SUCCESS && err != VK_SUBOPTIMAL_KHR) {
+		// Swap chain failed to present but the reason is unknown.
+		// Refer to the comment in command_queue_present() as to why VK_SUBOPTIMAL_KHR is handled the same as VK_SUCCESS.
+		return FramebufferID();
+	}
+
+	// Indicate the command queue should wait on these semaphores on the next submission and that it should
+	// indicate they're free again on the next fence.
+	command_queue->pending_semaphores_for_execute.push_back(semaphore_index);
+	command_queue->pending_semaphores_for_fence.push_back(semaphore_index);
+
+	// Return the corresponding framebuffer to the new current image.
+	return swap_chain->framebuffers[swap_chain->image_index];
+}
+
 RDD::RenderPassID RenderingDeviceDriverVulkan::swap_chain_get_render_pass(SwapChainID p_swap_chain) {
 	DEV_ASSERT(p_swap_chain.id != 0);
 
@@ -2595,6 +2657,28 @@ void RenderingDeviceDriverVulkan::command_pool_free(CommandPoolID p_cmd_pool) {
 	CommandPool *command_pool = (CommandPool *)(p_cmd_pool.id);
 	vkDestroyCommandPool(vk_device, command_pool->vk_command_pool, nullptr);
 	memdelete(command_pool);
+}
+
+RDD::CommandBufferID RenderingDeviceDriverVulkan::command_buffer_create(CommandPoolID p_cmd_pool) {
+	DEV_ASSERT(p_cmd_pool);
+
+	const CommandPool *command_pool = (const CommandPool *)(p_cmd_pool.id);
+	VkCommandBufferAllocateInfo cmd_buf_info = {};
+	cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	cmd_buf_info.commandPool = command_pool->vk_command_pool;
+	cmd_buf_info.commandBufferCount = 1;
+
+	if (command_pool->buffer_type == COMMAND_BUFFER_TYPE_SECONDARY) {
+		cmd_buf_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+	} else {
+		cmd_buf_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	}
+
+	VkCommandBuffer vk_cmd_buffer = VK_NULL_HANDLE;
+	VkResult err = vkAllocateCommandBuffers(vk_device, &cmd_buf_info, &vk_cmd_buffer);
+	ERR_FAIL_COND_V_MSG(err, CommandBufferID(), "vkAllocateCommandBuffers failed with error " + itos(err) + ".");
+
+	return CommandBufferID(vk_cmd_buffer);
 }
 
 /*********************/

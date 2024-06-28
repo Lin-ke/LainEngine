@@ -227,25 +227,17 @@ public:
 	virtual void command_queue_free(CommandQueueID p_cmd_queue) override final;
 
 	// ----- POOL -----
+private:
+
 	struct CommandPool {
 		VkCommandPool vk_command_pool = VK_NULL_HANDLE;
 		CommandBufferType buffer_type = COMMAND_BUFFER_TYPE_PRIMARY;
 	};
-
+public:
 	virtual CommandPoolID command_pool_create(CommandQueueFamilyID p_cmd_queue_family, CommandBufferType p_cmd_buffer_type) override final;
 	virtual void command_pool_free(CommandPoolID p_cmd_pool) override final;
-
-	/*****************/
-	/**** QUERIES ****/
-	/*****************/
-
-	// ----- TIMESTAMP -----
-
-	// Basic.
-	virtual QueryPoolID timestamp_query_pool_create(uint32_t p_query_count) override final;
-	virtual void timestamp_query_pool_free(QueryPoolID p_pool_id) override final;
-	virtual void timestamp_query_pool_get_results(QueryPoolID p_pool_id, uint32_t p_query_count, uint64_t *r_results) override final;
-	virtual uint64_t timestamp_query_result_to_time(uint64_t p_result) override final;
+private:
+	virtual CommandBufferID command_buffer_create(CommandPoolID p_cmd_pool) override final;
 	/********************/
 	/**** SWAP CHAIN ****/
 	/********************/

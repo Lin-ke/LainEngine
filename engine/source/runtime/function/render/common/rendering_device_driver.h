@@ -399,17 +399,17 @@ namespace lain {
 
 		// ----- POOL -----
 		// 主命令缓冲区，可以执行辅助命令缓冲区，并且提交到队列；辅助命令缓冲区，可以由主命令缓冲区执行，并且不直接提交到队列。
+
 		enum CommandBufferType {
-			assasCOMMAND_BUFFER_TYPE_PRIMARY,
+			COMMAND_BUFFER_TYPE_PRIMARY,
 			COMMAND_BUFFER_TYPE_SECONDARY,
 		};
-
 		virtual CommandPoolID command_pool_create(CommandQueueFamilyID p_cmd_queue_family, CommandBufferType p_cmd_buffer_type) = 0;
 		virtual void command_pool_free(CommandPoolID p_cmd_pool) = 0;
 		// Command pool 一般类似vector<CommandPool> cmd_pools[QUEUE_INDEX_COUNT];而且多线程每个都得单独分配
 		// ----- BUFFER -----
 
-		// virtual CommandBufferID command_buffer_create(CommandPoolID p_cmd_pool) = 0;
+		virtual CommandBufferID command_buffer_create(CommandPoolID p_cmd_pool) = 0;
 		// virtual bool command_buffer_begin(CommandBufferID p_cmd_buffer) = 0;
 		// virtual bool command_buffer_begin_secondary(CommandBufferID p_cmd_buffer, RenderPassID p_render_pass, uint32_t p_subpass, FramebufferID p_framebuffer) = 0;
 		// virtual void command_buffer_end(CommandBufferID p_cmd_buffer) = 0;
