@@ -1,6 +1,6 @@
 add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
 add_rules("mode.debug", "mode.release")
-add_requires( "assimp", "vulkan-memory-allocator", "zstd", "volk" ,"glfw","imgui",  "zlib", "spdlog","tinyobjloader", "vulkan-headers")
+add_requires( "assimp",  "zstd","glfw","imgui",  "zlib", "spdlog","tinyobjloader", "vulkan-headers")
 add_requires("mustache")
 target("Spirv-Reflect")
     set_kind("static")
@@ -43,7 +43,7 @@ target("Parser")
     end
     after_build(function(target)
         os.cp(target:targetfile(), "$(projectdir)/engine/bin")
-        -- ÅÐ¶ÏdllÊÇ·ñ´æÔÚ
+        -- ï¿½Ð¶ï¿½dllï¿½Ç·ï¿½ï¿½ï¿½ï¿½
         local clangdll = target:targetdir().."/libclang.dll"
         if not os.exists(clangdll) then
             if is_arch("x64") then
@@ -140,7 +140,7 @@ target("Renderer")
     add_includedirs("engine/thirdparty/json11")
     -- others
     add_includedirs("engine/thirdparty")
-    -- spirv-reflect ÓÃ×Ô¼ºµÄ
+    -- spirv-reflect ï¿½ï¿½ï¿½Ô¼ï¿½ï¿½ï¿½
     add_includedirs("engine/thirdparty/spirv-reflect")
     -- vulkan
     add_includedirs("$(env VULKAN_SDK)/Include")

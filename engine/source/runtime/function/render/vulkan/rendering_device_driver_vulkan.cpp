@@ -1776,6 +1776,7 @@ RenderingDeviceDriverVulkan::RenderingDeviceDriverVulkan(RenderingContextDriverV
 	context_driver = p_driver;
 }
 
+// // 必须在调用 vkDestroyDevice 之前显示释放所有这些资源，但是这里并没有Handle的管理，可能会导致资源泄露
 RenderingDeviceDriverVulkan::~RenderingDeviceDriverVulkan()
 {
 	while (small_allocs_pools.size())
@@ -2639,9 +2640,11 @@ RDD::CommandPoolID RenderingDeviceDriverVulkan::command_pool_create(CommandQueue
 	uint32_t family_index = p_cmd_queue_family.id - 1; // 内部映射是从1开始的
 	VkCommandPoolCreateInfo cmd_pool_info = {};
 	cmd_pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	cmd_pool_info.queueFamilyIndex = family_index;
+	cmd_pool_info.queueFamilyIndex = family_index; // //注意commnd pool也需要index，这个pool中的buffer只能submit到该queue中。
 	cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
+	// TRANSIENT代表生命周期很短
+	// @? PROTECTED有什么用
+	// 这里有trim函数可以将未使用的内存从commandpool回收到系统
 	VkCommandPool vk_command_pool = VK_NULL_HANDLE;
 	VkResult res = vkCreateCommandPool(vk_device, &cmd_pool_info, nullptr, &vk_command_pool);
 	ERR_FAIL_COND_V_MSG(res, CommandPoolID(), "vkCreateCommandPool failed with error " + itos(res) + ".");
@@ -2659,6 +2662,16 @@ void RenderingDeviceDriverVulkan::command_pool_free(CommandPoolID p_cmd_pool) {
 	memdelete(command_pool);
 }
 
+// ---- command buffer ----
+// primary 可以被submit，也可以调用secondary；secondary不能submit
+// 录制command包含：1. 绑定和set的command；2. 动态状态的command；3.drawcall 4. dispatchcall
+// 5， 调用secondary；6. copy buffer嗯好image
+// commandbuffer开始时处于未定义状态，并在记录完毕后回到未定义状态
+// 例外：在renderpass中的secondary command buffer不会干扰render pass的状态
+// 没有显示内存依赖关系，则command的内存副作用对其他command不可见。
+// 生命周期：Initial；Recording；Executable；Pending；Invalid
+// vkCmdExecuteCommands 将关联primary和secondary的生命周期
+// 管理：vkFreeCommandBuffers，vkResetCommandBuffers
 RDD::CommandBufferID RenderingDeviceDriverVulkan::command_buffer_create(CommandPoolID p_cmd_pool) {
 	DEV_ASSERT(p_cmd_pool);
 
@@ -2679,6 +2692,46 @@ RDD::CommandBufferID RenderingDeviceDriverVulkan::command_buffer_create(CommandP
 	ERR_FAIL_COND_V_MSG(err, CommandBufferID(), "vkAllocateCommandBuffers failed with error " + itos(err) + ".");
 
 	return CommandBufferID(vk_cmd_buffer);
+}
+/// command buffer开始录制
+// 由于通过reset pool创建，可以在invalid、executable state自动转为reset,否则需要执行initial state
+// primary buffer
+bool RenderingDeviceDriverVulkan::command_buffer_begin(CommandBufferID p_cmd_buffer) {
+	// Reset is implicit (VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT).
+
+	VkCommandBufferBeginInfo cmd_buf_begin_info = {};
+	cmd_buf_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	cmd_buf_begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	VkResult err = vkBeginCommandBuffer((VkCommandBuffer)p_cmd_buffer.id, &cmd_buf_begin_info);
+	ERR_FAIL_COND_V_MSG(err, false, "vkBeginCommandBuffer failed with error " + itos(err) + ".");
+
+	return true;
+}
+
+bool RenderingDeviceDriverVulkan::command_buffer_begin_secondary(CommandBufferID p_cmd_buffer, RenderPassID p_render_pass, uint32_t p_subpass, FramebufferID p_framebuffer) {
+	// Reset is implicit (VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT).
+
+	VkCommandBufferInheritanceInfo inheritance_info = {};
+	// secondary需要从primary buffer继承状态，还包括occlusionQueryEnable ，querycontrol， pipelineStatistics
+	// 这几个状态与primary command buffer的occlusionquery被开启的时候执行相关。
+	// continue bit 保证不改变状态
+	// 但是如果这些资源失效了，secondary buffer还有用吗？
+	inheritance_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+	inheritance_info.renderPass = (VkRenderPass)p_render_pass.id; // 表明与那个render pass兼容
+
+	inheritance_info.subpass = p_subpass;
+	// 为secondary commmand buffer设定一个明确的framebuffer，可能会提升command buffer执行时期的性能
+	inheritance_info.framebuffer = (VkFramebuffer)p_framebuffer.id;
+	// VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT  表明该command buffer处于pending state时可以被resubmit或录制到primary中。
+	VkCommandBufferBeginInfo cmd_buf_begin_info = {};
+	cmd_buf_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	cmd_buf_begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+	cmd_buf_begin_info.pInheritanceInfo = &inheritance_info;
+
+	VkResult err = vkBeginCommandBuffer((VkCommandBuffer)p_cmd_buffer.id, &cmd_buf_begin_info);
+	ERR_FAIL_COND_V_MSG(err, false, "vkBeginCommandBuffer failed with error " + itos(err) + ".");
+
+	return true;
 }
 
 /*********************/
