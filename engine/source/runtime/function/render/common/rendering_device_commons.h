@@ -350,7 +350,7 @@ namespace lain {
 			TEXTURE_SWIZZLE_A,
 			TEXTURE_SWIZZLE_MAX
 		};
-		// @?
+		// 目前支持的切片类型
 		enum TextureSliceType {
 			TEXTURE_SLICE_2D,
 			TEXTURE_SLICE_CUBEMAP,

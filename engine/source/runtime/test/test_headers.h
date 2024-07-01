@@ -7,4 +7,5 @@
 #include "test_imageio.h"
 #include "test_tree.h"
 #include "test_process.h"
+#include "test_vulkan.h"
 #endif // !TEST_HEADERS_H

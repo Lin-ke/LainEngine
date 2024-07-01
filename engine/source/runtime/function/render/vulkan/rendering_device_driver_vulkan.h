@@ -22,6 +22,8 @@ public:
 	/*****************/
 	/**** TEXTURE ****/
 	/*****************/
+	// 这里只有imageview
+	// vk image似乎没有什么用，保存在create_info->image里
 
 	struct TextureInfo {
 		VkImageView vk_view = VK_NULL_HANDLE;
@@ -33,12 +35,22 @@ public:
 			VmaAllocationInfo info = {};
 		} allocation; // All 0/null if just a view.
 	};
-	virtual BitField<TextureUsageBits> texture_get_usages_supported_by_format(DataFormat p_format, bool p_cpu_readable) override;
-	virtual uint64_t texture_get_allocation_size(TextureID p_texture) override final;
 
 	virtual TextureID texture_create(const TextureFormat& p_format, const TextureView& p_view) override final;
-	// 已有VKimage,创建view
 	virtual TextureID texture_create_from_extension(uint64_t p_native_texture, TextureType p_type, DataFormat p_format, uint32_t p_array_layers, bool p_depth_stencil) override final;
+	virtual TextureID texture_create_shared(TextureID p_original_texture, const TextureView &p_view) override final;
+	// 区别在sub resource range和view type上
+	virtual TextureID texture_create_shared_from_slice(TextureID p_original_texture, const TextureView &p_view, TextureSliceType p_slice_type, uint32_t p_layer, uint32_t p_layers, uint32_t p_mipmap, uint32_t p_mipmaps) override final;
+	virtual void texture_free(TextureID p_texture) override final;
+	virtual uint8_t *texture_map(TextureID p_texture, const TextureSubresource &p_subresource) override final;
+	virtual void texture_unmap(TextureID p_texture) override final;
+	
+	virtual void texture_get_copyable_layout(TextureID p_texture, const TextureSubresource &p_subresource, TextureCopyableLayout *r_layout) override final;
+	virtual uint64_t texture_get_allocation_size(TextureID p_texture) override final;
+	// virtual bool texture_can_make_shared_with_format(TextureID p_texture, DataFormat p_format, bool &r_raw_reinterpretation) override final;
+	virtual BitField<TextureUsageBits> texture_get_usages_supported_by_format(DataFormat p_format, bool p_cpu_readable) override;
+
+	// 已有VKimage,创建view
 
 private:
 	VkSampleCountFlagBits _ensure_supported_sample_count(TextureSamples p_requested_sample_count);
@@ -164,6 +176,20 @@ public:
 	virtual UniformSetID uniform_set_create(VectorView<BoundUniform> p_uniforms, ShaderID p_shader, uint32_t p_set_index) override final;
 	virtual void uniform_set_free(UniformSetID p_uniform_set) override final;
 
+	/******************/
+	/**** TRANSFER ****/
+	/******************/
+
+	virtual void command_clear_buffer(CommandBufferID p_cmd_buffer, BufferID p_buffer, uint64_t p_offset, uint64_t p_size) override final;
+	virtual void command_copy_buffer(CommandBufferID p_cmd_buffer, BufferID p_src_buffer, BufferID p_dst_buffer, VectorView<BufferCopyRegion> p_regions) override final;
+
+	virtual void command_copy_texture(CommandBufferID p_cmd_buffer, TextureID p_src_texture, TextureLayout p_src_texture_layout, TextureID p_dst_texture, TextureLayout p_dst_texture_layout, VectorView<TextureCopyRegion> p_regions) override final;
+	virtual void command_resolve_texture(CommandBufferID p_cmd_buffer, TextureID p_src_texture, TextureLayout p_src_texture_layout, uint32_t p_src_layer, uint32_t p_src_mipmap, TextureID p_dst_texture, TextureLayout p_dst_texture_layout, uint32_t p_dst_layer, uint32_t p_dst_mipmap) override final;
+	virtual void command_clear_color_texture(CommandBufferID p_cmd_buffer, TextureID p_texture, TextureLayout p_texture_layout, const Color &p_color, const TextureSubresourceRange &p_subresources) override final;
+
+	virtual void command_copy_buffer_to_texture(CommandBufferID p_cmd_buffer, BufferID p_src_buffer, TextureID p_dst_texture, TextureLayout p_dst_texture_layout, VectorView<BufferTextureCopyRegion> p_regions) override final;
+	virtual void command_copy_texture_to_buffer(CommandBufferID p_cmd_buffer, TextureID p_src_texture, TextureLayout p_src_texture_layout, BufferID p_dst_buffer, VectorView<BufferTextureCopyRegion> p_regions) override final;
+
 	/****************/
 	/**** FENCES ****/
 	/****************/
@@ -195,7 +221,11 @@ public:
 	virtual void timestamp_query_pool_free(QueryPoolID p_pool_id) override final;
 	virtual void timestamp_query_pool_get_results(QueryPoolID p_pool_id, uint32_t p_query_count, uint64_t *r_results) override final;
 	virtual uint64_t timestamp_query_result_to_time(uint64_t p_result) override final;
-
+	// commands
+	virtual void command_timestamp_query_pool_reset(CommandBufferID p_cmd_buffer, QueryPoolID p_pool_id, uint32_t p_query_count) override final;
+	virtual void command_timestamp_write(CommandBufferID p_cmd_buffer, QueryPoolID p_pool_id, uint32_t p_index) override final;
+	// ----- OCCLUSION -----
+	// @todo add occulusion query
 
 	/******************/
 	/**** COMMAND BUFFERS ****/
@@ -271,7 +301,9 @@ public:
 	// acquire next image
 	virtual FramebufferID swap_chain_acquire_framebuffer(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain, bool& r_resize_required) override final;
 	virtual RenderPassID swap_chain_get_render_pass(SwapChainID p_swap_chain) override final;
-	
+	// external wait needed!
+	virtual void swap_chain_free(SwapChainID p_swap_chain) override final;
+
 	
 	/*********************/
 	/**** FRAMEBUFFER ****/
@@ -316,7 +348,9 @@ private:
 	// 这里封装的十分如封
 	virtual RenderPassID render_pass_create(VectorView<Attachment> p_attachments, VectorView<Subpass> p_subpasses, VectorView<SubpassDependency> p_subpass_dependencies, uint32_t p_view_count) override final;
 	virtual void render_pass_free(RenderPassID p_render_pass) override final;
-
+	// ----- RENDER command -----
+	virtual void command_begin_render_pass(CommandBufferID p_cmd_buffer, RenderPassID p_render_pass, FramebufferID p_framebuffer, CommandBufferType p_cmd_buffer_type, const Rect2i& p_rect, VectorView<RenderPassClearValue> p_clear_values) override final;
+	virtual void command_end_render_pass(CommandBufferID p_cmd_buffer) override final;
 	// ----- PIPELINE -----
 
 	virtual PipelineID render_pipeline_create(
@@ -332,6 +366,18 @@ private:
 			RenderPassID p_render_pass,
 			uint32_t p_render_subpass,
 			VectorView<PipelineSpecializationConstant> p_specialization_constants) override final;
+	/*************** */
+	/**** COMPUTE ****/
+	/*************** */
+	virtual PipelineID compute_pipeline_create(ShaderID p_shader, VectorView<PipelineSpecializationConstant> p_specialization_constants) override final;
+	
+	/****************/
+	/**** LABELS ****/
+	/****************/
+
+	virtual void command_begin_label(CommandBufferID p_cmd_buffer, const char *p_label_name, const Color &p_color) override final;
+	virtual void command_end_label(CommandBufferID p_cmd_buffer) override final;
+
 	/*****************/
 	/**** GENERIC ****/
 	/*****************/

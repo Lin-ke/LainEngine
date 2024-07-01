@@ -701,7 +701,7 @@ uint32_t RenderingDeviceCommons::get_compressed_image_format_pixel_rshift(DataFo
 
 	return 0;
 }
-
+// 根据format和size计算出需要的内存大小
 uint32_t RenderingDeviceCommons::get_image_format_required_size(DataFormat p_format, uint32_t p_width, uint32_t p_height, uint32_t p_depth, uint32_t p_mipmaps, uint32_t* r_blockw, uint32_t* r_blockh, uint32_t* r_depth) {
 	ERR_FAIL_COND_V(p_mipmaps == 0, 0);
 	uint32_t w = p_width;

@@ -3,7 +3,6 @@
 #include "core/string/print_string.h"
 #include <smol-v/smolv.h>
 #include "core/io/marshalls.h"
-#define PRINT_NATIVE_COMMANDS 1
 /*****************/
 /**** GENERIC ****/
 /*****************/
@@ -269,8 +268,9 @@ static VkImageLayout RD_TO_VK_LAYOUT[RDD::TEXTURE_LAYOUT_MAX] = {
 	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, // TEXTURE_LAYOUT_COPY_DST_OPTIMAL
 	VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, // TEXTURE_LAYOUT_RESOLVE_SRC_OPTIMAL
 	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, // TEXTURE_LAYOUT_RESOLVE_DST_OPTIMAL
-	VK_IMAGE_LAYOUT_PREINITIALIZED, // TEXTURE_LAYOUT_PREINITIALIZED
 	VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR, // TEXTURE_LAYOUT_VRS_ATTACHMENT_OPTIMAL
+	VK_IMAGE_LAYOUT_PREINITIALIZED, // TEXTURE_LAYOUT_PREINITIALIZED
+
 };
 
 static VkPipelineStageFlags _rd_to_vk_pipeline_stages(BitField<RDD::PipelineStageBits> p_stages) {
@@ -322,7 +322,7 @@ static const VkImageType RD_TEX_TYPE_TO_VK_IMG_TYPE[RDD::TEXTURE_TYPE_MAX] = {
 	VK_IMAGE_TYPE_1D,
 	VK_IMAGE_TYPE_2D,
 	VK_IMAGE_TYPE_3D,
-	VK_IMAGE_TYPE_2D,
+	VK_IMAGE_TYPE_2D, // cube是2d的
 	VK_IMAGE_TYPE_1D,
 	VK_IMAGE_TYPE_2D,
 	VK_IMAGE_TYPE_2D,
@@ -664,6 +664,206 @@ BitField<RDD::TextureUsageBits> RenderingDeviceDriverVulkan::texture_get_usages_
 
 	return supported;
 }
+// memory mapping指的是获得一个cpu指针，这样对这个指针的读写就可以被视为对指定区域GPU内存的读写
+uint8_t *RenderingDeviceDriverVulkan::texture_map(TextureID p_texture, const TextureSubresource &p_subresource) {
+	const TextureInfo *tex_info = (const TextureInfo *)p_texture.id;
+
+	VkImageSubresource vk_subres = {};
+	vk_subres.aspectMask = (VkImageAspectFlags)(1 << p_subresource.aspect);
+	vk_subres.arrayLayer = p_subresource.layer;
+	vk_subres.mipLevel = p_subresource.mipmap;
+
+	VkSubresourceLayout vk_layout = {};
+	// query memory layout 对一个指定的subresource
+	// subresource由 aspectMask,  array layer 和 mip level 构成
+	vkGetImageSubresourceLayout(vk_device, tex_info->vk_view_create_info.image, &vk_subres, &vk_layout);
+
+	void *data_ptr = nullptr;
+	//  多分配这些资源 // 这个操作据说比较昂贵 
+	VkResult err = vkMapMemory(
+			vk_device,
+			tex_info->allocation.info.deviceMemory, 
+			tex_info->allocation.info.offset + vk_layout.offset,
+			vk_layout.size,
+			0,
+			&data_ptr); 
+
+	vmaMapMemory(allocator, tex_info->allocation.handle, &data_ptr); 
+	ERR_FAIL_COND_V_MSG(err, nullptr, "vkMapMemory failed with error " + itos(err) + ".");
+	return (uint8_t *)data_ptr;
+}
+
+void RenderingDeviceDriverVulkan::texture_unmap(TextureID p_texture) {
+	const TextureInfo *tex_info = (const TextureInfo *)p_texture.id;
+	vkUnmapMemory(vk_device, tex_info->allocation.info.deviceMemory);
+}
+
+
+RDD::TextureID RenderingDeviceDriverVulkan::texture_create_shared(TextureID p_original_texture, const TextureView &p_view) {
+	const TextureInfo *owner_tex_info = (const TextureInfo *)p_original_texture.id;
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_V(!owner_tex_info->allocation.handle, TextureID());
+#endif
+	// 将一些类型设置为传入的 texture view
+	VkImageViewCreateInfo image_view_create_info = owner_tex_info->vk_view_create_info;
+	image_view_create_info.format = RD_TO_VK_FORMAT[p_view.format];
+	image_view_create_info.components.r = (VkComponentSwizzle)p_view.swizzle_r;
+	image_view_create_info.components.g = (VkComponentSwizzle)p_view.swizzle_g;
+	image_view_create_info.components.b = (VkComponentSwizzle)p_view.swizzle_b;
+	image_view_create_info.components.a = (VkComponentSwizzle)p_view.swizzle_a;
+
+	if (enabled_device_extension_names.has(VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) {
+		// May need to make VK_KHR_maintenance2 mandatory and thus has Vulkan 1.1 be our minimum supported version
+		// if we require setting this information. Vulkan 1.0 may simply not care.
+		if (image_view_create_info.format != owner_tex_info->vk_view_create_info.format) {  // 如果与传入的format都不同，需要修改一些usage的格式
+			VkImageViewUsageCreateInfo *usage_info = ALLOCA_SINGLE(VkImageViewUsageCreateInfo);
+			*usage_info = {};
+			usage_info->sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO;
+			usage_info->usage = owner_tex_info->vk_create_info.usage;
+
+			// Certain features may not be available for the format of the view.
+			{
+				VkFormatProperties properties = {};
+				vkGetPhysicalDeviceFormatProperties(physical_device, RD_TO_VK_FORMAT[p_view.format], &properties); // 获得该format的properties
+				const VkFormatFeatureFlags &supported_flags = owner_tex_info->vk_create_info.tiling == VK_IMAGE_TILING_LINEAR ? properties.linearTilingFeatures : properties.optimalTilingFeatures;
+				if ((usage_info->usage & VK_IMAGE_USAGE_STORAGE_BIT) && !(supported_flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
+					usage_info->usage &= ~VK_IMAGE_USAGE_STORAGE_BIT;
+				}
+				if ((usage_info->usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) && !(supported_flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)) {
+					usage_info->usage &= ~VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+				}
+			}
+
+			image_view_create_info.pNext = usage_info;
+		}
+	}
+
+	VkImageView new_vk_image_view = VK_NULL_HANDLE;
+	VkResult err = vkCreateImageView(vk_device, &image_view_create_info, nullptr, &new_vk_image_view);
+	ERR_FAIL_COND_V_MSG(err, TextureID(), "vkCreateImageView failed with error " + itos(err) + ".");
+
+	// Bookkeep.
+
+	TextureInfo *tex_info = VersatileResource::allocate<TextureInfo>(resources_allocator);
+	*tex_info = *owner_tex_info;
+	tex_info->vk_view = new_vk_image_view;
+	tex_info->vk_view_create_info = image_view_create_info;
+	tex_info->allocation = {};
+
+#if PRINT_NATIVE_COMMANDS
+	print_line(vformat("vkCreateImageView: 0x%uX for 0x%uX", uint64_t(new_vk_image_view), uint64_t(owner_tex_info->vk_view_create_info.image)));
+#endif
+
+	return TextureID(tex_info);
+}
+
+RDD::TextureID RenderingDeviceDriverVulkan::texture_create_shared_from_slice(TextureID p_original_texture, const TextureView &p_view, TextureSliceType p_slice_type, uint32_t p_layer, uint32_t p_layers, uint32_t p_mipmap, uint32_t p_mipmaps) {
+	const TextureInfo *owner_tex_info = (const TextureInfo *)p_original_texture.id;
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_V(!owner_tex_info->allocation.handle, TextureID());
+#endif
+
+	VkImageViewCreateInfo image_view_create_info = owner_tex_info->vk_view_create_info;
+	switch (p_slice_type) {
+		case TEXTURE_SLICE_2D: {
+			image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		} break;
+		case TEXTURE_SLICE_3D: {
+			image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_3D;
+		} break;
+		case TEXTURE_SLICE_CUBEMAP: {
+			image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+		} break;
+		case TEXTURE_SLICE_2D_ARRAY: {
+			image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+		} break;
+		default: {
+			return TextureID(nullptr);
+		}
+	}
+	image_view_create_info.format = RD_TO_VK_FORMAT[p_view.format];
+	image_view_create_info.components.r = (VkComponentSwizzle)p_view.swizzle_r;
+	image_view_create_info.components.g = (VkComponentSwizzle)p_view.swizzle_g;
+	image_view_create_info.components.b = (VkComponentSwizzle)p_view.swizzle_b;
+	image_view_create_info.components.a = (VkComponentSwizzle)p_view.swizzle_a;
+	image_view_create_info.subresourceRange.baseMipLevel = p_mipmap;
+	image_view_create_info.subresourceRange.levelCount = p_mipmaps;
+	image_view_create_info.subresourceRange.baseArrayLayer = p_layer;
+	image_view_create_info.subresourceRange.layerCount = p_layers;
+
+	VkImageView new_vk_image_view = VK_NULL_HANDLE;
+	VkResult err = vkCreateImageView(vk_device, &image_view_create_info, nullptr, &new_vk_image_view);
+	ERR_FAIL_COND_V_MSG(err, TextureID(), "vkCreateImageView failed with error " + itos(err) + ".");
+
+	// Bookkeep.
+
+	TextureInfo *tex_info = VersatileResource::allocate<TextureInfo>(resources_allocator);
+	*tex_info = *owner_tex_info;
+	tex_info->vk_view = new_vk_image_view;
+	tex_info->vk_view_create_info = image_view_create_info;
+	tex_info->allocation = {};
+
+#if PRINT_NATIVE_COMMANDS
+	print_line(vformat("vkCreateImageView: 0x%uX for 0x%uX (%d %d %d %d)", uint64_t(new_vk_image_view), uint64_t(owner_tex_info->vk_view_create_info.image), p_mipmap, p_mipmaps, p_layer, p_layers));
+#endif
+
+	return TextureID(tex_info);
+}
+
+void RenderingDeviceDriverVulkan::texture_free(TextureID p_texture){
+	TextureInfo* texture_info = (TextureInfo*) p_texture.id;
+	vkDestroyImageView(vk_device, texture_info->vk_view, nullptr);
+	// vma
+	if (texture_info->allocation.handle)
+		vmaDestroyImage(allocator, texture_info->vk_view_create_info.image, texture_info->allocation.handle);
+	// free bookkeep
+	// 
+	VersatileResource::free(resources_allocator, texture_info);
+}
+
+void RenderingDeviceDriverVulkan::texture_get_copyable_layout(TextureID p_texture, const TextureSubresource &p_subresource, TextureCopyableLayout *r_layout) {
+	const TextureInfo *tex_info = (const TextureInfo *)p_texture.id;
+
+	*r_layout = {};
+	if (tex_info->vk_create_info.tiling == VK_IMAGE_TILING_LINEAR) {
+		// linear tiling, subresource是copyable的
+		VkImageSubresource vk_subres = {};
+		vk_subres.aspectMask = (VkImageAspectFlags)(1 << p_subresource.aspect);
+		vk_subres.arrayLayer = p_subresource.layer;
+		vk_subres.mipLevel = p_subresource.mipmap;
+
+		VkSubresourceLayout vk_layout = {};
+		vkGetImageSubresourceLayout(vk_device, tex_info->vk_view_create_info.image, &vk_subres, &vk_layout);
+
+		r_layout->offset = vk_layout.offset;
+		r_layout->size = vk_layout.size;
+		r_layout->row_pitch = vk_layout.rowPitch;
+		r_layout->depth_pitch = vk_layout.depthPitch;
+		r_layout->layer_pitch = vk_layout.arrayPitch;
+	} else {
+		// Tight.
+		// 手动算subresource_layout
+		uint32_t w = tex_info->vk_create_info.extent.width;
+		uint32_t h = tex_info->vk_create_info.extent.height;
+		uint32_t d = tex_info->vk_create_info.extent.depth;
+		if (p_subresource.mipmap > 0) {
+			r_layout->offset = get_image_format_required_size(tex_info->rd_format, w, h, d, p_subresource.mipmap);
+		}
+		for (uint32_t i = 0; i < p_subresource.mipmap; i++) {
+			w = MAX(1u, w >> 1);
+			h = MAX(1u, h >> 1);
+			d = MAX(1u, d >> 1);
+		}
+		uint32_t bw = 0, bh = 0;
+		get_compressed_image_format_block_dimensions(tex_info->rd_format, bw, bh);
+		uint32_t sbw = 0, sbh = 0;
+		r_layout->size = get_image_format_required_size(tex_info->rd_format, w, h, d, 1, &sbw, &sbh);
+		r_layout->row_pitch = r_layout->size / ((sbh / bh) * d);
+		r_layout->depth_pitch = r_layout->size / d;
+		r_layout->layer_pitch = r_layout->size / tex_info->vk_create_info.arrayLayers;
+	}
+}
+
 /// <summary>
 /// VMA
 /// </summary>
@@ -837,6 +1037,8 @@ RDD::CommandQueueID RenderingDeviceDriverVulkan::command_queue_create(CommandQue
 /// <param name="p_cmd_semaphores"></param>
 /// <param name="p_cmd_fence"></param>
 /// <param name="p_swap_chains"></param>
+/// 执行完毕后， command buffer 变为executable状态，除非VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT ，则为invalid
+/// VK_SEMAPHORE_TYPE_TIMELINE的semaphore需要特殊处理
 /// <returns></returns>
 Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueueID p_cmd_queue, VectorView<SemaphoreID> p_wait_semaphores, VectorView<CommandBufferID> p_cmd_buffers, VectorView<SemaphoreID> p_cmd_semaphores, FenceID p_cmd_fence, VectorView<SwapChainID> p_swap_chains)
 {
@@ -846,17 +1048,19 @@ Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueu
 	Queue &device_queue = queue_families[command_queue->queue_family][command_queue->queue_index];
 
 	Fence *fence = (Fence *)(p_cmd_fence.id);
-	VkFence vk_fence = (fence != nullptr) ? fence->vk_fence : VK_NULL_HANDLE;
-	// 需要waiting：
+	VkFence vk_fence = (fence != nullptr) ? fence->vk_fence : VK_NULL_HANDLE; // 不是null则必须unsignaled
+	if (vk_fence != VK_NULL_HANDLE)
+		DEV_ASSERT(vkGetFenceStatus(vk_device, vk_fence) == VK_NOT_READY);
+	// 需要waiting然后执行的：
 	// pending for execute;
 	// 传入的p_wait_semaphores
 	// 也许应该分开execute与present@TODO
 	// 需要signal：
-	// present
+	// present （如果不为了present，还需要signal嘛）
 	// 传入的cmd semaphore
 
 	thread_local LocalVector<VkSemaphore> wait_semaphores; // 为什么这个是thread local的？@？
-	thread_local LocalVector<VkPipelineStageFlags> wait_semaphores_stages;
+	thread_local LocalVector<VkPipelineStageFlags> wait_semaphores_stages; 
 	if (!command_queue->pending_semaphores_for_execute.is_empty())
 	{
 		for (uint32_t i = 0; i < command_queue->pending_semaphores_for_execute.size(); i++)
@@ -920,14 +1124,14 @@ Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueu
 		VkSubmitInfo submit_info = {};
 		submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		submit_info.waitSemaphoreCount = wait_semaphores.size();
-		submit_info.pWaitSemaphores = wait_semaphores.ptr();
-		submit_info.pWaitDstStageMask = wait_semaphores_stages.ptr();
-		submit_info.commandBufferCount = command_buffers.size();
+		submit_info.pWaitSemaphores = wait_semaphores.ptr(); // 在执行之前需要等待的semaphore
+		submit_info.pWaitDstStageMask = wait_semaphores_stages.ptr(); // 指向每个相应semaphore wait会发生的pipeline stages的数组
+		submit_info.commandBufferCount = command_buffers.size(); // 需要来自于一个pool
 		submit_info.pCommandBuffers = command_buffers.ptr();
 		submit_info.signalSemaphoreCount = signal_semaphores.size();
 		submit_info.pSignalSemaphores = signal_semaphores.ptr();
 
-		device_queue.submit_mutex.lock();
+		device_queue.submit_mutex.lock(); // 要submit时
 		err = vkQueueSubmit(device_queue.queue, 1, &submit_info, vk_fence); // 传入的fence
 		device_queue.submit_mutex.unlock();
 		ERR_FAIL_COND_V(err != VK_SUCCESS, FAILED);
@@ -2100,6 +2304,20 @@ RDD::SwapChainID RenderingDeviceDriverVulkan::swap_chain_create(RenderingContext
 	return SwapChainID(swap_chain);
 }
 
+void RenderingDeviceDriverVulkan::swap_chain_free(SwapChainID p_swap_chain) {
+	DEV_ASSERT(p_swap_chain.id != 0);
+
+	SwapChain *swap_chain = (SwapChain *)(p_swap_chain.id);
+	_swap_chain_release(swap_chain);
+
+	if (swap_chain->render_pass.id != 0) {
+		vkDestroyRenderPass(vk_device, VkRenderPass(swap_chain->render_pass.id), nullptr);
+	}
+
+	memdelete(swap_chain);
+}
+
+
 void RenderingDeviceDriverVulkan::_swap_chain_release(SwapChain *swap_chain)
 {
 	// Destroy views and framebuffers associated to the swapchain's images.
@@ -2707,7 +2925,8 @@ bool RenderingDeviceDriverVulkan::command_buffer_begin(CommandBufferID p_cmd_buf
 
 	return true;
 }
-
+// 执行时候对应的subpass 的index。
+// 设置为当前render pass的 VKFramebuffer
 bool RenderingDeviceDriverVulkan::command_buffer_begin_secondary(CommandBufferID p_cmd_buffer, RenderPassID p_render_pass, uint32_t p_subpass, FramebufferID p_framebuffer) {
 	// Reset is implicit (VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT).
 
@@ -2734,6 +2953,14 @@ bool RenderingDeviceDriverVulkan::command_buffer_begin_secondary(CommandBufferID
 	return true;
 }
 
+void RenderingDeviceDriverVulkan::command_buffer_end(CommandBufferID p_cmd_buffer) {
+	vkEndCommandBuffer((VkCommandBuffer)p_cmd_buffer.id);
+}
+// 执行secondary
+// 关于兼容性？
+void RenderingDeviceDriverVulkan::command_buffer_execute_secondary(CommandBufferID p_cmd_buffer, VectorView<CommandBufferID> p_secondary_cmd_buffers) {
+	vkCmdExecuteCommands((VkCommandBuffer)p_cmd_buffer.id, p_secondary_cmd_buffers.size(), (const VkCommandBuffer *)p_secondary_cmd_buffers.ptr());
+}
 /*********************/
 /**** UNIFORM SET ****/
 /*********************/
@@ -3125,9 +3352,150 @@ void RenderingDeviceDriverVulkan::uniform_set_free(UniformSetID p_uniform_set)
 	VersatileResource::free(resources_allocator, usi);
 }
 
+
+/******************/
+/**** transfer ****/
+/******************/
+// 一些转vk的函数
+// @TODO 怎么做fieldwise的检查？
+static_assert(ARRAYS_COMPATIBLE_FIELDWISE(RDD::BufferCopyRegion, VkBufferCopy));
+
+static void _texture_subresource_range_to_vk(const RDD::TextureSubresourceRange &p_subresources, VkImageSubresourceRange *r_vk_subreources) {
+	*r_vk_subreources = {};
+	r_vk_subreources->aspectMask = (VkImageAspectFlags)p_subresources.aspect;
+	r_vk_subreources->baseMipLevel = p_subresources.base_mipmap;
+	r_vk_subreources->levelCount = p_subresources.mipmap_count;
+	r_vk_subreources->baseArrayLayer = p_subresources.base_layer;
+	r_vk_subreources->layerCount = p_subresources.layer_count;
+}
+
+static void _texture_subresource_layers_to_vk(const RDD::TextureSubresourceLayers &p_subresources, VkImageSubresourceLayers *r_vk_subreources) {
+	*r_vk_subreources = {};
+	r_vk_subreources->aspectMask = (VkImageAspectFlags)p_subresources.aspect;
+	r_vk_subreources->mipLevel = p_subresources.mipmap;
+	r_vk_subreources->baseArrayLayer = p_subresources.base_layer;
+	r_vk_subreources->layerCount = p_subresources.layer_count;
+}
+
+static void _buffer_texture_copy_region_to_vk(const RDD::BufferTextureCopyRegion &p_copy_region, VkBufferImageCopy *r_vk_copy_region) {
+	*r_vk_copy_region = {};
+	r_vk_copy_region->bufferOffset = p_copy_region.buffer_offset;
+	_texture_subresource_layers_to_vk(p_copy_region.texture_subresources, &r_vk_copy_region->imageSubresource);
+	r_vk_copy_region->imageOffset.x = p_copy_region.texture_offset.x;
+	r_vk_copy_region->imageOffset.y = p_copy_region.texture_offset.y;
+	r_vk_copy_region->imageOffset.z = p_copy_region.texture_offset.z;
+	r_vk_copy_region->imageExtent.width = p_copy_region.texture_region_size.x; // width, height, depth
+	r_vk_copy_region->imageExtent.height = p_copy_region.texture_region_size.y;
+	r_vk_copy_region->imageExtent.depth = p_copy_region.texture_region_size.z;
+}
+
+static void _texture_copy_region_to_vk(const RDD::TextureCopyRegion &p_copy_region, VkImageCopy *r_vk_copy_region) {
+	*r_vk_copy_region = {};
+	_texture_subresource_layers_to_vk(p_copy_region.src_subresources, &r_vk_copy_region->srcSubresource);
+	r_vk_copy_region->srcOffset.x = p_copy_region.src_offset.x;
+	r_vk_copy_region->srcOffset.y = p_copy_region.src_offset.y;
+	r_vk_copy_region->srcOffset.z = p_copy_region.src_offset.z;
+	_texture_subresource_layers_to_vk(p_copy_region.dst_subresources, &r_vk_copy_region->dstSubresource);
+	r_vk_copy_region->dstOffset.x = p_copy_region.dst_offset.x;
+	r_vk_copy_region->dstOffset.y = p_copy_region.dst_offset.y;
+	r_vk_copy_region->dstOffset.z = p_copy_region.dst_offset.z;
+	r_vk_copy_region->extent.width = p_copy_region.size.x;
+	r_vk_copy_region->extent.height = p_copy_region.size.y;
+	r_vk_copy_region->extent.depth = p_copy_region.size.z;
+}
+
+void RenderingDeviceDriverVulkan::command_clear_buffer(CommandBufferID p_cmd_buffer, BufferID p_buffer, uint64_t p_offset, uint64_t p_size) {
+	const BufferInfo *buf_info = (const BufferInfo *)p_buffer.id;
+	vkCmdFillBuffer((VkCommandBuffer)p_cmd_buffer.id, buf_info->vk_buffer, p_offset, p_size, 0);
+}
+
+
+void RenderingDeviceDriverVulkan::command_copy_buffer(CommandBufferID p_cmd_buffer, BufferID p_src_buffer, BufferID p_dst_buffer, VectorView<BufferCopyRegion> p_regions) {
+	const BufferInfo *src_buf_info = (const BufferInfo *)p_src_buffer.id;
+	const BufferInfo *dst_buf_info = (const BufferInfo *)p_dst_buffer.id;
+	vkCmdCopyBuffer((VkCommandBuffer)p_cmd_buffer.id, src_buf_info->vk_buffer, dst_buf_info->vk_buffer, p_regions.size(), (const VkBufferCopy *)p_regions.ptr());
+}
+
+
+void RenderingDeviceDriverVulkan::command_copy_texture(CommandBufferID p_cmd_buffer, TextureID p_src_texture, TextureLayout p_src_texture_layout, TextureID p_dst_texture, TextureLayout p_dst_texture_layout, VectorView<TextureCopyRegion> p_regions) {
+	VkImageCopy *vk_copy_regions = ALLOCA_ARRAY(VkImageCopy, p_regions.size());
+	for (uint32_t i = 0; i < p_regions.size(); i++) {
+		_texture_copy_region_to_vk(p_regions[i], &vk_copy_regions[i]);
+	}
+
+	const TextureInfo *src_tex_info = (const TextureInfo *)p_src_texture.id;
+	const TextureInfo *dst_tex_info = (const TextureInfo *)p_dst_texture.id;
+	vkCmdCopyImage((VkCommandBuffer)p_cmd_buffer.id, src_tex_info->vk_view_create_info.image, RD_TO_VK_LAYOUT[p_src_texture_layout], dst_tex_info->vk_view_create_info.image, RD_TO_VK_LAYOUT[p_dst_texture_layout], p_regions.size(), vk_copy_regions);
+}
+
+void RenderingDeviceDriverVulkan::command_resolve_texture(CommandBufferID p_cmd_buffer, TextureID p_src_texture, TextureLayout p_src_texture_layout, uint32_t p_src_layer, uint32_t p_src_mipmap, TextureID p_dst_texture, TextureLayout p_dst_texture_layout, uint32_t p_dst_layer, uint32_t p_dst_mipmap) {
+	const TextureInfo *src_tex_info = (const TextureInfo *)p_src_texture.id;
+	const TextureInfo *dst_tex_info = (const TextureInfo *)p_dst_texture.id;
+
+	VkImageResolve vk_resolve = {};
+	vk_resolve.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	vk_resolve.srcSubresource.mipLevel = p_src_mipmap;
+	vk_resolve.srcSubresource.baseArrayLayer = p_src_layer;
+	vk_resolve.srcSubresource.layerCount = 1;
+	vk_resolve.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	vk_resolve.dstSubresource.mipLevel = p_dst_mipmap;
+	vk_resolve.dstSubresource.baseArrayLayer = p_dst_layer;
+	vk_resolve.dstSubresource.layerCount = 1;
+	vk_resolve.extent.width = MAX(1u, src_tex_info->vk_create_info.extent.width >> p_src_mipmap); // 这是为什么？将大小左移src mipmap位
+	vk_resolve.extent.height = MAX(1u, src_tex_info->vk_create_info.extent.height >> p_src_mipmap); 
+	vk_resolve.extent.depth = MAX(1u, src_tex_info->vk_create_info.extent.depth >> p_src_mipmap);
+
+	vkCmdResolveImage((VkCommandBuffer)p_cmd_buffer.id, src_tex_info->vk_view_create_info.image, RD_TO_VK_LAYOUT[p_src_texture_layout], dst_tex_info->vk_view_create_info.image, RD_TO_VK_LAYOUT[p_dst_texture_layout], 1, &vk_resolve);
+}
+
+void RenderingDeviceDriverVulkan::command_clear_color_texture(CommandBufferID p_cmd_buffer, TextureID p_texture, TextureLayout p_texture_layout, const Color &p_color, const TextureSubresourceRange &p_subresources) {
+	VkClearColorValue vk_color = {};
+	// 用这个memmcpy是不是更快？ @todo 优化思路：memcpy
+	memcpy(&vk_color.float32, p_color.components(), sizeof(VkClearColorValue::float32));
+
+	VkImageSubresourceRange vk_subresources = {};
+	_texture_subresource_range_to_vk(p_subresources, &vk_subresources);
+
+	const TextureInfo *tex_info = (const TextureInfo *)p_texture.id;
+	vkCmdClearColorImage((VkCommandBuffer)p_cmd_buffer.id, tex_info->vk_view_create_info.image, RD_TO_VK_LAYOUT[p_texture_layout], &vk_color, 1, &vk_subresources);
+}
+
+
+
+void RenderingDeviceDriverVulkan::command_copy_buffer_to_texture(CommandBufferID p_cmd_buffer, BufferID p_src_buffer, TextureID p_dst_texture, TextureLayout p_dst_texture_layout, VectorView<BufferTextureCopyRegion> p_regions) {
+	// 同时copy多个region
+	VkBufferImageCopy *vk_copy_regions = ALLOCA_ARRAY(VkBufferImageCopy, p_regions.size());
+	for (uint32_t i = 0; i < p_regions.size(); i++) {
+		_buffer_texture_copy_region_to_vk(p_regions[i], &vk_copy_regions[i]);
+	}
+
+	const BufferInfo *buf_info = (const BufferInfo *)p_src_buffer.id;
+	const TextureInfo *tex_info = (const TextureInfo *)p_dst_texture.id;
+	vkCmdCopyBufferToImage((VkCommandBuffer)p_cmd_buffer.id, buf_info->vk_buffer, tex_info->vk_view_create_info.image, RD_TO_VK_LAYOUT[p_dst_texture_layout], p_regions.size(), vk_copy_regions);
+}
+
+void RenderingDeviceDriverVulkan::command_copy_texture_to_buffer(CommandBufferID p_cmd_buffer, TextureID p_src_texture, TextureLayout p_src_texture_layout, BufferID p_dst_buffer, VectorView<BufferTextureCopyRegion> p_regions) {
+	VkBufferImageCopy *vk_copy_regions = ALLOCA_ARRAY(VkBufferImageCopy, p_regions.size());
+	for (uint32_t i = 0; i < p_regions.size(); i++) {
+		_buffer_texture_copy_region_to_vk(p_regions[i], &vk_copy_regions[i]);
+	}
+
+	const TextureInfo *tex_info = (const TextureInfo *)p_src_texture.id;
+	const BufferInfo *buf_info = (const BufferInfo *)p_dst_buffer.id;
+	vkCmdCopyImageToBuffer((VkCommandBuffer)p_cmd_buffer.id, tex_info->vk_view_create_info.image, RD_TO_VK_LAYOUT[p_src_texture_layout], buf_info->vk_buffer, p_regions.size(), vk_copy_regions);
+}
+
 /****************/
 /**** FENCES ****/
 /****************/
+// fence用于与主机通信，表明设备上某些任务的执行已完成。fence是同步gpu执行队列和渲染线程
+// semaphore是跨queue访问
+// Events提供细粒度的访问，是barrier的升级版
+// Barrier是command buffer内部的同步控制但只在一个点上
+// renderpasses是一个同步框架
+// -- 控制内存访问：Avaliablity；visibility；memory domain
+// write-after-read的危害可以通过execution dependency解决
+// 但是read-after-write和write-after-write需要加入同步
 RDD::FenceID RenderingDeviceDriverVulkan::fence_create()
 {
 	VkFence vk_fence = VK_NULL_HANDLE;
@@ -3271,7 +3639,7 @@ RDD::BufferID RenderingDeviceDriverVulkan::buffer_create(uint64_t p_size, BitFie
 	break;
 	case MEMORY_ALLOCATION_TYPE_GPU:
 	{
-		alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+		alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE; // @todo 可以做的更灵活一点
 		if (p_size <= SMALL_ALLOCATION_MAX_SIZE)
 		{
 			uint32_t mem_type_index = 0;
@@ -3870,6 +4238,75 @@ void RenderingDeviceDriverVulkan::render_pass_free(RenderPassID p_render_pass) {
 	vkDestroyRenderPass(vk_device, (VkRenderPass)p_render_pass.id, nullptr);
 }
 
+// ---- command render pass
+// 需要指定渲染区域、pass、framebuffer、clear color
+void RenderingDeviceDriverVulkan::command_begin_render_pass(CommandBufferID p_cmd_buffer, RenderPassID p_render_pass, FramebufferID p_framebuffer, CommandBufferType p_cmd_buffer_type, const Rect2i &p_rect, VectorView<RenderPassClearValue> p_clear_values) {
+	VkRenderPassBeginInfo render_pass_begin = {};
+	render_pass_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	render_pass_begin.renderPass = (VkRenderPass)p_render_pass.id;
+	render_pass_begin.framebuffer = (VkFramebuffer)p_framebuffer.id;
+
+	render_pass_begin.renderArea.offset.x = p_rect.position.x;
+	render_pass_begin.renderArea.offset.y = p_rect.position.y;
+	render_pass_begin.renderArea.extent.width = p_rect.size.x;
+	render_pass_begin.renderArea.extent.height = p_rect.size.y;
+
+	render_pass_begin.clearValueCount = p_clear_values.size();
+	render_pass_begin.pClearValues = (const VkClearValue *)p_clear_values.ptr();
+
+	VkSubpassContents vk_subpass_contents = p_cmd_buffer_type == COMMAND_BUFFER_TYPE_PRIMARY ? VK_SUBPASS_CONTENTS_INLINE : VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
+	vkCmdBeginRenderPass((VkCommandBuffer)p_cmd_buffer.id, &render_pass_begin, vk_subpass_contents);
+
+#if PRINT_NATIVE_COMMANDS
+	print_line(vformat("vkCmdBeginRenderPass Pass 0x%uX Framebuffer 0x%uX", p_render_pass.id, p_framebuffer.id));
+#endif
+}
+
+void RenderingDeviceDriverVulkan::command_end_render_pass(CommandBufferID p_cmd_buffer) {
+	vkCmdEndRenderPass((VkCommandBuffer)p_cmd_buffer.id);
+
+#if PRINT_NATIVE_COMMANDS
+	print_line("vkCmdEndRenderPass");
+#endif
+}
+
+	/************** */
+	/**** COMPUTE ****/
+	/************** */
+	RDD::PipelineID RenderingDeviceDriverVulkan::compute_pipeline_create(ShaderID p_shader, VectorView<PipelineSpecializationConstant> p_specialization_constants) {
+	const ShaderInfo *shader_info = (const ShaderInfo *)p_shader.id;
+
+	VkComputePipelineCreateInfo pipeline_create_info = {};
+	pipeline_create_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+	pipeline_create_info.stage = shader_info->vk_stages_create_info[0];
+	pipeline_create_info.layout = shader_info->vk_pipeline_layout;
+
+	if (p_specialization_constants.size()) {
+		VkSpecializationMapEntry *specialization_map_entries = ALLOCA_ARRAY(VkSpecializationMapEntry, p_specialization_constants.size());
+		for (uint32_t i = 0; i < p_specialization_constants.size(); i++) {
+			specialization_map_entries[i] = {};
+			specialization_map_entries[i].constantID = p_specialization_constants[i].constant_id;
+			specialization_map_entries[i].offset = (const char *)&p_specialization_constants[i].int_value - (const char *)p_specialization_constants.ptr();
+			specialization_map_entries[i].size = sizeof(uint32_t);
+		}
+
+		VkSpecializationInfo *specialization_info = ALLOCA_SINGLE(VkSpecializationInfo);
+		*specialization_info = {};
+		specialization_info->dataSize = p_specialization_constants.size() * sizeof(PipelineSpecializationConstant);
+		specialization_info->pData = p_specialization_constants.ptr();
+		specialization_info->mapEntryCount = p_specialization_constants.size();
+		specialization_info->pMapEntries = specialization_map_entries;
+
+		pipeline_create_info.stage.pSpecializationInfo = specialization_info;
+	}
+
+	VkPipeline vk_pipeline = VK_NULL_HANDLE;
+	VkResult err = vkCreateComputePipelines(vk_device, pipelines_cache.vk_cache, 1, &pipeline_create_info, nullptr, &vk_pipeline);
+	ERR_FAIL_COND_V_MSG(err, PipelineID(), "vkCreateComputePipelines failed with error " + itos(err) + ".");
+
+	return PipelineID(vk_pipeline);
+}
+
 	/****************/
 	/**** SHADER ****/
 	/****************/
@@ -4406,4 +4843,37 @@ uint64_t RenderingDeviceDriverVulkan::timestamp_query_result_to_time(uint64_t p_
 	l |= h << (64 - shift_bits);
 
 	return l;
+}
+// ---- command -----
+// reset query pool池
+void RenderingDeviceDriverVulkan::command_timestamp_query_pool_reset(CommandBufferID p_cmd_buffer, QueryPoolID p_pool_id, uint32_t p_query_count) {
+	vkCmdResetQueryPool((VkCommandBuffer)p_cmd_buffer.id, (VkQueryPool)p_pool_id.id, 0, p_query_count);
+}
+
+void RenderingDeviceDriverVulkan::command_timestamp_write(CommandBufferID p_cmd_buffer, QueryPoolID p_pool_id, uint32_t p_index) {
+	vkCmdWriteTimestamp((VkCommandBuffer)p_cmd_buffer.id, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, (VkQueryPool)p_pool_id.id, p_index);
+}
+
+
+
+/****************/
+/**** LABELS ****/
+/****************/
+
+void RenderingDeviceDriverVulkan::command_begin_label(CommandBufferID p_cmd_buffer, const char *p_label_name, const Color &p_color) {
+	const RenderingContextDriverVulkan::Functions &functions = context_driver->functions_get();
+	VkDebugUtilsLabelEXT label;
+	label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+	label.pNext = nullptr;
+	label.pLabelName = p_label_name;
+	label.color[0] = p_color[0];
+	label.color[1] = p_color[1];
+	label.color[2] = p_color[2];
+	label.color[3] = p_color[3];
+	functions.CmdBeginDebugUtilsLabelEXT((VkCommandBuffer)p_cmd_buffer.id, &label);
+}
+
+void RenderingDeviceDriverVulkan::command_end_label(CommandBufferID p_cmd_buffer) {
+	const RenderingContextDriverVulkan::Functions &functions = context_driver->functions_get();
+	functions.CmdEndDebugUtilsLabelEXT((VkCommandBuffer)p_cmd_buffer.id);
 }

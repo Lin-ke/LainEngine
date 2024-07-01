@@ -43,7 +43,6 @@ target("Parser")
     end
     after_build(function(target)
         os.cp(target:targetfile(), "$(projectdir)/engine/bin")
-        -- ï¿½Ð¶ï¿½dllï¿½Ç·ï¿½ï¿½ï¿½ï¿½
         local clangdll = target:targetdir().."/libclang.dll"
         if not os.exists(clangdll) then
             if is_arch("x64") then
@@ -140,7 +139,7 @@ target("Renderer")
     add_includedirs("engine/thirdparty/json11")
     -- others
     add_includedirs("engine/thirdparty")
-    -- spirv-reflect ï¿½ï¿½ï¿½Ô¼ï¿½ï¿½ï¿½
+    -- spirv-reflect ÓÃ×Ô¼ºµÄ
     add_includedirs("engine/thirdparty/spirv-reflect")
     -- vulkan
     add_includedirs("$(env VULKAN_SDK)/Include")
@@ -156,7 +155,8 @@ target("Renderer")
     "_CRT_SECURE_NO_WARNINGS",
      "VULKAN_ENABLED",
       "USE_VOLK",
-     "_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING"
+     "_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING",
+     "PRINT_NATIVE_COMMANDS"
      }
     
     if is_plat("windows") then

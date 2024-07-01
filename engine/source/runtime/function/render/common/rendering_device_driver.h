@@ -4,8 +4,25 @@
 #include "rendering_device_commons.h"
 #include "rendering_context_driver.h"
 #include "core/templates/local_vector.h"
+
+// ***********************************************************************************
+// RenderingDeviceDriver - Design principles
+// -----------------------------------------
+// - Very little validation is done, and normally only in dev or debug builds.
+// - Error reporting is generally simple: returning an id of 0 or a false boolean.
+// - Certain enums/constants/structs follow Vulkan values/layout. That makes things easier for RDDVulkan (it asserts compatibility).
+// - We allocate as little as possible in functions expected to be quick (a counterexample is loading/saving shaders) and use alloca() whenever suitable.
+// - We try to back opaque ids with the native ones or memory addresses.
+// - When using bookkeeping structures because the actual API id of a resource is not enough, we use a PagedAllocator.
+// - Every struct has default initializers.
+// - Using VectorView to take array-like arguments. Vector<uint8_t> is an exception (an indiom for "BLOB").
+// - If a driver needs some higher-level information (the kind of info RenderingDevice keeps), it shall store a copy of what it needs.
+//   There's no backwards communication from the driver to query data from RenderingDevice.
+// ***********************************************************************************
+
 // Driver的接口类
 // 实际上的RHI。执行具体的API相关命令，与RenderingDevice不同。并且，Graph是基于RenderingDevice的，并不执行命令。
+// 设计的原则是能独立出来就尽量独立出来
 
 // 指针大小，无所有权，轻便。使代码几乎独立于拥有序列的内容，并保留模板容器的所有细节
 // span; .._view; 或者slice
@@ -58,7 +75,8 @@ namespace lain {
 		static constexpr size_t RESOURCE_SIZES[] = { sizeof(RESOURCE_TYPES)... };
 		static constexpr size_t MAX_RESOURCE_SIZE = std::max_element(RESOURCE_SIZES, RESOURCE_SIZES + sizeof...(RESOURCE_TYPES))[0];
 		uint8_t data[MAX_RESOURCE_SIZE]; // sizeof(VersatileResourceTemplate)
-
+		// allocate的时候需要指定特化，而free的时候直接传T用模板自动推理
+		
 		template <typename T>
 		static T* allocate(PagedAllocator<VersatileResourceTemplate>& p_allocator) {
 			T* obj = (T*)p_allocator.alloc();
@@ -233,7 +251,8 @@ namespace lain {
 			uint32_t base_layer = 0;
 			uint32_t layer_count = 0;
 		};
-		// @?
+		// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkSubresourceLayout.html
+		// 只在tiling linear有用
 		struct TextureCopyableLayout {
 			uint64_t offset = 0;
 			uint64_t size = 0;
@@ -244,13 +263,14 @@ namespace lain {
 		 virtual TextureID texture_create(const TextureFormat& p_format, const TextureView& p_view) = 0;
 		 // already have image, create imageview
 		virtual TextureID texture_create_from_extension(uint64_t p_native_texture, TextureType p_type, DataFormat p_format, uint32_t p_array_layers, bool p_depth_stencil)=0;
-
-		// virtual TextureID texture_create_shared_from_slice(TextureID p_original_texture, const TextureView& p_view, TextureSliceType p_slice_type, uint32_t p_layer, uint32_t p_layers, uint32_t p_mipmap, uint32_t p_mipmaps) = 0;
-		// virtual void texture_free(TextureID p_texture) = 0;
+		// 根据已有的vkimage创建不同的view
+		virtual TextureID texture_create_shared(TextureID p_original_texture, const TextureView &p_view) = 0;
+		virtual TextureID texture_create_shared_from_slice(TextureID p_original_texture, const TextureView& p_view, TextureSliceType p_slice_type, uint32_t p_layer, uint32_t p_layers, uint32_t p_mipmap, uint32_t p_mipmaps) = 0;
+		virtual void texture_free(TextureID p_texture) = 0;
 		 virtual uint64_t texture_get_allocation_size(TextureID p_texture) = 0;
-		// virtual void texture_get_copyable_layout(TextureID p_texture, const TextureSubresource& p_subresource, TextureCopyableLayout* r_layout) = 0;
-		// virtual uint8_t* texture_map(TextureID p_texture, const TextureSubresource& p_subresource) = 0;
-		// virtual void texture_unmap(TextureID p_texture) = 0;
+		virtual void texture_get_copyable_layout(TextureID p_texture, const TextureSubresource& p_subresource, TextureCopyableLayout* r_layout) = 0;
+		virtual uint8_t* texture_map(TextureID p_texture, const TextureSubresource& p_subresource) = 0;
+		virtual void texture_unmap(TextureID p_texture) = 0;
 		 virtual BitField<TextureUsageBits> texture_get_usages_supported_by_format(DataFormat p_format, bool p_cpu_readable) = 0;
 		// texture_create_from_staging_buffer
 		// LinearHostImage: Special image type which supports direct CPU mapping.
@@ -293,7 +313,7 @@ namespace lain {
 		};
 		// same with vulkan https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkAccessFlagBits.html
 		enum BarrierAccessBits {
-			BARRIER_ACCESS_INDIRECT_COMMAND_READ_BIT = (1 << 0),
+			BARRIER_ACCESS_INDIRECT_COMMAND_READ_BIT = (1 << 0), // 一些access只能在对应管线中使用
 			BARRIER_ACCESS_INDEX_READ_BIT = (1 << 1),
 			BARRIER_ACCESS_VERTEX_ATTRIBUTE_READ_BIT = (1 << 2),
 			BARRIER_ACCESS_UNIFORM_READ_BIT = (1 << 3),
@@ -306,9 +326,9 @@ namespace lain {
 			BARRIER_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT = (1 << 10),
 			BARRIER_ACCESS_COPY_READ_BIT = (1 << 11),
 			BARRIER_ACCESS_COPY_WRITE_BIT = (1 << 12),
-			BARRIER_ACCESS_HOST_READ_BIT = (1 << 13),
-			BARRIER_ACCESS_HOST_WRITE_BIT = (1 << 14),
-			BARRIER_ACCESS_MEMORY_READ_BIT = (1 << 15),
+			BARRIER_ACCESS_HOST_READ_BIT = (1 << 13), // 指host操作中的读，并非通过resource，直接针对memory
+			BARRIER_ACCESS_HOST_WRITE_BIT = (1 << 14), // 如上
+			BARRIER_ACCESS_MEMORY_READ_BIT = (1 << 15), // 指所有的read access
 			BARRIER_ACCESS_MEMORY_WRITE_BIT = (1 << 16),
 			BARRIER_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT = (1 << 23),
 			BARRIER_ACCESS_RESOLVE_READ_BIT = (1 << 24),
@@ -434,7 +454,7 @@ namespace lain {
 		// virtual DataFormat swap_chain_get_format(SwapChainID p_swap_chain) = 0;
 
 		// Wait until all rendering associated to the swap chain is finished before deleting it.
-		// virtual void swap_chain_free(SwapChainID p_swap_chain) = 0;
+		virtual void swap_chain_free(SwapChainID p_swap_chain) = 0;
 
 		/*********************/
 		/**** FRAMEBUFFER ****/
@@ -500,15 +520,15 @@ namespace lain {
 		// 这边都差不多Granite写到了Command Buffer类里面，这边带上ID
 		
 
-		// virtual void command_clear_buffer(CommandBufferID p_cmd_buffer, BufferID p_buffer, uint64_t p_offset, uint64_t p_size) = 0;
-		// virtual void command_copy_buffer(CommandBufferID p_cmd_buffer, BufferID p_src_buffer, BufferID p_dst_buffer, VectorView<BufferCopyRegion> p_regions) = 0;
+		 virtual void command_clear_buffer(CommandBufferID p_cmd_buffer, BufferID p_buffer, uint64_t p_offset, uint64_t p_size) = 0;
+		 virtual void command_copy_buffer(CommandBufferID p_cmd_buffer, BufferID p_src_buffer, BufferID p_dst_buffer, VectorView<BufferCopyRegion> p_regions) = 0;
 
-		// virtual void command_copy_texture(CommandBufferID p_cmd_buffer, TextureID p_src_texture, TextureLayout p_src_texture_layout, TextureID p_dst_texture, TextureLayout p_dst_texture_layout, VectorView<TextureCopyRegion> p_regions) = 0;
-		// virtual void command_resolve_texture(CommandBufferID p_cmd_buffer, TextureID p_src_texture, TextureLayout p_src_texture_layout, uint32_t p_src_layer, uint32_t p_src_mipmap, TextureID p_dst_texture, TextureLayout p_dst_texture_layout, uint32_t p_dst_layer, uint32_t p_dst_mipmap) = 0;
-		// virtual void command_clear_color_texture(CommandBufferID p_cmd_buffer, TextureID p_texture, TextureLayout p_texture_layout, const Color& p_color, const TextureSubresourceRange& p_subresources) = 0;
+		 virtual void command_copy_texture(CommandBufferID p_cmd_buffer, TextureID p_src_texture, TextureLayout p_src_texture_layout, TextureID p_dst_texture, TextureLayout p_dst_texture_layout, VectorView<TextureCopyRegion> p_regions) = 0;
+		 virtual void command_resolve_texture(CommandBufferID p_cmd_buffer, TextureID p_src_texture, TextureLayout p_src_texture_layout, uint32_t p_src_layer, uint32_t p_src_mipmap, TextureID p_dst_texture, TextureLayout p_dst_texture_layout, uint32_t p_dst_layer, uint32_t p_dst_mipmap) = 0;
+		 virtual void command_clear_color_texture(CommandBufferID p_cmd_buffer, TextureID p_texture, TextureLayout p_texture_layout, const Color& p_color, const TextureSubresourceRange& p_subresources) = 0;
 
-		// virtual void command_copy_buffer_to_texture(CommandBufferID p_cmd_buffer, BufferID p_src_buffer, TextureID p_dst_texture, TextureLayout p_dst_texture_layout, VectorView<BufferTextureCopyRegion> p_regions) = 0;
-		// virtual void command_copy_texture_to_buffer(CommandBufferID p_cmd_buffer, TextureID p_src_texture, TextureLayout p_src_texture_layout, BufferID p_dst_buffer, VectorView<BufferTextureCopyRegion> p_regions) = 0;
+		 virtual void command_copy_buffer_to_texture(CommandBufferID p_cmd_buffer, BufferID p_src_buffer, TextureID p_dst_texture, TextureLayout p_dst_texture_layout, VectorView<BufferTextureCopyRegion> p_regions) = 0;
+		 virtual void command_copy_texture_to_buffer(CommandBufferID p_cmd_buffer, TextureID p_src_texture, TextureLayout p_src_texture_layout, BufferID p_dst_buffer, VectorView<BufferTextureCopyRegion> p_regions) = 0;
 		/******************/
 		/**** PIPELINE ****/
 		/******************/
@@ -606,8 +626,8 @@ namespace lain {
 		};
 
 
-		// virtual void command_begin_render_pass(CommandBufferID p_cmd_buffer, RenderPassID p_render_pass, FramebufferID p_framebuffer, CommandBufferType p_cmd_buffer_type, const Rect2i& p_rect, VectorView<RenderPassClearValue> p_clear_values) = 0;
-		// virtual void command_end_render_pass(CommandBufferID p_cmd_buffer) = 0;
+		virtual void command_begin_render_pass(CommandBufferID p_cmd_buffer, RenderPassID p_render_pass, FramebufferID p_framebuffer, CommandBufferType p_cmd_buffer_type, const Rect2i& p_rect, VectorView<RenderPassClearValue> p_clear_values) = 0;
+		virtual void command_end_render_pass(CommandBufferID p_cmd_buffer) = 0;
 		// virtual void command_next_render_subpass(CommandBufferID p_cmd_buffer, CommandBufferType p_cmd_buffer_type) = 0;
 		// virtual void command_render_set_viewport(CommandBufferID p_cmd_buffer, VectorView<Rect2i> p_viewports) = 0;
 		// virtual void command_render_set_scissor(CommandBufferID p_cmd_buffer, VectorView<Rect2i> p_scissors) = 0;
@@ -671,7 +691,7 @@ namespace lain {
 
 	// ----- PIPELINE -----
 
-	// virtual PipelineID compute_pipeline_create(ShaderID p_shader, VectorView<PipelineSpecializationConstant> p_specialization_constants) = 0;
+	virtual PipelineID compute_pipeline_create(ShaderID p_shader, VectorView<PipelineSpecializationConstant> p_specialization_constants) = 0;
 
 	/*****************/
 	/**** QUERIES ****/
@@ -686,15 +706,15 @@ namespace lain {
 	virtual uint64_t timestamp_query_result_to_time(uint64_t p_result) = 0;
 
 	// Commands.
-	// virtual void command_timestamp_query_pool_reset(CommandBufferID p_cmd_buffer, QueryPoolID p_pool_id, uint32_t p_query_count) = 0;
-	// virtual void command_timestamp_write(CommandBufferID p_cmd_buffer, QueryPoolID p_pool_id, uint32_t p_index) = 0;
+	virtual void command_timestamp_query_pool_reset(CommandBufferID p_cmd_buffer, QueryPoolID p_pool_id, uint32_t p_query_count) = 0;
+	virtual void command_timestamp_write(CommandBufferID p_cmd_buffer, QueryPoolID p_pool_id, uint32_t p_index) = 0;
 
 	/****************/
 	/**** LABELS ****/
 	/****************/
 
-	// virtual void command_begin_label(CommandBufferID p_cmd_buffer, const char* p_label_name, const Color& p_color) = 0;
-	// virtual void command_end_label(CommandBufferID p_cmd_buffer) = 0;
+	virtual void command_begin_label(CommandBufferID p_cmd_buffer, const char* p_label_name, const Color& p_color) = 0;
+	virtual void command_end_label(CommandBufferID p_cmd_buffer) = 0;
 
 	/********************/
 	/**** SUBMISSION ****/

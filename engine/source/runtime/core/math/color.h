@@ -69,6 +69,12 @@ struct _NO_DISCARD_ Color {
 		return (r != p_color.r || g != p_color.g || b != p_color.b || a != p_color.a);
 	}
 
+	const float* components() const {
+		return &r;
+	}
+	float* wptr() const{
+		return const_cast<float*>(&r);
+	}
 	Color operator+(const Color& p_color) const;
 	void operator+=(const Color& p_color);
 
