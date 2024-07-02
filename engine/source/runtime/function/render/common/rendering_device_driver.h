@@ -335,7 +335,7 @@ namespace lain {
 			BARRIER_ACCESS_RESOLVE_WRITE_BIT = (1 << 25),
 			BARRIER_ACCESS_STORAGE_CLEAR_BIT = (1 << 27),
 		};
-
+		// 这里从vulkan的抽象相当直接
 		struct MemoryBarrier {
 			BitField<BarrierAccessBits> src_access;
 			BitField<BarrierAccessBits> dst_access;
@@ -355,16 +355,16 @@ namespace lain {
 			BitField<BarrierAccessBits> dst_access;
 			TextureLayout prev_layout = TEXTURE_LAYOUT_UNDEFINED;
 			TextureLayout next_layout = TEXTURE_LAYOUT_UNDEFINED;
-			TextureSubresourceRange subresources;
+			TextureSubresourceRange subresources; // 用于指定哪些subresource需要barrier
 		};
 
-		/*virtual void command_pipeline_barrier(
+		virtual void command_pipeline_barrier(
 			CommandBufferID p_cmd_buffer,
 			BitField<PipelineStageBits> p_src_stages,
 			BitField<PipelineStageBits> p_dst_stages,
 			VectorView<MemoryBarrier> p_memory_barriers,
 			VectorView<BufferBarrier> p_buffer_barriers,
-			VectorView<TextureBarrier> p_texture_barriers) = 0;*/
+			VectorView<TextureBarrier> p_texture_barriers) = 0;
 
 		/****************/
 		/**** FENCES ****/
@@ -451,7 +451,7 @@ namespace lain {
 		virtual RenderPassID swap_chain_get_render_pass(SwapChainID p_swap_chain) = 0;
 
 		// Retrieve the format used by the swap chain's framebuffers.
-		// virtual DataFormat swap_chain_get_format(SwapChainID p_swap_chain) = 0;
+		virtual DataFormat swap_chain_get_format(SwapChainID p_swap_chain) = 0;
 
 		// Wait until all rendering associated to the swap chain is finished before deleting it.
 		virtual void swap_chain_free(SwapChainID p_swap_chain) = 0;
@@ -473,7 +473,7 @@ namespace lain {
 		virtual ShaderID shader_create_from_bytecode(const Vector<uint8_t>& p_shader_binary, ShaderDescription& r_shader_desc, String& r_name) = 0;
 		// Only meaningful if API_TRAIT_SHADER_CHANGE_INVALIDATION is SHADER_CHANGE_INVALIDATION_ALL_OR_NONE_ACCORDING_TO_LAYOUT_HASH.
 		virtual uint32_t shader_get_layout_hash(ShaderID p_shader) { return 0; }
-		// virtual void shader_free(ShaderID p_shader) = 0;
+		virtual void shader_free(ShaderID p_shader) = 0;
 		protected:
 		Error _reflect_spirv(VectorView<ShaderStageSPIRVData> p_spirv, ShaderReflection &r_reflection);
 		
@@ -536,7 +536,7 @@ namespace lain {
 		virtual void pipeline_free(PipelineID p_pipeline) = 0;
 		// ----- BINDING -----
 		// push constants
-		// virtual void command_bind_push_constants(CommandBufferID p_cmd_buffer, ShaderID p_shader, uint32_t p_first_index, VectorView<uint32_t> p_data) = 0;
+		virtual void command_bind_push_constants(CommandBufferID p_cmd_buffer, ShaderID p_shader, uint32_t p_first_index, VectorView<uint32_t> p_data) = 0;
 		// ----- CACHE -----
 		// 这是pipeline cache https://docs.vulkan.org/guide/latest/pipeline_cache.html
 		virtual bool pipeline_cache_create(const Vector<uint8_t>& p_data) = 0;
@@ -625,37 +625,37 @@ namespace lain {
 			RenderPassClearValue value;
 		};
 
-
+		// 与render相关的cmd
 		virtual void command_begin_render_pass(CommandBufferID p_cmd_buffer, RenderPassID p_render_pass, FramebufferID p_framebuffer, CommandBufferType p_cmd_buffer_type, const Rect2i& p_rect, VectorView<RenderPassClearValue> p_clear_values) = 0;
 		virtual void command_end_render_pass(CommandBufferID p_cmd_buffer) = 0;
-		// virtual void command_next_render_subpass(CommandBufferID p_cmd_buffer, CommandBufferType p_cmd_buffer_type) = 0;
-		// virtual void command_render_set_viewport(CommandBufferID p_cmd_buffer, VectorView<Rect2i> p_viewports) = 0;
-		// virtual void command_render_set_scissor(CommandBufferID p_cmd_buffer, VectorView<Rect2i> p_scissors) = 0;
-		// virtual void command_render_clear_attachments(CommandBufferID p_cmd_buffer, VectorView<AttachmentClear> p_attachment_clears, VectorView<Rect2i> p_rects) = 0;
+		virtual void command_next_render_subpass(CommandBufferID p_cmd_buffer, CommandBufferType p_cmd_buffer_type) = 0;
+		virtual void command_render_set_viewport(CommandBufferID p_cmd_buffer, VectorView<Rect2i> p_viewports) = 0;
+		virtual void command_render_set_scissor(CommandBufferID p_cmd_buffer, VectorView<Rect2i> p_scissors) = 0;
+		virtual void command_render_clear_attachments(CommandBufferID p_cmd_buffer, VectorView<AttachmentClear> p_attachment_clears, VectorView<Rect2i> p_rects) = 0;
 
 		// Binding.
-		// virtual void command_bind_render_pipeline(CommandBufferID p_cmd_buffer, PipelineID p_pipeline) = 0;
-		// virtual void command_bind_render_uniform_set(CommandBufferID p_cmd_buffer, UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index) = 0;
+		virtual void command_bind_render_pipeline(CommandBufferID p_cmd_buffer, PipelineID p_pipeline) = 0;
+		virtual void command_bind_render_uniform_set(CommandBufferID p_cmd_buffer, UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index) = 0;
 
 		// Drawing.
-		// virtual void command_render_draw(CommandBufferID p_cmd_buffer, uint32_t p_vertex_count, uint32_t p_instance_count, uint32_t p_base_vertex, uint32_t p_first_instance) = 0;
-		// virtual void command_render_draw_indexed(CommandBufferID p_cmd_buffer, uint32_t p_index_count, uint32_t p_instance_count, uint32_t p_first_index, int32_t p_vertex_offset, uint32_t p_first_instance) = 0;
-		// virtual void command_render_draw_indexed_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, uint32_t p_draw_count, uint32_t p_stride) = 0;
-		// virtual void command_render_draw_indexed_indirect_count(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer, uint64_t p_count_buffer_offset, uint32_t p_max_draw_count, uint32_t p_stride) = 0;
-		// virtual void command_render_draw_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, uint32_t p_draw_count, uint32_t p_stride) = 0;
+		virtual void command_render_draw(CommandBufferID p_cmd_buffer, uint32_t p_vertex_count, uint32_t p_instance_count, uint32_t p_base_vertex, uint32_t p_first_instance) = 0;
+		virtual void command_render_draw_indexed(CommandBufferID p_cmd_buffer, uint32_t p_index_count, uint32_t p_instance_count, uint32_t p_first_index, int32_t p_vertex_offset, uint32_t p_first_instance) = 0;
+		virtual void command_render_draw_indexed_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, uint32_t p_draw_count, uint32_t p_stride) = 0;
+		virtual void command_render_draw_indexed_indirect_count(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer, uint64_t p_count_buffer_offset, uint32_t p_max_draw_count, uint32_t p_stride) = 0;
+		virtual void command_render_draw_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, uint32_t p_draw_count, uint32_t p_stride) = 0;
 		// multi_indirect
-		// virtual void command_render_draw_indirect_count(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer, uint64_t p_count_buffer_offset, uint32_t p_max_draw_count, uint32_t p_stride) = 0;
+		virtual void command_render_draw_indirect_count(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer, uint64_t p_count_buffer_offset, uint32_t p_max_draw_count, uint32_t p_stride) = 0;
 		// for mesh shading, see command_buffer.hpp L516
 		/*// virtual void command_render_draw_mesh_tasks_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer, uint64_t p_count_buffer_offset, uint32_t p_max_draw_count, uint32_t p_stride) = 0;
 		// virtual void command_render_draw_mesh_tasks_indirect_count(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer, uint64_t p_count_buffer_offset, uint32_t p_max_draw_count, uint32_t p_stride) = 0;*/
 
 		// Buffer binding.
-		// virtual void command_render_bind_vertex_buffers(CommandBufferID p_cmd_buffer, uint32_t p_binding_count, const BufferID* p_buffers, const uint64_t* p_offsets) = 0;
-		// virtual void command_render_bind_index_buffer(CommandBufferID p_cmd_buffer, BufferID p_buffer, IndexBufferFormat p_format, uint64_t p_offset) = 0;
+		virtual void command_render_bind_vertex_buffers(CommandBufferID p_cmd_buffer, uint32_t p_binding_count, const BufferID* p_buffers, const uint64_t* p_offsets) = 0;
+		virtual void command_render_bind_index_buffer(CommandBufferID p_cmd_buffer, BufferID p_buffer, IndexBufferFormat p_format, uint64_t p_offset) = 0;
 
 		// Dynamic state.
-		// virtual void command_render_set_blend_constants(CommandBufferID p_cmd_buffer, const Color& p_constants) = 0;
-		// virtual void command_render_set_line_width(CommandBufferID p_cmd_buffer, float p_width) = 0;
+		virtual void command_render_set_blend_constants(CommandBufferID p_cmd_buffer, const Color& p_constants) = 0;
+		virtual void command_render_set_line_width(CommandBufferID p_cmd_buffer, float p_width) = 0;
 		
 
 		// ----- PIPELINE -----
@@ -682,12 +682,12 @@ namespace lain {
 	// ----- COMMANDS -----
 
 	// Binding.
-	// virtual void command_bind_compute_pipeline(CommandBufferID p_cmd_buffer, PipelineID p_pipeline) = 0;
-	// virtual void command_bind_compute_uniform_set(CommandBufferID p_cmd_buffer, UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index) = 0;
+	virtual void command_bind_compute_pipeline(CommandBufferID p_cmd_buffer, PipelineID p_pipeline) = 0;
+	virtual void command_bind_compute_uniform_set(CommandBufferID p_cmd_buffer, UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index) = 0;
 
 	// Dispatching.
-	// virtual void command_compute_dispatch(CommandBufferID p_cmd_buffer, uint32_t p_x_groups, uint32_t p_y_groups, uint32_t p_z_groups) = 0;
-	// virtual void command_compute_dispatch_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset) = 0;
+	virtual void command_compute_dispatch(CommandBufferID p_cmd_buffer, uint32_t p_x_groups, uint32_t p_y_groups, uint32_t p_z_groups) = 0;
+	virtual void command_compute_dispatch_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset) = 0;
 
 	// ----- PIPELINE -----
 
@@ -720,8 +720,8 @@ namespace lain {
 	/**** SUBMISSION ****/
 	/********************/
 	// d3d12
-	// virtual void begin_segment(uint32_t p_frame_index, uint32_t p_frames_drawn) = 0;
-	// virtual void end_segment() = 0;
+	virtual void begin_segment(uint32_t p_frame_index, uint32_t p_frames_drawn) = 0;
+	virtual void end_segment() = 0;
 
 
 	/**************/

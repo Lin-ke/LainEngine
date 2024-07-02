@@ -390,6 +390,7 @@ Error RenderingContextDriverVulkan::_find_validation_layers(TightLocalVector<con
 				for (const VkLayerProperties& properties : layer_properties) {
 					if (!strcmp(properties.layerName, layer_name)) {
 						layers_found = true;
+						L_PRINT("Found validation layer: " + String(layer_name));
 						break;
 					}
 				}

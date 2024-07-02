@@ -4952,9 +4952,9 @@ String String::lpad(int min_length, const String& character) const {
 //   "fish %s pie" % "frog"
 //   "fish %s %d pie" % ["frog", 12]
 // In case of an error, the string returned is the error description and "error" is true.
-String String::sprintf(const Array& values, bool* error) const {
+String String::sprintf(const Array &values, bool *error) const {
 	String formatted;
-	char32_t* self = (char32_t*)get_data();
+	char32_t *self = (char32_t *)get_data();
 	bool in_format = false;
 	int value_index = 0;
 	int min_chars = 0;
@@ -4963,6 +4963,7 @@ String String::sprintf(const Array& values, bool* error) const {
 	bool pad_with_zeros = false;
 	bool left_justified = false;
 	bool show_sign = false;
+	bool as_unsigned = false;
 
 	if (error) {
 		*error = true;
@@ -4973,345 +4974,343 @@ String String::sprintf(const Array& values, bool* error) const {
 
 		if (in_format) { // We have % - let's see what else we get.
 			switch (c) {
-			case '%': { // Replace %% with %
-				formatted += chr(c);
-				in_format = false;
-				break;
-			}
-			case 'd': // Integer (signed)
-			case 'o': // Octal
-			case 'x': // Hexadecimal (lowercase)
-			case 'X': { // Hexadecimal (uppercase)
-				if (value_index >= values.size()) {
-					return "not enough arguments for format string";
-				}
-
-				if (!values[value_index].is_num()) {
-					return "a number is required";
-				}
-
-				int64_t value = values[value_index];
-				int base = 16;
-				bool capitalize = false;
-				switch (c) {
-				case 'd':
-					base = 10;
-					break;
-				case 'o':
-					base = 8;
-					break;
-				case 'x':
-					break;
-				case 'X':
-					base = 16;
-					capitalize = true;
+				case '%': { // Replace %% with %
+					formatted += chr(c);
+					in_format = false;
 					break;
 				}
-				// Get basic number.
-				String str = String::num_int64(ABS(value), base, capitalize);
-				int number_len = str.length();
+				case 'd': // Integer (signed)
+				case 'o': // Octal
+				case 'x': // Hexadecimal (lowercase)
+				case 'X': { // Hexadecimal (uppercase)
+					if (value_index >= values.size()) {
+						return "not enough arguments for format string";
+					}
 
-				// Padding.
-				int pad_chars_count = (value < 0 || show_sign) ? min_chars - 1 : min_chars;
-				String pad_char = pad_with_zeros ? String("0") : String(" ");
-				if (left_justified) {
-					str = str.rpad(pad_chars_count, pad_char);
-				}
-				else {
-					str = str.lpad(pad_chars_count, pad_char);
-				}
+					if (!values[value_index].is_num()) {
+						return "a number is required";
+					}
 
-				// Sign.
-				if (show_sign || value < 0) {
-					String sign_char = value < 0 ? "-" : "+";
+					int64_t value = values[value_index];
+					int base = 16;
+					bool capitalize = false;
+					switch (c) {
+						case 'd':
+							base = 10;
+							break;
+						case 'o':
+							base = 8;
+							break;
+						case 'x':
+							break;
+						case 'X':
+							capitalize = true;
+							break;
+					}
+					// Get basic number.
+					String str;
+					if (!as_unsigned) {
+						str = String::num_int64(ABS(value), base, capitalize);
+					} else {
+						uint64_t uvalue = *((uint64_t *)&value);
+						// In unsigned hex, if the value fits in 32 bits, trim it down to that.
+						if (base == 16 && value < 0 && value >= INT32_MIN) {
+							uvalue &= 0xffffffff;
+						}
+						str = String::num_uint64(uvalue, base, capitalize);
+					}
+					int number_len = str.length();
+
+					bool negative = value < 0 && !as_unsigned;
+
+					// Padding.
+					int pad_chars_count = (negative || show_sign) ? min_chars - 1 : min_chars;
+					String pad_char = pad_with_zeros ? String("0") : String(" ");
 					if (left_justified) {
-						str = str.insert(0, sign_char);
+						str = str.rpad(pad_chars_count, pad_char);
+					} else {
+						str = str.lpad(pad_chars_count, pad_char);
 					}
-					else {
-						str = str.insert(pad_with_zeros ? 0 : str.length() - number_len, sign_char);
+
+					// Sign.
+					if (show_sign || negative) {
+						String sign_char = negative ? "-" : "+";
+						if (left_justified) {
+							str = str.insert(0, sign_char);
+						} else {
+							str = str.insert(pad_with_zeros ? 0 : str.length() - number_len, sign_char);
+						}
 					}
+
+					formatted += str;
+					++value_index;
+					in_format = false;
+
+					break;
 				}
-
-				formatted += str;
-				++value_index;
-				in_format = false;
-
-				break;
-			}
-			case 'f': { // Float
-				if (value_index >= values.size()) {
-					return "not enough arguments for format string";
-				}
-
-				if (!values[value_index].is_num()) {
-					return "a number is required";
-				}
-
-				double value = values[value_index];
-				bool is_negative = (value < 0);
-				String str = String::num(ABS(value), min_decimals);
-				const bool is_finite = Math::is_finite(value);
-
-				// Pad decimals out.
-				if (is_finite) {
-					str = str.pad_decimals(min_decimals);
-				}
-
-				int initial_len = str.length();
-
-				// Padding. Leave room for sign later if required.
-				int pad_chars_count = (is_negative || show_sign) ? min_chars - 1 : min_chars;
-				String pad_char = (pad_with_zeros && is_finite) ? String("0") : String(" "); // Never pad NaN or inf with zeros
-				if (left_justified) {
-					str = str.rpad(pad_chars_count, pad_char);
-				}
-				else {
-					str = str.lpad(pad_chars_count, pad_char);
-				}
-
-				// Add sign if needed.
-				if (show_sign || is_negative) {
-					String sign_char = is_negative ? "-" : "+";
-					if (left_justified) {
-						str = str.insert(0, sign_char);
+				case 'f': { // Float
+					if (value_index >= values.size()) {
+						return "not enough arguments for format string";
 					}
-					else {
-						str = str.insert(pad_with_zeros ? 0 : str.length() - initial_len, sign_char);
+
+					if (!values[value_index].is_num()) {
+						return "a number is required";
 					}
-				}
 
-				formatted += str;
-				++value_index;
-				in_format = false;
-				break;
-			}
-			case 'v': { // Vector2/3/4/2i/3i/4i
-				if (value_index >= values.size()) {
-					return "not enough arguments for format string";
-				}
-
-				int count;
-				switch (values[value_index].get_type()) {
-				case Variant::VECTOR2:
-				case Variant::VECTOR2I: {
-					count = 2;
-				} break;
-				case Variant::VECTOR3:
-				case Variant::VECTOR3I: {
-					count = 3;
-				} break;
-				case Variant::VECTOR4:
-				case Variant::VECTOR4I: {
-					count = 4;
-				} break;
-				default: {
-					return "%v requires a vector type (Vector2/3/4/2i/3i/4i)";
-				}
-				}
-
-				Vector4 vec = values[value_index];
-				String str = "(";
-				for (int i = 0; i < count; i++) {
-					double val = vec[i];
-					String number_str = String::num(ABS(val), min_decimals);
-					const bool is_finite = Math::is_finite(val);
+					double value = values[value_index];
+					bool is_negative = signbit(value);
+					String str = String::num(Math::abs(value), min_decimals);
+					const bool is_finite = Math::is_finite(value);
 
 					// Pad decimals out.
 					if (is_finite) {
-						number_str = number_str.pad_decimals(min_decimals);
+						str = str.pad_decimals(min_decimals);
 					}
 
-					int initial_len = number_str.length();
+					int initial_len = str.length();
 
 					// Padding. Leave room for sign later if required.
-					int pad_chars_count = val < 0 ? min_chars - 1 : min_chars;
+					int pad_chars_count = (is_negative || show_sign) ? min_chars - 1 : min_chars;
 					String pad_char = (pad_with_zeros && is_finite) ? String("0") : String(" "); // Never pad NaN or inf with zeros
 					if (left_justified) {
-						number_str = number_str.rpad(pad_chars_count, pad_char);
-					}
-					else {
-						number_str = number_str.lpad(pad_chars_count, pad_char);
+						str = str.rpad(pad_chars_count, pad_char);
+					} else {
+						str = str.lpad(pad_chars_count, pad_char);
 					}
 
 					// Add sign if needed.
-					if (val < 0) {
+					if (show_sign || is_negative) {
+						String sign_char = is_negative ? "-" : "+";
 						if (left_justified) {
-							number_str = number_str.insert(0, "-");
+							str = str.insert(0, sign_char);
+						} else {
+							str = str.insert(pad_with_zeros ? 0 : str.length() - initial_len, sign_char);
 						}
-						else {
-							number_str = number_str.insert(pad_with_zeros ? 0 : number_str.length() - initial_len, "-");
+					}
+
+					formatted += str;
+					++value_index;
+					in_format = false;
+					break;
+				}
+				case 'v': { // Vector2/3/4/2i/3i/4i
+					if (value_index >= values.size()) {
+						return "not enough arguments for format string";
+					}
+
+					int count;
+					switch (values[value_index].get_type()) {
+						case Variant::VECTOR2:
+						case Variant::VECTOR2I: {
+							count = 2;
+						} break;
+						case Variant::VECTOR3:
+						case Variant::VECTOR3I: {
+							count = 3;
+						} break;
+						case Variant::VECTOR4:
+						case Variant::VECTOR4I: {
+							count = 4;
+						} break;
+						default: {
+							return "%v requires a vector type (Vector2/3/4/2i/3i/4i)";
 						}
 					}
 
-					// Add number to combined string
-					str += number_str;
+					Vector4 vec = values[value_index];
+					String str = "(";
+					for (int i = 0; i < count; i++) {
+						double val = vec[i];
+						String number_str = String::num(Math::abs(val), min_decimals);
+						const bool is_finite = Math::is_finite(val);
 
-					if (i < count - 1) {
-						str += ", ";
+						// Pad decimals out.
+						if (is_finite) {
+							number_str = number_str.pad_decimals(min_decimals);
+						}
+
+						int initial_len = number_str.length();
+
+						// Padding. Leave room for sign later if required.
+						int pad_chars_count = val < 0 ? min_chars - 1 : min_chars;
+						String pad_char = (pad_with_zeros && is_finite) ? String("0") : String(" "); // Never pad NaN or inf with zeros
+						if (left_justified) {
+							number_str = number_str.rpad(pad_chars_count, pad_char);
+						} else {
+							number_str = number_str.lpad(pad_chars_count, pad_char);
+						}
+
+						// Add sign if needed.
+						if (val < 0) {
+							if (left_justified) {
+								number_str = number_str.insert(0, "-");
+							} else {
+								number_str = number_str.insert(pad_with_zeros ? 0 : number_str.length() - initial_len, "-");
+							}
+						}
+
+						// Add number to combined string
+						str += number_str;
+
+						if (i < count - 1) {
+							str += ", ";
+						}
 					}
-				}
-				str += ")";
+					str += ")";
 
-				formatted += str;
-				++value_index;
-				in_format = false;
-				break;
-			}
-			case 's': { // String
-				if (value_index >= values.size()) {
-					return "not enough arguments for format string";
+					formatted += str;
+					++value_index;
+					in_format = false;
+					break;
 				}
-
-				String str = values[value_index];
-				// Padding.
-				if (left_justified) {
-					str = str.rpad(min_chars);
-				}
-				else {
-					str = str.lpad(min_chars);
-				}
-
-				formatted += str;
-				++value_index;
-				in_format = false;
-				break;
-			}
-			case 'c': {
-				if (value_index >= values.size()) {
-					return "not enough arguments for format string";
-				}
-
-				// Convert to character.
-				String str;
-				if (values[value_index].is_num()) {
-					int value = values[value_index];
-					if (value < 0) {
-						return "unsigned integer is lower than minimum";
+				case 's': { // String
+					if (value_index >= values.size()) {
+						return "not enough arguments for format string";
 					}
-					else if (value >= 0xd800 && value <= 0xdfff) {
-						return "unsigned integer is invalid Unicode character";
+
+					String str = values[value_index];
+					// Padding.
+					if (left_justified) {
+						str = str.rpad(min_chars);
+					} else {
+						str = str.lpad(min_chars);
 					}
-					else if (value > 0x10ffff) {
-						return "unsigned integer is greater than maximum";
-					}
-					str = chr(values[value_index]);
+
+					formatted += str;
+					++value_index;
+					in_format = false;
+					break;
 				}
-				else if (values[value_index].get_type() == Variant::STRING) {
-					str = values[value_index];
-					if (str.length() != 1) {
+				case 'c': {
+					if (value_index >= values.size()) {
+						return "not enough arguments for format string";
+					}
+
+					// Convert to character.
+					String str;
+					if (values[value_index].is_num()) {
+						int value = values[value_index];
+						if (value < 0) {
+							return "unsigned integer is lower than minimum";
+						} else if (value >= 0xd800 && value <= 0xdfff) {
+							return "unsigned integer is invalid Unicode character";
+						} else if (value > 0x10ffff) {
+							return "unsigned integer is greater than maximum";
+						}
+						str = chr(values[value_index]);
+					} else if (values[value_index].get_type() == Variant::STRING) {
+						str = values[value_index];
+						if (str.length() != 1) {
+							return "%c requires number or single-character string";
+						}
+					} else {
 						return "%c requires number or single-character string";
 					}
-				}
-				else {
-					return "%c requires number or single-character string";
-				}
 
-				// Padding.
-				if (left_justified) {
-					str = str.rpad(min_chars);
-				}
-				else {
-					str = str.lpad(min_chars);
-				}
+					// Padding.
+					if (left_justified) {
+						str = str.rpad(min_chars);
+					} else {
+						str = str.lpad(min_chars);
+					}
 
-				formatted += str;
-				++value_index;
-				in_format = false;
-				break;
-			}
-			case '-': { // Left justify
-				left_justified = true;
-				break;
-			}
-			case '+': { // Show + if positive.
-				show_sign = true;
-				break;
-			}
-			case '0':
-			case '1':
-			case '2':
-			case '3':
-			case '4':
-			case '5':
-			case '6':
-			case '7':
-			case '8':
-			case '9': {
-				int n = c - '0';
-				if (in_decimals) {
-					min_decimals *= 10;
-					min_decimals += n;
+					formatted += str;
+					++value_index;
+					in_format = false;
+					break;
 				}
-				else {
-					if (c == '0' && min_chars == 0) {
-						if (left_justified) {
-							WARN_PRINT("'0' flag ignored with '-' flag in string format");
-						}
-						else {
-							pad_with_zeros = true;
+				case '-': { // Left justify
+					left_justified = true;
+					break;
+				}
+				case '+': { // Show + if positive.
+					show_sign = true;
+					break;
+				}
+				case 'u': { // Treat as unsigned (for int/hex).
+					as_unsigned = true;
+					break;
+				}
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9': {
+					int n = c - '0';
+					if (in_decimals) {
+						min_decimals *= 10;
+						min_decimals += n;
+					} else {
+						if (c == '0' && min_chars == 0) {
+							if (left_justified) {
+								WARN_PRINT("'0' flag ignored with '-' flag in string format");
+							} else {
+								pad_with_zeros = true;
+							}
+						} else {
+							min_chars *= 10;
+							min_chars += n;
 						}
 					}
-					else {
-						min_chars *= 10;
-						min_chars += n;
+					break;
+				}
+				case '.': { // Float/Vector separator.
+					if (in_decimals) {
+						return "too many decimal points in format";
 					}
+					in_decimals = true;
+					min_decimals = 0; // We want to add the value manually.
+					break;
 				}
-				break;
+
+				case '*': { // Dynamic width, based on value.
+					if (value_index >= values.size()) {
+						return "not enough arguments for format string";
+					}
+
+					Variant::Type value_type = values[value_index].get_type();
+					if (!values[value_index].is_num() &&
+							value_type != Variant::VECTOR2 && value_type != Variant::VECTOR2I &&
+							value_type != Variant::VECTOR3 && value_type != Variant::VECTOR3I &&
+							value_type != Variant::VECTOR4 && value_type != Variant::VECTOR4I) {
+						return "* wants number or vector";
+					}
+
+					int size = values[value_index];
+
+					if (in_decimals) {
+						min_decimals = size;
+					} else {
+						min_chars = size;
+					}
+
+					++value_index;
+					break;
+				}
+
+				default: {
+					return "unsupported format character";
+				}
 			}
-			case '.': { // Float/Vector separator.
-				if (in_decimals) {
-					return "too many decimal points in format";
-				}
-				in_decimals = true;
-				min_decimals = 0; // We want to add the value manually.
-				break;
-			}
-
-			case '*': { // Dynamic width, based on value.
-				if (value_index >= values.size()) {
-					return "not enough arguments for format string";
-				}
-
-				Variant::Type value_type = values[value_index].get_type();
-				if (!values[value_index].is_num() &&
-					value_type != Variant::VECTOR2 && value_type != Variant::VECTOR2I &&
-					value_type != Variant::VECTOR3 && value_type != Variant::VECTOR3I &&
-					value_type != Variant::VECTOR4 && value_type != Variant::VECTOR4I) {
-					return "* wants number or vector";
-				}
-
-				int size = values[value_index];
-
-				if (in_decimals) {
-					min_decimals = size;
-				}
-				else {
-					min_chars = size;
-				}
-
-				++value_index;
-				break;
-			}
-
-			default: {
-				return "unsupported format character";
-			}
-			}
-		}
-		else { // Not in format string.
+		} else { // Not in format string.
 			switch (c) {
-			case '%':
-				in_format = true;
-				// Back to defaults:
-				min_chars = 0;
-				min_decimals = 6;
-				pad_with_zeros = false;
-				left_justified = false;
-				show_sign = false;
-				in_decimals = false;
-				break;
-			default:
-				formatted += chr(c);
+				case '%':
+					in_format = true;
+					// Back to defaults:
+					min_chars = 0;
+					min_decimals = 6;
+					pad_with_zeros = false;
+					left_justified = false;
+					show_sign = false;
+					in_decimals = false;
+					break;
+				default:
+					formatted += chr(c);
 			}
 		}
 	}

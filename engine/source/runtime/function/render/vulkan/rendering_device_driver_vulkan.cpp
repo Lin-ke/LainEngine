@@ -1303,7 +1303,7 @@ Error RenderingDeviceDriverVulkan::_initialize_device_extensions()
 	_register_requested_device_extension(VK_KHR_MAINTENANCE_2_EXTENSION_NAME, false);
 	_register_requested_device_extension(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME, false);
 	_register_requested_device_extension(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, false);
-	_register_requested_device_extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, true);
+	_register_requested_device_extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, false);
 	// vulkan hdr support ?
 	_register_requested_device_extension(VK_EXT_HDR_METADATA_EXTENSION_NAME, false);
 	// vulkan wait_delay support?
@@ -2231,12 +2231,12 @@ RDD::SwapChainID RenderingDeviceDriverVulkan::swap_chain_create(RenderingContext
 	ERR_FAIL_COND_V(err != VK_SUCCESS, SwapChainID());
 
 	VkFormat format = VK_FORMAT_UNDEFINED;
-	VkColorSpaceKHR color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+	VkColorSpaceKHR color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR; // 为什么这里不选用HDR10？
 	// surface具有format
 	if (format_count == 1 && formats[0].format == VK_FORMAT_UNDEFINED)
 	{
 		// If the format list includes just one entry of VK_FORMAT_UNDEFINED, the surface has no preferred format.
-		format = VK_FORMAT_B8G8R8A8_UNORM;
+		format = VK_FORMAT_B8G8R8A8_UNORM; // 普通的色彩空间
 		color_space = formats[0].colorSpace;
 	}
 	else if (format_count > 0)
@@ -2317,6 +2317,21 @@ void RenderingDeviceDriverVulkan::swap_chain_free(SwapChainID p_swap_chain) {
 	memdelete(swap_chain);
 }
 
+
+RDD::DataFormat RenderingDeviceDriverVulkan::swap_chain_get_format(SwapChainID p_swap_chain) {
+	DEV_ASSERT(p_swap_chain.id != 0);
+
+	SwapChain *swap_chain = (SwapChain *)(p_swap_chain.id);
+	switch (swap_chain->format) {
+		case VK_FORMAT_B8G8R8A8_UNORM:
+			return DATA_FORMAT_B8G8R8A8_UNORM;
+		case VK_FORMAT_R8G8B8A8_UNORM:
+			return DATA_FORMAT_R8G8B8A8_UNORM;
+		default:
+			DEV_ASSERT(false && "Unknown swap chain format.");
+			return DATA_FORMAT_MAX;
+	}
+}
 
 void RenderingDeviceDriverVulkan::_swap_chain_release(SwapChain *swap_chain)
 {
@@ -2870,6 +2885,9 @@ RDD::CommandPoolID RenderingDeviceDriverVulkan::command_pool_create(CommandQueue
 	CommandPool *command_pool = memnew(CommandPool);
 	command_pool->vk_command_pool = vk_command_pool;
 	command_pool->buffer_type = p_cmd_buffer_type; // 只记录，没有区别
+	#ifdef PRINT_NATIVE_COMMANDS
+		print_line(vformat("vkCreateCommandPool 0x%uX for queue family %d", uint64_t(vk_command_pool), family_index));
+	#endif // DEBUG
 	return CommandPoolID(command_pool);
 }
 void RenderingDeviceDriverVulkan::command_pool_free(CommandPoolID p_cmd_pool) {
@@ -3485,6 +3503,80 @@ void RenderingDeviceDriverVulkan::command_copy_texture_to_buffer(CommandBufferID
 	vkCmdCopyImageToBuffer((VkCommandBuffer)p_cmd_buffer.id, tex_info->vk_view_create_info.image, RD_TO_VK_LAYOUT[p_src_texture_layout], buf_info->vk_buffer, p_regions.size(), vk_copy_regions);
 }
 
+
+void RenderingDeviceDriverVulkan::command_pipeline_barrier(
+		CommandBufferID p_cmd_buffer,
+		BitField<PipelineStageBits> p_src_stages,
+		BitField<PipelineStageBits> p_dst_stages,
+		VectorView<MemoryBarrier> p_memory_barriers,
+		VectorView<BufferBarrier> p_buffer_barriers,
+		VectorView<TextureBarrier> p_texture_barriers) {
+	VkMemoryBarrier *vk_memory_barriers = ALLOCA_ARRAY(VkMemoryBarrier, p_memory_barriers.size());
+	for (uint32_t i = 0; i < p_memory_barriers.size(); i++) {
+		vk_memory_barriers[i] = {};
+		vk_memory_barriers[i].sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+		vk_memory_barriers[i].srcAccessMask = _rd_to_vk_access_flags(p_memory_barriers[i].src_access);
+		vk_memory_barriers[i].dstAccessMask = _rd_to_vk_access_flags(p_memory_barriers[i].dst_access);
+	}
+
+	VkBufferMemoryBarrier *vk_buffer_barriers = ALLOCA_ARRAY(VkBufferMemoryBarrier, p_buffer_barriers.size());
+	for (uint32_t i = 0; i < p_buffer_barriers.size(); i++) {
+		vk_buffer_barriers[i] = {};
+		vk_buffer_barriers[i].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+		vk_buffer_barriers[i].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		vk_buffer_barriers[i].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		vk_buffer_barriers[i].srcAccessMask = _rd_to_vk_access_flags(p_buffer_barriers[i].src_access);
+		vk_buffer_barriers[i].dstAccessMask = _rd_to_vk_access_flags(p_buffer_barriers[i].dst_access);
+		vk_buffer_barriers[i].buffer = ((const BufferInfo *)p_buffer_barriers[i].buffer.id)->vk_buffer;
+		vk_buffer_barriers[i].offset = p_buffer_barriers[i].offset;
+		vk_buffer_barriers[i].size = p_buffer_barriers[i].size;
+	}
+
+	VkImageMemoryBarrier *vk_image_barriers = ALLOCA_ARRAY(VkImageMemoryBarrier, p_texture_barriers.size());
+	for (uint32_t i = 0; i < p_texture_barriers.size(); i++) {
+		const TextureInfo *tex_info = (const TextureInfo *)p_texture_barriers[i].texture.id;
+		vk_image_barriers[i] = {};
+		vk_image_barriers[i].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		vk_image_barriers[i].srcAccessMask = _rd_to_vk_access_flags(p_texture_barriers[i].src_access);
+		vk_image_barriers[i].dstAccessMask = _rd_to_vk_access_flags(p_texture_barriers[i].dst_access);
+		vk_image_barriers[i].oldLayout = RD_TO_VK_LAYOUT[p_texture_barriers[i].prev_layout];
+		vk_image_barriers[i].newLayout = RD_TO_VK_LAYOUT[p_texture_barriers[i].next_layout];
+		vk_image_barriers[i].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		vk_image_barriers[i].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		vk_image_barriers[i].image = tex_info->vk_view_create_info.image;
+		vk_image_barriers[i].subresourceRange.aspectMask = (VkImageAspectFlags)p_texture_barriers[i].subresources.aspect;
+		vk_image_barriers[i].subresourceRange.baseMipLevel = p_texture_barriers[i].subresources.base_mipmap;
+		vk_image_barriers[i].subresourceRange.levelCount = p_texture_barriers[i].subresources.mipmap_count;
+		vk_image_barriers[i].subresourceRange.baseArrayLayer = p_texture_barriers[i].subresources.base_layer;
+		vk_image_barriers[i].subresourceRange.layerCount = p_texture_barriers[i].subresources.layer_count;
+	}
+
+#if PRINT_NATIVE_COMMANDS
+	print_line(vformat("vkCmdPipelineBarrier MEMORY %d BUFFER %d TEXTURE %d", p_memory_barriers.size(), p_buffer_barriers.size(), p_texture_barriers.size()));
+	for (uint32_t i = 0; i < p_memory_barriers.size(); i++) {
+		print_line(vformat("  VkMemoryBarrier #%d src 0x%uX dst 0x%uX", i, vk_memory_barriers[i].srcAccessMask, vk_memory_barriers[i].dstAccessMask));
+	}
+
+	for (uint32_t i = 0; i < p_buffer_barriers.size(); i++) {
+		print_line(vformat("  VkBufferMemoryBarrier #%d src 0x%uX dst 0x%uX buffer 0x%ux", i, vk_buffer_barriers[i].srcAccessMask, vk_buffer_barriers[i].dstAccessMask, uint64_t(vk_buffer_barriers[i].buffer)));
+	}
+
+	for (uint32_t i = 0; i < p_texture_barriers.size(); i++) {
+		print_line(vformat("  VkImageMemoryBarrier #%d src 0x%uX dst 0x%uX image 0x%ux old %d new %d (%d %d %d %d)", i, vk_image_barriers[i].srcAccessMask, vk_image_barriers[i].dstAccessMask,
+				uint64_t(vk_image_barriers[i].image), vk_image_barriers[i].oldLayout, vk_image_barriers[i].newLayout, vk_image_barriers[i].subresourceRange.baseMipLevel, vk_image_barriers[i].subresourceRange.levelCount,
+				vk_image_barriers[i].subresourceRange.baseArrayLayer, vk_image_barriers[i].subresourceRange.layerCount));
+	}
+#endif
+
+	vkCmdPipelineBarrier(
+			(VkCommandBuffer)p_cmd_buffer.id,
+			_rd_to_vk_pipeline_stages(p_src_stages),
+			_rd_to_vk_pipeline_stages(p_dst_stages),
+			0,
+			p_memory_barriers.size(), vk_memory_barriers,
+			p_buffer_barriers.size(), vk_buffer_barriers,
+			p_texture_barriers.size(), vk_image_barriers);
+}
 /****************/
 /**** FENCES ****/
 /****************/
@@ -3663,7 +3755,10 @@ RDD::BufferID RenderingDeviceDriverVulkan::buffer_create(uint64_t p_size, BitFie
 	buf_info->allocation.handle = allocation;
 	buf_info->allocation.size = alloc_info.size;
 	buf_info->size = p_size;
-
+	#ifdef PRINT_NATIVE_COMMANDS
+		print_line(vformat("vkCreateBuffer 0x%uX", uint64_t(vk_buffer)));
+	
+	#endif // DEBUG
 	return BufferID(buf_info);
 }
 /// <summary>
@@ -3722,7 +3817,7 @@ void RenderingDeviceDriverVulkan::buffer_unmap(BufferID p_buffer)
 
 
 /*******************/
-/**** RENDERING ****/
+/****  PIPELINE ****/
 /*******************/
 RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(
 	ShaderID p_shader,
@@ -4013,15 +4108,18 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(
 
 	return PipelineID(vk_pipeline);
 }
-/******************/
-/**** PIPELINE ****/
-/******************/
+
 
 void RenderingDeviceDriverVulkan::pipeline_free(PipelineID p_pipeline) {
 	vkDestroyPipeline(vk_device, (VkPipeline)p_pipeline.id, nullptr);
 }
 
+// ----- BINDING -----
 
+void RenderingDeviceDriverVulkan::command_bind_push_constants(CommandBufferID p_cmd_buffer, ShaderID p_shader, uint32_t p_dst_first_index, VectorView<uint32_t> p_data) {
+	const ShaderInfo *shader_info = (const ShaderInfo *)p_shader.id;
+	vkCmdPushConstants((VkCommandBuffer)p_cmd_buffer.id, shader_info->vk_pipeline_layout, shader_info->vk_push_constant_stages, p_dst_first_index * sizeof(uint32_t), p_data.size() * sizeof(uint32_t), p_data.ptr());
+}
 // ----- CACHE -----
 
 int RenderingDeviceDriverVulkan::caching_instance_count = 0;
@@ -4270,6 +4368,119 @@ void RenderingDeviceDriverVulkan::command_end_render_pass(CommandBufferID p_cmd_
 #endif
 }
 
+
+/// --- command ---
+// 这里请看Granite command_buffer.hpp L493开始
+void RenderingDeviceDriverVulkan::command_next_render_subpass(CommandBufferID p_cmd_buffer, CommandBufferType p_cmd_buffer_type) {
+	VkSubpassContents vk_subpass_contents = p_cmd_buffer_type == COMMAND_BUFFER_TYPE_PRIMARY ? VK_SUBPASS_CONTENTS_INLINE : VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
+	vkCmdNextSubpass((VkCommandBuffer)p_cmd_buffer.id, vk_subpass_contents);
+}
+
+	// 需dynamic_state_viewport 或者drawing shader objects
+void RenderingDeviceDriverVulkan::command_render_set_viewport(CommandBufferID p_cmd_buffer, VectorView<Rect2i> p_viewports) {
+	VkViewport *vk_viewports = ALLOCA_ARRAY(VkViewport, p_viewports.size());
+	for (uint32_t i = 0; i < p_viewports.size(); i++) {
+		vk_viewports[i] = {};
+		vk_viewports[i].x = p_viewports[i].position.x;
+		vk_viewports[i].y = p_viewports[i].position.y;
+		vk_viewports[i].width = p_viewports[i].size.x;
+		vk_viewports[i].height = p_viewports[i].size.y;
+		vk_viewports[i].minDepth = 0.0f;
+		vk_viewports[i].maxDepth = 1.0f;
+	}
+	vkCmdSetViewport((VkCommandBuffer)p_cmd_buffer.id, 0, p_viewports.size(), vk_viewports);
+}
+
+void RenderingDeviceDriverVulkan::command_render_set_scissor(CommandBufferID p_cmd_buffer, VectorView<Rect2i> p_scissors) {
+	vkCmdSetScissor((VkCommandBuffer)p_cmd_buffer.id, 0, p_scissors.size(), (VkRect2D *)p_scissors.ptr());
+}
+
+void RenderingDeviceDriverVulkan::command_render_clear_attachments(CommandBufferID p_cmd_buffer, VectorView<AttachmentClear> p_attachment_clears, VectorView<Rect2i> p_rects) {
+	VkClearAttachment *vk_clears = ALLOCA_ARRAY(VkClearAttachment, p_attachment_clears.size());
+	for (uint32_t i = 0; i < p_attachment_clears.size(); i++) {
+		vk_clears[i] = {};
+		memcpy(&vk_clears[i].clearValue, &p_attachment_clears[i].value, sizeof(VkClearValue));
+		vk_clears[i].colorAttachment = p_attachment_clears[i].color_attachment;
+		vk_clears[i].aspectMask = p_attachment_clears[i].aspect;
+	}
+
+	VkClearRect *vk_rects = ALLOCA_ARRAY(VkClearRect, p_rects.size());
+	for (uint32_t i = 0; i < p_rects.size(); i++) {
+		vk_rects[i] = {};
+		vk_rects[i].rect.offset.x = p_rects[i].position.x;
+		vk_rects[i].rect.offset.y = p_rects[i].position.y;
+		vk_rects[i].rect.extent.width = p_rects[i].size.x;
+		vk_rects[i].rect.extent.height = p_rects[i].size.y;
+		vk_rects[i].baseArrayLayer = 0;
+		vk_rects[i].layerCount = 1;
+	}
+
+	vkCmdClearAttachments((VkCommandBuffer)p_cmd_buffer.id, p_attachment_clears.size(), vk_clears, p_rects.size(), vk_rects);
+}
+
+void RenderingDeviceDriverVulkan::command_bind_render_pipeline(CommandBufferID p_cmd_buffer, PipelineID p_pipeline) {
+	vkCmdBindPipeline((VkCommandBuffer)p_cmd_buffer.id, VK_PIPELINE_BIND_POINT_GRAPHICS, (VkPipeline)p_pipeline.id);
+}
+
+void RenderingDeviceDriverVulkan::command_bind_render_uniform_set(CommandBufferID p_cmd_buffer, UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index) {
+	const ShaderInfo *shader_info = (const ShaderInfo *)p_shader.id;
+	const UniformSetInfo *usi = (const UniformSetInfo *)p_uniform_set.id;
+	vkCmdBindDescriptorSets((VkCommandBuffer)p_cmd_buffer.id, VK_PIPELINE_BIND_POINT_GRAPHICS, shader_info->vk_pipeline_layout, p_set_index, 1, &usi->vk_descriptor_set, 0, nullptr);
+}
+
+
+void RenderingDeviceDriverVulkan::command_render_draw(CommandBufferID p_cmd_buffer, uint32_t p_vertex_count, uint32_t p_instance_count, uint32_t p_base_vertex, uint32_t p_first_instance) {
+	vkCmdDraw((VkCommandBuffer)p_cmd_buffer.id, p_vertex_count, p_instance_count, p_base_vertex, p_first_instance);
+}
+
+void RenderingDeviceDriverVulkan::command_render_draw_indexed(CommandBufferID p_cmd_buffer, uint32_t p_index_count, uint32_t p_instance_count, uint32_t p_first_index, int32_t p_vertex_offset, uint32_t p_first_instance) {
+	vkCmdDrawIndexed((VkCommandBuffer)p_cmd_buffer.id, p_index_count, p_instance_count, p_first_index, p_vertex_offset, p_first_instance);
+}
+
+void RenderingDeviceDriverVulkan::command_render_draw_indexed_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, uint32_t p_draw_count, uint32_t p_stride) {
+	const BufferInfo *buf_info = (const BufferInfo *)p_indirect_buffer.id;
+	vkCmdDrawIndexedIndirect((VkCommandBuffer)p_cmd_buffer.id, buf_info->vk_buffer, p_offset, p_draw_count, p_stride);
+}
+
+void RenderingDeviceDriverVulkan::command_render_draw_indexed_indirect_count(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer, uint64_t p_count_buffer_offset, uint32_t p_max_draw_count, uint32_t p_stride) {
+	const BufferInfo *indirect_buf_info = (const BufferInfo *)p_indirect_buffer.id;
+	const BufferInfo *count_buf_info = (const BufferInfo *)p_count_buffer.id;
+	vkCmdDrawIndexedIndirectCount((VkCommandBuffer)p_cmd_buffer.id, indirect_buf_info->vk_buffer, p_offset, count_buf_info->vk_buffer, p_count_buffer_offset, p_max_draw_count, p_stride);
+}
+
+void RenderingDeviceDriverVulkan::command_render_draw_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, uint32_t p_draw_count, uint32_t p_stride) {
+	const BufferInfo *buf_info = (const BufferInfo *)p_indirect_buffer.id;
+	vkCmdDrawIndirect((VkCommandBuffer)p_cmd_buffer.id, buf_info->vk_buffer, p_offset, p_draw_count, p_stride);
+}
+
+void RenderingDeviceDriverVulkan::command_render_draw_indirect_count(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer, uint64_t p_count_buffer_offset, uint32_t p_max_draw_count, uint32_t p_stride) {
+	const BufferInfo *indirect_buf_info = (const BufferInfo *)p_indirect_buffer.id;
+	const BufferInfo *count_buf_info = (const BufferInfo *)p_count_buffer.id;
+	vkCmdDrawIndirectCount((VkCommandBuffer)p_cmd_buffer.id, indirect_buf_info->vk_buffer, p_offset, count_buf_info->vk_buffer, p_count_buffer_offset, p_max_draw_count, p_stride);
+}
+// bind 
+void RenderingDeviceDriverVulkan::command_render_bind_vertex_buffers(CommandBufferID p_cmd_buffer, uint32_t p_binding_count, const BufferID *p_buffers, const uint64_t *p_offsets) {
+	VkBuffer *vk_buffers = ALLOCA_ARRAY(VkBuffer, p_binding_count);
+	for (uint32_t i = 0; i < p_binding_count; i++) {
+		vk_buffers[i] = ((const BufferInfo *)p_buffers[i].id)->vk_buffer;
+	}
+	vkCmdBindVertexBuffers((VkCommandBuffer)p_cmd_buffer.id, 0, p_binding_count, vk_buffers, p_offsets);
+}
+
+void RenderingDeviceDriverVulkan::command_render_bind_index_buffer(CommandBufferID p_cmd_buffer, BufferID p_buffer, IndexBufferFormat p_format, uint64_t p_offset) {
+	const BufferInfo *buf_info = (const BufferInfo *)p_buffer.id;
+	vkCmdBindIndexBuffer((VkCommandBuffer)p_cmd_buffer.id, buf_info->vk_buffer, p_offset, p_format == INDEX_BUFFER_FORMAT_UINT16 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
+}
+
+void RenderingDeviceDriverVulkan::command_render_set_blend_constants(CommandBufferID p_cmd_buffer, const Color &p_constants) {
+	vkCmdSetBlendConstants((VkCommandBuffer)p_cmd_buffer.id, p_constants.components());
+}
+
+void RenderingDeviceDriverVulkan::command_render_set_line_width(CommandBufferID p_cmd_buffer, float p_width) {
+	vkCmdSetLineWidth((VkCommandBuffer)p_cmd_buffer.id, p_width);
+}
+
+
 	/************** */
 	/**** COMPUTE ****/
 	/************** */
@@ -4305,6 +4516,27 @@ void RenderingDeviceDriverVulkan::command_end_render_pass(CommandBufferID p_cmd_
 	ERR_FAIL_COND_V_MSG(err, PipelineID(), "vkCreateComputePipelines failed with error " + itos(err) + ".");
 
 	return PipelineID(vk_pipeline);
+}
+
+// ----- COMMANDS -----
+
+void RenderingDeviceDriverVulkan::command_bind_compute_pipeline(CommandBufferID p_cmd_buffer, PipelineID p_pipeline) {
+	vkCmdBindPipeline((VkCommandBuffer)p_cmd_buffer.id, VK_PIPELINE_BIND_POINT_COMPUTE, (VkPipeline)p_pipeline.id);
+}
+
+void RenderingDeviceDriverVulkan::command_bind_compute_uniform_set(CommandBufferID p_cmd_buffer, UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index) {
+	const ShaderInfo *shader_info = (const ShaderInfo *)p_shader.id;
+	const UniformSetInfo *usi = (const UniformSetInfo *)p_uniform_set.id;
+	vkCmdBindDescriptorSets((VkCommandBuffer)p_cmd_buffer.id, VK_PIPELINE_BIND_POINT_COMPUTE, shader_info->vk_pipeline_layout, p_set_index, 1, &usi->vk_descriptor_set, 0, nullptr);
+}
+
+void RenderingDeviceDriverVulkan::command_compute_dispatch(CommandBufferID p_cmd_buffer, uint32_t p_x_groups, uint32_t p_y_groups, uint32_t p_z_groups) {
+	vkCmdDispatch((VkCommandBuffer)p_cmd_buffer.id, p_x_groups, p_y_groups, p_z_groups);
+}
+
+void RenderingDeviceDriverVulkan::command_compute_dispatch_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset) {
+	const BufferInfo *buf_info = (const BufferInfo *)p_indirect_buffer.id;
+	vkCmdDispatchIndirect((VkCommandBuffer)p_cmd_buffer.id, buf_info->vk_buffer, p_offset);
 }
 
 	/****************/
@@ -4876,4 +5108,13 @@ void RenderingDeviceDriverVulkan::command_begin_label(CommandBufferID p_cmd_buff
 void RenderingDeviceDriverVulkan::command_end_label(CommandBufferID p_cmd_buffer) {
 	const RenderingContextDriverVulkan::Functions &functions = context_driver->functions_get();
 	functions.CmdEndDebugUtilsLabelEXT((VkCommandBuffer)p_cmd_buffer.id);
+}
+
+// d3d12
+void RenderingDeviceDriverVulkan::begin_segment(uint32_t p_frame_index, uint32_t p_frames_drawn) {
+	// Per-frame segments are not required in Vulkan.
+}
+
+void RenderingDeviceDriverVulkan::end_segment() {
+	// Per-frame segments are not required in Vulkan.
 }

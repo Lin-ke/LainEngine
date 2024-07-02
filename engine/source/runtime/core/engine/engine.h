@@ -30,7 +30,7 @@ public:
 	/// --- configs
 	int32_t gpu_idx = 0;
 	bool generate_spirv_debug_info = false;
-	bool use_validation_layers = true;
+	bool use_validation_layers = false;
 	bool abort_on_gpu_errors = false; // quit on gpu errors
 public:
 	ENGINE_GET(get_gpu_index,gpu_idx);
