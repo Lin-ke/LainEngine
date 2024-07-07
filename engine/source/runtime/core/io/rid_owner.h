@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <typeinfo>
 namespace lain {
-
+// @todo read it!
 class RID_AllocBase {
 	static SafeNumeric<uint64_t> base_id;
 

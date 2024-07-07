@@ -14,6 +14,20 @@
 
 #include <climits>
 #include <initializer_list>
+
+template <class T, class = void>
+struct has_operator_neq: std::false_type { };
+
+template <class T>
+struct has_operator_neq<T, typename std::enable_if<std::is_same<decltype(static_cast<bool (T::*)(const T&) const>(&T::operator!=)),
+                                                             bool (T::*)(const T&) const>::value>::type> : std::true_type {};
+
+template <class T, class = void>
+struct has_operator_eq: std::false_type { };
+
+template <class T>
+struct has_operator_eq<T, typename std::enable_if<std::is_same<decltype(static_cast<bool (T::*)(const T&) const>(&T::operator==)),
+                                                             bool (T::*)(const T&) const>::value>::type> : std::true_type {};
 namespace lain {
 	 template <class T>
 	 class VectorWriteProxy {
@@ -175,9 +189,18 @@ namespace lain {
 				 return false;
 			 }
 			 for (int i = 0; i < s; i++) {
+				if constexpr (has_operator_eq<T>::value) {
+					if (!(operator[](i) == p_arr[i])) {
+						return false;
+					}
+				} else
+				if constexpr (has_operator_neq<T>::value) {
 				 if (operator[](i) != p_arr[i]) {
 					 return false;
-				 }
+				 }	
+				}
+				// 如果都没有重载会发生什么？报一条根本不可读的错误
+				
 			 }
 			 return true;
 		 }

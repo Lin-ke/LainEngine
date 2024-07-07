@@ -782,7 +782,7 @@ namespace lain {
 	// virtual String get_api_name() const = 0;
 	// virtual String get_api_version() const = 0;
 	// virtual String get_pipeline_cache_uuid() const = 0;
-	// virtual const Capabilities& get_capabilities() const = 0;
+	virtual const Capabilities& get_capabilities() const = 0;
 
 	/******************/
 	public:

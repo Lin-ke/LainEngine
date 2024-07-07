@@ -424,6 +424,9 @@ namespace lain {
 			DataFormat format = DATA_FORMAT_MAX;
 			uint32_t stride = 0;
 			VertexFrequency frequency = VERTEX_FREQUENCY_VERTEX;
+			bool operator==(const VertexAttribute &p_attr) const {
+			return location == p_attr.location && offset == p_attr.offset && format == p_attr.format && stride == p_attr.stride && frequency == p_attr.frequency;
+			}
 		};
 
 		/*********************/
@@ -868,7 +871,7 @@ public:
 		UniformType type = UniformType::UNIFORM_TYPE_MAX;
 		bool writable = false;
 		uint32_t binding = 0;
-		BitField<ShaderStage> stages;
+		BitField<ShaderStage> stages; // 一个uniform能在多个stage中出现吗？
 		uint32_t length = 0; // Size of arrays (in total elements), or ubos (in bytes * total elements).
 
 		bool operator!=(const ShaderUniform& p_other) const {
