@@ -330,7 +330,9 @@ RID RenderingDevice::texture_create(const TextureFormat& p_format, const Texture
 
   return id;
 }
+///
 /// --- screen ---
+///
 /// --- swap chain ---
 Error RenderingDevice::screen_create(WindowSystem::WindowID p_screen) {
   _THREAD_SAFE_METHOD_
@@ -343,7 +345,7 @@ Error RenderingDevice::screen_create(WindowSystem::WindowID p_screen) {
 
   RDD::SwapChainID swap_chain = driver->swap_chain_create(surface);
   ERR_FAIL_COND_V_MSG(swap_chain.id == 0, ERR_CANT_CREATE, "Unable to create swap chain.");
-
+  // 实际是这个create的
   Error err = driver->swap_chain_resize(main_queue, swap_chain, _get_swap_chain_desired_count());
   ERR_FAIL_COND_V_MSG(err != OK, ERR_CANT_CREATE, "Unable to resize the new swap chain.");
 
@@ -351,6 +353,84 @@ Error RenderingDevice::screen_create(WindowSystem::WindowID p_screen) {
 
   return OK;
 }
+
+Error RenderingDevice::screen_prepare_for_drawing(WindowSystem::WindowID p_screen) {
+	_THREAD_SAFE_METHOD_
+
+	HashMap<WindowSystem::WindowID, RDD::SwapChainID>::ConstIterator it = screen_swap_chains.find(p_screen);
+	ERR_FAIL_COND_V_MSG(it == screen_swap_chains.end(), ERR_CANT_CREATE, "A swap chain was not created for the screen.");
+
+	// Erase the framebuffer corresponding to this screen from the map in case any of the operations fail.
+	screen_framebuffers.erase(p_screen);
+
+	// If this frame has already queued this swap chain for presentation, we present it and remove it from the pending list.
+	uint32_t to_present_index = 0;
+	while (to_present_index < frames[frame].swap_chains_to_present.size()) {
+		if (frames[frame].swap_chains_to_present[to_present_index] == it->value) { // 好到这个交换链
+			driver->command_queue_execute_and_present(present_queue, {}, {}, {}, {}, it->value);
+			frames[frame].swap_chains_to_present.remove_at(to_present_index);
+		} else {
+			to_present_index++;
+		}
+	}
+
+	bool resize_required = false;
+	RDD::FramebufferID framebuffer = driver->swap_chain_acquire_framebuffer(main_queue, it->value, resize_required);
+	if (resize_required) {
+		// Flush everything so nothing can be using the swap chain before resizing it.
+		_flush_and_stall_for_all_frames();
+
+		Error err = driver->swap_chain_resize(main_queue, it->value, _get_swap_chain_desired_count());
+		if (err != OK) {
+			// Resize is allowed to fail silently because the window can be minimized.
+			return err;
+		}
+
+		framebuffer = driver->swap_chain_acquire_framebuffer(main_queue, it->value, resize_required);
+	}
+
+	ERR_FAIL_COND_V_MSG(framebuffer.id == 0, FAILED, "Unable to acquire framebuffer.");
+
+	// Store the framebuffer that will be used next to draw to this screen.
+	screen_framebuffers[p_screen] = framebuffer;
+	frames[frame].swap_chains_to_present.push_back(it->value);
+
+	return OK;
+}
+
+
+int RenderingDevice::screen_get_width(DisplayServer::WindowID p_screen) const {
+	_THREAD_SAFE_METHOD_
+	RenderingContextDriver::SurfaceID surface = context->surface_get_from_window(p_screen);
+	ERR_FAIL_COND_V_MSG(surface == 0, 0, "A surface was not created for the screen.");
+	return context->surface_get_width(surface);
+}
+
+int RenderingDevice::screen_get_height(DisplayServer::WindowID p_screen) const {
+	_THREAD_SAFE_METHOD_
+	RenderingContextDriver::SurfaceID surface = context->surface_get_from_window(p_screen);
+	ERR_FAIL_COND_V_MSG(surface == 0, 0, "A surface was not created for the screen.");
+	return context->surface_get_height(surface);
+}
+
+RenderingDevice::FramebufferFormatID RenderingDevice::screen_get_framebuffer_format(DisplayServer::WindowID p_screen) const {
+	_THREAD_SAFE_METHOD_
+
+	HashMap<DisplayServer::WindowID, RDD::SwapChainID>::ConstIterator it = screen_swap_chains.find(p_screen);
+	ERR_FAIL_COND_V_MSG(it == screen_swap_chains.end(), FAILED, "Screen was never prepared.");
+
+	DataFormat format = driver->swap_chain_get_format(it->value);
+	ERR_FAIL_COND_V(format == DATA_FORMAT_MAX, INVALID_ID);
+
+	AttachmentFormat attachment;
+	attachment.format = format;
+	attachment.samples = TEXTURE_SAMPLES_1;
+	attachment.usage_flags = TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+	Vector<AttachmentFormat> screen_attachment;
+	screen_attachment.push_back(attachment);
+	return const_cast<RenderingDevice *>(this)->framebuffer_format_create(screen_attachment);
+}
+
 
 uint32_t RenderingDevice::_get_swap_chain_desired_count() const {
   return MAX(3U, uint32_t(GLOBAL_GET("rendering/rendering_device/vsync/swapchain_image_count")));  // 这个也要调整吗

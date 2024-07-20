@@ -48,6 +48,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     ID_MASK = (ID_BASE_SHIFT - 1),
   };
 
+  typedef int64_t FramebufferFormatID;
  private:
   // 这个dependency map不应该在这里，应该在resource_tracker中吗？
   HashMap<RID, HashSet<RID>> dependency_map;          // IDs to IDs that depend on it.
@@ -61,10 +62,16 @@ class RenderingDevice : public RenderingDeviceCommons {
   HashMap<WindowSystem::WindowID, RDD::FramebufferID> screen_framebuffers;
 
  public:
+
   /****************/
   /**** SCREEN ****/
   /****************/
   Error screen_create(WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID);
+  Error screen_prepare_for_drawing(WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID);
+	int screen_get_width(WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID) const;
+	int screen_get_height(WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID) const;
+	FramebufferFormatID screen_get_framebuffer_format(WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID) const;
+	Error screen_free(WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID);
 
  private:
   uint32_t _get_swap_chain_desired_count() const;
@@ -319,7 +326,6 @@ class RenderingDevice : public RenderingDeviceCommons {
     int32_t vrs_attachment = ATTACHMENT_UNUSED;  // density map for VRS, only used if supported
   };
 
-  typedef int64_t FramebufferFormatID;
   // RenderPassformat的引入
   struct FramebufferFormatKey {
     Vector<AttachmentFormat> attachment_formats;
@@ -474,8 +480,8 @@ class RenderingDevice : public RenderingDeviceCommons {
     RDD::VertexFormatID driver_id;
   };
 
-  HashMap<VertexFormatID, VertexDescriptionCache> vertex_formats;
-  struct VertexArray {
+  HashMap<VertexFormatID, VertexDescriptionCache> vertex_formats; // 根据id快速找到format的缓存结构
+  struct VertexArray { // 顶点数组的抽象;
     RID buffer;
     VertexFormatID description;
     int vertex_count = 0;
@@ -488,7 +494,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     HashSet<RID> untracked_buffers;
   };
   RID_Owner<VertexArray> vertex_array_owner;
-  struct IndexBuffer : public Buffer {  // 噫，为啥vertex不继承buffer
+  struct IndexBuffer : public Buffer {  // vertex buffer 不需要buffer以外的信息
     uint32_t max_index = 0;             // Used for validation.
     uint32_t index_count = 0;
     IndexBufferFormat format = INDEX_BUFFER_FORMAT_UINT16;
@@ -1025,7 +1031,7 @@ class RenderingDevice : public RenderingDeviceCommons {
 
     // Swap chains prepared for drawing during the frame that must be
     // presented.
-    LocalVector<RDD::SwapChainID> swap_chains_to_present;
+    LocalVector<RDD::SwapChainID> swap_chains_to_present; // 交换链, 为什么一帧中会有多个交换链？
 
     struct Timestamp {
       String description;
