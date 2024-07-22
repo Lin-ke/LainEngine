@@ -327,11 +327,11 @@ Error RenderingContextDriverVulkan::_initialize_instance_extensions() {
 		ERR_FAIL_V(ERR_CANT_CREATE);
 	}
 
-#ifdef DEV_ENABLED
-	for (uint32_t i = 0; i < instance_extension_count; i++) {
-		print_verbose(String("VULKAN: Found instance extension ") + String::utf8(instance_extensions[i].extensionName) + String("."));
-	}
-#endif
+// #ifdef DEV_ENABLED
+// 	for (uint32_t i = 0; i < instance_extension_count; i++) {
+// 		print_verbose(String("VULKAN: Found instance extension ") + String::utf8(instance_extensions[i].extensionName) + String("."));
+// 	}
+// #endif
 
 
 	// Enable all extensions that are supported and requested.

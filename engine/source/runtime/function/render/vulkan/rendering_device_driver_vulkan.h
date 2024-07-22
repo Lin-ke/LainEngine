@@ -512,18 +512,12 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
 
     Size2i texel_size;  // The texel size we'll use
   };
+  // multi-view capabilities 被放到了更上一层，因为更通用吧
   struct StorageBufferCapabilities {
     bool storage_buffer_16_bit_access_is_supported = false;
     bool uniform_and_storage_buffer_16_bit_access_is_supported = false;
     bool storage_push_constant_16_is_supported = false;
     bool storage_input_output_16 = false;
-  };
-  struct MultiviewCapabilities {
-    bool is_supported = false;
-    bool geometry_shader_is_supported = false;
-    bool tessellation_shader_is_supported = false;
-    uint32_t max_view_count = 0;
-    uint32_t max_instance_count = 0;
   };
 
   struct SubgroupCapabilities {
@@ -616,7 +610,9 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   bool _recreate_image_semaphore(CommandQueue* p_command_queue, uint32_t p_semaphore_index, bool p_release_on_swap_chain);
 
  public:
+  /// --- limits --- 
   const RDD::Capabilities& get_capabilities() const { return device_capabilities; }
+  virtual const RDD::MultiviewCapabilities& get_multiview_capabilities() override final { return multiview_capabilities; }
   RenderingDeviceDriverVulkan(RenderingContextDriverVulkan* p_context_driver);
   virtual ~RenderingDeviceDriverVulkan();
 

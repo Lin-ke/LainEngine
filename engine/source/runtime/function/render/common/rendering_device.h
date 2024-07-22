@@ -278,7 +278,43 @@ class RenderingDevice : public RenderingDeviceCommons {
   /// 对于同一个frame
   /// buffer，不同的initialaction构成了不同的version，这在实际中真的有用吗
   enum InitialAction { INITIAL_ACTION_LOAD, INITIAL_ACTION_CLEAR, INITIAL_ACTION_DISCARD, INITIAL_ACTION_MAX };
+  struct ColorInitialAction{
+    uint32_t load_attach = 0;
+    uint32_t clear_attach = 0xffffffff;
+    uint32_t discard_attach = 0;
+    bool operator<(const ColorInitialAction& p_key) const {
+      if (load_attach != p_key.load_attach) {
+        return load_attach < p_key.load_attach;
+      }
+      if (clear_attach != p_key.clear_attach) {
+        return clear_attach < p_key.clear_attach;
+      }
+      if (discard_attach != p_key.discard_attach) {
+        return discard_attach < p_key.discard_attach;
+      }
+      return false;
+    }
+    bool operator==(const ColorInitialAction& p_key) const {
+      return load_attach == p_key.load_attach && clear_attach == p_key.clear_attach && discard_attach == p_key.discard_attach;
+    }
+  };
   enum FinalAction { FINAL_ACTION_STORE, FINAL_ACTION_DISCARD, FINAL_ACTION_MAX };
+  struct ColorFinalAction{
+    uint32_t store_attach = 0xffffffff;
+    uint32_t discard_attach = 0;
+    bool operator<(const ColorFinalAction& p_key) const {
+      if (store_attach != p_key.store_attach) {
+        return store_attach < p_key.store_attach;
+      }
+      if (discard_attach != p_key.discard_attach) {
+        return discard_attach < p_key.discard_attach;
+      }
+      return false;
+    }
+    bool operator==(const ColorFinalAction& p_key) const {
+      return store_attach == p_key.store_attach && discard_attach == p_key.discard_attach;
+    }
+  }; // 最多32个attachment
   /*********************/
   /**** RenderPass ****/
   /*********************/
@@ -290,9 +326,9 @@ class RenderingDevice : public RenderingDeviceCommons {
   // 这里就是在规定renderpass所用的framebuffer的格式
   struct AttachmentFormat {
     enum { UNUSED_ATTACHMENT = 0xFFFFFFFF };
-    DataFormat format;
-    TextureSamples samples;
-    uint32_t usage_flags;  // TextureUsageBits
+    DataFormat format;  // 数据格式
+    TextureSamples samples; // 有几个sample
+    uint32_t usage_flags;  // TextureUsageBits // 这里用uint32_t是为了方便
     AttachmentFormat() {
       format = DATA_FORMAT_R8G8B8A8_UNORM;
       samples = TEXTURE_SAMPLES_1;
@@ -336,7 +372,7 @@ class RenderingDevice : public RenderingDeviceCommons {
 
  private:
   RDD::RenderPassID _render_pass_create(const Vector<AttachmentFormat>& p_attachments, const Vector<FramebufferPass>& p_passes,
-                                        InitialAction p_initial_action, FinalAction p_final_action,
+                                        ColorInitialAction p_initial_action, ColorFinalAction p_final_action,
                                         InitialAction p_initial_depth_action, FinalAction p_final_depth_action,
                                         uint32_t p_view_count = 1, Vector<TextureSamples>* r_samples = nullptr);
   // This is a cache and it's never freed, it ensures
@@ -349,39 +385,35 @@ class RenderingDevice : public RenderingDeviceCommons {
     const RBMap<FramebufferFormatKey, FramebufferFormatID>::Element* E;
     RDD::RenderPassID render_pass;        // Here for constructing shaders, never used, see section
                                           // (7.2. Render Pass Compatibility from Vulkan spec).
-    Vector<TextureSamples> pass_samples;  // 为什么这两个变量在这个位置？
+    Vector<TextureSamples> pass_samples;  // 每个pass只能有一个固定的sample
     uint32_t view_count = 1;              // Number of views.
   };
   HashMap<FramebufferFormatID, FramebufferFormat> framebuffer_formats;
   struct Framebuffer {
     FramebufferFormatID format_id;
     struct VersionKey {  // version
-                         // 根据这些参数来区分（@todo，更正确的写法似乎是每个initial
-                         // action都是一个bitfiled，标记对哪些attachment做什么动作
-      InitialAction initial_color_action;
-      FinalAction final_color_action;
+                         // 根据view_count 和 op来区分不同的renderpass
+      ColorInitialAction initial_color_action;
+      ColorFinalAction final_color_action;
+
       InitialAction initial_depth_action;
       FinalAction final_depth_action;
       uint32_t view_count;
 
       bool operator<(const VersionKey& p_key) const {
-        if (initial_color_action == p_key.initial_color_action) {
-          if (final_color_action == p_key.final_color_action) {
-            if (initial_depth_action == p_key.initial_depth_action) {
-              if (final_depth_action == p_key.final_depth_action) {
-                return view_count < p_key.view_count;
-              } else {
-                return final_depth_action < p_key.final_depth_action;
-              }
-            } else {
-              return initial_depth_action < p_key.initial_depth_action;
-            }
-          } else {
-            return final_color_action < p_key.final_color_action;
-          }
-        } else {
+        if(!(initial_color_action == p_key.initial_color_action)) {
           return initial_color_action < p_key.initial_color_action;
         }
+        if(!(final_color_action == p_key.final_color_action)) {
+          return final_color_action < p_key.final_color_action;
+        }
+        if(!(initial_depth_action == p_key.initial_depth_action)) {
+          return initial_depth_action < p_key.initial_depth_action;
+        }
+        if(!(final_depth_action == p_key.final_depth_action)) {
+          return final_depth_action < p_key.final_depth_action;
+        }
+        return view_count < p_key.view_count;
       }
     };
 
@@ -404,6 +436,7 @@ class RenderingDevice : public RenderingDeviceCommons {
  public:
   // This ID is warranted to be unique for the same formats, does not need to be
   // freed
+  // framebuffer format就是renderpass
   FramebufferFormatID framebuffer_format_create(const Vector<AttachmentFormat>& p_format, uint32_t p_view_count = 1);
   FramebufferFormatID framebuffer_format_create_multipass(const Vector<AttachmentFormat>& p_attachments,
                                                           const Vector<FramebufferPass>& p_passes, uint32_t p_view_count = 1);
