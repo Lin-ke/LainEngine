@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
                   << "ms" << std::endl;
         return result;
     }
-    else
+    else 
     {
         std::cerr << "Arguments parse error!" << std::endl
                   << "Please call the tool like this:" << std::endl

@@ -1,5 +1,14 @@
 add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
+includes("setup/xmake_rules.lua")
+engine_version = "0.1.0"
+default_unity_batch = 16
+set_warnings("all")
+set_policy("build.ccache", false)
+set_policy("check.auto_ignore_flags", false)
+set_policy("build.warning", true)
+
 add_rules("mode.debug", "mode.release")
+
 add_requires( "assimp",  "zstd","glfw","imgui",  "zlib", "spdlog","tinyobjloader", "vulkan-headers")
 add_requires("mustache")
 target("Spirv-Reflect")
@@ -67,7 +76,7 @@ target("MetaParser")
         import ("setup.precompile_xmake",{alias = "precompile"})
         
         precompile()
-        proc = process.open((os.projectdir()) .. "/engine/bin/Parser.exe" .. " " .. precompile.get_parser_order())
+        proc = process.open((os.projectdir()) .. "\\engine\\bin\\Parser.exe" .. " " .. precompile.get_parser_order())
         if proc then
             proc:wait()
             proc:close()
@@ -116,66 +125,96 @@ target("CompileShader")
             -- lock:unlock()
         end
     )
-target("Renderer")
-    set_kind("binary")
+target("Core")
+    set_kind("static")
     set_languages("cxx17", "c99")
-    add_deps("Spirv-Reflect", "mbedtls", "smol-v")
+    add_headerfiles("engine/source/runtime/**.h") --- 这里包含了module.h
+    -- sourcve 
+    add_files("engine/source/runtime/core/**.cpp")
+    add_packages(
+        "assimp","glfw", "imgui", "zstd",  "zlib", "spdlog","tinyobjloader"
+    )
+    -- include path
+    add_includedirs("engine/source/runtime")
+    add_includedirs("engine/source")
     
-    add_includedirs("engine/thirdparty/volk")
-    add_includedirs("engine/thirdparty/vma")
-    add_includedirs("engine/thirdparty/misc")
-    add_headerfiles("engine/source/**.h")
-    add_files("engine/source/runtime/**.cpp")
-    add_files("engine/source/editor/**.cpp")
-    add_headerfiles("engine/source/_generated/**.h")
-    add_packages("assimp","glfw", "imgui", "zstd",  "zlib", "spdlog","tinyobjloader","vulkan-headers" )
-    add_includedirs("engine/source","engine/source/runtime", "engine/source/editor")
+    -- mbedtls
+    add_deps("mbedtls")
     -- stb_img
     -- json 11
-    add_includedirs("engine/thirdparty")
     add_includedirs("engine/thirdparty/stb_image")
     add_headerfiles("engine/thirdparty/json11/json11.hpp")
     add_files("engine/thirdparty/json11/json11.cpp")
     add_includedirs("engine/thirdparty/json11")
-    -- others
-    add_includedirs("engine/thirdparty")
-    -- spirv-reflect 用自己的
-    add_includedirs("engine/thirdparty/spirv-reflect")
-    -- vulkan
-    add_includedirs("$(env VULKAN_SDK)/Include")
-    add_linkdirs("$(env VULKAN_SDK)/Lib")
     -- fastlz
+    add_includedirs("engine/thirdparty", {public = true})
     add_includedirs("engine/thirdparty/misc")
     add_files("engine/thirdparty/misc/*.c")
-    -- add_files("engine/thirdparty/misc/*.cpp")
     add_headerfiles(("engine/thirdparty/misc/*.h"))
- 
-
-    add_defines{
-    "_CRT_SECURE_NO_WARNINGS",
-     "VULKAN_ENABLED",
-      "USE_VOLK",
-     "_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING",
-     "PRINT_NATIVE_COMMANDS"
-     }
-    
     if is_plat("windows") then
-        add_links("Ws2_32.lib")
-        add_links("Winmm.lib")
-        add_links("Version.lib")
-        add_links("Bcrypt.lib")
-        add_defines("L_PLATFORM_WINDOWS")
-        add_defines("_WIN32")
+        add_defines("L_PLATFORM_WINDOWS", {public = true})
     end
-    if is_mode("debug") then
+    -- resources
+    add_files("engine/source/runtime/resource/**.cpp")
+
+    if is_config("mode", "debug") then
         add_defines("L_DEBUG")
     end
-     target_end()
+    if is_config("mode", "release") then
+        add_defines("L_RELEASE")
+    end
+--- functions
+
+static_component("Renderer", "Core")
+    add_rules("mode.debug", "mode.release")
+    add_deps("Spirv-Reflect", "mbedtls", "smol-v")
+    set_languages("cxx17")
+    add_files("engine/source/runtime/function/render/**.cpp")
+    add_headerfiles("engine/source/runtime/function/display/**.h")
+
+    add_includedirs("engine/thirdparty/volk", {public = true})
+    add_includedirs("engine/thirdparty/vma", {public = true})
+     -- spirv-reflect 用自己的
+    add_includedirs("engine/thirdparty/spirv-reflect")
+    
+    add_includedirs("$(env VULKAN_SDK)/Include")
+    add_linkdirs("$(env VULKAN_SDK)/Lib", {public = true})
+    add_defines(
+    "_CRT_SECURE_NO_WARNINGS",
+     "PRINT_NATIVE_COMMANDS"
+    )
+    add_defines("VULKAN_ENABLED", {public = true})
+-- vulkan相关的需要继承宏vulkan_enabled
+static_component("Display", "Renderer")
+    set_languages("cxx17")
+    add_files("engine/source/runtime/function/display/**.cpp")
+
+static_component("Editor", "Core")
+    set_languages("cxx17")
+    add_files("engine/source/editor/**.cpp")
     
 
--- target ("Editor")
---     add_includedirs("engine/source","engine/source/runtime", "engine/source/editor")
---     add_files("engine/source/editor/**.cpp")
---     add_deps("LainRuntime")
---     set_kind("binary")
+target("main")
+    set_languages("cxx17")
+    set_kind("static")
+    add_files("engine/source/runtime/main/**.cpp")
+    add_includedirs("engine/source/runtime", {public = true})
+    add_deps("Core")
+    -- functions
+    add_deps("Renderer", "Display")
+    -- editor
+    add_deps("Editor")
+    -- modules?
 
+target("lain-windows")
+    set_languages("cxx17")
+    set_kind("binary")
+    add_files("engine/source/runtime/platform/**_windows.cpp")
+    add_files("engine/source/runtime/test/**.cpp")
+    add_deps("main")
+    add_links(
+        "BCrypt",
+        "Winmm"
+    )
+--- add modules
+includes("engine/source/module/**/xmake.lua")

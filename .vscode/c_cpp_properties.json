@@ -18,7 +18,6 @@
                 "${workspaceFolder}/engine/thirdparty/vma",
                 "${workspaceFolder}/engine/thirdparty",
                 "${workspaceFolder}/engine/thirdparty/misc",
-
                 "${workspaceFolder}/engine/source",
                 "${workspaceFolder}/engine/source/runtime",
                 "${workspaceFolder}/engine/source/editor",

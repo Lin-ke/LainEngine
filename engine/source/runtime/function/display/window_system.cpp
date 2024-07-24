@@ -6,7 +6,7 @@
 namespace lain {
 
     WindowSystem* WindowSystem::p_singleton = nullptr;
-    int WindowSystem::m_windowid = WindowSystem::MAIN_WINDOW_ID;
+    int WindowSystem::m_windowid = WindowSystem::MAIN_WINDOW_ID; // counter
 
     WindowSystem::~WindowSystem()
     {
@@ -144,7 +144,7 @@ namespace lain {
             wd.p_window = window;
             wd.hWnd = hwnd;
             
-
+            // 注意这里传入windowdata信息到context driver
             if (rendering_context) {
                 union {
     #ifdef VULKAN_ENABLED
@@ -328,7 +328,7 @@ namespace lain {
         create_info.vsync = p_vsync_mode;
         create_info.mode = p_mode;
         create_info.title =  GLOBAL_GET("application/config/name");
-        WindowID main_window = NewWindow(&create_info);
+        WindowID main_window = NewWindow(&create_info); // 这里window 的 need_resize 为true
 
         if (rendering_context) {
             rendering_device = memnew(graphics::RenderingDevice);
@@ -470,22 +470,21 @@ namespace lain {
         data.rect.position -= _get_screens_origin();
         return data.rect;
     }
-    // @TODO
     void WindowSystem::window_set_vsync_mode(VSyncMode p_vsync_mode, WindowID p_window) {
         _THREAD_SAFE_METHOD_
         if (rendering_context) {
             rendering_context->window_set_vsync_mode(p_window, p_vsync_mode);
         }
 
-        switch (p_vsync_mode) {
-        case VSYNC_DISABLED:
-        case VSYNC_ADAPTIVE:
-        case VSYNC_MAILBOX:
-            glfwSwapInterval(0);
-            break;
-        case VSYNC_ENABLED:
-            glfwSwapInterval(1);
-        }
+        // switch (p_vsync_mode) {
+        // case VSYNC_DISABLED:
+        // case VSYNC_ADAPTIVE:
+        // case VSYNC_MAILBOX:
+        //     glfwSwapInterval(0);
+        //     break;
+        // case VSYNC_ENABLED:
+        //     glfwSwapInterval(1);
+        // }
 
     }
 

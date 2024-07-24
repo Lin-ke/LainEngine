@@ -1,6 +1,6 @@
 #include "os_windows.h"
 #include <timeapi.h>
-#include "core/main/main.h"
+#include "main/main.h"
 #include "function/display/window_system.h"
 #include "core/config/project_settings.h"
 #include "platform/io/file_access_windows.h"

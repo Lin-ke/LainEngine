@@ -7,7 +7,7 @@
 #include <platform/os/os_windows.h>
 using namespace lain;
 #include "test/test_headers.h"
-#include "core/main/main.h"
+#include "main/main.h"
 #ifndef _TEST_
 
 int main() {

@@ -1159,6 +1159,14 @@ class RenderingDevice : public RenderingDeviceCommons {
   static RenderingDevice* get_singleton() { return singleton; }
   RenderingDeviceDriver* get_driver() { return driver; }
   const RDD::Capabilities& get_device_capabilities() const { return driver->get_capabilities(); }
+  // feature
+  bool is_feature_supported(Features p_feature) const{
+    return driver->is_feature_supported(p_feature);
+  }
+
+  static ShaderCompileToSPIRVFunction compile_to_spirv_function;
+	static ShaderCacheFunction cache_function;
+	static ShaderSPIRVGetCacheKeyFunction get_spirv_cache_key_function;
 
   RenderingContextDriver* get_context_driver() const { return context; }
   Error initialize(RenderingContextDriver* p_driver, WindowSystem::WindowID p_main_window);
@@ -1166,6 +1174,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     if (singleton == nullptr)
       singleton = this;
   }
+  // 
   ~RenderingDevice() {}
   void finalize();  // 主要清理dependency graph
   void free(RID p_id);

@@ -959,7 +959,7 @@ RDD::CommandQueueID RenderingDeviceDriverVulkan::command_queue_create(CommandQue
   TightLocalVector<Queue>& queue_family = queue_families[family_index];
   uint32_t picked_queue_index = UINT_MAX;
   uint32_t picked_virtual_count = UINT_MAX;
-  print_verbose("queue_family count", queue_family.size());  // 实际上只有一条队列,max_queue_count_per_family
+  // print_verbose("queue_family count", queue_family.size());  // 实际上只有一条队列,max_queue_count_per_family
   for (uint32_t i = 0; i < queue_family.size(); i++) {
     if (queue_family[i].virtual_count < picked_virtual_count) {
       picked_queue_index = i;
@@ -2158,6 +2158,7 @@ VmaPool RenderingDeviceDriverVulkan::_find_or_create_small_allocs_pool(uint32_t 
 /**** Swap Chain ****/
 /****************/
 // create swap chain对象
+// 该surface仅包含了一些必要信息
 RDD::SwapChainID RenderingDeviceDriverVulkan::swap_chain_create(RenderingContextDriver::SurfaceID p_surface) {
   DEV_ASSERT(p_surface != 0);
 
@@ -5010,4 +5011,20 @@ void RenderingDeviceDriverVulkan::begin_segment(uint32_t p_frame_index, uint32_t
 
 void RenderingDeviceDriverVulkan::end_segment() {
   // Per-frame segments are not required in Vulkan.
+}
+
+/// features
+bool RenderingDeviceDriverVulkan::is_feature_supported(Features p_feature) {
+	switch (p_feature) {
+		case SUPPORTS_MULTIVIEW:
+			return multiview_capabilities.is_supported && multiview_capabilities.max_view_count > 1;
+		case SUPPORTS_FSR_HALF_FLOAT:
+			return shader_capabilities.shader_float16_is_supported && physical_device_features.shaderInt16 && storage_buffer_capabilities.storage_buffer_16_bit_access_is_supported;
+		case SUPPORTS_ATTACHMENT_VRS:
+			return vrs_capabilities.attachment_vrs_supported && physical_device_features.shaderStorageImageExtendedFormats;
+		case SUPPORTS_FRAGMENT_SHADER_WITH_ONLY_SIDE_EFFECTS:
+			return true;
+		default:
+			return false;
+	}
 }

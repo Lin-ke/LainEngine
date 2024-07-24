@@ -615,7 +615,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   virtual const RDD::MultiviewCapabilities& get_multiview_capabilities() override final { return multiview_capabilities; }
   RenderingDeviceDriverVulkan(RenderingContextDriverVulkan* p_context_driver);
   virtual ~RenderingDeviceDriverVulkan();
-
+  virtual bool is_feature_supported(Features p_feature) override;
  private:
   using VersatileResource = VersatileResourceTemplate<BufferInfo, TextureInfo, VertexFormatInfo, ShaderInfo, UniformSetInfo>;
   PagedAllocator<VersatileResource> resources_allocator;

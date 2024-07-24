@@ -38,6 +38,7 @@ public:
 	ENGINE_GET(is_abort_on_gpu_errors_enabled, abort_on_gpu_errors);
 	ENGINE_GET(get_frame_ticks, m_frame_ticks);
 	ENGINE_SET(set_frame_ticks, ui64 ,m_frame_ticks);
+	ENGINE_GET(is_generate_spirv_debug_info_enabled, generate_spirv_debug_info);
 
 	Engine::Engine() {
 		singleton = this;

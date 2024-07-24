@@ -16,7 +16,6 @@ project "LainRuntime"
       defines{
          "_CRT_SECURE_NO_WARNINGS",
 		"GLFW_INCLUDE_NONE",
-      "USE_VOLK",
       "VULKAN_ENABLED",
       "VK_NO_PROTOTYPES",
       "_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING",

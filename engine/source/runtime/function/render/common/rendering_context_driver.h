@@ -16,6 +16,8 @@ private:
 	HashMap<WindowSystem::WindowID, SurfaceID> window_surface_map;
 
 public:
+// vulkan surface通过 platform()创建
+// swapchain在 renderingdevice里创建。
 	SurfaceID surface_get_from_window(WindowSystem::WindowID p_window) const;
 	Error window_create(WindowSystem::WindowID p_window, const void* p_platform_data);
 	void window_set_size(WindowSystem::WindowID p_window, uint32_t p_width, uint32_t p_height);

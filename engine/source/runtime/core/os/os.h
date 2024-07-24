@@ -1,7 +1,7 @@
 #pragma once
 #ifndef __OS_H__
 #define __OS_H__
-#include "runtime/base.h"
+#include "base.h"
 #include "memory.h"
 #include "thread_safe.h"
 #include "time_enums.h"

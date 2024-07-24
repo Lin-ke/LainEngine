@@ -4,6 +4,21 @@
 using namespace lain::graphics;
 using namespace lain;
 RenderingDevice* RenderingDevice::singleton = nullptr;
+RenderingDevice::ShaderCompileToSPIRVFunction RenderingDevice::compile_to_spirv_function = nullptr;
+RenderingDevice::ShaderCacheFunction RenderingDevice::cache_function = nullptr;
+RenderingDevice::ShaderSPIRVGetCacheKeyFunction RenderingDevice::get_spirv_cache_key_function = nullptr;
+void RenderingDevice::shader_set_compile_to_spirv_function(ShaderCompileToSPIRVFunction p_function) {
+	compile_to_spirv_function = p_function;
+}
+
+void RenderingDevice::shader_set_spirv_cache_function(ShaderCacheFunction p_function) {
+	cache_function = p_function;
+}
+
+void RenderingDevice::shader_set_get_cache_key_function(ShaderSPIRVGetCacheKeyFunction p_function) {
+	get_spirv_cache_key_function = p_function;
+}
+
 static String _get_device_vendor_name(const RenderingContextDriver::Device& p_device) {
   switch (p_device.vendor) {
     case RenderingContextDriver::VENDOR_AMD:
@@ -618,7 +633,7 @@ RID RenderingDevice::framebuffer_create_empty(const Size2i &p_size, TextureSampl
 	framebuffer.size = p_size;
 	framebuffer.view_count = 1;
 
-	RID id = framebuffer_owner.make_rid(framebuffer);
+	RID id = framebuffer_owner.make_rid(framebuffer); 
 #ifdef DEV_ENABLED
 	set_resource_name(id, "RID:" + itos(id.get_id()));
 #endif
@@ -945,3 +960,18 @@ void RenderingDevice::set_resource_name(RID p_id, const String &p_name) {
 	resource_names[p_id] = p_name;
 #endif
 }
+
+/// Shader compile 
+Vector<uint8_t> RenderingDevice::shader_compile_spirv_from_source(ShaderStage p_stage, const String &p_source_code, ShaderLanguage p_language, String *r_error, bool p_allow_cache) {
+	if (p_allow_cache && cache_function) {
+		Vector<uint8_t> cache = cache_function(p_stage, p_source_code, p_language);
+		if (cache.size()) {
+			return cache;
+		}
+	}
+
+	ERR_FAIL_NULL_V(compile_to_spirv_function, Vector<uint8_t>());
+
+	return compile_to_spirv_function(p_stage, p_source_code, p_language, r_error, this);
+}
+
