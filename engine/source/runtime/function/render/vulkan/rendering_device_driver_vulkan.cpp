@@ -3683,6 +3683,7 @@ void RenderingDeviceDriverVulkan::buffer_unmap(BufferID p_buffer) {
 /*******************/
 /****  PIPELINE ****/
 /*******************/
+/// pipeline里并没有framebuffer，只有各种state
 RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(
     ShaderID p_shader, VertexFormatID p_vertex_format, RenderPrimitive p_render_primitive,
     PipelineRasterizationState p_rasterization_state, PipelineMultisampleState p_multisample_state,
@@ -3970,7 +3971,7 @@ void RenderingDeviceDriverVulkan::command_bind_push_constants(CommandBufferID p_
 // ----- CACHE -----
 
 int RenderingDeviceDriverVulkan::caching_instance_count = 0;
-
+// @todo: readit
 bool RenderingDeviceDriverVulkan::pipeline_cache_create(const Vector<uint8_t>& p_data) {
   if (caching_instance_count) {
     WARN_PRINT(
@@ -4047,6 +4048,18 @@ void RenderingDeviceDriverVulkan::pipeline_cache_free() {
   DEV_ASSERT(caching_instance_count > 0);
   caching_instance_count--;
 }
+size_t RenderingDeviceDriverVulkan::pipeline_cache_query_size() {
+	DEV_ASSERT(pipelines_cache.vk_cache);
+
+	// FIXME:
+	// We're letting the cache grow unboundedly. We may want to set at limit and see if implementations use LRU or the like.
+	// If we do, we won't be able to assume any longer that the cache is dirty if, and only if, it has grown.
+	VkResult err = vkGetPipelineCacheData(vk_device, pipelines_cache.vk_cache, &pipelines_cache.current_size, nullptr);
+	ERR_FAIL_COND_V_MSG(err, 0, "vkGetPipelineCacheData failed with error " + itos(err) + ".");
+
+	return pipelines_cache.current_size;
+}
+
 
 /*******************/
 /**** RENDERING ****/

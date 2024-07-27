@@ -291,9 +291,6 @@ struct BuildIndexSequence<0, Is...> : IndexSequence<Is...> {};
 #define GD_IS_DEFINED(x) ___gd_is_defined(x)
 
 #define THREADING_NAMESPACE std
-#ifdef L_DEBUG
-#define DEBUG_ENABLED
-#endif // L_DEBUG
 
 
 #endif // TYPEDEFS_H

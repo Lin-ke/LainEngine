@@ -13,3 +13,7 @@ rendering_device/vulkan/max_descriptors_per_pool=64
 rendering_device/vulkan/present_wait_latency=1
 rendering_device/vsync/frame_queue_size=3
 rendering_device/vsync/swapchain_image_count=3
+rendering_device/staging_buffer/block_size_kb=256
+rendering_device/staging_buffer/max_size_mb=128
+rendering_device/staging_buffer/texture_upload_region_size_px=64
+rendering_device/pipeline_cache/enable=true

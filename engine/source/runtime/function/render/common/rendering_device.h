@@ -832,6 +832,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   // information used for validation. This
   // validation is cheap so most of it can
   // also run in release builds.
+  // @brief DrawList：视口，状态（管线、shader、driver、vertex和index）
 
   struct DrawList {
     Rect2i viewport;
@@ -1065,7 +1066,8 @@ class RenderingDevice : public RenderingDeviceCommons {
     // Swap chains prepared for drawing during the frame that must be
     // presented.
     LocalVector<RDD::SwapChainID> swap_chains_to_present; // 交换链, 为什么一帧中会有多个交换链？
-
+    // Extra command buffer pool used for driver workarounds.
+		// RDG::CommandBufferPool command_buffer_pool;
     struct Timestamp {
       String description;
       uint64_t value = 0;

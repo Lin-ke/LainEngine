@@ -897,7 +897,7 @@ public:
 			return false;
 		}
 	};
-	// 除了这里还有哪里需要管道特化常量？
+	// 管道特化在create_render_pass中传入，shader比之多了stage
 	struct ShaderSpecializationConstant : public PipelineSpecializationConstant {
 		BitField<ShaderStage> stages;
 

@@ -409,6 +409,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   // --- cache ---
   virtual bool pipeline_cache_create(const Vector<uint8_t>& p_data) override final;
   virtual void pipeline_cache_free() override final;
+  virtual size_t pipeline_cache_query_size() override final;
   /*******************/
   /**** RENDERING ****/
   /*******************/

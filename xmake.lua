@@ -158,10 +158,10 @@ target("Core")
     add_files("engine/source/runtime/resource/**.cpp")
 
     if is_config("mode", "debug") then
-        add_defines("L_DEBUG")
+        add_defines("L_DEBUG", "DEBUG_ENABLED", {public = true})
     end
     if is_config("mode", "release") then
-        add_defines("L_RELEASE")
+        add_defines("L_RELEASE", {public = true })
     end
 --- functions
 
