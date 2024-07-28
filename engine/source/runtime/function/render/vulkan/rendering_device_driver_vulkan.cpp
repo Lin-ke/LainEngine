@@ -1895,7 +1895,7 @@ Error RenderingDeviceDriverVulkan::_initialize_allocator() {
   return OK;
 }
 /// <summary>
-/// pipeline cache header
+/// pipeline cache header 初始化
 /// </summary>
 /// <returns></returns>
 Error RenderingDeviceDriverVulkan::_initialize_pipeline_cache() {
@@ -3971,7 +3971,7 @@ void RenderingDeviceDriverVulkan::command_bind_push_constants(CommandBufferID p_
 // ----- CACHE -----
 
 int RenderingDeviceDriverVulkan::caching_instance_count = 0;
-// @todo: readit
+
 bool RenderingDeviceDriverVulkan::pipeline_cache_create(const Vector<uint8_t>& p_data) {
   if (caching_instance_count) {
     WARN_PRINT(
@@ -4002,6 +4002,7 @@ bool RenderingDeviceDriverVulkan::pipeline_cache_create(const Vector<uint8_t>& p
         const uint8_t* loaded_buffer_start = p_data.ptr() + sizeof(PipelineCacheHeader);
         uint32_t loaded_buffer_size = p_data.size() - sizeof(PipelineCacheHeader);
         const PipelineCacheHeader* current_header = (PipelineCacheHeader*)pipelines_cache.buffer.ptr();
+        // 检验有效性
         if (loaded_header->data_hash != hash_murmur3_buffer(loaded_buffer_start, loaded_buffer_size) ||
             loaded_header->data_size != loaded_buffer_size || loaded_header->vendor_id != current_header->vendor_id ||
             loaded_header->device_id != current_header->device_id ||
@@ -4050,7 +4051,7 @@ void RenderingDeviceDriverVulkan::pipeline_cache_free() {
 }
 size_t RenderingDeviceDriverVulkan::pipeline_cache_query_size() {
 	DEV_ASSERT(pipelines_cache.vk_cache);
-
+  // 规范：如果p_data是NULL，则返回最大可缓存的大小
 	// FIXME:
 	// We're letting the cache grow unboundedly. We may want to set at limit and see if implementations use LRU or the like.
 	// If we do, we won't be able to assume any longer that the cache is dirty if, and only if, it has grown.
@@ -4059,8 +4060,25 @@ size_t RenderingDeviceDriverVulkan::pipeline_cache_query_size() {
 
 	return pipelines_cache.current_size;
 }
+// update
 
+Vector<uint8_t> RenderingDeviceDriverVulkan::pipeline_cache_serialize() {
+	DEV_ASSERT(pipelines_cache.vk_cache);
+  // 这次resize是上次query_size的结果
+	pipelines_cache.buffer.resize(pipelines_cache.current_size + sizeof(PipelineCacheHeader));
+	// 如果p_data_size比实际大，则只写入实际大小，并覆盖data_size； 并返回in_complete.
+  VkResult err = vkGetPipelineCacheData(vk_device, pipelines_cache.vk_cache, &pipelines_cache.current_size, pipelines_cache.buffer.ptrw() + sizeof(PipelineCacheHeader));
+	ERR_FAIL_COND_V(err != VK_SUCCESS && err != VK_INCOMPLETE, Vector<uint8_t>()); // Incomplete is OK because the cache may have grown since the size was queried (unless when exiting).
 
+	// The real buffer size may now be bigger than the updated current_size.
+	// We take into account the new size but keep the buffer resized in a worst-case fashion.
+
+	PipelineCacheHeader *header = (PipelineCacheHeader *)pipelines_cache.buffer.ptrw();
+	header->data_size = pipelines_cache.current_size;
+	header->data_hash = hash_murmur3_buffer(pipelines_cache.buffer.ptr() + sizeof(PipelineCacheHeader), pipelines_cache.current_size);
+
+	return pipelines_cache.buffer;
+}
 /*******************/
 /**** RENDERING ****/
 /*******************/
@@ -4930,7 +4948,8 @@ RDD::QueryPoolID RenderingDeviceDriverVulkan::timestamp_query_pool_create(uint32
   query_pool_create_info.queryCount = p_query_count;
 
   VkQueryPool vk_query_pool = VK_NULL_HANDLE;
-  vkCreateQueryPool(vk_device, &query_pool_create_info, nullptr, &vk_query_pool);
+  VkResult err = vkCreateQueryPool(vk_device, &query_pool_create_info, nullptr, &vk_query_pool);
+  ERR_FAIL_COND_V_MSG(err, RDD::QueryPoolID(), "vkCreateQueryPool failed with error " + itos(err) + ".");
   return RDD::QueryPoolID(vk_query_pool);
 }
 

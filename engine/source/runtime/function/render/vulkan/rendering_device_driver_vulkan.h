@@ -371,8 +371,8 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
  private:
   struct PipelineCacheHeader {
     uint32_t magic = 0;
-    uint32_t data_size = 0;
-    uint64_t data_hash = 0;
+    uint32_t data_size = 0; // 更新需要修改
+    uint64_t data_hash = 0; // 更新需要修改
     uint32_t vendor_id = 0;
     uint32_t device_id = 0;
     uint32_t driver_version = 0;
@@ -407,9 +407,15 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
                                            VectorView<uint32_t> p_data) override final;
 
   // --- cache ---
+  /// @brief 根据p_data创建pipeline cache，其中header已经初始化
+  /// @param p_data 
+  /// @return 
   virtual bool pipeline_cache_create(const Vector<uint8_t>& p_data) override final;
   virtual void pipeline_cache_free() override final;
   virtual size_t pipeline_cache_query_size() override final;
+  /// @brief vkGetPipelineCacheData，并且修改header
+  /// @return 
+  virtual Vector<uint8_t> pipeline_cache_serialize() override final;
   /*******************/
   /**** RENDERING ****/
   /*******************/

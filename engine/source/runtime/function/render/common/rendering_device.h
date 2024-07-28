@@ -50,7 +50,7 @@ class RenderingDevice : public RenderingDeviceCommons {
 
   typedef int64_t FramebufferFormatID;
  private:
-  // 这个dependency map不应该在这里，应该在resource_tracker中吗？
+  // RID到依赖它的ID(s)的映射，因此删除时需要删除依赖它的ID
   HashMap<RID, HashSet<RID>> dependency_map;          // IDs to IDs that depend on it.
   HashMap<RID, HashSet<RID>> reverse_dependency_map;  // Same as above, but in reverse.
 
@@ -794,6 +794,8 @@ class RenderingDevice : public RenderingDeviceCommons {
   WorkerThreadPool::TaskID pipeline_cache_save_task = WorkerThreadPool::INVALID_TASK_ID;
 
   Vector<uint8_t> _load_pipeline_cache();
+  /// @brief 
+  /// @param p_closing 关闭任务 
   void _update_pipeline_cache(bool p_closing = false);
   static void _save_pipeline_cache(void* p_data);
 
@@ -1085,7 +1087,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     uint64_t index = 0;
   };
 
-  uint32_t max_timestamp_query_elements = 0;
+  uint32_t max_timestamp_query_elements = 0; // 如果这种不初始化，编译器就会提示未初始化错误
 
   int frame = 0;
   TightLocalVector<Frame> frames;

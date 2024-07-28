@@ -1,6 +1,7 @@
 #include "rendering_device.h"
 #include "_generated/serializer/all_serializer.h"
 #include "core/engine/engine.h"
+#include "core/io/dir_access.h"
 using namespace lain::graphics;
 using namespace lain;
 RenderingDevice *RenderingDevice::singleton = nullptr;
@@ -19,11 +20,10 @@ void RenderingDevice::shader_set_get_cache_key_function(ShaderSPIRVGetCacheKeyFu
 	get_spirv_cache_key_function = p_function;
 }
 
-
 /***************************/
 /**** ID INFRASTRUCTURE ****/
 /***************************/
-// RID的依赖
+// 利用reverse_map，在删除时可以快速找到哪些资源被这个资源依赖，从而删除
 void RenderingDevice::_add_dependency(RID p_id, RID p_depends_on) {
 	if (!dependency_map.has(p_depends_on)) {
 		dependency_map[p_depends_on] = HashSet<RID>();
@@ -55,18 +55,14 @@ void RenderingDevice::_free_dependencies(RID p_id) {
 	if (E) {
 		for (const RID &F : E->value) {
 			HashMap<RID, HashSet<RID>>::Iterator G = dependency_map.find(F);
-			ERR_CONTINUE(!G);
+			ERR_CONTINUE(!G);// 说明建图发生了错误，但是仍然continue
 			ERR_CONTINUE(!G->value.has(p_id));
-			G->value.erase(p_id);
+			G->value.erase(p_id); 
 		}
 
-		reverse_dependency_map.remove(E);
+		reverse_dependency_map.remove(E); // 不再需要挨个free了
 	}
 }
-
-
-
-
 
 static String _get_device_vendor_name(const RenderingContextDriver::Device &p_device) {
 	switch (p_device.vendor) {
@@ -119,6 +115,23 @@ static uint32_t _get_device_type_score(const RenderingContextDriver::Device &p_d
 		default:
 			return 1;
 	}
+}
+
+/***************************/
+/**** BUFFER MANAGEMENT ****/
+/***************************/
+
+Error RenderingDevice::_insert_staging_block() {
+	StagingBufferBlock block;
+	// 每次分配一个staging_buffer_block_size大小的buffer，staging_buffer_block_size记载在project_settings
+	block.driver_id = driver->buffer_create(staging_buffer_block_size, RDD::BUFFER_USAGE_TRANSFER_FROM_BIT, RDD::MEMORY_ALLOCATION_TYPE_CPU);
+	ERR_FAIL_COND_V(!block.driver_id, ERR_CANT_CREATE);
+
+	// block.frame_used = 0;
+	// block.fill_amount = 0;
+
+	staging_buffer_blocks.insert(staging_buffer_current, block);
+	return OK;
 }
 /*********************/
 /**** (RenderPass) ****/
@@ -557,6 +570,12 @@ Error RenderingDevice::initialize(RenderingContextDriver *p_context, WindowSyste
 		frame_count = MAX(3U, uint32_t(GLOBAL_GET("rendering/rendering_device/vsync/frame_queue_size")));
 	}
 
+	frame = 0;
+	frames.resize(frame_count);
+	max_timestamp_query_elements = GLOBAL_GET("debug/settings/profiler/max_timestamp_query_elements");
+
+
+
 	device = context->device_get(device_index);
 
 	err = driver->initialize(device_index, frame_count);
@@ -660,15 +679,15 @@ Error RenderingDevice::initialize(RenderingContextDriver *p_context, WindowSyste
 	texture_upload_region_size_px = nearest_power_of_2_templated(texture_upload_region_size_px);
 
 	// Ensure current staging block is valid and at least one per frame exists.
+	// already initialized(when construct)
 	staging_buffer_current = 0;
 	staging_buffer_used = false;
-
+	// 每个frame都有一个staging block
 	for (uint32_t i = 0; i < frames.size(); i++) {
 		// Staging was never used, create a block.
 		err = _insert_staging_block();
 		ERR_FAIL_COND_V(err, FAILED);
 	}
-
 	draw_list = nullptr;
 	compute_list = nullptr;
 
@@ -694,8 +713,78 @@ Error RenderingDevice::initialize(RenderingContextDriver *p_context, WindowSyste
 	return OK;
 }
 
+Vector<uint8_t> RenderingDevice::_load_pipeline_cache() {
+	DirAccess::make_dir_recursive_absolute(pipeline_cache_file_path.get_base_dir());
 
+	if (FileAccess::exists(pipeline_cache_file_path)) {
+		Error file_error;
+		Vector<uint8_t> file_data = FileAccess::get_file_as_bytes(pipeline_cache_file_path, &file_error);
+		return file_data;
+	} else {
+		return Vector<uint8_t>();
+	}
+}
 
+void RenderingDevice::_update_pipeline_cache(bool p_closing) {
+	{
+		bool still_saving = pipeline_cache_save_task != WorkerThreadPool::INVALID_TASK_ID && !WorkerThreadPool::get_singleton()->is_task_completed(pipeline_cache_save_task);
+		if (still_saving) {
+			if (p_closing) {
+				WorkerThreadPool::get_singleton()->wait_for_task_completion(pipeline_cache_save_task);
+				pipeline_cache_save_task = WorkerThreadPool::INVALID_TASK_ID;
+			} else {
+				// We can't save until the currently running save is done. We'll retry next time; worst case, we'll save when exiting.
+				// @todo 做异步
+				return;
+			}
+		}
+	}
+
+	{ // 计算差别，若差别大于save_chunk_size_mb则保存
+		size_t new_pipelines_cache_size = driver->pipeline_cache_query_size();
+		ERR_FAIL_COND(!new_pipelines_cache_size);
+		size_t difference = new_pipelines_cache_size - pipeline_cache_size;
+
+		bool must_save = false;
+
+		if (p_closing) {
+			must_save = difference > 0;
+		} else {
+			float save_interval = GLOBAL_GET("rendering/rendering_device/pipeline_cache/save_chunk_size_mb");
+			must_save = difference > 0 && difference / (1024.0f * 1024.0f) >= save_interval;
+		}
+
+		if (must_save) {
+			pipeline_cache_size = new_pipelines_cache_size;
+		} else {
+			return;
+		}
+	}
+
+	if (p_closing) {
+		_save_pipeline_cache(this);
+	} else {
+		pipeline_cache_save_task = WorkerThreadPool::get_singleton()->add_native_task(&_save_pipeline_cache, this, false, "PipelineCacheSave");
+	}
+}
+
+void RenderingDevice::_save_pipeline_cache(void *p_data) {
+	RenderingDevice *self = static_cast<RenderingDevice *>(p_data);
+
+	self->_thread_safe_.lock();
+	Vector<uint8_t> cache_blob = self->driver->pipeline_cache_serialize();
+	self->_thread_safe_.unlock();
+
+	if (cache_blob.size() == 0) {
+		return;
+	}
+	print_verbose(vformat("Updated PSO cache (%.1f MiB)", cache_blob.size() / (1024.0f * 1024.0f)));
+
+	Ref<FileAccess> f = FileAccess::open(self->pipeline_cache_file_path, FileAccess::WRITE, nullptr);
+	if (f.is_valid()) {
+		f->store_buffer(cache_blob);
+	}
+}
 
 /// framebuffer
 RenderingDevice::FramebufferFormatID RenderingDevice::framebuffer_format_create(const Vector<AttachmentFormat> &p_format, uint32_t p_view_count) {
@@ -1162,11 +1251,11 @@ RID RenderingDevice::render_pipeline_create(RID p_shader, FramebufferFormatID p_
 	}
 
 	RDD::VertexFormatID driver_vertex_format;
-	if (p_vertex_format != INVALID_ID) {  // p_vertex_format指向VertexDescriptionCache，即内容和driver中的ID
+	if (p_vertex_format != INVALID_ID) { // p_vertex_format指向VertexDescriptionCache，即内容和driver中的ID
 		// Uses vertices, else it does not.
 		ERR_FAIL_COND_V(!vertex_formats.has(p_vertex_format), RID());
 		const VertexDescriptionCache &vd = vertex_formats[p_vertex_format];
-		driver_vertex_format = vertex_formats[p_vertex_format].driver_id; 
+		driver_vertex_format = vertex_formats[p_vertex_format].driver_id;
 
 		// Validate with inputs.
 		for (uint32_t i = 0; i < 64; i++) {
@@ -1353,4 +1442,120 @@ RID RenderingDevice::compute_pipeline_create(RID p_shader, const Vector<Pipeline
 	// Now add all the dependencies.
 	_add_dependency(id, p_shader);
 	return id;
+}
+
+/**************************/
+/**** FRAME MANAGEMENT ****/
+/**************************/
+/// free RID, 
+/// 1. free_dependencies
+/// 2. free_internal
+void RenderingDevice::free(RID p_id) {
+	_THREAD_SAFE_METHOD_
+
+	_free_dependencies(p_id); // Recursively erase dependencies first, to avoid potential API problems.
+	_free_internal(p_id);
+}
+
+void RenderingDevice::_free_internal(RID p_id) {
+#ifdef DEV_ENABLED
+	String resource_name;
+	if (resource_names.has(p_id)) {
+		resource_name = resource_names[p_id];
+		resource_names.erase(p_id);
+	}
+#endif
+
+// 	// Push everything so it's disposed of next time this frame index is processed (means, it's safe to do it).
+// 	if (texture_owner.owns(p_id)) {
+// 		Texture *texture = texture_owner.get_or_null(p_id);
+// 		RDG::ResourceTracker *draw_tracker = texture->draw_tracker;
+// 		if (draw_tracker != nullptr) {
+// 			draw_tracker->reference_count--;
+// 			if (draw_tracker->reference_count == 0) {
+// 				RDG::resource_tracker_free(draw_tracker);
+
+// 				if (texture->owner.is_valid() && (texture->slice_type != TEXTURE_SLICE_MAX)) {
+// 					// If this was a texture slice, erase the tracker from the map.
+// 					Texture *owner_texture = texture_owner.get_or_null(texture->owner);
+// 					if (owner_texture != nullptr) {
+// 						owner_texture->slice_trackers.erase(texture->slice_rect);
+// 					}
+// 				}
+// 			}
+// 		}
+
+// 		frames[frame].textures_to_dispose_of.push_back(*texture);
+// 		texture_owner.free(p_id);
+// 	} else if (framebuffer_owner.owns(p_id)) {
+// 		Framebuffer *framebuffer = framebuffer_owner.get_or_null(p_id);
+// 		frames[frame].framebuffers_to_dispose_of.push_back(*framebuffer);
+
+// 		if (framebuffer->invalidated_callback != nullptr) {
+// 			framebuffer->invalidated_callback(framebuffer->invalidated_callback_userdata);
+// 		}
+
+// 		framebuffer_owner.free(p_id);
+// 	} else if (sampler_owner.owns(p_id)) {
+// 		RDD::SamplerID sampler_driver_id = *sampler_owner.get_or_null(p_id);
+// 		frames[frame].samplers_to_dispose_of.push_back(sampler_driver_id);
+// 		sampler_owner.free(p_id);
+// 	} else if (vertex_buffer_owner.owns(p_id)) {
+// 		Buffer *vertex_buffer = vertex_buffer_owner.get_or_null(p_id);
+// 		RDG::resource_tracker_free(vertex_buffer->draw_tracker);
+// 		frames[frame].buffers_to_dispose_of.push_back(*vertex_buffer);
+// 		vertex_buffer_owner.free(p_id);
+// 	} else if (vertex_array_owner.owns(p_id)) {
+// 		vertex_array_owner.free(p_id);
+// 	} else if (index_buffer_owner.owns(p_id)) {
+// 		IndexBuffer *index_buffer = index_buffer_owner.get_or_null(p_id);
+// 		RDG::resource_tracker_free(index_buffer->draw_tracker);
+// 		frames[frame].buffers_to_dispose_of.push_back(*index_buffer);
+// 		index_buffer_owner.free(p_id);
+// 	} else if (index_array_owner.owns(p_id)) {
+// 		index_array_owner.free(p_id);
+// 	} else if (shader_owner.owns(p_id)) {
+// 		Shader *shader = shader_owner.get_or_null(p_id);
+// 		if (shader->driver_id) { // Not placeholder?
+// 			frames[frame].shaders_to_dispose_of.push_back(*shader);
+// 		}
+// 		shader_owner.free(p_id);
+// 	} else if (uniform_buffer_owner.owns(p_id)) {
+// 		Buffer *uniform_buffer = uniform_buffer_owner.get_or_null(p_id);
+// 		RDG::resource_tracker_free(uniform_buffer->draw_tracker);
+// 		frames[frame].buffers_to_dispose_of.push_back(*uniform_buffer);
+// 		uniform_buffer_owner.free(p_id);
+// 	} else if (texture_buffer_owner.owns(p_id)) {
+// 		Buffer *texture_buffer = texture_buffer_owner.get_or_null(p_id);
+// 		RDG::resource_tracker_free(texture_buffer->draw_tracker);
+// 		frames[frame].buffers_to_dispose_of.push_back(*texture_buffer);
+// 		texture_buffer_owner.free(p_id);
+// 	} else if (storage_buffer_owner.owns(p_id)) {
+// 		Buffer *storage_buffer = storage_buffer_owner.get_or_null(p_id);
+// 		RDG::resource_tracker_free(storage_buffer->draw_tracker);
+// 		frames[frame].buffers_to_dispose_of.push_back(*storage_buffer);
+// 		storage_buffer_owner.free(p_id);
+// 	} else if (uniform_set_owner.owns(p_id)) {
+// 		UniformSet *uniform_set = uniform_set_owner.get_or_null(p_id);
+// 		frames[frame].uniform_sets_to_dispose_of.push_back(*uniform_set);
+// 		uniform_set_owner.free(p_id);
+
+// 		if (uniform_set->invalidated_callback != nullptr) {
+// 			uniform_set->invalidated_callback(uniform_set->invalidated_callback_userdata);
+// 		}
+// 	} else if (render_pipeline_owner.owns(p_id)) {
+// 		RenderPipeline *pipeline = render_pipeline_owner.get_or_null(p_id);
+// 		frames[frame].render_pipelines_to_dispose_of.push_back(*pipeline);
+// 		render_pipeline_owner.free(p_id);
+// 	} else if (compute_pipeline_owner.owns(p_id)) {
+// 		ComputePipeline *pipeline = compute_pipeline_owner.get_or_null(p_id);
+// 		frames[frame].compute_pipelines_to_dispose_of.push_back(*pipeline);
+// 		compute_pipeline_owner.free(p_id);
+// 	} else {
+// #ifdef DEV_ENABLED
+// 		ERR_PRINT("Attempted to free invalid ID: " + itos(p_id.get_id()) + " " + resource_name);
+// #else
+// 		ERR_PRINT("Attempted to free invalid ID: " + itos(p_id.get_id()));
+// #endif
+// 	}
 }

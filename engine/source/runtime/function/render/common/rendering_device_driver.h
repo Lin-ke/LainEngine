@@ -570,7 +570,7 @@ namespace lain::graphics
 		virtual bool pipeline_cache_create(const Vector<uint8_t> &p_data) = 0;
 		virtual void pipeline_cache_free() = 0;
 		virtual size_t pipeline_cache_query_size() = 0;
-		// virtual Vector<uint8_t> pipeline_cache_serialize() = 0;
+		virtual Vector<uint8_t> pipeline_cache_serialize() = 0;
 		/*******************/
 		/**** RENDERING ****/
 		/*******************/

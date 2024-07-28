@@ -1,8 +1,8 @@
 #ifndef HASH_MAP_H
 #define HASH_MAP_H
 
-#include "core/os/memory.h"
 #include "core/math/hashfuncs.h"
+#include "core/os/memory.h"
 #include "core/templates/pair.h"
 //
 /**
@@ -23,18 +23,18 @@ namespace lain {
 template <class TKey, class TValue>
 // 双向链表
 struct HashMapElement {
-	HashMapElement* next = nullptr;
-	HashMapElement* prev = nullptr;
+	HashMapElement *next = nullptr;
+	HashMapElement *prev = nullptr;
 	KeyValue<TKey, TValue> data;
 	HashMapElement() {}
-	HashMapElement(const TKey& p_key, const TValue& p_value) :
-		data(p_key, p_value) {}
+	HashMapElement(const TKey &p_key, const TValue &p_value) :
+			data(p_key, p_value) {}
 };
 
 template <class TKey, class TValue,
-	class Hasher = HashMapHasherDefault,
-	class Comparator = HashMapComparatorDefault<TKey>,
-	class Allocator = DefaultTypedAllocator<HashMapElement<TKey, TValue>>>
+		class Hasher = HashMapHasherDefault,
+		class Comparator = HashMapComparatorDefault<TKey>,
+		class Allocator = DefaultTypedAllocator<HashMapElement<TKey, TValue>>>
 class HashMap {
 public:
 	static constexpr uint32_t MIN_CAPACITY_INDEX = 2; // Use a prime.
@@ -43,15 +43,15 @@ public:
 
 private:
 	Allocator element_alloc;
-	HashMapElement<TKey, TValue>** elements = nullptr;
-	uint32_t* hashes = nullptr;
-	HashMapElement<TKey, TValue>* head_element = nullptr;
-	HashMapElement<TKey, TValue>* tail_element = nullptr;
+	HashMapElement<TKey, TValue> **elements = nullptr;
+	uint32_t *hashes = nullptr;
+	HashMapElement<TKey, TValue> *head_element = nullptr;
+	HashMapElement<TKey, TValue> *tail_element = nullptr;
 
 	uint32_t capacity_index = 0;
 	uint32_t num_elements = 0;
 
-	_FORCE_INLINE_ uint32_t _hash(const TKey& p_key) const {
+	_FORCE_INLINE_ uint32_t _hash(const TKey &p_key) const {
 		uint32_t hash = Hasher::hash(p_key);
 
 		if (unlikely(hash == EMPTY_HASH)) {
@@ -66,7 +66,7 @@ private:
 		return fastmod(p_pos - original_pos + p_capacity, p_capacity_inv, p_capacity);
 	}
 
-	bool _lookup_pos(const TKey& p_key, uint32_t& r_pos) const {
+	bool _lookup_pos(const TKey &p_key, uint32_t &r_pos) const {
 		if (elements == nullptr || num_elements == 0) {
 			return false; // Failed lookups, no elements
 		}
@@ -96,11 +96,11 @@ private:
 		}
 	}
 
-	void _insert_with_hash(uint32_t p_hash, HashMapElement<TKey, TValue>* p_value) {
+	void _insert_with_hash(uint32_t p_hash, HashMapElement<TKey, TValue> *p_value) {
 		const uint32_t capacity = hash_table_size_primes[capacity_index];
 		const uint64_t capacity_inv = hash_table_size_primes_inv[capacity_index];
 		uint32_t hash = p_hash;
-		HashMapElement<TKey, TValue>* value = p_value;
+		HashMapElement<TKey, TValue> *value = p_value;
 		uint32_t distance = 0;
 		uint32_t pos = fastmod(hash, capacity_inv, capacity);
 
@@ -135,12 +135,12 @@ private:
 
 		uint32_t capacity = hash_table_size_primes[capacity_index];
 
-		HashMapElement<TKey, TValue>** old_elements = elements;
-		uint32_t* old_hashes = hashes;
+		HashMapElement<TKey, TValue> **old_elements = elements;
+		uint32_t *old_hashes = hashes;
 
 		num_elements = 0;
-		hashes = reinterpret_cast<uint32_t*>(Memory::alloc_static(sizeof(uint32_t) * capacity));
-		elements = reinterpret_cast<HashMapElement<TKey, TValue>**>(Memory::alloc_static(sizeof(HashMapElement<TKey, TValue> *) * capacity));
+		hashes = reinterpret_cast<uint32_t *>(Memory::alloc_static(sizeof(uint32_t) * capacity));
+		elements = reinterpret_cast<HashMapElement<TKey, TValue> **>(Memory::alloc_static(sizeof(HashMapElement<TKey, TValue> *) * capacity));
 
 		for (uint32_t i = 0; i < capacity; i++) {
 			hashes[i] = 0;
@@ -164,13 +164,13 @@ private:
 		Memory::free_static(old_hashes);
 	}
 
-	_FORCE_INLINE_ HashMapElement<TKey, TValue>* _insert(const TKey& p_key, const TValue& p_value, bool p_front_insert = false) {
+	_FORCE_INLINE_ HashMapElement<TKey, TValue> *_insert(const TKey &p_key, const TValue &p_value, bool p_front_insert = false) {
 		uint32_t capacity = hash_table_size_primes[capacity_index];
 		if (unlikely(elements == nullptr)) {
 			// Allocate on demand to save memory.
 
-			hashes = reinterpret_cast<uint32_t*>(Memory::alloc_static(sizeof(uint32_t) * capacity));
-			elements = reinterpret_cast<HashMapElement<TKey, TValue>**>(Memory::alloc_static(sizeof(HashMapElement<TKey, TValue> *) * capacity));
+			hashes = reinterpret_cast<uint32_t *>(Memory::alloc_static(sizeof(uint32_t) * capacity));
+			elements = reinterpret_cast<HashMapElement<TKey, TValue> **>(Memory::alloc_static(sizeof(HashMapElement<TKey, TValue> *) * capacity));
 
 			for (uint32_t i = 0; i < capacity; i++) {
 				hashes[i] = EMPTY_HASH;
@@ -184,25 +184,22 @@ private:
 		if (exists) {
 			elements[pos]->data.value = p_value;
 			return elements[pos];
-		}
-		else {
+		} else {
 			if (num_elements + 1 > MAX_OCCUPANCY * capacity) {
 				ERR_FAIL_COND_V_MSG(capacity_index + 1 == HASH_TABLE_SIZE_MAX, nullptr, "Hash table maximum capacity reached, aborting insertion.");
 				_resize_and_rehash(capacity_index + 1);
 			}
 			// Allocator 需要实现new_alloc
-			HashMapElement<TKey, TValue>* elem = element_alloc.new_allocation(HashMapElement<TKey, TValue>(p_key, p_value));
+			HashMapElement<TKey, TValue> *elem = element_alloc.new_allocation(HashMapElement<TKey, TValue>(p_key, p_value));
 
 			if (tail_element == nullptr) {
 				head_element = elem;
 				tail_element = elem;
-			}
-			else if (p_front_insert) {
+			} else if (p_front_insert) {
 				head_element->prev = elem;
 				elem->next = head_element;
 				head_element = elem;
-			}
-			else {
+			} else {
 				tail_element->next = elem;
 				elem->prev = tail_element;
 				tail_element = elem;
@@ -244,21 +241,21 @@ public:
 		num_elements = 0;
 	}
 
-	TValue& get(const TKey& p_key) {
+	TValue &get(const TKey &p_key) {
 		uint32_t pos = 0;
 		bool exists = _lookup_pos(p_key, pos);
 		CRASH_COND_MSG(!exists, "HashMap key not found.");
 		return elements[pos]->data.value;
 	}
 
-	const TValue& get(const TKey& p_key) const {
+	const TValue &get(const TKey &p_key) const {
 		uint32_t pos = 0;
 		bool exists = _lookup_pos(p_key, pos);
 		CRASH_COND_MSG(!exists, "HashMap key not found.");
 		return elements[pos]->data.value;
 	}
 
-	const TValue* getptr(const TKey& p_key) const {
+	const TValue *getptr(const TKey &p_key) const {
 		uint32_t pos = 0;
 		bool exists = _lookup_pos(p_key, pos);
 
@@ -268,7 +265,7 @@ public:
 		return nullptr;
 	}
 
-	TValue* getptr(const TKey& p_key) {
+	TValue *getptr(const TKey &p_key) {
 		uint32_t pos = 0;
 		bool exists = _lookup_pos(p_key, pos);
 
@@ -278,12 +275,12 @@ public:
 		return nullptr;
 	}
 
-	_FORCE_INLINE_ bool has(const TKey& p_key) const {
+	_FORCE_INLINE_ bool has(const TKey &p_key) const {
 		uint32_t _pos = 0;
 		return _lookup_pos(p_key, _pos);
 	}
 
-	bool erase(const TKey& p_key) {
+	bool erase(const TKey &p_key) {
 		uint32_t pos = 0;
 		bool exists = _lookup_pos(p_key, pos);
 
@@ -327,14 +324,14 @@ public:
 	}
 	// Replace the key of an entry in-place, without invalidating iterators or changing the entries position during iteration.
 	// p_old_key must exist in the map and p_new_key must not, unless it is equal to p_old_key.
-	bool replace_key(const TKey& p_old_key, const TKey& p_new_key) {
+	bool replace_key(const TKey &p_old_key, const TKey &p_new_key) {
 		if (p_old_key == p_new_key) {
 			return true;
 		}
 		uint32_t pos = 0;
 		ERR_FAIL_COND_V(_lookup_pos(p_new_key, pos), false);
 		ERR_FAIL_COND_V(!_lookup_pos(p_old_key, pos), false);
-		HashMapElement<TKey, TValue>* element = elements[pos];
+		HashMapElement<TKey, TValue> *element = elements[pos];
 
 		// Delete the old entries in hashes and elements.
 		const uint32_t capacity = hash_table_size_primes[capacity_index];
@@ -352,7 +349,7 @@ public:
 		num_elements--;
 
 		// Update the HashMapElement with the new key and reinsert it.
-		const_cast<TKey&>(element->data.key) = p_new_key;
+		const_cast<TKey &>(element->data.key) = p_new_key;
 		uint32_t hash = _hash(p_new_key);
 		_insert_with_hash(hash, element);
 
@@ -382,70 +379,70 @@ public:
 	/** Iterator API **/
 
 	struct ConstIterator {
-		_FORCE_INLINE_ const KeyValue<TKey, TValue>& operator*() const {
+		_FORCE_INLINE_ const KeyValue<TKey, TValue> &operator*() const {
 			return E->data;
 		}
-		_FORCE_INLINE_ const KeyValue<TKey, TValue>* operator->() const { return &E->data; }
-		_FORCE_INLINE_ ConstIterator& operator++() {
+		_FORCE_INLINE_ const KeyValue<TKey, TValue> *operator->() const { return &E->data; }
+		_FORCE_INLINE_ ConstIterator &operator++() {
 			if (E) {
 				E = E->next;
 			}
 			return *this;
 		}
-		_FORCE_INLINE_ ConstIterator& operator--() {
+		_FORCE_INLINE_ ConstIterator &operator--() {
 			if (E) {
 				E = E->prev;
 			}
 			return *this;
 		}
 
-		_FORCE_INLINE_ bool operator==(const ConstIterator& b) const { return E == b.E; }
-		_FORCE_INLINE_ bool operator!=(const ConstIterator& b) const { return E != b.E; }
+		_FORCE_INLINE_ bool operator==(const ConstIterator &b) const { return E == b.E; }
+		_FORCE_INLINE_ bool operator!=(const ConstIterator &b) const { return E != b.E; }
 
 		_FORCE_INLINE_ explicit operator bool() const {
 			return E != nullptr;
 		}
 
-		_FORCE_INLINE_ ConstIterator(const HashMapElement<TKey, TValue>* p_E) { E = p_E; }
+		_FORCE_INLINE_ ConstIterator(const HashMapElement<TKey, TValue> *p_E) { E = p_E; }
 		_FORCE_INLINE_ ConstIterator() {}
-		_FORCE_INLINE_ ConstIterator(const ConstIterator& p_it) { E = p_it.E; }
-		_FORCE_INLINE_ void operator=(const ConstIterator& p_it) {
+		_FORCE_INLINE_ ConstIterator(const ConstIterator &p_it) { E = p_it.E; }
+		_FORCE_INLINE_ void operator=(const ConstIterator &p_it) {
 			E = p_it.E;
 		}
 
 	private:
-		const HashMapElement<TKey, TValue>* E = nullptr;
+		const HashMapElement<TKey, TValue> *E = nullptr;
 	};
 
 	struct Iterator {
-		_FORCE_INLINE_ KeyValue<TKey, TValue>& operator*() const {
+		_FORCE_INLINE_ KeyValue<TKey, TValue> &operator*() const {
 			return E->data;
 		}
-		_FORCE_INLINE_ KeyValue<TKey, TValue>* operator->() const { return &E->data; }
-		_FORCE_INLINE_ Iterator& operator++() {
+		_FORCE_INLINE_ KeyValue<TKey, TValue> *operator->() const { return &E->data; }
+		_FORCE_INLINE_ Iterator &operator++() {
 			if (E) {
 				E = E->next;
 			}
 			return *this;
 		}
-		_FORCE_INLINE_ Iterator& operator--() {
+		_FORCE_INLINE_ Iterator &operator--() {
 			if (E) {
 				E = E->prev;
 			}
 			return *this;
 		}
 
-		_FORCE_INLINE_ bool operator==(const Iterator& b) const { return E == b.E; }
-		_FORCE_INLINE_ bool operator!=(const Iterator& b) const { return E != b.E; }
+		_FORCE_INLINE_ bool operator==(const Iterator &b) const { return E == b.E; }
+		_FORCE_INLINE_ bool operator!=(const Iterator &b) const { return E != b.E; }
 
 		_FORCE_INLINE_ explicit operator bool() const {
 			return E != nullptr;
 		}
 
-		_FORCE_INLINE_ Iterator(HashMapElement<TKey, TValue>* p_E) { E = p_E; }
+		_FORCE_INLINE_ Iterator(HashMapElement<TKey, TValue> *p_E) { E = p_E; }
 		_FORCE_INLINE_ Iterator() {}
-		_FORCE_INLINE_ Iterator(const Iterator& p_it) { E = p_it.E; }
-		_FORCE_INLINE_ void operator=(const Iterator& p_it) {
+		_FORCE_INLINE_ Iterator(const Iterator &p_it) { E = p_it.E; }
+		_FORCE_INLINE_ void operator=(const Iterator &p_it) {
 			E = p_it.E;
 		}
 
@@ -454,7 +451,7 @@ public:
 		}
 
 	private:
-		HashMapElement<TKey, TValue>* E = nullptr;
+		HashMapElement<TKey, TValue> *E = nullptr;
 	};
 
 	_FORCE_INLINE_ Iterator begin() {
@@ -467,7 +464,7 @@ public:
 		return Iterator(tail_element);
 	}
 
-	_FORCE_INLINE_ Iterator find(const TKey& p_key) {
+	_FORCE_INLINE_ Iterator find(const TKey &p_key) {
 		uint32_t pos = 0;
 		bool exists = _lookup_pos(p_key, pos);
 		if (!exists) {
@@ -476,7 +473,7 @@ public:
 		return Iterator(elements[pos]);
 	}
 
-	_FORCE_INLINE_ void remove(const Iterator& p_iter) {
+	_FORCE_INLINE_ void remove(const Iterator &p_iter) {
 		if (p_iter) {
 			erase(p_iter->key);
 		}
@@ -492,7 +489,7 @@ public:
 		return ConstIterator(tail_element);
 	}
 
-	_FORCE_INLINE_ ConstIterator find(const TKey& p_key) const {
+	_FORCE_INLINE_ ConstIterator find(const TKey &p_key) const {
 		uint32_t pos = 0;
 		bool exists = _lookup_pos(p_key, pos);
 		if (!exists) {
@@ -503,45 +500,44 @@ public:
 
 	/* Indexing */
 
-	const TValue& operator[](const TKey& p_key) const {
+	const TValue &operator[](const TKey &p_key) const {
 		uint32_t pos = 0;
 		bool exists = _lookup_pos(p_key, pos);
 		CRASH_COND(!exists);
 		return elements[pos]->data.value;
-	} 
-	
-	TValue& operator[](const TKey& p_key) {
+	}
+
+	TValue &operator[](const TKey &p_key) {
 		uint32_t pos = 0;
 		bool exists = _lookup_pos(p_key, pos);
 		if (!exists) {
 			return _insert(p_key, TValue())->data.value;
-		}
-		else {
+		} else {
 			return elements[pos]->data.value;
 		}
 	}
 
 	/* Insert */
 
-	Iterator insert(const TKey& p_key, const TValue& p_value, bool p_front_insert = false) {
+	Iterator insert(const TKey &p_key, const TValue &p_value, bool p_front_insert = false) {
 		return Iterator(_insert(p_key, p_value, p_front_insert));
 	}
 
 	/* Constructors */
 
-	HashMap(const HashMap& p_other) {
+	HashMap(const HashMap &p_other) {
 		reserve(hash_table_size_primes[p_other.capacity_index]);
 
 		if (p_other.num_elements == 0) {
 			return;
 		}
 
-		for (const KeyValue<TKey, TValue>& E : p_other) {
+		for (const KeyValue<TKey, TValue> &E : p_other) {
 			insert(E.key, E.value);
 		}
 	}
 
-	void operator=(const HashMap& p_other) {
+	void operator=(const HashMap &p_other) {
 		if (this == &p_other) {
 			return; // Ignore self assignment.
 		}
@@ -555,7 +551,7 @@ public:
 			return; // Nothing to copy.
 		}
 
-		for (const KeyValue<TKey, TValue>& E : p_other) {
+		for (const KeyValue<TKey, TValue> &E : p_other) {
 			insert(E.key, E.value);
 		}
 	}
@@ -593,6 +589,6 @@ public:
 		}
 	}
 };
-}
+} //namespace lain
 
 #endif // HASH_MAP_H

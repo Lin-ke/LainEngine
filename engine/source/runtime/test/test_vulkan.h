@@ -10,7 +10,10 @@ namespace lain::test {
 		String str = file->get_as_utf8_string();
 		RenderingDeviceDriver* driver = RenderingDevice::get_singleton()->get_driver();
 		auto a = driver->buffer_create(100, RDD::BUFFER_USAGE_UNIFORM_BIT, RDD::MEMORY_ALLOCATION_TYPE_CPU);
-		auto b = driver->texture_create({}, {} );
+		// auto b = driver->texture_create({}, {} );
+		RenderingDevice::get_singleton()->texture_create(
+			{}, {}
+		);
 		auto index = driver->command_queue_family_get(
 			RDD::CommandQueueFamilyBits::COMMAND_QUEUE_FAMILY_GRAPHICS_BIT
 		);
