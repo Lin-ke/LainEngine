@@ -79,7 +79,10 @@ public:
 		int32_t buffer_barrier_index = -1;
 		int32_t buffer_barrier_count = 0;
 #endif
-
+	
+		// 图：邻接表 adjacent commands
+		int32_t adjacent_command_list_index = -1;
+		
 	};
 
 	struct CommandBufferPool {
@@ -127,6 +130,8 @@ public:
 
 	struct ResourceTracker {
 		uint32_t ref_count = 0;
+		int64_t command_frame = -1;
+
 		ResourceUsage usage = RESOURCE_USAGE_NONE;
 		BitField<RDD::BarrierAccessBits> usage_access;
 		// buffer
@@ -138,6 +143,19 @@ public:
 
 		ResourceTracker *parent = nullptr;
 		bool in_parent_dirty_list = false;
+		_FORCE_INLINE_ void reset_if_outdated(int64_t new_command_frame) {
+			if (new_command_frame != command_frame) {
+				usage_access.clear();
+				command_frame = new_command_frame;
+				// read_full_command_list_index = -1;
+				// read_slice_command_list_index = -1;
+				// write_command_or_list_index = -1;
+				// draw_list_index = -1;
+				// compute_list_index = -1;
+				// texture_slice_command_index = -1;
+				// write_command_list_enabled = false;
+			}
+		}
 	};
 
 private:
@@ -189,6 +207,12 @@ private:
 
 			return index < p_other.index;
 		}
+	};
+
+	
+	struct RecordedCommandListNode {
+		int32_t command_index = -1;
+		int32_t next_list_index = -1;
 	};
 
 	struct RecordedBufferClearCommand : RecordedCommand {
@@ -523,6 +547,18 @@ private:
 	/// @param p_command_index 
 	/// @param r_command 
 	void _add_command_to_graph(ResourceTracker **p_resource_trackers, ResourceUsage *p_resource_usages, uint32_t p_resource_count, int32_t p_command_index, RecordedCommand *r_command);
+	/// @brief 
+	/// @param p_previous_command_index 
+	/// @param p_command_index 
+	/// @param r_command 
+	void _add_adjacent_command(int32_t p_previous_command_index, int32_t p_command_index, RecordedCommand *r_command);
+	/// @brief 
+	/// @param p_command_index 
+	/// @param p_list_index 
+	/// @return 
+	int32_t _add_to_command_list(int32_t p_command_index, int32_t p_list_index);
+	static bool _is_write_usage(ResourceUsage p_usage);
+	static RDD::BarrierAccessBits _usage_to_access_bits(ResourceUsage p_usage);
 
 public:
 	RenderingDeviceGraph();
@@ -577,11 +613,25 @@ public:
 	static void resource_tracker_free(ResourceTracker *tracker);
 
 	RDD *driver = nullptr;
-	int64_t tracking_frame = 0;
+	int64_t tracking_frame = 0; // 当前帧
 	uint32_t command_count = 0;
 	uint32_t frame = 0;
 	TightLocalVector<Frame> frames;
 	RBMap<ResourceTracker *, uint32_t> write_dependency_counters;
+	int32_t command_label_index = -1;
+
+	int32_t command_timestamp_index = -1; // previous timestamp command index
+
+	// 一个同步命令是否应当让所有命令等待 
+	bool command_synchronization_pending = false;
+	int32_t command_synchronization_index = -1; // previous synchronization command index
+
+	LocalVector<uint32_t> command_data_offsets; // 标记了每个data的offset
+	LocalVector<uint8_t> command_data; //
+
+	LocalVector<RecordedCommandListNode> command_list_nodes; // 邻接表节点数组，在recordcommand中通过id索引，插入是倒着的
+
+
 
 private:
 };
