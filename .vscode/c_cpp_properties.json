@@ -2,49 +2,34 @@
     "configurations": [
         {
             "name": "Win32",
-            // "includePath": [
-            //     "${workspaceFolder}/**",
-            //     "${workspaceFolder}/engine/thirdparty/spdlog/include",
-            //     "${workspaceFolder}/engine/thirdparty/glfw/include",
-            //     "${workspaceFolder}/engine/thirdparty/spirv-reflect",
-            //     "${workspaceFolder}/engine/thirdparty/imgui",
-            //     "${workspaceFolder}/engine/thirdparty/mustache",
-            //     "${workspaceFolder}/engine/thirdparty/json11",
-            //     "${workspaceFolder}/engine/thirdparty/stb_image",
-            //     "${workspaceFolder}/engine/thirdparty/mbedtls/include",
-            //     "${workspaceFolder}/engine/thirdparty/LLVM/include",
-            //     "${workspaceFolder}/engine/thirdparty/tinyobjloader",
-            //     "${workspaceFolder}/engine/thirdparty/volk",
-            //     "${workspaceFolder}/engine/thirdparty/vma",
-            //     "${workspaceFolder}/engine/thirdparty",
-            //     "${workspaceFolder}/engine/thirdparty/misc",
-            //     "${workspaceFolder}/engine/source",
-            //     "${workspaceFolder}/engine/source/runtime",
-            //     "${workspaceFolder}/engine/source/editor",
-            //     "${env:VULKAN_SDK}/Include"
-            // ],
-            // "defines": [
-            //     "_DEBUG",
-            //     "UNICODE",
-            //     "_UNICODE",
-            //     "_CRT_SECURE_NO_WARNINGS",
-            //     "GLFW_INCLUDE_NONE",
-            //   "USE_VOLK",
-            //   "VULKAN_ENABLED",
-            //   "VK_NO_PROTOTYPES",
-            //   "L_PLATFORM_WINDOWS",
-            //     "_WIN32",
-            //     "DEV_ENABLED"
-            // ],
             "windowsSdkVersion": "10.0.22621.0",
             "compilerPath": "cl.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "windows-msvc-x64",
-            "compileCommands": ".vscode/compile_commands.json"
-
+            "compileCommands": ".vscode/compile_commands.json",
+            "includePath": [
+                   "${workspaceFolder}/**",
+                "${workspaceFolder}/engine/thirdparty/spdlog/include",
+                "${workspaceFolder}/engine/thirdparty/glfw/include",
+                "${workspaceFolder}/engine/thirdparty/spirv-reflect",
+                "${workspaceFolder}/engine/thirdparty/imgui",
+                "${workspaceFolder}/engine/thirdparty/mustache",
+                "${workspaceFolder}/engine/thirdparty/json11",
+                "${workspaceFolder}/engine/thirdparty/stb_image",
+                "${workspaceFolder}/engine/thirdparty/mbedtls/include",
+                "${workspaceFolder}/engine/thirdparty/LLVM/include",
+                "${workspaceFolder}/engine/thirdparty/tinyobjloader",
+                "${workspaceFolder}/engine/thirdparty/volk",
+                "${workspaceFolder}/engine/thirdparty/vma",
+                "${workspaceFolder}/engine/thirdparty",
+                "${workspaceFolder}/engine/thirdparty/misc",
+                "${workspaceFolder}/engine/source",
+                "${workspaceFolder}/engine/source/runtime",
+                "${workspaceFolder}/engine/source/editor",
+                "${env:VULKAN_SDK}/Include"
+            ]
         }
-        
     ],
     "version": 4
 }

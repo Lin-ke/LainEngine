@@ -8,7 +8,7 @@
 #include "core/thread/worker_thread_pool.h"
 #include "rendering_device_commons.h"
 #include "rendering_device_driver.h"
-
+#include "rendering_device_graph.h"
 namespace lain::graphics {
 
 class RenderingDevice : public RenderingDeviceCommons {
@@ -1004,6 +1004,20 @@ class RenderingDevice : public RenderingDeviceCommons {
   void compute_list_add_barrier(ComputeListID p_list);
 
   void compute_list_end();
+  /***********************/
+	/**** COMMAND GRAPH ****/
+	/***********************/
+
+	bool _texture_make_mutable(Texture *p_texture, RID p_texture_id);
+	bool _buffer_make_mutable(Buffer *p_buffer, RID p_buffer_id);
+	bool _vertex_array_make_mutable(VertexArray *p_vertex_array, RID p_resource_id, RDG::ResourceTracker *p_resource_tracker);
+	bool _index_array_make_mutable(IndexArray *p_index_array, RDG::ResourceTracker *p_resource_tracker);
+	bool _uniform_set_make_mutable(UniformSet *p_uniform_set, RID p_resource_id, RDG::ResourceTracker *p_resource_tracker);
+	bool _dependency_make_mutable(RID p_id, RID p_resource_id, RDG::ResourceTracker *p_resource_tracker);
+	bool _dependencies_make_mutable(RID p_id, RDG::ResourceTracker *p_resource_tracker);
+
+	RenderingDeviceGraph draw_graph;
+
   /**************************/
   /**** QUEUE MANAGEMENT ****/
   /**************************/

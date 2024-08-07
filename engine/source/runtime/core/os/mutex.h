@@ -93,7 +93,7 @@ template <class MutexT>
 class MutexLock {
 	friend class ConditionVariable;
 
-	std::unique_lock<typename MutexT::StdMutexType> lock; 
+	THREADING_NAMESPACE::unique_lock<typename MutexT::StdMutexType> lock; 
 
 public:
 	// explicit constructor

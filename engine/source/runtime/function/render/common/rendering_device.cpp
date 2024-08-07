@@ -1559,3 +1559,60 @@ void RenderingDevice::_free_internal(RID p_id) {
 // #endif
 // 	}
 }
+
+
+/*******************/
+/**** DRAW LIST ****/
+/*******************/
+
+Error RenderingDevice::_draw_list_allocate(const Rect2i &p_viewport, uint32_t p_subpass) {
+	// Lock while draw_list is active.
+	_THREAD_SAFE_LOCK_
+
+	draw_list = memnew(DrawList);
+	draw_list->viewport = p_viewport;
+
+	return OK;
+}
+
+
+RenderingDevice::DrawListID RenderingDevice::draw_list_begin_for_screen(WindowSystem::WindowID p_screen, const Color &p_clear_color) {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V_MSG(draw_list != nullptr, INVALID_ID, "Only one draw list can be active at the same time.");
+	ERR_FAIL_COND_V_MSG(compute_list != nullptr, INVALID_ID, "Only one draw/compute list can be active at the same time.");
+
+	RenderingContextDriver::SurfaceID surface = context->surface_get_from_window(p_screen);
+	HashMap<WindowSystem::WindowID, RDD::SwapChainID>::ConstIterator sc_it = screen_swap_chains.find(p_screen);
+	HashMap<WindowSystem::WindowID, RDD::FramebufferID>::ConstIterator fb_it = screen_framebuffers.find(p_screen);
+	ERR_FAIL_COND_V_MSG(surface == 0, 0, "A surface was not created for the screen.");
+	ERR_FAIL_COND_V_MSG(sc_it == screen_swap_chains.end(), INVALID_ID, "Screen was never prepared.");
+	ERR_FAIL_COND_V_MSG(fb_it == screen_framebuffers.end(), INVALID_ID, "Framebuffer was never prepared.");
+	// 这里使用了context的api，而非window_system的api
+	Rect2i viewport = Rect2i(0, 0, context->surface_get_width(surface), context->surface_get_height(surface));
+
+	_draw_list_allocate(viewport, 0);
+#ifdef DEBUG_ENABLED
+	draw_list_framebuffer_format = screen_get_framebuffer_format(p_screen);
+#endif
+	draw_list_subpass_count = 1;
+
+	RDD::RenderPassClearValue clear_value;
+	clear_value.color = p_clear_color;
+
+	RDD::RenderPassID render_pass = driver->swap_chain_get_render_pass(sc_it->value);
+	draw_graph.add_draw_list_begin(render_pass, fb_it->value, viewport, clear_value, true, false);
+
+	_draw_list_set_viewport(viewport);
+	_draw_list_set_scissor(viewport);
+
+	return int64_t(ID_TYPE_DRAW_LIST) << ID_BASE_SHIFT;
+}
+
+void RenderingDevice::_draw_list_set_viewport(Rect2i p_rect) {
+	draw_graph.add_draw_list_set_viewport(p_rect);
+}
+
+void RenderingDevice::_draw_list_set_scissor(Rect2i p_rect) {
+	draw_graph.add_draw_list_set_scissor(p_rect);
+}
