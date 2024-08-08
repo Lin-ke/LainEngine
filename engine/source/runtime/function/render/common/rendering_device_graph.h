@@ -127,10 +127,22 @@ public:
 		RESOURCE_USAGE_ATTACHMENT_COLOR_READ_WRITE,
 		RESOURCE_USAGE_ATTACHMENT_DEPTH_STENCIL_READ_WRITE
 	};
-
+	// tracker保存对资源写入和读取的命令的引用
+	//  当命令以只读方式使用资源时，对该命令的引用将存储在资源跟踪器的列表中。对命令的引用放置在写入资源的最后一个操作的邻接列表中。
+	// 当命令以读写方式使用资源时，对该命令的引用将存储在资源跟踪器中，替换前一个命令并清除从该资源读取的命令列表。对命令的引用放置在读取或写入资源的所有操作的邻接列表中。
+	// 纹理有一个例外：如果操作必须更改使用类型，则该操作将被视为正在写入资源，因为需要内存布局转换。两个操作是否都是只读并不重要：无论如何都会建立写入依赖关系。这是值得记住的，因为如果纹理的使用经常变化，图表就会认为操作是相关的。
 	struct ResourceTracker {
 		uint32_t ref_count = 0;
 		int64_t command_frame = -1;
+		
+		// reference of commands
+		int32_t read_full_cmd_idx = -1;
+		int32_t read_slice_cmd_idx = -1;
+		int32_t write_cmd_idx = -1;
+		int32_t draw_idx = -1;
+		int32_t compute_idx = -1;
+
+
 
 		ResourceUsage usage = RESOURCE_USAGE_NONE;
 		BitField<RDD::BarrierAccessBits> usage_access;
@@ -140,6 +152,7 @@ public:
 		RDD::TextureID texture_driver_id; // .id = 0
 		RDD::TextureSubresourceRange texture_subresources;
 		uint32_t texture_usage;
+		int32_t texture_slice_cmd_idx = -1;
 
 		ResourceTracker *parent = nullptr;
 		bool in_parent_dirty_list = false;
@@ -147,14 +160,20 @@ public:
 			if (new_command_frame != command_frame) {
 				usage_access.clear();
 				command_frame = new_command_frame;
-				// read_full_command_list_index = -1;
-				// read_slice_command_list_index = -1;
-				// write_command_or_list_index = -1;
-				// draw_list_index = -1;
-				// compute_list_index = -1;
-				// texture_slice_command_index = -1;
-				// write_command_list_enabled = false;
+				read_full_cmd_idx = -1;
+				read_slice_cmd_idx = -1;
+				write_cmd_idx = -1;
+				draw_idx = -1;
+				compute_idx = -1;
+				texture_slice_cmd_idx = -1;
+
 			}
+		}
+		L_INLINE bool is_buffer() const {
+			return buffer_driver_id.id != 0;
+		}
+		L_INLINE bool is_texture() const {
+			return texture_driver_id.id != 0;
 		}
 	};
 
@@ -559,6 +578,17 @@ private:
 	int32_t _add_to_command_list(int32_t p_command_index, int32_t p_list_index);
 	static bool _is_write_usage(ResourceUsage p_usage);
 	static RDD::BarrierAccessBits _usage_to_access_bits(ResourceUsage p_usage);
+	/// @brief add_barrier
+	/// @param p_texture_id 
+	/// @param p_src_access 
+	/// @param p_dst_access 
+	/// @param p_prev_usage 
+	/// @param p_next_usage 
+	/// @param p_subresources 
+	/// @param r_barrier_vector 
+	/// @param r_barrier_index 
+	/// @param r_barrier_count 
+	void _add_texture_barrier_to_command(RDD::TextureID p_texture_id, BitField<RDD::BarrierAccessBits> p_src_access, BitField<RDD::BarrierAccessBits> p_dst_access, ResourceUsage p_prev_usage, ResourceUsage p_next_usage, RDD::TextureSubresourceRange p_subresources, LocalVector<RDD::TextureBarrier> &r_barrier_vector, int32_t &r_barrier_index, int32_t &r_barrier_count);
 
 public:
 	RenderingDeviceGraph();

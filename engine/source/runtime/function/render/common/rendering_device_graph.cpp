@@ -122,11 +122,32 @@ void RDG::_add_command_to_graph(ResourceTracker **p_resource_trackers, ResourceU
 		BitField<RDD::BarrierAccessBits> new_usage_access = _usage_to_access_bits(new_resource_usage);
 		bool is_resource_a_slice = resource_tracker->parent != nullptr;
         if(is_resource_a_slice) {
+			// This resource depends on a parent resource.
         }
         else{
 
         }
-        // search operation
+        // 如果只是一个切片就用父亲的
+		bool resource_has_parent = resource_tracker->parent != nullptr;
+		ResourceTracker *search_tracker = resource_has_parent ? resource_tracker->parent : resource_tracker;
+
+		bool diff_usage = resource_tracker->usage != new_resource_usage;
+		bool write_usage_after_write = (write_usage && search_tracker->write_cmd_idx >= 0);
+
+		if (diff_usage || write_usage_after_write) {
+			// A barrier must be pushed if the usage is different of it's a write usage and there was already a command that wrote to this resource previously.
+			// 在之前cmd完成之前等待
+			if (resource_tracker->is_texture()){
+				if (resource_tracker->usage_access.is_empty()) {
+					// FIXME: If the tracker does not know the previous type of usage, assume the generic memory write one.
+					// Tracking access bits across texture slices can be tricky, so this failsafe can be removed once that's improved.
+					resource_tracker->usage_access = RDD::BARRIER_ACCESS_MEMORY_WRITE_BIT; // 假定之前是写，现在又写
+				}
+				_add_texture_barrier_to_command(resource_tracker->texture_driver_id, resource_tracker->usage_access, new_usage_access, resource_tracker->usage, new_resource_usage, resource_tracker->texture_subresources, command_transition_barriers, r_command->transition_barrier_index, r_command->transition_barrier_count);
+			}
+
+		}
+
     }
 
 
