@@ -28,15 +28,19 @@ struct _NO_DISCARD_ Rect2i {
 			ERR_PRINT("Rect2i size is negative, this is not supported. Use Rect2i.abs() to get a Rect2i with a positive size.");
 		}
 #endif
+		// 左边大于右边
 		if (position.x >= (p_rect.position.x + p_rect.size.x)) {
 			return false;
 		}
+		// 右边小于左边
 		if ((position.x + size.x) <= p_rect.position.x) {
 			return false;
 		}
+		// 上边大于下边
 		if (position.y >= (p_rect.position.y + p_rect.size.y)) {
 			return false;
 		}
+		// 下边小于上边
 		if ((position.y + size.y) <= p_rect.position.y) {
 			return false;
 		}

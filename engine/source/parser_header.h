@@ -141,6 +141,7 @@
 #include  "D:/LainEngine/engine/source/runtime/function/render/common/rendering_device_bind.h"
 #include  "D:/LainEngine/engine/source/runtime/function/render/common/rendering_device_commons.h"
 #include  "D:/LainEngine/engine/source/runtime/function/render/common/rendering_device_driver.h"
+#include  "D:/LainEngine/engine/source/runtime/function/render/common/rendering_device_graph.h"
 #include  "D:/LainEngine/engine/source/runtime/function/render/common/rendering_graph.h"
 #include  "D:/LainEngine/engine/source/runtime/function/render/common/render_pass.h"
 #include  "D:/LainEngine/engine/source/runtime/function/render/common/render_state.h"

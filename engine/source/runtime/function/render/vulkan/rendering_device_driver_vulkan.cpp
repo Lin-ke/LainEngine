@@ -3420,8 +3420,8 @@ void RenderingDeviceDriverVulkan::command_pipeline_barrier(CommandBufferID p_cmd
     vk_buffer_barriers[i].srcAccessMask = _rd_to_vk_access_flags(p_buffer_barriers[i].src_access);
     vk_buffer_barriers[i].dstAccessMask = _rd_to_vk_access_flags(p_buffer_barriers[i].dst_access);
     vk_buffer_barriers[i].buffer = ((const BufferInfo*)p_buffer_barriers[i].buffer.id)->vk_buffer;
-    vk_buffer_barriers[i].offset = p_buffer_barriers[i].offset;
-    vk_buffer_barriers[i].size = p_buffer_barriers[i].size;
+    vk_buffer_barriers[i].offset = p_buffer_barriers[i].range.offset;
+    vk_buffer_barriers[i].size = p_buffer_barriers[i].range.size;
   }
 
   VkImageMemoryBarrier* vk_image_barriers = ALLOCA_ARRAY(VkImageMemoryBarrier, p_texture_barriers.size());

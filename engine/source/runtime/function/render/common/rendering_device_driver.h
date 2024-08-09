@@ -167,6 +167,7 @@ namespace lain::graphics
 		/*****************/
 		// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkBufferUsageFlagBits.html
 
+		
 		enum BufferUsageBits
 		{
 			BUFFER_USAGE_TRANSFER_FROM_BIT = (1 << 0),
@@ -183,6 +184,12 @@ namespace lain::graphics
 		{
 			BUFFER_WHOLE_SIZE = ~0ULL
 		};
+
+		struct BufferRange{
+			uint64_t offset = 0;
+			uint64_t size = BUFFER_WHOLE_SIZE;
+		};
+
 
 		virtual BufferID buffer_create(uint64_t p_size, BitField<BufferUsageBits> p_usage, MemoryAllocationType p_allocation_type) = 0;
 		virtual bool buffer_set_texel_format(BufferID p_buffer, DataFormat p_format) = 0;
@@ -251,7 +258,7 @@ namespace lain::graphics
 			uint32_t layer = 0;
 			uint32_t mipmap = 0;
 		};
-
+		//https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkImageSubresourceLayers.html
 		struct TextureSubresourceLayers
 		{
 			BitField<TextureAspectBits> aspect;
@@ -259,7 +266,7 @@ namespace lain::graphics
 			uint32_t base_layer = 0;
 			uint32_t layer_count = 0;
 		};
-
+		//https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkImageSubresourceRange.html
 		struct TextureSubresourceRange
 		{
 			BitField<TextureAspectBits> aspect;
@@ -367,8 +374,7 @@ namespace lain::graphics
 			BufferID buffer;
 			BitField<BarrierAccessBits> src_access;
 			BitField<BarrierAccessBits> dst_access;
-			uint64_t offset = 0;
-			uint64_t size = 0;
+			BufferRange range;
 		};
 
 		struct TextureBarrier
