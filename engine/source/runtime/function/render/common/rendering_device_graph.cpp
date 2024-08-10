@@ -111,7 +111,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
     // If a label is active, tag the command with the label.
     r_command->label_index = command_label_index;
   }
-
+  // timestamp和synchronization是特殊的command，需要单独处理(需要将之前的命令与该命令相连)
   if (r_command->type == RecordedCommand::TYPE_CAPTURE_TIMESTAMP) {
     // All previous commands starting from the previous timestamp should be adjacent to this command.
     int32_t start_command_index = uint32_t(MAX(command_timestamp_index, 0));
@@ -139,23 +139,14 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
     // Synchronization command should be adjacent to this command.
     _add_adjacent_command(command_synchronization_index, p_command_index, r_command);
   }
-  // 根据resource tracker
+
+  // 根据resource tracker添加barrier
   for (uint32_t i = 0; i < p_resource_count; i++) {
     ResourceTracker* resource_tracker = p_resource_trackers[i];
     DEV_ASSERT(resource_tracker != nullptr);
-    Rect2i resource_tracker_rect;
     resource_tracker->reset_if_outdated(tracking_frame);
-    if (resource_tracker->is_texture()) {
-      const RDD::TextureSubresourceRange& subresources = resource_tracker->texture_subresources;
-      resource_tracker_rect = Rect2i(subresources.base_mipmap, subresources.base_layer,
-                                     subresources.mipmap_count, subresources.layer_count);
-    } else if (resource_tracker->is_buffer()) {
-      const RDD::BufferRange& buffer_range = resource_tracker->buffer_range;
-      resource_tracker_rect = Rect2i(buffer_range.offset, 0, buffer_range.size, 0);
-    } else {
-      DEV_ASSERT(false && "Resource tracker does not contain a valid buffer or texture ID.");
-    }
-
+    const Rect2i resource_tracker_rect = resource_tracker->get_subresources();
+    
     Rect2i search_tracker_rect = resource_tracker_rect;
 
     ResourceUsage new_resource_usage = p_resource_usages[i];
@@ -173,7 +164,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
 
     bool diff_usage = resource_tracker->usage != new_resource_usage;
     bool write_usage_after_write = (write_usage && search_tracker->write_cmd_idx >= 0);
-
+    // 添加barrier
     if (diff_usage || write_usage_after_write) {
       // A barrier must be pushed if the usage is different of it's a write usage and there was already a command that wrote to this resource previously.
       // 在之前cmd完成之前等待
@@ -213,7 +204,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
       write_usage = true;
       resource_tracker->usage = new_resource_usage;
     }
-    if (search_tracker->has_write()) {
+    if (search_tracker->has_write() && search_tracker->write_cmd_list_enable ) {
       // Make this command adjacent to any commands that wrote to this resource and intersect with the slice if it applies.
       // For buffers or textures that never use slices, this list will only be one element long at most.
       int32_t write_cmd_idx = search_tracker->write_cmd_idx; // 能保证write_cmd_idx都是属于该资源的
@@ -231,6 +222,8 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
             if (resource_has_parent && write_usage &&
                 search_tracker_rect.encloses(write_list_node.subresources)) {
               // Eliminate redundant writes from the list.
+              // 如果要写切片，并且写的范围比该命令的范围大，就不需要之前的写了
+              // 但是，此时的previous在adjacent_command_list中仍然存在呀？
               if (previous_write_cmd_idx >= 0) {
                 RecordedSliceListNode& previous_list_node =
                     write_slice_list_nodes[previous_write_cmd_idx];
@@ -248,9 +241,106 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
         previous_write_cmd_idx = write_cmd_idx;
         write_cmd_idx = write_list_node.next_list_index;
       }
+    } else if(search_tracker->has_write() && ! search_tracker->write_cmd_list_enable){
+				// The index is just the latest command index that wrote to the resource.
+				if (search_tracker->write_cmd_idx == p_command_index) {
+					ERR_FAIL_MSG("Command can't have itself as a dependency.");
+				} else {
+					_add_adjacent_command(search_tracker->write_cmd_idx, p_command_index, r_command);
+        }
     }
-  }
+    // update write_cmd_list
+    if (write_usage) {
+      // 处理 index
+			if (resource_has_parent) {
+				if (!search_tracker->write_cmd_list_enable && search_tracker->write_cmd_idx >= 0) {
+					// Write command list was not being used but there was a write command recorded. Add a new node with the entire parent resource's subresources and the recorded command index to the list.
+					search_tracker->write_cmd_idx = _add_to_write_list(search_tracker->write_cmd_idx, search_tracker->get_subresources(), -1);
+				}
+
+				search_tracker->write_cmd_idx = _add_to_write_list(p_command_index, search_tracker_rect, search_tracker->write_cmd_idx);
+				search_tracker->write_cmd_list_enable = true;
+			} else { // 如果不是切片，直接添加
+				search_tracker->write_cmd_idx = p_command_index;
+				search_tracker->write_cmd_list_enable = false;
+			}
+
+       // We add this command to the adjacency list of all commands that were reading from the entire resource.
+			int32_t read_full_cmd_idx = search_tracker->read_full_cmd_idx;
+			while (read_full_cmd_idx >= 0) {
+				int32_t read_full_command_index = command_list_nodes[read_full_cmd_idx].command_index;
+				int32_t read_full_next_index = command_list_nodes[read_full_cmd_idx].next_list_index;
+				if (read_full_command_index == p_command_index) {
+					if (!resource_has_parent) {
+						// Only slices are allowed to be in different usages in the same command as they are guaranteed to have no overlap in the same command.
+						ERR_FAIL_MSG("Command can't have itself as a dependency.");
+					}
+				} else {
+					// Add this command to the adjacency list of each command that was reading this resource.
+					_add_adjacent_command(read_full_command_index, p_command_index, r_command);
+				}
+
+				read_full_cmd_idx = read_full_next_index;
+			}
+      if (!resource_has_parent) {
+				// Clear the full list if this resource is not a slice.
+				search_tracker->read_full_cmd_idx = -1;
+			}
+    // We add this command to the adjacency list of all commands that were reading from resource slices.
+			int32_t previous_slice_command_list_index = -1;
+			int32_t read_slice_command_list_index = search_tracker->read_slice_cmd_idx;
+			while (read_slice_command_list_index >= 0) {
+				const RecordedSliceListNode &read_list_node = read_slice_list_nodes[read_slice_command_list_index];
+				if (!resource_has_parent || search_tracker_rect.encloses(read_list_node.subresources)) {
+					if (previous_slice_command_list_index >= 0) {
+						// Erase this element and connect the previous one to the next element.
+						read_slice_list_nodes[previous_slice_command_list_index].next_list_index = read_list_node.next_list_index;
+					} else {
+						// Erase this element from the head of the list.
+						DEV_ASSERT(search_tracker->read_slice_cmd_idx == read_slice_command_list_index);
+						search_tracker->read_slice_cmd_idx = read_list_node.next_list_index;
+					}
+
+					// Advance to the next element.
+					read_slice_command_list_index = read_list_node.next_list_index;
+				} else {
+					previous_slice_command_list_index = read_slice_command_list_index;
+					read_slice_command_list_index = read_list_node.next_list_index;
+				}
+
+				if (!resource_has_parent || search_tracker_rect.intersects(read_list_node.subresources)) {
+					// Add this command to the adjacency list of each command that was reading this resource.
+					// We only add the dependency if there's an intersection between slices or this resource isn't a slice.
+					_add_adjacent_command(read_list_node.command_index, p_command_index, r_command);
+				}
+			}
+    } // if (write_usage)
+    else if(resource_has_parent){
+      // We add a read dependency to the tracker to indicate this command reads from the resource slice.
+			search_tracker->read_slice_cmd_idx = _add_to_slice_read_list(p_command_index, resource_tracker_rect, search_tracker->read_slice_command_list_index);
+    }
+    else {
+			// We add a read dependency to the tracker to indicate this command reads from the entire resource.
+			search_tracker->read_full_cmd_idx = _add_to_command_list(p_command_index, search_tracker->read_full_command_list_index);
+		}
+   
+  } // for each resource tracker
 }
+
+int32_t RenderingDeviceGraph::_add_to_write_list(int32_t p_command_index, Rect2i p_subresources, int32_t p_list_index) {
+	DEV_ASSERT(p_command_index < int32_t(command_count));
+	DEV_ASSERT(p_list_index < int32_t(write_slice_list_nodes.size()));
+
+	int32_t next_index = int32_t(write_slice_list_nodes.size());
+	write_slice_list_nodes.resize(next_index + 1);
+
+	RecordedSliceListNode &new_node = write_slice_list_nodes[next_index];
+	new_node.command_index = p_command_index;
+	new_node.next_list_index = p_list_index;
+	new_node.subresources = p_subresources;
+	return next_index;
+}
+
 #if USE_BUFFER_BARRIERS
 void RenderingDeviceGraph::_add_buffer_barrier_to_command(
     RDD::BufferID p_buffer_id, BitField<RDD::BarrierAccessBits> p_src_access,

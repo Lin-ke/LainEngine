@@ -79,7 +79,7 @@ class RenderingDeviceGraph {
     RDD::MemoryBarrier memory_barrier;
     int32_t normalization_barrier_index = -1;
     int normalization_barrier_count = 0;
-    int32_t transition_barrier_index = -1; // 这里的index指向command_transition_barriers
+    int32_t transition_barrier_index = -1;  // 这里的index指向command_transition_barriers
     int32_t transition_barrier_count = 0;
 #if USE_BUFFER_BARRIERS
     int32_t buffer_barrier_index = -1;
@@ -146,12 +146,15 @@ class RenderingDeviceGraph {
     int32_t draw_idx = -1;
     int32_t compute_idx = -1;
 
+    bool write_cmd_list_enable = false;  // 已经有写命令
+    bool read_cmd_list_enable = false;   // 已经有读命令
+
     ResourceUsage usage = RESOURCE_USAGE_NONE;
     BitField<RDD::BarrierAccessBits> usage_access;
     // buffer
     RDD::BufferID buffer_driver_id;  // .id = 0
     RDD::BufferRange buffer_range;
-	// texture
+    // texture
     RDD::TextureID texture_driver_id;  // .id = 0
     RDD::TextureSubresourceRange texture_subresources;
 
@@ -174,7 +177,19 @@ class RenderingDeviceGraph {
     }
     L_INLINE bool is_buffer() const { return buffer_driver_id.id != 0; }
     L_INLINE bool is_texture() const { return texture_driver_id.id != 0; }
-	L_INLINE bool has_write() const { return write_cmd_idx > 0; }
+    L_INLINE bool has_write() const { return write_cmd_idx > 0; }
+    L_INLINE Rect2i get_subresources() const {
+      ERR_FAIL_COND_V_MSG(!is_buffer() && !is_texture(), Rect2i(),
+                          "Resource is not a buffer or texture.");
+      if (is_buffer()) {
+        const RDD::BufferRange& buffer_range = buffer_range;
+        return Rect2i(buffer_range.offset, 0, buffer_range.size, 0);
+      } else {
+        const RDD::TextureSubresourceRange& subresources = texture_subresources;
+        return Rect2i(subresources.base_mipmap, subresources.base_layer, subresources.mipmap_count,
+                      subresources.layer_count);
+      }
+    }
   };
 
  private:
@@ -232,12 +247,13 @@ class RenderingDeviceGraph {
     int32_t command_index = -1;
     int32_t next_list_index = -1;
   };
-	// 记录关于切片的命令
-   struct RecordedSliceListNode { 
-		int32_t command_index = -1;
-		int32_t next_list_index = -1;
-		Rect2i subresources; // 用rect2i记录subresource，可以覆盖texturesubresourcerange 和 buffer range
-	};
+  // 记录关于切片的命令
+  struct RecordedSliceListNode {
+    int32_t command_index = -1;
+    int32_t next_list_index = -1;
+    Rect2i
+        subresources;  // 用rect2i记录subresource，可以覆盖texturesubresourcerange 和 buffer range
+  };
 
   struct RecordedBufferClearCommand : RecordedCommand {
     RDD::BufferID buffer;
@@ -586,8 +602,8 @@ class RenderingDeviceGraph {
   void _add_buffer_barrier_to_command(RDD::BufferID p_buffer_id,
                                       BitField<RDD::BarrierAccessBits> p_src_access,
                                       BitField<RDD::BarrierAccessBits> p_dst_access,
-									  RDD::BufferRange p_range,
-                                      int32_t& r_barrier_index, int32_t& r_barrier_count);
+                                      RDD::BufferRange p_range, int32_t& r_barrier_index,
+                                      int32_t& r_barrier_count);
 #endif
   void _add_texture_barrier_to_command(RDD::TextureID p_texture_id,
                                        BitField<RDD::BarrierAccessBits> p_src_access,
@@ -596,6 +612,9 @@ class RenderingDeviceGraph {
                                        RDD::TextureSubresourceRange p_subresources,
                                        LocalVector<RDD::TextureBarrier>& r_barrier_vector,
                                        int32_t& r_barrier_index, int32_t& r_barrier_count);
+  int32_t _add_to_write_list(int32_t p_command_index, Rect2i p_subresources, int32_t p_list_index);
+  int32_t _add_to_slice_read_list(int32_t p_command_index, Rect2i p_subresources,
+                                  int32_t p_list_index);
 
  public:
   RenderingDeviceGraph();
@@ -698,20 +717,20 @@ class RenderingDeviceGraph {
   // 在当前命令同步（通过add_synchronization 设置为true）
   bool command_synchronization_pending = false;
   int32_t command_synchronization_index = -1;  // previous synchronization command index
-	// Texture
-  LocalVector<RDD::TextureBarrier> command_transition_barriers; // transition barrier
-  LocalVector<RDD::TextureBarrier> command_normalization_barriers; // normalization barrier
-  #if USE_BUFFER_BARRIERS
-  LocalVector<RDD::BufferBarrier> command_buffer_barriers; // buffer barrier
-  #endif
+                                               // Texture
+  LocalVector<RDD::TextureBarrier> command_transition_barriers;     // transition barrier
+  LocalVector<RDD::TextureBarrier> command_normalization_barriers;  // normalization barrier
+#if USE_BUFFER_BARRIERS
+  LocalVector<RDD::BufferBarrier> command_buffer_barriers;  // buffer barrier
+#endif
 
   LocalVector<uint32_t> command_data_offsets;  // 标记了每个data的offset
   LocalVector<uint8_t> command_data;           //
 
   LocalVector<RecordedCommandListNode>
       command_list_nodes;  // 邻接表节点数组，在recordcommand中通过id索引，插入是倒着的
-  LocalVector<RecordedSliceListNode> write_slice_list_nodes; // 写入切片节点数组
-  LocalVector<RecordedSliceListNode> read_slice_list_nodes; // 读切片节点数组
+  LocalVector<RecordedSliceListNode> write_slice_list_nodes;  // 写入切片节点数组
+  LocalVector<RecordedSliceListNode> read_slice_list_nodes;   // 读切片节点数组
 
  private:
 };

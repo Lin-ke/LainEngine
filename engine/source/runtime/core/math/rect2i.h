@@ -47,7 +47,7 @@ struct _NO_DISCARD_ Rect2i {
 
 		return true;
 	}
-
+	// p_rect在当前Rect2i内
 	inline bool encloses(const Rect2i& p_rect) const {
 #ifdef MATH_CHECKS
 		if (unlikely(size.x < 0 || size.y < 0 || p_rect.size.x < 0 || p_rect.size.y < 0)) {
