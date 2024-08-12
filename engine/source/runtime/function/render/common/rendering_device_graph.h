@@ -26,7 +26,7 @@ class RenderingDeviceGraph {
 
     Type type = TYPE_NONE;
   };
-
+  /// @brief DrawList中的命令
   struct DrawListInstruction {
     enum Type {
       TYPE_NONE,
@@ -49,7 +49,7 @@ class RenderingDeviceGraph {
 
     Type type = TYPE_NONE;
   };
-
+  /// @brief 命令的类型
   struct RecordedCommand {
     enum Type {
       TYPE_NONE,
@@ -159,9 +159,12 @@ class RenderingDeviceGraph {
     RDD::TextureSubresourceRange texture_subresources;
 
     uint32_t texture_usage;
-    int32_t texture_slice_cmd_idx = -1;
+    int32_t slice_cmd_idx = -1; // 最近使用的切片命令的索引
 
     ResourceTracker* parent = nullptr;
+		ResourceTracker *dirty_shared_list = nullptr; // 双向链表（to child）
+		ResourceTracker *next_shared = nullptr; // to parent
+    Rect2i slice_or_dirty_rect;
     bool in_parent_dirty_list = false;
     _FORCE_INLINE_ void reset_if_outdated(int64_t new_command_frame) {
       if (new_command_frame != command_frame) {
@@ -172,7 +175,7 @@ class RenderingDeviceGraph {
         write_cmd_idx = -1;
         draw_idx = -1;
         compute_idx = -1;
-        texture_slice_cmd_idx = -1;
+        slice_cmd_idx = -1;
       }
     }
     L_INLINE bool is_buffer() const { return buffer_driver_id.id != 0; }
@@ -182,12 +185,10 @@ class RenderingDeviceGraph {
       ERR_FAIL_COND_V_MSG(!is_buffer() && !is_texture(), Rect2i(),
                           "Resource is not a buffer or texture.");
       if (is_buffer()) {
-        const RDD::BufferRange& buffer_range = buffer_range;
         return Rect2i(buffer_range.offset, 0, buffer_range.size, 0);
       } else {
-        const RDD::TextureSubresourceRange& subresources = texture_subresources;
-        return Rect2i(subresources.base_mipmap, subresources.base_layer, subresources.mipmap_count,
-                      subresources.layer_count);
+        return Rect2i(texture_subresources.base_mipmap, texture_subresources.base_layer, texture_subresources.mipmap_count,
+                      texture_subresources.layer_count);
       }
     }
   };
@@ -575,7 +576,7 @@ class RenderingDeviceGraph {
   };
 
  private:
-  /// @brief
+  /// @brief 添加一个命令到图中
   /// @param p_resource_trackers
   /// @param p_resource_usages
   /// @param p_resource_count
@@ -616,6 +617,9 @@ class RenderingDeviceGraph {
   int32_t _add_to_slice_read_list(int32_t p_command_index, Rect2i p_subresources,
                                   int32_t p_list_index);
 
+  // alloc command
+  RecordedCommand *_allocate_command(uint32_t p_command_size, int32_t &r_command_index);
+	DrawListInstruction *_allocate_draw_list_instruction(uint32_t p_instruction_size);
  public:
   RenderingDeviceGraph();
   ~RenderingDeviceGraph();
@@ -732,6 +736,9 @@ class RenderingDeviceGraph {
   LocalVector<RecordedSliceListNode> write_slice_list_nodes;  // 写入切片节点数组
   LocalVector<RecordedSliceListNode> read_slice_list_nodes;   // 读切片节点数组
 
+
+  DrawInstructionList draw_instruction_list;
+	ComputeInstructionList compute_instruction_list;
  private:
 };
 
