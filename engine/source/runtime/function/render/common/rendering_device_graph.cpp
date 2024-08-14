@@ -164,7 +164,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
         resource_tracker->slice_cmd_idx = p_command_index;
       }
       if (parent_traker->usage == ResourceUsage::RESOURCE_USAGE_NONE) {
-        if (parent_traker->is_texture()) {  // 需要转换一次
+        if (parent_traker->is_texture()) {  // 需要转换parent的layout
           // If the resource is a texture, we transition it entirely to the layout determined by the first slice that uses it.
           _add_texture_barrier_to_command(
               parent_traker->texture_driver_id, RDD::BarrierAccessBits(0), new_usage_access,
@@ -220,9 +220,46 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
         if (parent_traker->dirty_shared_list != nullptr &&
             parent_traker->slice_or_dirty_rect.intersects(resource_tracker_rect)) {
               
-            }
           // There's an intersection with the current dirty area of the parent and the slice. We must verify if the intersection is against a slice
           // that was used in this command or not. Any slice we can find that wasn't used by this command must be reverted to the layout of the parent.
+            ResourceTracker *_prev = nullptr;
+            ResourceTracker *_curr = parent_traker->dirty_shared_list;
+            bool initialized_dirty_rect = false;
+            while(_curr != nullptr){
+              _curr->reset_if_outdated(tracking_frame);
+              if (_curr->slice_or_dirty_rect.intersects(resource_tracker->slice_or_dirty_rect)){
+                if (_curr->command_frame == tracking_frame && _curr->slice_cmd_idx == p_command_index) {
+								ERR_FAIL_MSG("Texture slices that overlap can't be used in the same command.");
+                } else{ 
+								// Delete the slice from the dirty list and revert it to the usage of the parent.
+                  if(_curr->is_texture()){
+									_add_texture_barrier_to_command(_curr->texture_driver_id, _curr->usage_access, new_usage_access, _curr->usage, resource_tracker->parent->usage, _curr->texture_subresources, command_normalization_barriers, r_command->normalization_barrier_index, r_command->normalization_barrier_count);
+                  search_tracker_rect = search_tracker_rect.merge(_curr->slice_or_dirty_rect);
+                  write_usage = true;        
+                  }
+                  _curr->in_parent_dirty_list = false;
+                  if(_prev!=nullptr){
+                    _prev->next_shared = _curr->next_shared;
+                  }else{
+                    parent_traker->dirty_shared_list = _curr->next_shared;
+                  }
+                  _curr = _curr->next_shared;
+                }
+              } // if intersect
+              else{
+							// Recalculate the dirty rect of the parent so the deleted slices are excluded.
+              if (initialized_dirty_rect) {
+								resource_tracker->parent->slice_or_dirty_rect = resource_tracker->parent->slice_or_dirty_rect.merge(_curr->texture_slice_or_dirty_rect);
+							} else {
+								resource_tracker->parent->slice_or_dirty_rect = _curr->slice_or_dirty_rect;
+								initialized_dirty_rect = true;
+							}
+                _prev = _curr;
+                _curr = _curr->next_shared;
+              }
+            }
+            
+            }
           resource_tracker->usage = parent_traker->usage;
           resource_tracker->usage_access = parent_traker->usage_access;
 
