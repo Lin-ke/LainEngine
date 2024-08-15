@@ -454,7 +454,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
       while (read_slice_command_list_index >= 0) {
         const RecordedSliceListNode& read_list_node =
             read_slice_list_nodes[read_slice_command_list_index];
-            // 如果不是切片或者切片且完全包含该命令
+            // 如果不是切片或者切片且完全包含该命令(后面会加入这个作为新的)
         if (!resource_has_parent || search_tracker_rect.encloses(read_list_node.subresources)) {
           if (previous_slice_command_list_index >= 0) {
             // Erase this element and connect the previous one to the next element.
