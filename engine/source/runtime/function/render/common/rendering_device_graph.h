@@ -77,7 +77,7 @@ class RenderingDeviceGraph {
     // barries
     // MemoryBarrier只有一个？
     RDD::MemoryBarrier memory_barrier;
-    int32_t normalization_barrier_index = -1;
+    int32_t normalization_barrier_index = -1; // 规范到纹理布局，指向command_normalization_barriers
     int normalization_barrier_count = 0;
     int32_t transition_barrier_index = -1;  // 这里的index指向command_transition_barriers
     int32_t transition_barrier_count = 0;
@@ -162,6 +162,8 @@ class RenderingDeviceGraph {
     int32_t slice_cmd_idx = -1; // 最近使用的切片命令的索引
 
     ResourceTracker* parent = nullptr;
+    // 保存脏列表，包含与父纹理使用的内存布局不同的切片。
+    // 一个命令不允许使用重叠的相同纹理的切片（UB）
 		ResourceTracker *dirty_shared_list = nullptr; // 双向链表（to child）
 		ResourceTracker *next_shared = nullptr; // to parent
     Rect2i slice_or_dirty_rect;
@@ -177,6 +179,9 @@ class RenderingDeviceGraph {
         compute_idx = -1;
         slice_cmd_idx = -1;
       }
+    }
+    _FORCE_INLINE_ bool is_outdated(int64_t new_command_frame) const {
+      return new_command_frame != command_frame;
     }
     L_INLINE bool is_buffer() const { return buffer_driver_id.id != 0; }
     L_INLINE bool is_texture() const { return texture_driver_id.id != 0; }
@@ -723,7 +728,7 @@ class RenderingDeviceGraph {
   int32_t command_synchronization_index = -1;  // previous synchronization command index
                                                // Texture
   LocalVector<RDD::TextureBarrier> command_transition_barriers;     // transition barrier
-  LocalVector<RDD::TextureBarrier> command_normalization_barriers;  // normalization barrier
+  LocalVector<RDD::TextureBarrier> command_normalization_barriers;  // normalization barrier,转变layout
 #if USE_BUFFER_BARRIERS
   LocalVector<RDD::BufferBarrier> command_buffer_barriers;  // buffer barrier
 #endif
