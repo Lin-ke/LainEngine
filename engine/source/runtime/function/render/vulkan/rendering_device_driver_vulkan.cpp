@@ -5060,3 +5060,14 @@ bool RenderingDeviceDriverVulkan::is_feature_supported(Features p_feature) {
 			return false;
 	}
 }
+
+uint64_t RenderingDeviceDriverVulkan::api_trait_get(ApiTrait p_trait) {
+	switch (p_trait) {
+		case API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT:
+			return (uint64_t)MAX((uint64_t)16, physical_device_properties.limits.optimalBufferCopyOffsetAlignment);
+		case API_TRAIT_SHADER_CHANGE_INVALIDATION:
+			return (uint64_t)SHADER_CHANGE_INVALIDATION_INCOMPATIBLE_SETS_PLUS_CASCADE;
+		default:
+			return RenderingDeviceDriver::api_trait_get(p_trait);
+	}
+}

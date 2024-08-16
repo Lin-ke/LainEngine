@@ -617,6 +617,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   bool _recreate_image_semaphore(CommandQueue* p_command_queue, uint32_t p_semaphore_index, bool p_release_on_swap_chain);
 
  public:
+ virtual uint64_t api_trait_get(ApiTrait p_trait) override final;
   /// --- limits --- 
   const RDD::Capabilities& get_capabilities() const { return device_capabilities; }
   virtual const RDD::MultiviewCapabilities& get_multiview_capabilities() override final { return multiview_capabilities; }

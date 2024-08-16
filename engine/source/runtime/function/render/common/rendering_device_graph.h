@@ -77,7 +77,7 @@ class RenderingDeviceGraph {
     // barries
     // MemoryBarrier只有一个？
     RDD::MemoryBarrier memory_barrier;
-    int32_t normalization_barrier_index = -1; // 规范到纹理布局，指向command_normalization_barriers
+    int32_t normalization_barrier_index = -1;  // 规范到纹理布局，指向command_normalization_barriers
     int normalization_barrier_count = 0;
     int32_t transition_barrier_index = -1;  // 这里的index指向command_transition_barriers
     int32_t transition_barrier_count = 0;
@@ -100,7 +100,7 @@ class RenderingDeviceGraph {
     uint32_t buffers_used = 0;
   };
 
-  // copy所需数据的结构
+  // copy所需数据的结构 (在update中使用)
   struct RecordedBufferCopy {
     RDD::BufferID source;
     RDD::BufferCopyRegion region;
@@ -144,7 +144,9 @@ class RenderingDeviceGraph {
     int32_t read_slice_cmd_idx = -1;
     int32_t write_cmd_idx = -1;
     int32_t draw_idx = -1;
+    ResourceUsage draw_usage = RESOURCE_USAGE_NONE;
     int32_t compute_idx = -1;
+    ResourceUsage compute_usage = RESOURCE_USAGE_NONE;
 
     bool write_cmd_list_enable = false;  // 已经有写命令
     bool read_cmd_list_enable = false;   // 已经有读命令
@@ -159,15 +161,16 @@ class RenderingDeviceGraph {
     RDD::TextureSubresourceRange texture_subresources;
 
     uint32_t texture_usage;
-    int32_t slice_cmd_idx = -1; // 最近使用的切片命令的索引
+    int32_t slice_cmd_idx = -1;  // 最近使用的切片命令的索引
 
     ResourceTracker* parent = nullptr;
     // 保存脏列表，包含与父纹理使用的内存布局不同的切片。
     // 一个命令不允许使用重叠的相同纹理的切片（UB）
-		ResourceTracker *dirty_shared_list = nullptr; // 双向链表（to child）
-		ResourceTracker *next_shared = nullptr; // to parent
+    ResourceTracker* dirty_shared_list = nullptr;  // 双向链表（to child）
+    ResourceTracker* next_shared = nullptr;        // to parent
     Rect2i slice_or_dirty_rect;
     bool in_parent_dirty_list = false;
+
     _FORCE_INLINE_ void reset_if_outdated(int64_t new_command_frame) {
       if (new_command_frame != command_frame) {
         usage_access.clear();
@@ -192,8 +195,8 @@ class RenderingDeviceGraph {
       if (is_buffer()) {
         return Rect2i(buffer_range.offset, 0, buffer_range.size, 0);
       } else {
-        return Rect2i(texture_subresources.base_mipmap, texture_subresources.base_layer, texture_subresources.mipmap_count,
-                      texture_subresources.layer_count);
+        return Rect2i(texture_subresources.base_mipmap, texture_subresources.base_layer,
+                      texture_subresources.mipmap_count, texture_subresources.layer_count);
       }
     }
   };
@@ -204,7 +207,7 @@ class RenderingDeviceGraph {
     LocalVector<ResourceTracker*> command_trackers;
     LocalVector<ResourceUsage> command_tracker_usages;
     BitField<RDD::PipelineStageBits> stages;
-    int32_t index = 0;
+    int32_t index = 0;  // 当前是第几个compute index
 
     void clear() {
       data.clear();
@@ -565,7 +568,7 @@ class RenderingDeviceGraph {
 #endif
     }
   };
-
+  //在initialize中初始化command_pool和command_buffer
   struct SecondaryCommandBuffer {
     LocalVector<uint8_t> instruction_data;
     RDD::CommandBufferID command_buffer;
@@ -623,8 +626,15 @@ class RenderingDeviceGraph {
                                   int32_t p_list_index);
 
   // alloc command
-  RecordedCommand *_allocate_command(uint32_t p_command_size, int32_t &r_command_index);
-	DrawListInstruction *_allocate_draw_list_instruction(uint32_t p_instruction_size);
+  RecordedCommand* _allocate_command(uint32_t p_command_size, int32_t& r_command_index);
+  DrawListInstruction* _allocate_draw_list_instruction(uint32_t p_instruction_size);
+  ComputeListInstruction* _allocate_compute_list_instruction(uint32_t p_instruction_size);
+
+  void _run_secondary_command_buffer_task(const SecondaryCommandBuffer* p_secondary);
+  void _run_draw_list_command(RDD::CommandBufferID p_command_buffer,
+                              const uint8_t* p_instruction_data, uint32_t p_instruction_data_size);
+void _run_compute_list_command(RDD::CommandBufferID p_command_buffer, const uint8_t *p_instruction_data, uint32_t p_instruction_data_size);
+
  public:
   RenderingDeviceGraph();
   ~RenderingDeviceGraph();
@@ -713,7 +723,11 @@ class RenderingDeviceGraph {
   static ResourceTracker* resource_tracker_create();
   static void resource_tracker_free(ResourceTracker* tracker);
 
+  bool driver_honors_barriers =
+      false;  // 是否支持barrier，vulkan默认是1，d3d12则有enhanced_barriers_supported标志位
+  bool driver_clears_with_copy_engine = false;  // 是否支持通过copy命令来进行clear
   RDD* driver = nullptr;
+  RenderingContextDriver::Device device;
   int64_t tracking_frame = 0;  // 当前帧
   uint32_t command_count = 0;
   uint32_t frame = 0;
@@ -727,23 +741,24 @@ class RenderingDeviceGraph {
   bool command_synchronization_pending = false;
   int32_t command_synchronization_index = -1;  // previous synchronization command index
                                                // Texture
-  LocalVector<RDD::TextureBarrier> command_transition_barriers;     // transition barrier
-  LocalVector<RDD::TextureBarrier> command_normalization_barriers;  // normalization barrier,转变layout
+  LocalVector<RDD::TextureBarrier> command_transition_barriers;  // transition barrier
+  LocalVector<RDD::TextureBarrier>
+      command_normalization_barriers;  // normalization barrier,转变layout
 #if USE_BUFFER_BARRIERS
   LocalVector<RDD::BufferBarrier> command_buffer_barriers;  // buffer barrier
 #endif
 
   LocalVector<uint32_t> command_data_offsets;  // 标记了每个data的offset
-  LocalVector<uint8_t> command_data;           //
+  LocalVector<uint8_t> command_data;           // 存储了所有的command data
 
   LocalVector<RecordedCommandListNode>
       command_list_nodes;  // 邻接表节点数组，在recordcommand中通过id索引，插入是倒着的
   LocalVector<RecordedSliceListNode> write_slice_list_nodes;  // 写入切片节点数组
   LocalVector<RecordedSliceListNode> read_slice_list_nodes;   // 读切片节点数组
 
-
   DrawInstructionList draw_instruction_list;
-	ComputeInstructionList compute_instruction_list;
+  ComputeInstructionList compute_instruction_list;
+
  private:
 };
 
