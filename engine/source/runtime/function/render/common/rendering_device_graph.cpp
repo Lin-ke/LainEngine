@@ -480,6 +480,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
         }
       }
     }  // if (write_usage)
+    // read_usage
     else if (resource_has_parent) {
       // We add a read dependency to the tracker to indicate this command reads from the resource slice.
       search_tracker->read_slice_cmd_idx = _add_to_slice_read_list(
@@ -594,29 +595,7 @@ int32_t RenderingDeviceGraph::_add_to_command_list(int32_t p_command_index, int3
   return next_index;
 }
 
-void RenderingDeviceGraph::add_draw_list_begin(RDD::RenderPassID p_render_pass,
-                                               RDD::FramebufferID p_framebuffer, Rect2i p_region,
-                                               VectorView<RDD::RenderPassClearValue> p_clear_values,
-                                               bool p_uses_color, bool p_uses_depth) {
-  draw_instruction_list.clear();
-  draw_instruction_list.index++;
-  draw_instruction_list.render_pass = p_render_pass;
-  draw_instruction_list.framebuffer = p_framebuffer;
-  draw_instruction_list.region = p_region;
-  draw_instruction_list.clear_values.resize(p_clear_values.size());
-  for (uint32_t i = 0; i < p_clear_values.size(); i++) {
-    draw_instruction_list.clear_values[i] = p_clear_values[i];
-  }
-
-  if (p_uses_color) {
-    draw_instruction_list.stages.set_flag(RDD::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-  }
-
-  if (p_uses_depth) {
-    draw_instruction_list.stages.set_flag(RDD::PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT);
-    draw_instruction_list.stages.set_flag(RDD::PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
-  }
-}
+// allocate command
 RenderingDeviceGraph::DrawListInstruction* RenderingDeviceGraph::_allocate_draw_list_instruction(
     uint32_t p_instruction_size) {
   uint32_t draw_list_data_offset = draw_instruction_list.data.size();
@@ -659,6 +638,17 @@ RenderingDeviceGraph::RecordedCommand* RenderingDeviceGraph::_allocate_command(
   *new_command = RecordedCommand(); // 需要初始化
   return new_command;
 }
+
+RenderingDeviceGraph::ComputeListInstruction*
+RenderingDeviceGraph::_allocate_compute_list_instruction(uint32_t p_instruction_size) {
+  uint32_t compute_list_data_offset = compute_instruction_list.data.size();
+  compute_instruction_list.data.resize(compute_list_data_offset + p_instruction_size);
+  return reinterpret_cast<ComputeListInstruction*>(
+      &compute_instruction_list.data[compute_list_data_offset]);
+}
+
+
+
 
 void RenderingDeviceGraph::add_buffer_clear(RDD::BufferID p_dst, ResourceTracker* p_dst_tracker,
                                             uint32_t p_offset, uint32_t p_size) {
@@ -742,13 +732,6 @@ void RenderingDeviceGraph::add_buffer_update(RDD::BufferID p_dst, ResourceTracke
   _add_command_to_graph(&p_dst_tracker, &buffer_usage, 1, command_index, command);
 }
 
-RenderingDeviceGraph::ComputeListInstruction*
-RenderingDeviceGraph::_allocate_compute_list_instruction(uint32_t p_instruction_size) {
-  uint32_t compute_list_data_offset = compute_instruction_list.data.size();
-  compute_instruction_list.data.resize(compute_list_data_offset + p_instruction_size);
-  return reinterpret_cast<ComputeListInstruction*>(
-      &compute_instruction_list.data[compute_list_data_offset]);
-}
 
 void RenderingDeviceGraph::add_compute_list_begin() {
   compute_instruction_list.clear();
@@ -853,6 +836,7 @@ void RenderingDeviceGraph::add_compute_list_usages(VectorView<ResourceTracker*> 
   }
 }
 // 把所有compute commands塞到一起
+// 没有多线程的部分？
 void RenderingDeviceGraph::add_compute_list_end() {
   int32_t command_index;
   uint32_t instruction_data_size = compute_instruction_list.data.size();
@@ -867,8 +851,35 @@ void RenderingDeviceGraph::add_compute_list_end() {
                         compute_instruction_list.command_tracker_usages.ptr(),
                         compute_instruction_list.command_trackers.size(), command_index, command);
 }
+///
+///
+/// *** DRAW LIST ***
+///
+///
 
+void RenderingDeviceGraph::add_draw_list_begin(RDD::RenderPassID p_render_pass,
+                                               RDD::FramebufferID p_framebuffer, Rect2i p_region,
+                                               VectorView<RDD::RenderPassClearValue> p_clear_values,
+                                               bool p_uses_color, bool p_uses_depth) {
+  draw_instruction_list.clear();
+  draw_instruction_list.index++;
+  draw_instruction_list.render_pass = p_render_pass;
+  draw_instruction_list.framebuffer = p_framebuffer;
+  draw_instruction_list.region = p_region;
+  draw_instruction_list.clear_values.resize(p_clear_values.size());
+  for (uint32_t i = 0; i < p_clear_values.size(); i++) {
+    draw_instruction_list.clear_values[i] = p_clear_values[i];
+  }
 
+  if (p_uses_color) {
+    draw_instruction_list.stages.set_flag(RDD::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+  }
+
+  if (p_uses_depth) {
+    draw_instruction_list.stages.set_flag(RDD::PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT);
+    draw_instruction_list.stages.set_flag(RDD::PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
+  }
+}
 
 void RenderingDeviceGraph::add_draw_list_bind_index_buffer(RDD::BufferID p_buffer, RDD::IndexBufferFormat p_format, uint32_t p_offset) {
 	DrawListBindIndexBufferInstruction *instruction = reinterpret_cast<DrawListBindIndexBufferInstruction *>(_allocate_draw_list_instruction(sizeof(DrawListBindIndexBufferInstruction)));
@@ -1030,7 +1041,7 @@ void RenderingDeviceGraph::add_draw_list_usages(VectorView<ResourceTracker *> p_
 
 
 void RenderingDeviceGraph::add_draw_list_end() {
-	// Arbitrary size threshold to evaluate if it'd be best to record the draw list on the background as a secondary buffer.
+	//@todo Arbitrary size threshold to evaluate if it'd be best to record the draw list on the background as a secondary buffer.
 	const uint32_t instruction_data_threshold_for_secondary = 16384;
 	RDD::CommandBufferType command_buffer_type;
 	uint32_t &secondary_buffers_used = frames[frame].secondary_command_buffers_used;

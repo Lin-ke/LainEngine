@@ -413,7 +413,7 @@ class RenderingDeviceGraph {
 
   struct DrawListBindVertexBuffersInstruction : DrawListInstruction {
     uint32_t vertex_buffers_count = 0;
-
+    // vertex_buffer在this（该对象）后的第一个位置，长度为count
     _FORCE_INLINE_ RDD::BufferID* vertex_buffers() {
       return reinterpret_cast<RDD::BufferID*>(&this[1]);
     }
@@ -421,7 +421,7 @@ class RenderingDeviceGraph {
     _FORCE_INLINE_ const RDD::BufferID* vertex_buffers() const {
       return reinterpret_cast<const RDD::BufferID*>(&this[1]);
     }
-
+    // vertex_buffer_offsets 在vertex_buffers后的第一个位置
     _FORCE_INLINE_ uint64_t* vertex_buffer_offsets() {
       return reinterpret_cast<uint64_t*>(&vertex_buffers()[vertex_buffers_count]);
     }
