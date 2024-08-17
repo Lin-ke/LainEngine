@@ -231,7 +231,7 @@ class RenderingDeviceGraph {
   struct RecordedCommandSort {
     uint32_t level = 0;
     uint32_t priority = 0;
-    int32_t index = -1;
+    int32_t index = -1; // 通过index获取offset再获得command
 
     RecordedCommandSort() = default;
 
@@ -291,6 +291,7 @@ class RenderingDeviceGraph {
       // 也就是说，this[1]是一个RecordedBufferCopy的数组
       // 其长度由buffer_copies_count决定
       // 相当于RecordedBufferCopy *buffer_copies = nullptr;
+      // 可以参看函数_run_draw_list_command
       return reinterpret_cast<RecordedBufferCopy*>(&this[1]);
     }
 
@@ -580,7 +581,7 @@ class RenderingDeviceGraph {
 
   struct Frame {
     TightLocalVector<SecondaryCommandBuffer> secondary_command_buffers;
-    uint32_t secondary_command_buffers_used = 0;
+    uint32_t secondary_command_buffers_used = 0; // used buffers
   };
 
  private:
@@ -633,7 +634,26 @@ class RenderingDeviceGraph {
   void _run_secondary_command_buffer_task(const SecondaryCommandBuffer* p_secondary);
   void _run_draw_list_command(RDD::CommandBufferID p_command_buffer,
                               const uint8_t* p_instruction_data, uint32_t p_instruction_data_size);
-void _run_compute_list_command(RDD::CommandBufferID p_command_buffer, const uint8_t *p_instruction_data, uint32_t p_instruction_data_size);
+  void _run_compute_list_command(RDD::CommandBufferID p_command_buffer,
+                                 const uint8_t* p_instruction_data,
+                                 uint32_t p_instruction_data_size);
+  void _run_render_command(int32_t p_level, const RecordedCommandSort* p_sorted_commands,
+                           uint32_t p_sorted_commands_count, RDD::CommandBufferID& r_command_buffer,
+                           CommandBufferPool& r_command_buffer_pool, int32_t& r_current_label_index,
+                           int32_t& r_current_label_level);
+  /// @brief command_end_label和command_begin_label
+  void _run_label_command_change(RDD::CommandBufferID p_command_buffer, int32_t p_new_label_index,
+                                 int32_t p_new_level, bool p_ignore_previous_value,
+                                 bool p_use_label_for_empty,
+                                 const RecordedCommandSort* p_sorted_commands,
+                                 uint32_t p_sorted_commands_count, int32_t& r_current_label_index,
+                                 int32_t& r_current_label_level);
+  void _wait_for_secondary_command_buffer_tasks();
+
+  // 工具
+  RecordedCommand* _get_command(uint32_t p_command_index) {
+    return reinterpret_cast<RecordedCommand*>(&command_data[command_data_offsets[p_command_index]]);
+  }
 
  public:
   RenderingDeviceGraph();
@@ -641,6 +661,8 @@ void _run_compute_list_command(RDD::CommandBufferID p_command_buffer, const uint
   void initialize(RDD* p_driver, RenderingContextDriver::Device p_device, uint32_t p_frame_count,
                   RDD::CommandQueueFamilyID p_secondary_command_queue_family,
                   uint32_t p_secondary_command_buffers_per_frame);
+  // 释放command_pool的资源， secondary_command_buffers的资源可以继续用
+  // frame 需要clear
   void finalize();
   void begin();
   void add_buffer_clear(RDD::BufferID p_dst, ResourceTracker* p_dst_tracker, uint32_t p_offset,
@@ -730,10 +752,17 @@ void _run_compute_list_command(RDD::CommandBufferID p_command_buffer, const uint
   RenderingContextDriver::Device device;
   int64_t tracking_frame = 0;  // 当前帧
   uint32_t command_count = 0;
+// label
+  uint32_t command_label_count = 0;
+  LocalVector<char> command_label_chars;
+	LocalVector<Color> command_label_colors;
+	LocalVector<uint32_t> command_label_offsets; // 在chars中的offset
+	int32_t command_label_index = -1;
+  // frame
   uint32_t frame = 0;
   TightLocalVector<Frame> frames;
+
   RBMap<ResourceTracker*, uint32_t> write_dependency_counters;
-  int32_t command_label_index = -1;
 
   int32_t command_timestamp_index = -1;  // previous timestamp command index
 
