@@ -351,6 +351,7 @@ namespace lain {
 			TEXTURE_SWIZZLE_MAX
 		};
 		// 目前支持的切片类型
+		//用作imageview
 		enum TextureSliceType {
 			TEXTURE_SLICE_2D,
 			TEXTURE_SLICE_CUBEMAP,

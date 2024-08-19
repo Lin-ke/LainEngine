@@ -349,6 +349,8 @@ uint64_t RenderingDeviceDriver::api_trait_get(ApiTrait p_trait) {
 		return 1;
 	case API_TRAIT_SECONDARY_VIEWPORT_SCISSOR:
 		return 1;
+	case API_TRAIT_CLEARS_WITH_COPY_ENGINE:
+		return 1;
 	default:
 		ERR_FAIL_V(0);
 	}
