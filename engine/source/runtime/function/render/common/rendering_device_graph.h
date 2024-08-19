@@ -3,6 +3,7 @@
 #include "core/thread/worker_thread_pool.h"
 #include "rendering_device_driver.h"
 #define USE_BUFFER_BARRIERS 1
+#define PRINT_RESOURCE_TRACKER_TOTAL 1
 // Buffer barriers have not shown any significant improvement or shown to be
 // even detrimental to performance. However, there are currently some known
 // cases where using them can solve problems that using singular memory
@@ -789,6 +790,9 @@ class RenderingDeviceGraph {
   ComputeInstructionList compute_instruction_list;
 
  private:
+#if PRINT_RESOURCE_TRACKER_TOTAL
+  static uint32_t resource_tracker_total;
+#endif
 };
 
 using RDG = RenderingDeviceGraph;

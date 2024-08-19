@@ -4,6 +4,7 @@ using namespace lain::graphics;
 RenderingDeviceGraph::RenderingDeviceGraph() {}
 RenderingDeviceGraph::~RenderingDeviceGraph() {}
 
+uint32_t RenderingDeviceGraph::resource_tracker_total = 0;
 bool RenderingDeviceGraph::_is_write_usage(ResourceUsage p_usage) {
   switch (p_usage) {
     case RESOURCE_USAGE_COPY_FROM:
@@ -1840,4 +1841,40 @@ void RenderingDeviceGraph::finalize() {
   }
 
   frames.clear();
+}
+
+RenderingDeviceGraph::ResourceTracker *RenderingDeviceGraph::resource_tracker_create() {
+#if PRINT_RESOURCE_TRACKER_TOTAL
+	print_line("Resource trackers:", ++resource_tracker_total);
+#endif
+	return memnew(ResourceTracker);
+}
+
+void RenderingDeviceGraph::resource_tracker_free(ResourceTracker *tracker) {
+	if (tracker == nullptr) {
+		return;
+	}
+
+	if (tracker->in_parent_dirty_list) {
+		// Delete the tracker from the parent's dirty linked list.
+		if (tracker->parent->dirty_shared_list == tracker) {
+			tracker->parent->dirty_shared_list = tracker->next_shared;
+		} else {
+			ResourceTracker *node = tracker->parent->dirty_shared_list;
+			while (node != nullptr) {
+				if (node->next_shared == tracker) {
+					node->next_shared = tracker->next_shared;
+					node = nullptr;
+				} else {
+					node = node->next_shared;
+				}
+			}
+		}
+	}
+
+	memdelete(tracker);
+
+#if PRINT_RESOURCE_TRACKER_TOTAL
+	print_line("Resource trackers:", --resource_tracker_total);
+#endif
 }
