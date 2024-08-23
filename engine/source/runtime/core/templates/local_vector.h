@@ -133,6 +133,15 @@ public:
 		return data[p_index];
 	}
 
+	_FORCE_INLINE_ const T& back() const {
+		CRASH_COND(count == 0);
+		return data[count - 1];
+	}
+	_FORCE_INLINE_ T& back() {
+		CRASH_COND(count == 0);
+		return data[count - 1];
+	}
+
 	struct Iterator {
 		_FORCE_INLINE_ T& operator*() const {
 			return *elem_ptr;

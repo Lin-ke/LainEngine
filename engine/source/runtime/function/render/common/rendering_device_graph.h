@@ -68,7 +68,6 @@ class RenderingDeviceGraph {
       TYPE_CAPTURE_TIMESTAMP,
       TYPE_MAX
     };
-    static const uint32 PriorityTable[Type::TYPE_MAX];
     Type type = TYPE_NONE;
     BitField<RDD::PipelineStageBits> next_stages;
     BitField<RDD::PipelineStageBits> self_stages;
@@ -234,6 +233,7 @@ class RenderingDeviceGraph {
     uint32_t level = 0;
     uint32_t priority = 0;
     int32_t index = -1; // 通过index获取offset再获得command
+    static const uint32 PriorityTable[RecordedCommand::Type::TYPE_MAX];
 
     RecordedCommandSort() = default;
 
@@ -627,6 +627,8 @@ class RenderingDeviceGraph {
   int32_t _add_to_write_list(int32_t p_command_index, Rect2i p_subresources, int32_t p_list_index);
   int32_t _add_to_slice_read_list(int32_t p_command_index, Rect2i p_subresources,
                                   int32_t p_list_index);
+  void _print_render_commands(const RecordedCommandSort* p_sorted_commands,
+                              uint32_t p_sorted_commands_count);
 
   // alloc command
   RecordedCommand* _allocate_command(uint32_t p_command_size, int32_t& r_command_index);
@@ -644,6 +646,8 @@ class RenderingDeviceGraph {
                            CommandBufferPool& r_command_buffer_pool, int32_t& r_current_label_index,
                            int32_t& r_current_label_level);
   /// @brief command_end_label和command_begin_label
+  /// @param 
+
   void _run_label_command_change(RDD::CommandBufferID p_command_buffer, int32_t p_new_label_index,
                                  int32_t p_new_level, bool p_ignore_previous_value,
                                  bool p_use_label_for_empty,
@@ -651,113 +655,117 @@ class RenderingDeviceGraph {
                                  uint32_t p_sorted_commands_count, int32_t& r_current_label_index,
                                  int32_t& r_current_label_level);
   void _wait_for_secondary_command_buffer_tasks();
+  void _group_barriers_for_render_commands(RDD::CommandBufferID p_command_buffer,
+                                           const RecordedCommandSort* p_sorted_commands,
+                                           uint32_t p_sorted_commands_count,
+                                           bool p_full_memory_barrier);
+void _boost_priority_for_render_commands(RecordedCommandSort *p_sorted_commands, uint32_t p_sorted_commands_count, uint32_t &r_boosted_priority);
 
-  // 工具
-  RecordedCommand* _get_command(int32_t p_command_index) {
-    return reinterpret_cast<RecordedCommand*>(&command_data[command_data_offsets[p_command_index]]);
-  }
+    // 工具
+    RecordedCommand* _get_command(int32_t p_command_index) {
+      return reinterpret_cast<RecordedCommand*>(
+          &command_data[command_data_offsets[p_command_index]]);
+    }
 
- public:
-  RenderingDeviceGraph();
-  ~RenderingDeviceGraph();
-  void initialize(RDD* p_driver, RenderingContextDriver::Device p_device, uint32_t p_frame_count,
-                  RDD::CommandQueueFamilyID p_secondary_command_queue_family,
-                  uint32_t p_secondary_command_buffers_per_frame);
-  // 释放command_pool的资源， secondary_command_buffers的资源可以继续用
-  // frame 需要clear
-  void finalize();
-  void begin();
-  void add_buffer_clear(RDD::BufferID p_dst, ResourceTracker* p_dst_tracker, uint32_t p_offset,
-                        uint32_t p_size);
-  void add_buffer_copy(RDD::BufferID p_src, ResourceTracker* p_src_tracker, RDD::BufferID p_dst,
-                       ResourceTracker* p_dst_tracker, RDD::BufferCopyRegion p_region);
-  void add_buffer_get_data(RDD::BufferID p_src, ResourceTracker* p_src_tracker, RDD::BufferID p_dst,
-                           RDD::BufferCopyRegion p_region);
-  void add_buffer_update(RDD::BufferID p_dst, ResourceTracker* p_dst_tracker,
-                         VectorView<RecordedBufferCopy> p_buffer_copies);
-  void add_compute_list_begin();
-  void add_compute_list_bind_pipeline(RDD::PipelineID p_pipeline);
-  void add_compute_list_bind_uniform_set(RDD::ShaderID p_shader, RDD::UniformSetID p_uniform_set,
-                                         uint32_t set_index);
-  void add_compute_list_dispatch(uint32_t p_x_groups, uint32_t p_y_groups, uint32_t p_z_groups);
-  void add_compute_list_dispatch_indirect(RDD::BufferID p_buffer, uint32_t p_offset);
-  void add_compute_list_set_push_constant(RDD::ShaderID p_shader, const void* p_data,
-                                          uint32_t p_data_size);
-  void add_compute_list_uniform_set_prepare_for_use(RDD::ShaderID p_shader,
-                                                    RDD::UniformSetID p_uniform_set,
-                                                    uint32_t set_index);
-  void add_compute_list_usage(ResourceTracker* p_tracker, ResourceUsage p_usage);
-  void add_compute_list_usages(VectorView<ResourceTracker*> p_trackers,
-                               VectorView<ResourceUsage> p_usages);
-  void add_compute_list_end();
-  void add_draw_list_begin(RDD::RenderPassID p_render_pass, RDD::FramebufferID p_framebuffer,
-                           Rect2i p_region, VectorView<RDD::RenderPassClearValue> p_clear_values,
-                           bool p_uses_color, bool p_uses_depth);
-  void add_draw_list_bind_index_buffer(RDD::BufferID p_buffer, RDD::IndexBufferFormat p_format,
-                                       uint32_t p_offset);
-  void add_draw_list_bind_pipeline(RDD::PipelineID p_pipeline,
-                                   BitField<RDD::PipelineStageBits> p_pipeline_stage_bits);
-  void add_draw_list_bind_uniform_set(RDD::ShaderID p_shader, RDD::UniformSetID p_uniform_set,
-                                      uint32_t set_index);
-  void add_draw_list_bind_vertex_buffers(VectorView<RDD::BufferID> p_vertex_buffers,
-                                         VectorView<uint64_t> p_vertex_buffer_offsets);
-  void add_draw_list_clear_attachments(VectorView<RDD::AttachmentClear> p_attachments_clear,
-                                       VectorView<Rect2i> p_attachments_clear_rect);
-  void add_draw_list_draw(uint32_t p_vertex_count, uint32_t p_instance_count);
-  void add_draw_list_draw_indexed(uint32_t p_index_count, uint32_t p_instance_count,
-                                  uint32_t p_first_index);
-  void add_draw_list_execute_commands(RDD::CommandBufferID p_command_buffer);
-  void add_draw_list_next_subpass(RDD::CommandBufferType p_command_buffer_type);
-  void add_draw_list_set_blend_constants(const Color& p_color);
-  void add_draw_list_set_line_width(float p_width);
-  void add_draw_list_set_push_constant(RDD::ShaderID p_shader, const void* p_data,
-                                       uint32_t p_data_size);
-  void add_draw_list_set_scissor(Rect2i p_rect);
-  void add_draw_list_set_viewport(Rect2i p_rect);
-  void add_draw_list_uniform_set_prepare_for_use(RDD::ShaderID p_shader,
-                                                 RDD::UniformSetID p_uniform_set,
-                                                 uint32_t set_index);
-  void add_draw_list_usage(ResourceTracker* p_tracker, ResourceUsage p_usage);
-  void add_draw_list_usages(VectorView<ResourceTracker*> p_trackers,
-                            VectorView<ResourceUsage> p_usages);
-  void add_draw_list_end();
-  void add_texture_clear(RDD::TextureID p_dst, ResourceTracker* p_dst_tracker, const Color& p_color,
-                         const RDD::TextureSubresourceRange& p_range);
-  void add_texture_copy(RDD::TextureID p_src, ResourceTracker* p_src_tracker, RDD::TextureID p_dst,
-                        ResourceTracker* p_dst_tracker,
-                        VectorView<RDD::TextureCopyRegion> p_texture_copy_regions);
-  void add_texture_get_data(RDD::TextureID p_src, ResourceTracker* p_src_tracker,
-                            RDD::BufferID p_dst,
-                            VectorView<RDD::BufferTextureCopyRegion> p_buffer_texture_copy_regions,
-                            ResourceTracker* p_dst_tracker = nullptr);
-  void add_texture_resolve(RDD::TextureID p_src, ResourceTracker* p_src_tracker,
-                           RDD::TextureID p_dst, ResourceTracker* p_dst_tracker,
-                           uint32_t p_src_layer, uint32_t p_src_mipmap, uint32_t p_dst_layer,
-                           uint32_t p_dst_mipmap);
-  void add_texture_update(
-      RDD::TextureID p_dst, ResourceTracker* p_dst_tracker,
-      VectorView<RecordedBufferToTextureCopy> p_buffer_copies,
-      VectorView<ResourceTracker*> p_buffer_trackers = VectorView<ResourceTracker*>());
-  void add_capture_timestamp(RDD::QueryPoolID p_query_pool, uint32_t p_index);
-  void add_synchronization();
-  void begin_label(const String& p_label_name, const Color& p_color);
-  void end_label();
-  // compile
-  void end(bool p_reorder_commands, bool p_full_barriers, RDD::CommandBufferID& r_command_buffer,
-           CommandBufferPool& r_command_buffer_pool);
-  static ResourceTracker* resource_tracker_create();
-  static void resource_tracker_free(ResourceTracker* tracker);
+   public:
+    RenderingDeviceGraph();
+    ~RenderingDeviceGraph();
+    void initialize(RDD * p_driver, RenderingContextDriver::Device p_device, uint32_t p_frame_count,
+                    RDD::CommandQueueFamilyID p_secondary_command_queue_family,
+                    uint32_t p_secondary_command_buffers_per_frame);
+    // 释放command_pool的资源， secondary_command_buffers的资源可以继续用
+    // frame 需要clear
+    void finalize();
+    void begin();
+    void add_buffer_clear(RDD::BufferID p_dst, ResourceTracker * p_dst_tracker, uint32_t p_offset,
+                          uint32_t p_size);
+    void add_buffer_copy(RDD::BufferID p_src, ResourceTracker * p_src_tracker, RDD::BufferID p_dst,
+                         ResourceTracker * p_dst_tracker, RDD::BufferCopyRegion p_region);
+    void add_buffer_get_data(RDD::BufferID p_src, ResourceTracker * p_src_tracker,
+                             RDD::BufferID p_dst, RDD::BufferCopyRegion p_region);
+    void add_buffer_update(RDD::BufferID p_dst, ResourceTracker * p_dst_tracker,
+                           VectorView<RecordedBufferCopy> p_buffer_copies);
+    void add_compute_list_begin();
+    void add_compute_list_bind_pipeline(RDD::PipelineID p_pipeline);
+    void add_compute_list_bind_uniform_set(RDD::ShaderID p_shader, RDD::UniformSetID p_uniform_set,
+                                           uint32_t set_index);
+    void add_compute_list_dispatch(uint32_t p_x_groups, uint32_t p_y_groups, uint32_t p_z_groups);
+    void add_compute_list_dispatch_indirect(RDD::BufferID p_buffer, uint32_t p_offset);
+    void add_compute_list_set_push_constant(RDD::ShaderID p_shader, const void* p_data,
+                                            uint32_t p_data_size);
+    void add_compute_list_uniform_set_prepare_for_use(
+        RDD::ShaderID p_shader, RDD::UniformSetID p_uniform_set, uint32_t set_index);
+    void add_compute_list_usage(ResourceTracker * p_tracker, ResourceUsage p_usage);
+    void add_compute_list_usages(VectorView<ResourceTracker*> p_trackers,
+                                 VectorView<ResourceUsage> p_usages);
+    void add_compute_list_end();
+    void add_draw_list_begin(RDD::RenderPassID p_render_pass, RDD::FramebufferID p_framebuffer,
+                             Rect2i p_region, VectorView<RDD::RenderPassClearValue> p_clear_values,
+                             bool p_uses_color, bool p_uses_depth);
+    void add_draw_list_bind_index_buffer(RDD::BufferID p_buffer, RDD::IndexBufferFormat p_format,
+                                         uint32_t p_offset);
+    void add_draw_list_bind_pipeline(RDD::PipelineID p_pipeline,
+                                     BitField<RDD::PipelineStageBits> p_pipeline_stage_bits);
+    void add_draw_list_bind_uniform_set(RDD::ShaderID p_shader, RDD::UniformSetID p_uniform_set,
+                                        uint32_t set_index);
+    void add_draw_list_bind_vertex_buffers(VectorView<RDD::BufferID> p_vertex_buffers,
+                                           VectorView<uint64_t> p_vertex_buffer_offsets);
+    void add_draw_list_clear_attachments(VectorView<RDD::AttachmentClear> p_attachments_clear,
+                                         VectorView<Rect2i> p_attachments_clear_rect);
+    void add_draw_list_draw(uint32_t p_vertex_count, uint32_t p_instance_count);
+    void add_draw_list_draw_indexed(uint32_t p_index_count, uint32_t p_instance_count,
+                                    uint32_t p_first_index);
+    void add_draw_list_execute_commands(RDD::CommandBufferID p_command_buffer);
+    void add_draw_list_next_subpass(RDD::CommandBufferType p_command_buffer_type);
+    void add_draw_list_set_blend_constants(const Color& p_color);
+    void add_draw_list_set_line_width(float p_width);
+    void add_draw_list_set_push_constant(RDD::ShaderID p_shader, const void* p_data,
+                                         uint32_t p_data_size);
+    void add_draw_list_set_scissor(Rect2i p_rect);
+    void add_draw_list_set_viewport(Rect2i p_rect);
+    void add_draw_list_uniform_set_prepare_for_use(
+        RDD::ShaderID p_shader, RDD::UniformSetID p_uniform_set, uint32_t set_index);
+    void add_draw_list_usage(ResourceTracker * p_tracker, ResourceUsage p_usage);
+    void add_draw_list_usages(VectorView<ResourceTracker*> p_trackers,
+                              VectorView<ResourceUsage> p_usages);
+    void add_draw_list_end();
+    void add_texture_clear(RDD::TextureID p_dst, ResourceTracker * p_dst_tracker,
+                           const Color& p_color, const RDD::TextureSubresourceRange& p_range);
+    void add_texture_copy(RDD::TextureID p_src, ResourceTracker * p_src_tracker,
+                          RDD::TextureID p_dst, ResourceTracker * p_dst_tracker,
+                          VectorView<RDD::TextureCopyRegion> p_texture_copy_regions);
+    void add_texture_get_data(
+        RDD::TextureID p_src, ResourceTracker * p_src_tracker, RDD::BufferID p_dst,
+        VectorView<RDD::BufferTextureCopyRegion> p_buffer_texture_copy_regions,
+        ResourceTracker* p_dst_tracker = nullptr);
+    void add_texture_resolve(RDD::TextureID p_src, ResourceTracker * p_src_tracker,
+                             RDD::TextureID p_dst, ResourceTracker * p_dst_tracker,
+                             uint32_t p_src_layer, uint32_t p_src_mipmap, uint32_t p_dst_layer,
+                             uint32_t p_dst_mipmap);
+    void add_texture_update(
+        RDD::TextureID p_dst, ResourceTracker * p_dst_tracker,
+        VectorView<RecordedBufferToTextureCopy> p_buffer_copies,
+        VectorView<ResourceTracker*> p_buffer_trackers = VectorView<ResourceTracker*>());
+    void add_capture_timestamp(RDD::QueryPoolID p_query_pool, uint32_t p_index);
+    void add_synchronization();
+    void begin_label(const String& p_label_name, const Color& p_color);
+    void end_label();
+    // compile
+    void end(bool p_reorder_commands, bool p_full_barriers, RDD::CommandBufferID& r_command_buffer,
+             CommandBufferPool& r_command_buffer_pool);
+    static ResourceTracker* resource_tracker_create();
+    static void resource_tracker_free(ResourceTracker * tracker);
 
-  bool driver_honors_barriers =
-      false;  // 是否支持barrier，vulkan默认是1，d3d12则有enhanced_barriers_supported标志位
-  bool driver_clears_with_copy_engine = false;  // 是否支持通过copy命令来进行clear
-  RDD* driver = nullptr;
-  RenderingContextDriver::Device device;
-  int64_t tracking_frame = 0;  // 当前帧
-  uint32_t command_count = 0;
-// label
-  uint32_t command_label_count = 0;
-  LocalVector<char> command_label_chars;
+    bool driver_honors_barriers =
+        false;  // 是否支持barrier，vulkan默认是1，d3d12则有enhanced_barriers_supported标志位
+    bool driver_clears_with_copy_engine = false;  // 是否支持通过copy命令来进行clear
+    RDD* driver = nullptr;
+    RenderingContextDriver::Device device;
+    int64_t tracking_frame = 0;  // 当前帧
+    uint32_t command_count = 0;
+    // label
+    uint32_t command_label_count = 0;
+    LocalVector<char> command_label_chars;
 	LocalVector<Color> command_label_colors;
 	LocalVector<uint32_t> command_label_offsets; // 在chars中的offset
 	int32_t command_label_index = -1; // count时为在label中， -1则否
@@ -795,7 +803,8 @@ class RenderingDeviceGraph {
 #if PRINT_RESOURCE_TRACKER_TOTAL
   static uint32_t resource_tracker_total;
 #endif
-};
+  BarrierGroup barrier_group;
+  };
 
 using RDG = RenderingDeviceGraph;
 

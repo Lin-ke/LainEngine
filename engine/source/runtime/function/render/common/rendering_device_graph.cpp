@@ -2,6 +2,8 @@
 #ifdef PRINT_RESOURCE_TRACKER_TOTAL
 #include "core/string/print_string.h"
 #endif
+#define PRINT_RENDER_GRAPH 1
+#define PRINT_COMMAND_RECORDING 1
 using namespace lain::graphics;
 // 主要分为read和write两种
 RenderingDeviceGraph::RenderingDeviceGraph() {}
@@ -1320,21 +1322,22 @@ void RenderingDeviceGraph::add_synchronization() {
   }
 }
 
-void RenderingDeviceGraph::begin_label(const String &p_label_name, const Color &p_color) {
-	uint32_t command_label_offset = command_label_chars.size();
-	PackedByteArray command_label_utf8 = p_label_name.to_utf8_buffer();
-	int command_label_utf8_size = command_label_utf8.size();
-	command_label_chars.resize(command_label_offset + command_label_utf8_size + 1);
-	memcpy(&command_label_chars[command_label_offset], command_label_utf8.ptr(), command_label_utf8.size());
-	command_label_chars[command_label_offset + command_label_utf8_size] = '\0';
-	command_label_colors.push_back(p_color);
-	command_label_offsets.push_back(command_label_offset);
-	command_label_index = command_label_count;
-	command_label_count++;
+void RenderingDeviceGraph::begin_label(const String& p_label_name, const Color& p_color) {
+  uint32_t command_label_offset = command_label_chars.size();
+  PackedByteArray command_label_utf8 = p_label_name.to_utf8_buffer();
+  int command_label_utf8_size = command_label_utf8.size();
+  command_label_chars.resize(command_label_offset + command_label_utf8_size + 1);
+  memcpy(&command_label_chars[command_label_offset], command_label_utf8.ptr(),
+         command_label_utf8.size());
+  command_label_chars[command_label_offset + command_label_utf8_size] = '\0';
+  command_label_colors.push_back(p_color);
+  command_label_offsets.push_back(command_label_offset);
+  command_label_index = command_label_count;
+  command_label_count++;
 }
 
 void RenderingDeviceGraph::end_label() {
-	command_label_index = -1;
+  command_label_index = -1;
 }
 
 void RenderingDeviceGraph::_run_secondary_command_buffer_task(
@@ -1571,8 +1574,7 @@ void RenderingDeviceGraph::_run_render_command(
     RDD::CommandBufferID& r_command_buffer, CommandBufferPool& r_command_buffer_pool,
     int32_t& r_current_label_index, int32_t& r_current_label_level) {
   for (uint32_t i = 0; i < p_sorted_commands_count; i++) {
-    const RecordedCommand* command =
-        _get_command(p_sorted_commands[i].index);
+    const RecordedCommand* command = _get_command(p_sorted_commands[i].index);
     _run_label_command_change(r_command_buffer, command->label_index, p_level, false, true,
                               &p_sorted_commands[i], p_sorted_commands_count - i,
                               r_current_label_index, r_current_label_level);
@@ -1841,79 +1843,308 @@ void RenderingDeviceGraph::begin() {
 #endif
 }
 
-    const uint32_t RenderingDeviceGraph::RecordedCommand::PriorityTable[]{
-      0, // TYPE_NONE
-			1, // TYPE_BUFFER_CLEAR
-			1, // TYPE_BUFFER_COPY
-			1, // TYPE_BUFFER_GET_DATA
-			1, // TYPE_BUFFER_UPDATE
-			4, // TYPE_COMPUTE_LIST
-			3, // TYPE_DRAW_LIST
-			2, // TYPE_TEXTURE_CLEAR
-			2, // TYPE_TEXTURE_COPY
-			2, // TYPE_TEXTURE_GET_DATA
-			2, // TYPE_TEXTURE_RESOLVE
-			2, // TYPE_TEXTURE_UPDATE
-    };
+const uint32_t RenderingDeviceGraph::RecordedCommandSort::PriorityTable[] = {
+    0,  // TYPE_NONE
+    1,  // TYPE_BUFFER_CLEAR
+    1,  // TYPE_BUFFER_COPY
+    1,  // TYPE_BUFFER_GET_DATA
+    1,  // TYPE_BUFFER_UPDATE
+    4,  // TYPE_COMPUTE_LIST
+    3,  // TYPE_DRAW_LIST
+    2,  // TYPE_TEXTURE_CLEAR
+    2,  // TYPE_TEXTURE_COPY
+    2,  // TYPE_TEXTURE_GET_DATA
+    2,  // TYPE_TEXTURE_RESOLVE
+    2,  // TYPE_TEXTURE_UPDATE
+};
 
-void RenderingDeviceGraph::end(bool p_reorder_commands, bool p_full_barriers, RDD::CommandBufferID& r_command_buffer,
-           CommandBufferPool& r_command_buffer_pool){
-  if (command_count == 0) return;
+void RenderingDeviceGraph::end(bool p_reorder_commands, bool p_full_barriers,
+                               RDD::CommandBufferID& r_command_buffer,
+                               CommandBufferPool& r_command_buffer_pool) {
+  if (command_count == 0)
+    return;
   thread_local LocalVector<RecordedCommandSort> commands_sorted;
-  
-  if (p_reorder_commands){ // 
+
+  if (p_reorder_commands) {  //
     // 计算每个顶点的入度，从每个根节点进行BFS遍历
     // 为什么都使用thread_local?
     thread_local LocalVector<uint32_t> command_degrees;
     command_degrees.resize(command_count);
-    
-    for(int32_t i = 0 ; i< command_count ; i++){
-      const RecoredCommand* recorded_command = _get_command(i);
-      adjacent_list_idx = recorded_command->adjacent_command_list_index;
-      while(adjacent_command_idx >=0){
-				const RecordedCommandListNode &command_list_node = command_list_nodes[adjacency_list_index];
-				DEV_ASSERT((command_list_node.command_index != int32_t(i)) && "Command can't have itself as a dependency.");
-				command_degrees[command_list_node.command_index] += 1;
-				adjacent_list_idx = command_list_node.next_list_index;
+
+    for (int32_t i = 0; i < command_count; i++) {
+      const RecordedCommand* recorded_command = _get_command(i);
+      int32_t adjcent_list_idx = recorded_command->adjacent_command_list_index;
+      while (adjcent_list_idx >= 0) {
+        const RecordedCommandListNode& command_list_node = command_list_nodes[adjcent_list_idx];
+        DEV_ASSERT((command_list_node.command_index != int32_t(i)) &&
+                   "Command can't have itself as a dependency.");
+        command_degrees[command_list_node.command_index] += 1;
+        adjcent_list_idx = command_list_node.next_list_index;
       }
     }
     // 根节点
     thread_local LocalVector<int32_t> command_stack;
     command_stack.clear();
-    for(int32_t i = 0;i < command_count;i++){
-      if(command_degrees[i] == 0){
+    for (int32_t i = 0; i < command_count; i++) {
+      if (command_degrees[i] == 0) {
         command_stack.push_back(i);
       }
     }
     thread_local LocalVector<int32_t> sorted_command_indices;
     // BFS
     sorted_command_indices.clear();
-    while (!command_stack.is_empty()){
+    int32_t adjacent_list_idx = 0;  // 用于遍历邻接表
+
+    while (!command_stack.is_empty()) {  // 层序遍历
       const RecordedCommand* recorded_command = _get_command(command_stack.back());
       command_stack.resize(command_stack.size() - 1);
       sorted_command_indices.push_back(command_stack.back());
-      int32_t adjacent_list_idx = recorded_command->adjacent_command_list_index;
-      while(adjacent_list_idx >= 0){
-        const RecordedCommandListNode &command_list_node = command_list_nodes[adjacent_list_idx];
-				// 入栈
-				uint32_t &command_degree = command_degrees[command_list_node.command_index];
+      adjacent_list_idx = recorded_command->adjacent_command_list_index;
+      while (adjacent_list_idx >= 0) {
+        const RecordedCommandListNode& command_list_node = command_list_nodes[adjacent_list_idx];
+        // 入栈
+        uint32_t& command_degree = command_degrees[command_list_node.command_index];
         command_degree -= 1;
-        if(command_degree == 0){ // 说明就在这一层（最深的父亲）
+        if (command_degree == 0) {  // 说明就在这一层（最深的父亲）
           command_stack.push_back(command_list_node.command_index);
         }
         adjacent_list_idx = command_list_node.next_list_index;
       }
     }
 
-  } // if(p_reorder_commands) 
-  else{
     commands_sorted.clear();
     commands_sorted.resize(command_count);
-    for (int i = 0; i<command_count;i++){
-      comamnds_sorted[i].index = i;
+    // 填写commands_sorted的index和level，根据sorted_command_indices
+    for (int32_t i = 0; i < command_count; i++) {
+      int32_t sorted_command_index = sorted_command_indices[i];
+      const RecordedCommand* recorded_command = _get_command(sorted_command_index);
+      const uint32_t next_command_level = commands_sorted[sorted_command_index].level + 1;
+      adjacent_list_idx = recorded_command->adjacent_command_list_index;
+      // 更新所有儿子的层，取更大的
+      while (adjacent_list_idx >= 0) {
+        const RecordedCommandListNode& command_list_node = command_list_nodes[adjacent_list_idx];
+        uint32_t& adjacent_command_level = commands_sorted[command_list_node.command_index].level;
+        if (adjacent_command_level < next_command_level) {
+          adjacent_command_level = next_command_level;
+        }
+        adjacent_list_idx = command_list_node.next_list_index;
+      }
+      commands_sorted[sorted_command_index].index = sorted_command_index;
+      commands_sorted[sorted_command_index].priority =
+          RecordedCommandSort::PriorityTable[recorded_command->type];
+    }
+
+  }  // if(p_reorder_commands)
+  else {
+    commands_sorted.clear();
+    commands_sorted.resize(command_count);
+    for (int i = 0; i < command_count; i++) {
+      commands_sorted[i].index = i;
     }
   }
+  _wait_for_secondary_command_buffer_tasks();
+  int32_t current_label_index = -1;
+  int32_t current_label_level = -1;
+  // reset label
+  _run_label_command_change(r_command_buffer, -1, -1, true, true, nullptr, 0, current_label_index,
+                            current_label_level);
+  if (p_reorder_commands) {
+#if PRINT_RENDER_GRAPH
+    print_line("BEFORE SORT");
+    _print_render_commands(commands_sorted.ptr(), command_count);
+#endif
+
+    commands_sorted.sort();
+
+#if PRINT_RENDER_GRAPH
+    print_line("AFTER SORT");  // 每一层根据优先级排序
+    _print_render_commands(commands_sorted.ptr(), command_count);
+#endif
+
+#if PRINT_COMMAND_RECORDING
+    print_line(vformat("Recording %d commands", command_count));
+#endif
+    uint32_t boosted_priority = 0;
+    uint32_t current_level = commands_sorted[0].level;
+    uint32_t current_level_start = 0;
+    for (uint32_t i = 0; i < command_count; i++) {
+      if (current_level != commands_sorted[i].level) {  // new level
+        RecordedCommandSort* level_command_ptr = &commands_sorted[current_level_start];
+        uint32_t level_command_count = i - current_level_start;
+        _boost_priority_for_render_commands(level_command_ptr, level_command_count,
+                                            boosted_priority);
+        _group_barriers_for_render_commands(r_command_buffer, level_command_ptr,
+                                            level_command_count, p_full_barriers);
+        _run_render_command(current_level, level_command_ptr, level_command_count, r_command_buffer,
+                            r_command_buffer_pool, current_label_index, current_label_level);
+        current_level = commands_sorted[i].level;
+        current_level_start = i;
+      }
+    }
+    // 最后一层
+    RecordedCommandSort* level_command_ptr = &commands_sorted[current_level_start];
+    uint32_t level_command_count = command_count - current_level_start;
+    _boost_priority_for_render_commands(level_command_ptr, level_command_count, boosted_priority);
+    _group_barriers_for_render_commands(r_command_buffer, level_command_ptr, level_command_count,
+                                        p_full_barriers);
+    _run_render_command(current_level, level_command_ptr, level_command_count, r_command_buffer,
+                        r_command_buffer_pool, current_label_index, current_label_level);
+
+#if PRINT_RENDER_GRAPH
+    print_line("COMMANDS", command_count, "LEVELS", current_level + 1);
+#endif
+
+  } else {
+    for (uint32_t i = 0; i < command_count; i++) {
+      // 挨个加barrier
+      _group_barriers_for_render_commands(r_command_buffer, &commands_sorted[i], 1,
+                                          p_full_barriers);
+      _run_render_command(i, &commands_sorted[i], 1, r_command_buffer, r_command_buffer_pool,
+                          current_label_index, current_label_level);
+    }
   }
+  _run_label_command_change(r_command_buffer, -1, -1, true, false, nullptr, 0, current_label_index,
+                            current_label_level);
+
+  frame = (frame + 1) % frames.size();
+}
+
+void RenderingDeviceGraph::_boost_priority_for_render_commands(
+    RecordedCommandSort* p_sorted_commands, uint32_t p_sorted_commands_count,
+    uint32_t& r_boosted_priority) {
+  if (p_sorted_commands_count == 0) {
+    return;
+  }
+
+  const uint32_t boosted_priority_value = 0;
+  if (r_boosted_priority > 0) {
+    bool perform_sort = false;
+    for (uint32_t j = 0; j < p_sorted_commands_count; j++) {
+      if (p_sorted_commands[j].priority == r_boosted_priority) {
+        p_sorted_commands[j].priority = boosted_priority_value;
+        perform_sort = true;
+      }
+    }
+
+    if (perform_sort) {
+      SortArray<RecordedCommandSort> command_sorter;
+      command_sorter.sort(p_sorted_commands, p_sorted_commands_count);
+    }
+  }
+  // 最后一个指令的优先级；将与该优先级相同的指令设置为0 （为什么？以方便下次执行吗）
+  // 
+  if (p_sorted_commands[p_sorted_commands_count - 1].priority != boosted_priority_value) {
+    r_boosted_priority = p_sorted_commands[p_sorted_commands_count - 1].priority;
+  }
+}
+
+void RenderingDeviceGraph::_group_barriers_for_render_commands(
+    RDD::CommandBufferID p_command_buffer, const RecordedCommandSort* p_sorted_commands,
+    uint32_t p_sorted_commands_count, bool p_full_memory_barrier) {
+  if (!driver_honors_barriers) {
+    return;
+  }
+
+  barrier_group.clear();
+  barrier_group.src_stages = RDD::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+  barrier_group.dst_stages = RDD::PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+  for (uint32_t i = 0; i < p_sorted_commands_count; i++) {
+    const RecordedCommand* command = _get_command(p_sorted_commands[i].index);
+
+#if PRINT_COMMAND_RECORDING
+    print_line(vformat("Grouping barriers for #%d", p_sorted_commands[i].index));
+#endif
+
+    // Merge command's stage bits with the barrier group.
+    barrier_group.src_stages = barrier_group.src_stages | command->previous_stages;
+    barrier_group.dst_stages = barrier_group.dst_stages | command->next_stages;
+
+    // Merge command's memory barrier bits with the barrier group.
+    barrier_group.memory_barrier.src_access =
+        barrier_group.memory_barrier.src_access | command->memory_barrier.src_access;
+    barrier_group.memory_barrier.dst_access =
+        barrier_group.memory_barrier.dst_access | command->memory_barrier.dst_access;
+
+    // Gather texture barriers.
+    for (int32_t j = 0; j < command->normalization_barrier_count; j++) {
+      const RDD::TextureBarrier& recorded_barrier =
+          command_normalization_barriers[command->normalization_barrier_index + j];
+      barrier_group.normalization_barriers.push_back(recorded_barrier);
+#if PRINT_COMMAND_RECORDING
+      print_line(
+          vformat("Normalization Barrier #%d", barrier_group.normalization_barriers.size() - 1));
+#endif
+    }
+
+    for (int32_t j = 0; j < command->transition_barrier_count; j++) {
+      const RDD::TextureBarrier& recorded_barrier =
+          command_transition_barriers[command->transition_barrier_index + j];
+      barrier_group.transition_barriers.push_back(recorded_barrier);
+#if PRINT_COMMAND_RECORDING
+      print_line(vformat("Transition Barrier #%d", barrier_group.transition_barriers.size() - 1));
+#endif
+    }
+
+#if USE_BUFFER_BARRIERS
+    // Gather buffer barriers.
+    for (int32_t j = 0; j < command->buffer_barrier_count; j++) {
+      const RDD::BufferBarrier& recorded_barrier =
+          command_buffer_barriers[command->buffer_barrier_index + j];
+      barrier_group.buffer_barriers.push_back(recorded_barrier);
+    }
+#endif
+  }
+
+  if (p_full_memory_barrier) {
+    barrier_group.src_stages = RDD::PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    barrier_group.dst_stages = RDD::PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    barrier_group.memory_barrier.src_access =
+        RDD::BARRIER_ACCESS_MEMORY_READ_BIT | RDD::BARRIER_ACCESS_MEMORY_WRITE_BIT;
+    barrier_group.memory_barrier.dst_access =
+        RDD::BARRIER_ACCESS_MEMORY_READ_BIT | RDD::BARRIER_ACCESS_MEMORY_WRITE_BIT;
+  }
+
+  const bool is_memory_barrier_empty = barrier_group.memory_barrier.src_access.is_empty() &&
+                                       barrier_group.memory_barrier.dst_access.is_empty();
+  const bool are_texture_barriers_empty = barrier_group.normalization_barriers.is_empty() &&
+                                          barrier_group.transition_barriers.is_empty();
+#if USE_BUFFER_BARRIERS
+  const bool are_buffer_barriers_empty = barrier_group.buffer_barriers.is_empty();
+#else
+  const bool are_buffer_barriers_empty = true;
+#endif
+  if (is_memory_barrier_empty && are_texture_barriers_empty && are_buffer_barriers_empty) {
+    // Commands don't require synchronization.
+    return;
+  }
+
+  const VectorView<RDD::MemoryBarrier> memory_barriers =
+      !is_memory_barrier_empty ? barrier_group.memory_barrier : VectorView<RDD::MemoryBarrier>();
+  const VectorView<RDD::TextureBarrier> texture_barriers =
+      barrier_group.normalization_barriers.is_empty() ? barrier_group.transition_barriers
+                                                      : barrier_group.normalization_barriers;
+#if USE_BUFFER_BARRIERS
+  const VectorView<RDD::BufferBarrier> buffer_barriers =
+      !are_buffer_barriers_empty ? barrier_group.buffer_barriers : VectorView<RDD::BufferBarrier>();
+#else
+  const VectorView<RDD::BufferBarrier> buffer_barriers = VectorView<RDD::BufferBarrier>();
+#endif
+
+  driver->command_pipeline_barrier(p_command_buffer, barrier_group.src_stages,
+                                   barrier_group.dst_stages, memory_barriers, buffer_barriers,
+                                   texture_barriers);
+
+  bool separate_texture_barriers = !barrier_group.normalization_barriers.is_empty() &&
+                                   !barrier_group.transition_barriers.is_empty();
+  if (separate_texture_barriers) {
+    driver->command_pipeline_barrier(p_command_buffer, barrier_group.src_stages,
+                                     barrier_group.dst_stages, VectorView<RDD::MemoryBarrier>(),
+                                     VectorView<RDD::BufferBarrier>(),
+                                     barrier_group.transition_barriers);
+  }
+}
+
 void RenderingDeviceGraph::_wait_for_secondary_command_buffer_tasks() {
   for (uint32_t i = 0; i < frames[frame].secondary_command_buffers_used; i++) {
     WorkerThreadPool::TaskID& task = frames[frame].secondary_command_buffers[i].task;
@@ -1938,38 +2169,128 @@ void RenderingDeviceGraph::finalize() {
   frames.clear();
 }
 
-RenderingDeviceGraph::ResourceTracker *RenderingDeviceGraph::resource_tracker_create() {
+RenderingDeviceGraph::ResourceTracker* RenderingDeviceGraph::resource_tracker_create() {
 #if PRINT_RESOURCE_TRACKER_TOTAL
-	print_line("Resource trackers:", ++resource_tracker_total);
+  print_line("Resource trackers:", ++resource_tracker_total);
 #endif
-	return memnew(ResourceTracker);
+  return memnew(ResourceTracker);
 }
 
-void RenderingDeviceGraph::resource_tracker_free(ResourceTracker *tracker) {
-	if (tracker == nullptr) {
-		return;
-	}
+void RenderingDeviceGraph::resource_tracker_free(ResourceTracker* tracker) {
+  if (tracker == nullptr) {
+    return;
+  }
 
-	if (tracker->in_parent_dirty_list) {
-		// Delete the tracker from the parent's dirty linked list.
-		if (tracker->parent->dirty_shared_list == tracker) {
-			tracker->parent->dirty_shared_list = tracker->next_shared;
-		} else {
-			ResourceTracker *node = tracker->parent->dirty_shared_list;
-			while (node != nullptr) {
-				if (node->next_shared == tracker) {
-					node->next_shared = tracker->next_shared;
-					node = nullptr;
-				} else {
-					node = node->next_shared;
-				}
-			}
-		}
-	}
+  if (tracker->in_parent_dirty_list) {
+    // Delete the tracker from the parent's dirty linked list.
+    if (tracker->parent->dirty_shared_list == tracker) {
+      tracker->parent->dirty_shared_list = tracker->next_shared;
+    } else {
+      ResourceTracker* node = tracker->parent->dirty_shared_list;
+      while (node != nullptr) {
+        if (node->next_shared == tracker) {
+          node->next_shared = tracker->next_shared;
+          node = nullptr;
+        } else {
+          node = node->next_shared;
+        }
+      }
+    }
+  }
 
-	memdelete(tracker);
+  memdelete(tracker);
 
 #if PRINT_RESOURCE_TRACKER_TOTAL
-	print_line("Resource trackers:", --resource_tracker_total);
+  print_line("Resource trackers:", --resource_tracker_total);
 #endif
+}
+
+void RenderingDeviceGraph::_print_render_commands(const RecordedCommandSort* p_sorted_commands,
+                                                  uint32_t p_sorted_commands_count) {
+  for (uint32_t i = 0; i < p_sorted_commands_count; i++) {
+    const uint32_t command_index = p_sorted_commands[i].index;
+    const uint32_t command_level = p_sorted_commands[i].level;
+    const uint32_t command_data_offset = command_data_offsets[command_index];
+    const RecordedCommand* command =
+        reinterpret_cast<RecordedCommand*>(&command_data[command_data_offset]);
+    switch (command->type) {
+      case RecordedCommand::TYPE_BUFFER_CLEAR: {
+        const RecordedBufferClearCommand* buffer_clear_command =
+            reinterpret_cast<const RecordedBufferClearCommand*>(command);
+        print_line(command_index, "LEVEL", command_level, "BUFFER CLEAR DESTINATION",
+                   itos(buffer_clear_command->buffer.id));
+      } break;
+      case RecordedCommand::TYPE_BUFFER_COPY: {
+        const RecordedBufferCopyCommand* buffer_copy_command =
+            reinterpret_cast<const RecordedBufferCopyCommand*>(command);
+        print_line(command_index, "LEVEL", command_level, "BUFFER COPY SOURCE",
+                   itos(buffer_copy_command->source.id), "DESTINATION",
+                   itos(buffer_copy_command->destination.id));
+      } break;
+      case RecordedCommand::TYPE_BUFFER_GET_DATA: {
+        const RecordedBufferGetDataCommand* buffer_get_data_command =
+            reinterpret_cast<const RecordedBufferGetDataCommand*>(command);
+        print_line(command_index, "LEVEL", command_level, "BUFFER GET DATA DESTINATION",
+                   itos(buffer_get_data_command->destination.id));
+      } break;
+      case RecordedCommand::TYPE_BUFFER_UPDATE: {
+        const RecordedBufferUpdateCommand* buffer_update_command =
+            reinterpret_cast<const RecordedBufferUpdateCommand*>(command);
+        print_line(command_index, "LEVEL", command_level, "BUFFER UPDATE DESTINATION",
+                   itos(buffer_update_command->destination.id), "COPIES",
+                   buffer_update_command->buffer_copies_count);
+      } break;
+      case RecordedCommand::TYPE_COMPUTE_LIST: {
+        const RecordedComputeListCommand* compute_list_command =
+            reinterpret_cast<const RecordedComputeListCommand*>(command);
+        print_line(command_index, "LEVEL", command_level, "COMPUTE LIST SIZE",
+                   compute_list_command->instruction_data_size);
+      } break;
+      case RecordedCommand::TYPE_DRAW_LIST: {
+        const RecordedDrawListCommand* draw_list_command =
+            reinterpret_cast<const RecordedDrawListCommand*>(command);
+        print_line(command_index, "LEVEL", command_level, "DRAW LIST SIZE",
+                   draw_list_command->instruction_data_size);
+      } break;
+      case RecordedCommand::TYPE_TEXTURE_CLEAR: {
+        const RecordedTextureClearCommand* texture_clear_command =
+            reinterpret_cast<const RecordedTextureClearCommand*>(command);
+        print_line(command_index, "LEVEL", command_level, "TEXTURE CLEAR",
+                   itos(texture_clear_command->texture.id), "COLOR", texture_clear_command->color);
+      } break;
+      case RecordedCommand::TYPE_TEXTURE_COPY: {
+        const RecordedTextureCopyCommand* texture_copy_command =
+            reinterpret_cast<const RecordedTextureCopyCommand*>(command);
+        print_line(command_index, "LEVEL", command_level, "TEXTURE COPY FROM",
+                   itos(texture_copy_command->from_texture.id), "TO",
+                   itos(texture_copy_command->to_texture.id));
+      } break;
+      case RecordedCommand::TYPE_TEXTURE_GET_DATA: {
+        print_line(command_index, "LEVEL", command_level, "TEXTURE GET DATA");
+      } break;
+      case RecordedCommand::TYPE_TEXTURE_RESOLVE: {
+        const RecordedTextureResolveCommand* texture_resolve_command =
+            reinterpret_cast<const RecordedTextureResolveCommand*>(command);
+        print_line(command_index, "LEVEL", command_level, "TEXTURE RESOLVE FROM",
+                   itos(texture_resolve_command->from_texture.id), "TO",
+                   itos(texture_resolve_command->to_texture.id));
+      } break;
+      case RecordedCommand::TYPE_TEXTURE_UPDATE: {
+        const RecordedTextureUpdateCommand* texture_update_command =
+            reinterpret_cast<const RecordedTextureUpdateCommand*>(command);
+        print_line(command_index, "LEVEL", command_level, "TEXTURE UPDATE TO",
+                   itos(texture_update_command->to_texture.id));
+      } break;
+      case RecordedCommand::TYPE_CAPTURE_TIMESTAMP: {
+        const RecordedCaptureTimestampCommand* texture_capture_timestamp_command =
+            reinterpret_cast<const RecordedCaptureTimestampCommand*>(command);
+        print_line(command_index, "LEVEL", command_level, "CAPTURE TIMESTAMP POOL",
+                   itos(texture_capture_timestamp_command->pool.id), "INDEX",
+                   texture_capture_timestamp_command->index);
+      } break;
+      default:
+        DEV_ASSERT(false && "Unknown recorded command type.");
+        return;
+    }
+  }
 }
