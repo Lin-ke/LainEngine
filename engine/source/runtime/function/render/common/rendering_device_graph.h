@@ -68,6 +68,7 @@ class RenderingDeviceGraph {
       TYPE_CAPTURE_TIMESTAMP,
       TYPE_MAX
     };
+    static const uint32 PriorityTable[Type::TYPE_MAX];
     Type type = TYPE_NONE;
     BitField<RDD::PipelineStageBits> next_stages;
     BitField<RDD::PipelineStageBits> self_stages;
@@ -652,7 +653,7 @@ class RenderingDeviceGraph {
   void _wait_for_secondary_command_buffer_tasks();
 
   // 工具
-  RecordedCommand* _get_command(uint32_t p_command_index) {
+  RecordedCommand* _get_command(int32_t p_command_index) {
     return reinterpret_cast<RecordedCommand*>(&command_data[command_data_offsets[p_command_index]]);
   }
 
@@ -741,6 +742,7 @@ class RenderingDeviceGraph {
   void add_synchronization();
   void begin_label(const String& p_label_name, const Color& p_color);
   void end_label();
+  // compile
   void end(bool p_reorder_commands, bool p_full_barriers, RDD::CommandBufferID& r_command_buffer,
            CommandBufferPool& r_command_buffer_pool);
   static ResourceTracker* resource_tracker_create();
@@ -758,7 +760,7 @@ class RenderingDeviceGraph {
   LocalVector<char> command_label_chars;
 	LocalVector<Color> command_label_colors;
 	LocalVector<uint32_t> command_label_offsets; // 在chars中的offset
-	int32_t command_label_index = -1;
+	int32_t command_label_index = -1; // count时为在label中， -1则否
   // frame
   uint32_t frame = 0;
   TightLocalVector<Frame> frames;

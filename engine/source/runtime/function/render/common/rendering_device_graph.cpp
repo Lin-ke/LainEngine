@@ -1,4 +1,7 @@
 #include "rendering_device_graph.h"
+#ifdef PRINT_RESOURCE_TRACKER_TOTAL
+#include "core/string/print_string.h"
+#endif
 using namespace lain::graphics;
 // 主要分为read和write两种
 RenderingDeviceGraph::RenderingDeviceGraph() {}
@@ -1317,6 +1320,23 @@ void RenderingDeviceGraph::add_synchronization() {
   }
 }
 
+void RenderingDeviceGraph::begin_label(const String &p_label_name, const Color &p_color) {
+	uint32_t command_label_offset = command_label_chars.size();
+	PackedByteArray command_label_utf8 = p_label_name.to_utf8_buffer();
+	int command_label_utf8_size = command_label_utf8.size();
+	command_label_chars.resize(command_label_offset + command_label_utf8_size + 1);
+	memcpy(&command_label_chars[command_label_offset], command_label_utf8.ptr(), command_label_utf8.size());
+	command_label_chars[command_label_offset + command_label_utf8_size] = '\0';
+	command_label_colors.push_back(p_color);
+	command_label_offsets.push_back(command_label_offset);
+	command_label_index = command_label_count;
+	command_label_count++;
+}
+
+void RenderingDeviceGraph::end_label() {
+	command_label_index = -1;
+}
+
 void RenderingDeviceGraph::_run_secondary_command_buffer_task(
     const SecondaryCommandBuffer* p_secondary) {
   driver->command_buffer_begin_secondary(p_secondary->command_buffer, p_secondary->render_pass, 0,
@@ -1396,6 +1416,7 @@ void RenderingDeviceGraph::_run_compute_list_command(RDD::CommandBufferID p_comm
 // 感觉这里的设计是比较糙的，这样每次增加一个字段需要在好多地方更改
 // 方案：使用虚函数，代价是多4个字节（虚函数表）
 // @todo 测试。 考虑到PSO占用内存很大，未必好用。
+// 可以考虑最近大家研究的proxy机制（通过concept？）
 /* 
 while(instruction_data_cursor < p_instruction_data_size) {
   const DrawListInstruction *instruction = reinterpret_cast<const DrawListInstruction *>(&p_instruction_data[instruction_data_cursor]);
@@ -1819,6 +1840,80 @@ void RenderingDeviceGraph::begin() {
   write_dependency_counters.clear();
 #endif
 }
+
+    const uint32_t RenderingDeviceGraph::RecordedCommand::PriorityTable[]{
+      0, // TYPE_NONE
+			1, // TYPE_BUFFER_CLEAR
+			1, // TYPE_BUFFER_COPY
+			1, // TYPE_BUFFER_GET_DATA
+			1, // TYPE_BUFFER_UPDATE
+			4, // TYPE_COMPUTE_LIST
+			3, // TYPE_DRAW_LIST
+			2, // TYPE_TEXTURE_CLEAR
+			2, // TYPE_TEXTURE_COPY
+			2, // TYPE_TEXTURE_GET_DATA
+			2, // TYPE_TEXTURE_RESOLVE
+			2, // TYPE_TEXTURE_UPDATE
+    };
+
+void RenderingDeviceGraph::end(bool p_reorder_commands, bool p_full_barriers, RDD::CommandBufferID& r_command_buffer,
+           CommandBufferPool& r_command_buffer_pool){
+  if (command_count == 0) return;
+  thread_local LocalVector<RecordedCommandSort> commands_sorted;
+  
+  if (p_reorder_commands){ // 
+    // 计算每个顶点的入度，从每个根节点进行BFS遍历
+    // 为什么都使用thread_local?
+    thread_local LocalVector<uint32_t> command_degrees;
+    command_degrees.resize(command_count);
+    
+    for(int32_t i = 0 ; i< command_count ; i++){
+      const RecoredCommand* recorded_command = _get_command(i);
+      adjacent_list_idx = recorded_command->adjacent_command_list_index;
+      while(adjacent_command_idx >=0){
+				const RecordedCommandListNode &command_list_node = command_list_nodes[adjacency_list_index];
+				DEV_ASSERT((command_list_node.command_index != int32_t(i)) && "Command can't have itself as a dependency.");
+				command_degrees[command_list_node.command_index] += 1;
+				adjacent_list_idx = command_list_node.next_list_index;
+      }
+    }
+    // 根节点
+    thread_local LocalVector<int32_t> command_stack;
+    command_stack.clear();
+    for(int32_t i = 0;i < command_count;i++){
+      if(command_degrees[i] == 0){
+        command_stack.push_back(i);
+      }
+    }
+    thread_local LocalVector<int32_t> sorted_command_indices;
+    // BFS
+    sorted_command_indices.clear();
+    while (!command_stack.is_empty()){
+      const RecordedCommand* recorded_command = _get_command(command_stack.back());
+      command_stack.resize(command_stack.size() - 1);
+      sorted_command_indices.push_back(command_stack.back());
+      int32_t adjacent_list_idx = recorded_command->adjacent_command_list_index;
+      while(adjacent_list_idx >= 0){
+        const RecordedCommandListNode &command_list_node = command_list_nodes[adjacent_list_idx];
+				// 入栈
+				uint32_t &command_degree = command_degrees[command_list_node.command_index];
+        command_degree -= 1;
+        if(command_degree == 0){ // 说明就在这一层（最深的父亲）
+          command_stack.push_back(command_list_node.command_index);
+        }
+        adjacent_list_idx = command_list_node.next_list_index;
+      }
+    }
+
+  } // if(p_reorder_commands) 
+  else{
+    commands_sorted.clear();
+    commands_sorted.resize(command_count);
+    for (int i = 0; i<command_count;i++){
+      comamnds_sorted[i].index = i;
+    }
+  }
+  }
 void RenderingDeviceGraph::_wait_for_secondary_command_buffer_tasks() {
   for (uint32_t i = 0; i < frames[frame].secondary_command_buffers_used; i++) {
     WorkerThreadPool::TaskID& task = frames[frame].secondary_command_buffers[i].task;

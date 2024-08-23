@@ -8,7 +8,10 @@
 #include "base.h"
 namespace lain {
 	// #do as std::vector( if not tight)
-	/// force_trivial: no need to call destructor
+	/// force_trivial: 假装是个默认构造的类
+	// 1. 在构造时, ! is_trivial_constructor && ! force_trivial 调用 placement_new(memnew_placement)
+	// 2. 在析构时, ! is_trivial_deconst ... 调用~T()
+	// 不支持使用初始化列表构造
 	//# not cow
 template <class T, class U = uint32_t, bool force_trivial = false, bool tight = false>
 class LocalVector{
