@@ -89,6 +89,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   int staging_buffer_current = 0;
   uint32_t staging_buffer_block_size = 0;
   uint64_t staging_buffer_max_size = 0;
+  int32_t secondary_command_buffer_per_frame = 0;
   bool staging_buffer_used = false;
   enum StagingRequiredAction {
     STAGING_REQUIRED_ACTION_NONE,
