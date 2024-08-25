@@ -516,6 +516,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
 
     Size2i min_texel_size;
     Size2i max_texel_size;
+    Size2i max_fragment_size;
 
     Size2i texel_size;  // The texel size we'll use
   };
@@ -618,7 +619,10 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
 
  public:
  virtual uint64_t api_trait_get(ApiTrait p_trait) override final;
+		virtual uint64_t get_total_memory_used() override final;
+
   /// --- limits --- 
+  virtual uint64_t limit_get(Limit p_limit); // ∑≠“ÎlimitµΩphysical_device_properties.limits
   const RDD::Capabilities& get_capabilities() const { return device_capabilities; }
   virtual const RDD::MultiviewCapabilities& get_multiview_capabilities() override final { return multiview_capabilities; }
   RenderingDeviceDriverVulkan(RenderingContextDriverVulkan* p_context_driver);

@@ -5,7 +5,7 @@
 namespace lain
 {
     REFLECTION_TYPE(BaseTest)
-    CLASS(BaseTest, Fields)
+    CLASS(BaseTest, WhiteListFields)
     {
         REFLECTION_BODY(BaseTest);
 
@@ -25,7 +25,7 @@ namespace lain
     };
 
     REFLECTION_TYPE(Test2)
-    CLASS(Test2 : public BaseTest, Fields)
+    CLASS(Test2 : public BaseTest, WhiteListFields)
     {
         REFLECTION_BODY(Test2);
 
@@ -37,7 +37,7 @@ namespace lain
     };
 
     REFLECTION_TYPE(Test3)
-        CLASS(Test3 : public BaseTest, Fields)
+        CLASS(Test3 : public BaseTest, WhiteListFields)
     {
         REFLECTION_BODY(Test3);
 

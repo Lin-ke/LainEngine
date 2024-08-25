@@ -41,8 +41,8 @@ class RenderingDevice : public RenderingDeviceCommons {
   enum IDType {
     ID_TYPE_FRAMEBUFFER_FORMAT,
     ID_TYPE_VERTEX_FORMAT,
-    ID_TYPE_DRAW_LIST,
-    ID_TYPE_COMPUTE_LIST = 4,
+    ID_TYPE_DRAW_LIST,// 唯一
+    ID_TYPE_COMPUTE_LIST = 4,// 唯一 
     ID_TYPE_MAX,
     ID_BASE_SHIFT = 58,  // 5 bits for ID types.
     ID_MASK = (ID_BASE_SHIFT - 1),
@@ -105,7 +105,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     RDD::BufferID driver_id;
     uint32_t size = 0;
     BitField<RDD::BufferUsageBits> usage;
-    // RDG::ResourceTracker* draw_tracker = nullptr;
+    RDG::ResourceTracker* draw_tracker = nullptr;
   };
   // 一共需要管理三种buffer
   Buffer* _get_buffer_from_owner(RID p_buffer);
@@ -149,6 +149,14 @@ class RenderingDevice : public RenderingDeviceCommons {
   // or slices of a texture (a mipmap, a layer, a 3D slice)
   // for a framebuffer to render into it.
   struct Texture {
+    struct SharedFallback {
+			uint32_t revision = 1;
+			RDD::TextureID texture;
+			RDG::ResourceTracker *texture_tracker = nullptr;
+			RDD::BufferID buffer;
+			RDG::ResourceTracker *buffer_tracker = nullptr;
+			bool raw_reinterpretation = false;
+		};
     RDD::TextureID driver_id;
     TextureType type = TEXTURE_TYPE_MAX;
     DataFormat format = DATA_FORMAT_MAX;
@@ -174,8 +182,9 @@ class RenderingDevice : public RenderingDeviceCommons {
     bool bound = false;  // Bound to framebuffer.
     RID owner;
 
-    /*RDG::ResourceTracker* draw_tracker = nullptr;
-    HashMap<Rect2i, RDG::ResourceTracker*> slice_trackers;*/
+    RDG::ResourceTracker* draw_tracker = nullptr;
+    HashMap<Rect2i, RDG::ResourceTracker*> slice_trackers; // 快速寻找slice
+		SharedFallback *shared_fallback = nullptr;
 
     RDD::TextureSubresourceRange barrier_range() const {  // texture subresource range;
       RDD::TextureSubresourceRange r;
@@ -522,7 +531,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     uint32_t max_instances_allowed = 0;
 
     Vector<RDD::BufferID> buffers;  // Not owned, just referenced.
-    //   Vector<RDG::ResourceTracker *> draw_trackers; // Not owned, just
+      Vector<RDG::ResourceTracker *> draw_trackers; // Not owned, just
     //   referenced.
     Vector<uint64_t> offsets;
     HashSet<RID> untracked_buffers;
@@ -540,7 +549,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   struct IndexArray {
     uint32_t max_index = 0;   // Remember the maximum index here too, for validation.
     RDD::BufferID driver_id;  // Not owned, inherited from index buffer.
-    // RDG::ResourceTracker *draw_tracker = nullptr; // Not owned, inherited
+    RDG::ResourceTracker *draw_tracker = nullptr; // Not owned, inherited
     // from index buffer.
     uint32_t offset = 0;
     uint32_t indices = 0;
@@ -732,9 +741,9 @@ class RenderingDevice : public RenderingDeviceCommons {
     };
 
     LocalVector<AttachableTexture> attachable_textures;  // Used for validation.
-    // Vector<RDG::ResourceTracker *> draw_trackers;
-    // Vector<RDG::ResourceUsage> draw_trackers_usage;
-    // HashMap<RID, RDG::ResourceUsage> untracked_usage;
+    Vector<RDG::ResourceTracker *> draw_trackers;
+    Vector<RDG::ResourceUsage> draw_trackers_usage;
+    HashMap<RID, RDG::ResourceUsage> untracked_usage; // @?
     LocalVector<SharedTexture> shared_textures_to_update;
     InvalidationCallback invalidated_callback = nullptr;
     void* invalidated_callback_userdata = nullptr;
@@ -1008,7 +1017,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   /***********************/
 	/**** COMMAND GRAPH ****/
 	/***********************/
-
+  // 在这里新建 resource_tracker
 	bool _texture_make_mutable(Texture *p_texture, RID p_texture_id);
 	bool _buffer_make_mutable(Buffer *p_buffer, RID p_buffer_id);
 	bool _vertex_array_make_mutable(VertexArray *p_vertex_array, RID p_resource_id, RDG::ResourceTracker *p_resource_tracker);

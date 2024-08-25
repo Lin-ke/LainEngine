@@ -5,6 +5,7 @@
 #include "core/config/project_settings.h"
 #include "rendering_device_driver_vulkan.h"
 #include "core/engine/engine.h"
+#define USE_ANY_VALIDATION_LAYER 0
 using namespace lain::graphics;
 const RenderingContextDriver::Device& RenderingContextDriverVulkan::device_get(uint32_t p_device_index) const {
 	DEV_ASSERT(p_device_index < driver_devices.size());
@@ -389,7 +390,9 @@ Error RenderingContextDriverVulkan::_find_validation_layers(TightLocalVector<con
 
 				for (const VkLayerProperties& properties : layer_properties) {
 					if (!strcmp(properties.layerName, layer_name)) {
+#if USE_ANY_VALIDATION_LAYER
 						layers_found = true;
+#endif 
 						L_PRINT("Found validation layer: " + String(layer_name));
 						break;
 					}

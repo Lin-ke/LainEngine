@@ -1681,6 +1681,8 @@ Error RenderingDeviceDriverVulkan::_check_device_capabilities() {
         vrs_capabilities.min_texel_size.y = vrs_properties.minFragmentShadingRateAttachmentTexelSize.height;
         vrs_capabilities.max_texel_size.x = vrs_properties.maxFragmentShadingRateAttachmentTexelSize.width;
         vrs_capabilities.max_texel_size.y = vrs_properties.maxFragmentShadingRateAttachmentTexelSize.height;
+        vrs_capabilities.max_fragment_size.x = vrs_properties.maxFragmentSize.width; // either 4 or 8
+				vrs_capabilities.max_fragment_size.y = vrs_properties.maxFragmentSize.height; // generally the same as width
 
         // We'll attempt to default to a texel size of 16x16.
         vrs_capabilities.texel_size = Vector2i(16, 16).clamp(vrs_capabilities.min_texel_size, vrs_capabilities.max_texel_size);
@@ -5069,5 +5071,111 @@ uint64_t RenderingDeviceDriverVulkan::api_trait_get(ApiTrait p_trait) {
 			return (uint64_t)SHADER_CHANGE_INVALIDATION_INCOMPATIBLE_SETS_PLUS_CASCADE;
 		default:
 			return RenderingDeviceDriver::api_trait_get(p_trait);
+	}
+}
+
+
+
+uint64_t RenderingDeviceDriverVulkan::get_total_memory_used() {
+	VmaTotalStatistics stats = {};
+	vmaCalculateStatistics(allocator, &stats);
+	return stats.total.statistics.allocationBytes;
+}
+
+uint64_t RenderingDeviceDriverVulkan::limit_get(Limit p_limit) {
+	const VkPhysicalDeviceLimits &limits = physical_device_properties.limits;
+	switch (p_limit) {
+		case LIMIT_MAX_BOUND_UNIFORM_SETS:
+			return limits.maxBoundDescriptorSets;
+		case LIMIT_MAX_FRAMEBUFFER_COLOR_ATTACHMENTS:
+			return limits.maxColorAttachments;
+		case LIMIT_MAX_TEXTURES_PER_UNIFORM_SET:
+			return limits.maxDescriptorSetSampledImages;
+		case LIMIT_MAX_SAMPLERS_PER_UNIFORM_SET:
+			return limits.maxDescriptorSetSamplers;
+		case LIMIT_MAX_STORAGE_BUFFERS_PER_UNIFORM_SET:
+			return limits.maxDescriptorSetStorageBuffers;
+		case LIMIT_MAX_STORAGE_IMAGES_PER_UNIFORM_SET:
+			return limits.maxDescriptorSetStorageImages;
+		case LIMIT_MAX_UNIFORM_BUFFERS_PER_UNIFORM_SET:
+			return limits.maxDescriptorSetUniformBuffers;
+		case LIMIT_MAX_DRAW_INDEXED_INDEX:
+			return limits.maxDrawIndexedIndexValue;
+		case LIMIT_MAX_FRAMEBUFFER_HEIGHT:
+			return limits.maxFramebufferHeight;
+		case LIMIT_MAX_FRAMEBUFFER_WIDTH:
+			return limits.maxFramebufferWidth;
+		case LIMIT_MAX_TEXTURE_ARRAY_LAYERS:
+			return limits.maxImageArrayLayers;
+		case LIMIT_MAX_TEXTURE_SIZE_1D:
+			return limits.maxImageDimension1D;
+		case LIMIT_MAX_TEXTURE_SIZE_2D:
+			return limits.maxImageDimension2D;
+		case LIMIT_MAX_TEXTURE_SIZE_3D:
+			return limits.maxImageDimension3D;
+		case LIMIT_MAX_TEXTURE_SIZE_CUBE:
+			return limits.maxImageDimensionCube;
+		case LIMIT_MAX_TEXTURES_PER_SHADER_STAGE:
+			return limits.maxPerStageDescriptorSampledImages;
+		case LIMIT_MAX_SAMPLERS_PER_SHADER_STAGE:
+			return limits.maxPerStageDescriptorSamplers;
+		case LIMIT_MAX_STORAGE_BUFFERS_PER_SHADER_STAGE:
+			return limits.maxPerStageDescriptorStorageBuffers;
+		case LIMIT_MAX_STORAGE_IMAGES_PER_SHADER_STAGE:
+			return limits.maxPerStageDescriptorStorageImages;
+		case LIMIT_MAX_UNIFORM_BUFFERS_PER_SHADER_STAGE:
+			return limits.maxPerStageDescriptorUniformBuffers;
+		case LIMIT_MAX_PUSH_CONSTANT_SIZE:
+			return limits.maxPushConstantsSize;
+		case LIMIT_MAX_UNIFORM_BUFFER_SIZE:
+			return limits.maxUniformBufferRange;
+		case LIMIT_MAX_VERTEX_INPUT_ATTRIBUTE_OFFSET:
+			return limits.maxVertexInputAttributeOffset;
+		case LIMIT_MAX_VERTEX_INPUT_ATTRIBUTES:
+			return limits.maxVertexInputAttributes;
+		case LIMIT_MAX_VERTEX_INPUT_BINDINGS:
+			return limits.maxVertexInputBindings;
+		case LIMIT_MAX_VERTEX_INPUT_BINDING_STRIDE:
+			return limits.maxVertexInputBindingStride;
+		case LIMIT_MIN_UNIFORM_BUFFER_OFFSET_ALIGNMENT:
+			return limits.minUniformBufferOffsetAlignment;
+		case LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_X:
+			return limits.maxComputeWorkGroupCount[0];
+		case LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_Y:
+			return limits.maxComputeWorkGroupCount[1];
+		case LIMIT_MAX_COMPUTE_WORKGROUP_COUNT_Z:
+			return limits.maxComputeWorkGroupCount[2];
+		case LIMIT_MAX_COMPUTE_WORKGROUP_INVOCATIONS:
+			return limits.maxComputeWorkGroupInvocations;
+		case LIMIT_MAX_COMPUTE_WORKGROUP_SIZE_X:
+			return limits.maxComputeWorkGroupSize[0];
+		case LIMIT_MAX_COMPUTE_WORKGROUP_SIZE_Y:
+			return limits.maxComputeWorkGroupSize[1];
+		case LIMIT_MAX_COMPUTE_WORKGROUP_SIZE_Z:
+			return limits.maxComputeWorkGroupSize[2];
+		case LIMIT_MAX_VIEWPORT_DIMENSIONS_X:
+			return limits.maxViewportDimensions[0];
+		case LIMIT_MAX_VIEWPORT_DIMENSIONS_Y:
+			return limits.maxViewportDimensions[1];
+		case LIMIT_SUBGROUP_SIZE:
+			return subgroup_capabilities.size;
+		case LIMIT_SUBGROUP_MIN_SIZE:
+			return subgroup_capabilities.min_size;
+		case LIMIT_SUBGROUP_MAX_SIZE:
+			return subgroup_capabilities.max_size;
+		case LIMIT_SUBGROUP_IN_SHADERS:
+			return subgroup_capabilities.supported_stages_flags_rd();
+		case LIMIT_SUBGROUP_OPERATIONS:
+			return subgroup_capabilities.supported_operations_flags_rd();
+		case LIMIT_VRS_TEXEL_WIDTH:
+			return vrs_capabilities.texel_size.x;
+		case LIMIT_VRS_TEXEL_HEIGHT:
+			return vrs_capabilities.texel_size.y;
+		case LIMIT_VRS_MAX_FRAGMENT_WIDTH:
+			return vrs_capabilities.max_fragment_size.x;
+		case LIMIT_VRS_MAX_FRAGMENT_HEIGHT:
+			return vrs_capabilities.max_fragment_size.y;
+		default:
+			ERR_FAIL_V(0);
 	}
 }

@@ -69,7 +69,8 @@ namespace lain::graphics
 		VectorView(const LocalVector<T> &p_lv) : _ptr(p_lv.ptr()), _size(p_lv.size()) {}
 	};
 	// This helps using a single paged allocator for many resource types.
-	// @？
+	// 使用一个page allocator分配多种资源 ，（空间是七张最大的）
+	// @learnable
 	template <typename... RESOURCE_TYPES>
 	struct VersatileResourceTemplate
 	{
@@ -787,15 +788,16 @@ namespace lain::graphics
 			uint32_t max_view_count = 0;
 			uint32_t max_instance_count = 0;
 		};
-		// @?
+		// 用于标记API（vulkan， dx12）一些有的没的特性，需要实现get_api_trait
+		// 例如： vulkan可以设置pipelinebarrier
 		enum ApiTrait
 		{
-			API_TRAIT_HONORS_PIPELINE_BARRIERS,
-			API_TRAIT_SHADER_CHANGE_INVALIDATION,
+			API_TRAIT_HONORS_PIPELINE_BARRIERS, //需要加barrier
+			API_TRAIT_SHADER_CHANGE_INVALIDATION, // 
 			API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT,
 			API_TRAIT_TEXTURE_DATA_ROW_PITCH_STEP,
 			API_TRAIT_SECONDARY_VIEWPORT_SCISSOR,
-			API_TRAIT_CLEARS_WITH_COPY_ENGINE,
+			API_TRAIT_CLEARS_WITH_COPY_ENGINE, // copy不需要显示clear。
 
 		};
 		enum ShaderChangeInvalidation
@@ -823,8 +825,8 @@ namespace lain::graphics
 		};
 		virtual void set_object_name(ObjectType p_type, ID p_driver_id, const String &p_name) = 0;
 		// virtual uint64_t get_resource_native_handle(DriverResource p_type, ID p_driver_id) = 0;
-		// virtual uint64_t get_total_memory_used() = 0;
-		// virtual uint64_t limit_get(Limit p_limit) = 0;
+		virtual uint64_t get_total_memory_used() = 0;
+		virtual uint64_t limit_get(Limit p_limit) = 0;
 		virtual uint64_t api_trait_get(ApiTrait p_trait);
 		virtual bool is_feature_supported(Features p_feature) = 0;
 		virtual const MultiviewCapabilities& get_multiview_capabilities() = 0;
