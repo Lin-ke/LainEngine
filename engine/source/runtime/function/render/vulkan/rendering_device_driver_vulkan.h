@@ -543,7 +543,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
     String supported_operations_desc() const;
   };
   struct PipelineCacheControlCapabilities {
-    bool is_supported;
+    bool is_supported = false;
   };
 
   struct DeviceFunctions {

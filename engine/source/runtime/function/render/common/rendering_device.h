@@ -89,7 +89,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   int staging_buffer_current = 0;
   uint32_t staging_buffer_block_size = 0;
   uint64_t staging_buffer_max_size = 0;
-  int32_t secondary_command_buffer_per_frame = 0;
+  
   bool staging_buffer_used = false;
   enum StagingRequiredAction {
     STAGING_REQUIRED_ACTION_NONE,
@@ -107,7 +107,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     BitField<RDD::BufferUsageBits> usage;
     RDG::ResourceTracker* draw_tracker = nullptr;
   };
-  // 一共需要管理三种buffer
+  // vertex; index; uniform; storage
   Buffer* _get_buffer_from_owner(RID p_buffer);
   Error _buffer_update(Buffer* p_buffer, RID p_buffer_id, size_t p_offset, const uint8_t* p_data, size_t p_data_size,
                        bool p_use_draw_queue = false, uint32_t p_required_align = 32);
@@ -116,6 +116,8 @@ class RenderingDevice : public RenderingDeviceCommons {
   RID_Owner<Buffer> storage_buffer_owner;
   RID_Owner<Buffer> texture_buffer_owner;
 
+
+  /// **** COMMAND
  public:
   // 目前只有一种
   enum StorageBufferUsage {
@@ -150,11 +152,11 @@ class RenderingDevice : public RenderingDeviceCommons {
   // for a framebuffer to render into it.
   struct Texture {
     struct SharedFallback {
-			uint32_t revision = 1;
+			uint32_t revision = 1; // 被修改的次数，要求与owner的保持一致，否则更新
 			RDD::TextureID texture;
 			RDG::ResourceTracker *texture_tracker = nullptr;
 			RDD::BufferID buffer;
-			RDG::ResourceTracker *buffer_tracker = nullptr;
+			RDG::ResourceTracker *buffer_tracker = nullptr; // reinterpretation buffer @?
 			bool raw_reinterpretation = false;
 		};
     RDD::TextureID driver_id;
@@ -917,12 +919,12 @@ class RenderingDevice : public RenderingDeviceCommons {
   void _draw_list_insert_clear_region(DrawList* p_draw_list, Framebuffer* p_framebuffer, Point2i p_viewport_offset,
                                       Point2i p_viewport_size, bool p_clear_color, const Vector<Color>& p_clear_colors,
                                       bool p_clear_depth, float p_depth, uint32_t p_stencil);
-  Error _draw_list_setup_framebuffer(Framebuffer* p_framebuffer, InitialAction p_initial_color_action,
-                                     FinalAction p_final_color_action, InitialAction p_initial_depth_action,
+  Error _draw_list_setup_framebuffer(Framebuffer* p_framebuffer, ColorInitialAction p_initial_color_action,
+                                     ColorFinalAction p_final_color_action, InitialAction p_initial_depth_action,
                                      FinalAction p_final_depth_action, RDD::FramebufferID* r_framebuffer,
                                      RDD::RenderPassID* r_render_pass, uint32_t* r_subpass_count);
-  Error _draw_list_render_pass_begin(Framebuffer* p_framebuffer, InitialAction p_initial_color_action,
-                                     FinalAction p_final_color_action, InitialAction p_initial_depth_action,
+  Error _draw_list_render_pass_begin(Framebuffer* p_framebuffer, ColorInitialAction p_initial_color_action,
+                                     ColorFinalAction p_final_color_action, InitialAction p_initial_depth_action,
                                      FinalAction p_final_depth_action, const Vector<Color>& p_clear_colors, float p_clear_depth,
                                      uint32_t p_clear_stencil, Point2i p_viewport_offset, Point2i p_viewport_size,
                                      RDD::FramebufferID p_framebuffer_driver_id, RDD::RenderPassID p_render_pass);
@@ -934,7 +936,7 @@ class RenderingDevice : public RenderingDeviceCommons {
 
  public:
   DrawListID draw_list_begin_for_screen(WindowSystem::WindowID p_screen = 0, const Color& p_clear_color = Color());
-  DrawListID draw_list_begin(RID p_framebuffer, InitialAction p_initial_color_action, FinalAction p_final_color_action,
+  DrawListID draw_list_begin(RID p_framebuffer, ColorInitialAction p_initial_color_action, ColorFinalAction p_final_color_action,
                              InitialAction p_initial_depth_action, FinalAction p_final_depth_action,
                              const Vector<Color>& p_clear_color_values = Vector<Color>(), float p_clear_depth = 1.0,
                              uint32_t p_clear_stencil = 0, const Rect2& p_region = Rect2());
@@ -1027,6 +1029,7 @@ class RenderingDevice : public RenderingDeviceCommons {
 	bool _dependencies_make_mutable(RID p_id, RDG::ResourceTracker *p_resource_tracker);
 
 	RenderingDeviceGraph draw_graph;
+  int32_t secondary_command_buffer_per_frame;
 
   /**************************/
   /**** QUEUE MANAGEMENT ****/
@@ -1093,7 +1096,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     // presented.
     LocalVector<RDD::SwapChainID> swap_chains_to_present; // 交换链, 为什么一帧中会有多个交换链？
     // Extra command buffer pool used for driver workarounds.
-		// RDG::CommandBufferPool command_buffer_pool;
+		RDG::CommandBufferPool command_buffer_pool;
     struct Timestamp {
       String description;
       uint64_t value = 0;

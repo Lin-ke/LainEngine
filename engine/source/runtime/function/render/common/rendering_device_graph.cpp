@@ -134,7 +134,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
     // Timestamp command should be adjacent to this command.
     _add_adjacent_command(command_timestamp_index, p_command_index, r_command);
   }
-
+  // ´¦ÓÚsynchronizationµÄ×´Ì¬
   if (command_synchronization_pending) {
     // All previous commands should be adjacent to this command.
     int32_t start_command_index = uint32_t(MAX(command_synchronization_index, 0));

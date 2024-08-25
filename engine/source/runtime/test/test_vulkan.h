@@ -29,7 +29,8 @@ namespace lain::test {
 		auto f = RenderingDevice::get_singleton()->framebuffer_format_create(formats);
 		auto g = RenderingDevice::get_singleton()->framebuffer_create_empty({720, 480}, RDD::TextureSamples::TEXTURE_SAMPLES_1, d);
 		L_PRINT(f, g.get_id());
-		
+		RenderingDevice* device = RenderingDevice::get_singleton();
+		device->compute_list_begin();
 	}
 
 }

@@ -20,6 +20,26 @@ void RenderingDevice::shader_set_get_cache_key_function(ShaderSPIRVGetCacheKeyFu
   get_spirv_cache_key_function = p_function;
 }
 
+// When true, the command graph will attempt to reorder the rendering commands submitted by the user based on the dependencies detected from
+// the commands automatically. This should improve rendering performance in most scenarios at the cost of some extra CPU overhead.
+//
+// This behavior can be disabled if it's suspected that the graph is not detecting dependencies correctly and more control over the order of
+// the commands is desired (e.g. debugging).
+
+#define RENDER_GRAPH_REORDER 1
+
+// Synchronization barriers are issued between the graph's levels only with the necessary amount of detail to achieve the correct result. If
+// it's suspected that the graph is not doing this correctly, full barriers can be issued instead that will block all types of operations
+// between the synchronization levels. This setting will have a very negative impact on performance when enabled, so it's only intended for
+// debugging purposes.
+
+#define RENDER_GRAPH_FULL_BARRIERS 0
+
+// The command graph can automatically issue secondary command buffers and record them on background threads when they reach an arbitrary
+// size threshold. This can be very beneficial towards reducing the time the main thread takes to record all the rendering commands. However,
+// this setting is not enabled by default as it's been shown to cause some strange issues with certain IHVs that have yet to be understood.
+
+
 /***************************/
 /**** ID INFRASTRUCTURE ****/
 /***************************/
@@ -409,17 +429,48 @@ RID RenderingDevice::texture_create(const TextureFormat& p_format, const Texture
   return id;
 }
 ///
-/// --- screen ---
+/// ******FRAME **********
 ///
 /// frame operations
 void RenderingDevice::_flush_and_stall_for_all_frames() {
-  // _stall_for_previous_frames();
+  _stall_for_previous_frames();
   // _end_frame();
   // _execute_frame(false);
   // _begin_frame();
 }
 
+void RenderingDevice::_stall_for_previous_frames() {
+	for (uint32_t i = 0; i < frames.size(); i++) {
+		if (frames[i].draw_fence_signaled) {
+			driver->fence_wait(frames[i].draw_fence);
+			frames[i].draw_fence_signaled = false;
+		}
+	}
+}
+
+void RenderingDevice::_end_frame() {
+	if (draw_list) {
+		ERR_PRINT("Found open draw list at the end of the frame, this should never happen (further drawing will likely not work).");
+	}
+
+	if (compute_list) {
+		ERR_PRINT("Found open compute list at the end of the frame, this should never happen (further compute will likely not work).");
+	}
+
+	driver->command_buffer_end(frames[frame].setup_command_buffer);
+
+	// The command buffer must be copied into a stack variable as the driver workarounds can change the command buffer in use.
+	RDD::CommandBufferID command_buffer = frames[frame].draw_command_buffer;
+	draw_graph.end(RENDER_GRAPH_REORDER, RENDER_GRAPH_FULL_BARRIERS, command_buffer, frames[frame].command_buffer_pool);
+	driver->command_buffer_end(command_buffer);
+	driver->end_segment();
+}
+
+
+
 /// --- swap chain ---
+/// ****** screen *******
+/// *********************
 Error RenderingDevice::screen_create(WindowSystem::WindowID p_screen) {
   _THREAD_SAFE_METHOD_
 
@@ -514,6 +565,259 @@ RenderingDevice::FramebufferFormatID RenderingDevice::screen_get_framebuffer_for
   Vector<AttachmentFormat> screen_attachment;
   screen_attachment.push_back(attachment);
   return const_cast<RenderingDevice*>(this)->framebuffer_format_create(screen_attachment);
+}
+
+Error RenderingDevice::screen_free(WindowSystem::WindowID p_screen) {
+	_THREAD_SAFE_METHOD_
+
+	HashMap<WindowSystem::WindowID, RDD::SwapChainID>::ConstIterator it = screen_swap_chains.find(p_screen);
+	ERR_FAIL_COND_V_MSG(it == screen_swap_chains.end(), FAILED, "Screen was never created.");
+
+	// Flush everything so nothing can be using the swap chain before erasing it.
+	_flush_and_stall_for_all_frames();
+
+	const WindowSystem::WindowID screen = it->key;
+	const RDD::SwapChainID swap_chain = it->value;
+	driver->swap_chain_free(swap_chain);
+	screen_framebuffers.erase(screen);
+	screen_swap_chains.erase(screen);
+
+	return OK;
+}
+/// ********************************
+/// ********** STAGING BUFFER ******
+/// *********************************
+
+Error RenderingDevice::_staging_buffer_allocate(uint32_t p_amount, uint32_t p_required_align, uint32_t &r_alloc_offset, uint32_t &r_alloc_size, StagingRequiredAction &r_required_action, bool p_can_segment) {
+	// Determine a block to use.
+
+	r_alloc_size = p_amount;
+	r_required_action = STAGING_REQUIRED_ACTION_NONE;
+
+	while (true) {
+		r_alloc_offset = 0;
+
+		// See if we can use current block.
+		if (staging_buffer_blocks[staging_buffer_current].frame_used == frames_drawn) {
+			// We used this block this frame, let's see if there is still room.
+
+			uint32_t write_from = staging_buffer_blocks[staging_buffer_current].fill_amount;
+
+			{
+				uint32_t align_remainder = write_from % p_required_align;
+				if (align_remainder != 0) {
+					write_from += p_required_align - align_remainder;
+				}
+			}
+
+			int32_t available_bytes = int32_t(staging_buffer_block_size) - int32_t(write_from);
+
+			if ((int32_t)p_amount < available_bytes) {
+				// All is good, we should be ok, all will fit.
+				r_alloc_offset = write_from;
+			} else if (p_can_segment && available_bytes >= (int32_t)p_required_align) {
+				// Ok all won't fit but at least we can fit a chunkie.
+				// All is good, update what needs to be written to.
+				r_alloc_offset = write_from;
+				r_alloc_size = available_bytes - (available_bytes % p_required_align);
+
+			} else {
+				// Can't fit it into this buffer.
+				// Will need to try next buffer.
+
+				staging_buffer_current = (staging_buffer_current + 1) % staging_buffer_blocks.size();
+
+				// Before doing anything, though, let's check that we didn't manage to fill all blocks.
+				// Possible in a single frame.
+				if (staging_buffer_blocks[staging_buffer_current].frame_used == frames_drawn) {
+					// Guess we did.. ok, let's see if we can insert a new block.
+					if ((uint64_t)staging_buffer_blocks.size() * staging_buffer_block_size < staging_buffer_max_size) {
+						// We can, so we are safe.
+						Error err = _insert_staging_block();
+						if (err) {
+							return err;
+						}
+						// Claim for this frame.
+						staging_buffer_blocks.write[staging_buffer_current].frame_used = frames_drawn;
+					} else {
+						// Ok, worst case scenario, all the staging buffers belong to this frame
+						// and this frame is not even done.
+						// If this is the main thread, it means the user is likely loading a lot of resources at once,.
+						// Otherwise, the thread should just be blocked until the next frame (currently unimplemented).
+						r_required_action = STAGING_REQUIRED_ACTION_FLUSH_AND_STALL_ALL;
+					}
+
+				} else {
+					// Not from current frame, so continue and try again.
+					continue;
+				}
+			}
+
+		} else if (staging_buffer_blocks[staging_buffer_current].frame_used <= frames_drawn - frames.size()) {
+			// This is an old block, which was already processed, let's reuse.
+			staging_buffer_blocks.write[staging_buffer_current].frame_used = frames_drawn;
+			staging_buffer_blocks.write[staging_buffer_current].fill_amount = 0;
+		} else {
+			// This block may still be in use, let's not touch it unless we have to, so.. can we create a new one?
+			if ((uint64_t)staging_buffer_blocks.size() * staging_buffer_block_size < staging_buffer_max_size) {
+				// We are still allowed to create a new block, so let's do that and insert it for current pos.
+				Error err = _insert_staging_block();
+				if (err) {
+					return err;
+				}
+				// Claim for this frame.
+				staging_buffer_blocks.write[staging_buffer_current].frame_used = frames_drawn;
+			} else {
+				// Oops, we are out of room and we can't create more.
+				// Let's flush older frames.
+				// The logic here is that if a game is loading a lot of data from the main thread, it will need to be stalled anyway.
+				// If loading from a separate thread, we can block that thread until next frame when more room is made (not currently implemented, though).
+				r_required_action = STAGING_REQUIRED_ACTION_STALL_PREVIOUS;
+			}
+		}
+
+		// All was good, break.
+		break;
+	}
+
+	staging_buffer_used = true;
+
+	return OK;
+}
+
+void RenderingDevice::_staging_buffer_execute_required_action(StagingRequiredAction p_required_action) {
+	switch (p_required_action) {
+		case STAGING_REQUIRED_ACTION_NONE: {
+			// Do nothing.
+		} break;
+		case STAGING_REQUIRED_ACTION_FLUSH_AND_STALL_ALL: { // 该帧的满了
+			_flush_and_stall_for_all_frames();
+
+			// Clear the whole staging buffer.
+			for (int i = 0; i < staging_buffer_blocks.size(); i++) {
+				staging_buffer_blocks.write[i].frame_used = 0;
+				staging_buffer_blocks.write[i].fill_amount = 0;
+			}
+
+			// Claim for current frame.
+			staging_buffer_blocks.write[staging_buffer_current].frame_used = frames_drawn;
+		} break;
+		case STAGING_REQUIRED_ACTION_STALL_PREVIOUS: {
+			_stall_for_previous_frames();
+
+			for (int i = 0; i < staging_buffer_blocks.size(); i++) {
+				// Clear all blocks but the ones from this frame.
+				int block_idx = (i + staging_buffer_current) % staging_buffer_blocks.size();
+				if (staging_buffer_blocks[block_idx].frame_used == frames_drawn) {
+					break; // Ok, we reached something from this frame, abort.
+				}
+
+				staging_buffer_blocks.write[block_idx].frame_used = 0;
+				staging_buffer_blocks.write[block_idx].fill_amount = 0;
+			}
+
+			// Claim for current frame.
+			staging_buffer_blocks.write[staging_buffer_current].frame_used = frames_drawn;
+		} break;
+		default: {
+			DEV_ASSERT(false && "Unknown required action.");
+		} break;
+	}
+}
+
+/// *******************************
+/// *********** buffer ************
+///******************************* 
+RenderingDevice::Buffer *RenderingDevice::_get_buffer_from_owner(RID p_buffer) {
+	Buffer *buffer = nullptr;
+	if (vertex_buffer_owner.owns(p_buffer)) {
+		buffer = vertex_buffer_owner.get_or_null(p_buffer);
+	} else if (index_buffer_owner.owns(p_buffer)) {
+		buffer = index_buffer_owner.get_or_null(p_buffer);
+	} else if (uniform_buffer_owner.owns(p_buffer)) {
+		buffer = uniform_buffer_owner.get_or_null(p_buffer);
+	} else if (texture_buffer_owner.owns(p_buffer)) {
+		DEV_ASSERT(false && "FIXME: Broken.");
+		//buffer = texture_buffer_owner.get_or_null(p_buffer)->buffer;
+	} else if (storage_buffer_owner.owns(p_buffer)) {
+		buffer = storage_buffer_owner.get_or_null(p_buffer);
+	}
+	return buffer;
+}
+
+
+Error RenderingDevice::_buffer_update(Buffer *p_buffer, RID p_buffer_id, size_t p_offset, const uint8_t *p_data, size_t p_data_size, bool p_use_draw_queue, uint32_t p_required_align) {
+	// Submitting may get chunked for various reasons, so convert this to a task.
+	size_t to_submit = p_data_size;
+	size_t submit_from = 0;
+
+	thread_local LocalVector<RDG::RecordedBufferCopy> command_buffer_copies_vector;
+	command_buffer_copies_vector.clear();
+
+	while (to_submit > 0) {
+		uint32_t block_write_offset;
+		uint32_t block_write_amount;
+		StagingRequiredAction required_action;
+	
+		Error err = _staging_buffer_allocate(MIN(to_submit, staging_buffer_block_size), p_required_align, block_write_offset, block_write_amount, required_action);
+		if (err) {
+			return err;
+		}
+
+		if (p_use_draw_queue && !command_buffer_copies_vector.is_empty() && required_action == STAGING_REQUIRED_ACTION_FLUSH_AND_STALL_ALL) {
+			if (_buffer_make_mutable(p_buffer, p_buffer_id)) {
+				// The buffer must be mutable to be used as a copy destination.
+				draw_graph.add_synchronization();
+			}
+
+			// If we're using the draw queue and the staging buffer requires flushing everything, we submit the command early and clear the current vector.
+			draw_graph.add_buffer_update(p_buffer->driver_id, p_buffer->draw_tracker, command_buffer_copies_vector);
+			command_buffer_copies_vector.clear();
+		}
+
+		_staging_buffer_execute_required_action(required_action);
+
+		// Map staging buffer (It's CPU and coherent).
+		uint8_t *data_ptr = driver->buffer_map(staging_buffer_blocks[staging_buffer_current].driver_id);
+		ERR_FAIL_NULL_V(data_ptr, ERR_CANT_CREATE);
+
+		// Copy to staging buffer.
+		memcpy(data_ptr + block_write_offset, p_data + submit_from, block_write_amount);
+
+		// Unmap.
+		driver->buffer_unmap(staging_buffer_blocks[staging_buffer_current].driver_id);
+
+		// Insert a command to copy this.
+		RDD::BufferCopyRegion region;
+		region.src_offset = block_write_offset;
+		region.dst_offset = submit_from + p_offset;
+		region.size = block_write_amount;
+
+		if (p_use_draw_queue) {
+			RDG::RecordedBufferCopy buffer_copy;
+			buffer_copy.source = staging_buffer_blocks[staging_buffer_current].driver_id;
+			buffer_copy.region = region;
+			command_buffer_copies_vector.push_back(buffer_copy);
+		} else {
+			driver->command_copy_buffer(frames[frame].setup_command_buffer, staging_buffer_blocks[staging_buffer_current].driver_id, p_buffer->driver_id, region);
+		}
+
+		staging_buffer_blocks.write[staging_buffer_current].fill_amount = block_write_offset + block_write_amount;
+
+		to_submit -= block_write_amount;
+		submit_from += block_write_amount;
+	}
+
+	if (p_use_draw_queue && !command_buffer_copies_vector.is_empty()) {
+		if (_buffer_make_mutable(p_buffer, p_buffer_id)) {
+			// The buffer must be mutable to be used as a copy destination.
+			draw_graph.add_synchronization();
+		}
+
+		draw_graph.add_buffer_update(p_buffer->driver_id, p_buffer->draw_tracker, command_buffer_copies_vector);
+	}
+
+	return OK;
 }
 
 uint32_t RenderingDevice::_get_swap_chain_desired_count() const {
@@ -1626,62 +1930,6 @@ void RenderingDevice::_free_internal(RID p_id) {
 #endif
   }
 }
-
-/*******************/
-/**** DRAW LIST ****/
-/*******************/
-
-Error RenderingDevice::_draw_list_allocate(const Rect2i& p_viewport, uint32_t p_subpass) {
-  // Lock while draw_list is active.
-  _THREAD_SAFE_LOCK_
-
-  draw_list = memnew(DrawList);
-  draw_list->viewport = p_viewport;
-
-  return OK;
-}
-
-RenderingDevice::DrawListID RenderingDevice::draw_list_begin_for_screen(WindowSystem::WindowID p_screen,
-                                                                        const Color& p_clear_color) {
-  _THREAD_SAFE_METHOD_
-
-  ERR_FAIL_COND_V_MSG(draw_list != nullptr, INVALID_ID, "Only one draw list can be active at the same time.");
-  ERR_FAIL_COND_V_MSG(compute_list != nullptr, INVALID_ID, "Only one draw/compute list can be active at the same time.");
-
-  RenderingContextDriver::SurfaceID surface = context->surface_get_from_window(p_screen);
-  HashMap<WindowSystem::WindowID, RDD::SwapChainID>::ConstIterator sc_it = screen_swap_chains.find(p_screen);
-  HashMap<WindowSystem::WindowID, RDD::FramebufferID>::ConstIterator fb_it = screen_framebuffers.find(p_screen);
-  ERR_FAIL_COND_V_MSG(surface == 0, 0, "A surface was not created for the screen.");
-  ERR_FAIL_COND_V_MSG(sc_it == screen_swap_chains.end(), INVALID_ID, "Screen was never prepared.");
-  ERR_FAIL_COND_V_MSG(fb_it == screen_framebuffers.end(), INVALID_ID, "Framebuffer was never prepared.");
-  // 这里使用了context的api，而非window_system的api
-  Rect2i viewport = Rect2i(0, 0, context->surface_get_width(surface), context->surface_get_height(surface));
-
-  _draw_list_allocate(viewport, 0);
-#ifdef DEBUG_ENABLED
-  draw_list_framebuffer_format = screen_get_framebuffer_format(p_screen);
-#endif
-  draw_list_subpass_count = 1;
-
-  RDD::RenderPassClearValue clear_value;
-  clear_value.color = p_clear_color;
-
-  RDD::RenderPassID render_pass = driver->swap_chain_get_render_pass(sc_it->value);
-  draw_graph.add_draw_list_begin(render_pass, fb_it->value, viewport, clear_value, true, false);
-
-  _draw_list_set_viewport(viewport);
-  _draw_list_set_scissor(viewport);
-
-  return int64_t(ID_TYPE_DRAW_LIST) << ID_BASE_SHIFT;
-}
-
-void RenderingDevice::_draw_list_set_viewport(Rect2i p_rect) {
-  draw_graph.add_draw_list_set_viewport(p_rect);
-}
-
-void RenderingDevice::_draw_list_set_scissor(Rect2i p_rect) {
-  draw_graph.add_draw_list_set_scissor(p_rect);
-}
 ///
 /// ***** compute list ****
 ///
@@ -1698,7 +1946,7 @@ RenderingDevice::ComputeListID RenderingDevice::compute_list_begin() {
 
   draw_graph.add_compute_list_begin();
 
-  return ID_TYPE_COMPUTE_LIST;  // @? 为什么返回这个
+  return ID_TYPE_COMPUTE_LIST;  
 }
 void RenderingDevice::compute_list_bind_compute_pipeline(ComputeListID p_list, RID p_compute_pipeline) {
 
@@ -2479,4 +2727,748 @@ void RenderingDevice::compute_list_end() {
 
   // Compute_list is no longer active.
   _THREAD_SAFE_UNLOCK_
+}
+
+static const char *SHADER_UNIFORM_NAMES[RenderingDevice::UNIFORM_TYPE_MAX] = {
+	"Sampler", "CombinedSampler", "Texture", "Image", "TextureBuffer", "SamplerTextureBuffer", "ImageBuffer", "UniformBuffer", "StorageBuffer", "InputAttachment"
+};
+String RenderingDevice::_shader_uniform_debug(RID p_shader, int p_set) {
+	String ret;
+	const Shader *shader = shader_owner.get_or_null(p_shader);
+	ERR_FAIL_INDEX_V(p_set , shader->uniform_sets.size(), String());
+	ERR_FAIL_NULL_V(shader, String());
+	const Vector<ShaderUniform>& uniform_set = shader->uniform_sets[p_set];
+
+	for (int j = 0; j < uniform_set.size(); j++) {
+		const ShaderUniform &ui = uniform_set[j];
+		if (!ret.is_empty()) {
+			ret += "\n";
+		}
+		ret += "Set: " + itos(p_set) + " Binding: " + itos(ui.binding) + " Type: " + SHADER_UNIFORM_NAMES[ui.type] + " Writable: " + (ui.writable ? "Y" : "N") + " Length: " + itos(ui.length);
+	}
+	return ret;
+}
+
+
+
+
+
+
+/*******************/
+/**** DRAW LIST ****/
+/*******************/
+
+Error RenderingDevice::_draw_list_allocate(const Rect2i& p_viewport, uint32_t p_subpass) {
+  // Lock while draw_list is active.
+  _THREAD_SAFE_LOCK_
+
+  draw_list = memnew(DrawList);
+  draw_list->viewport = p_viewport;
+
+  return OK;
+}
+
+RenderingDevice::DrawListID RenderingDevice::draw_list_begin_for_screen(WindowSystem::WindowID p_screen,
+                                                                        const Color& p_clear_color) {
+  _THREAD_SAFE_METHOD_
+
+  ERR_FAIL_COND_V_MSG(draw_list != nullptr, INVALID_ID, "Only one draw list can be active at the same time.");
+  ERR_FAIL_COND_V_MSG(compute_list != nullptr, INVALID_ID, "Only one draw/compute list can be active at the same time.");
+
+  RenderingContextDriver::SurfaceID surface = context->surface_get_from_window(p_screen);
+  HashMap<WindowSystem::WindowID, RDD::SwapChainID>::ConstIterator sc_it = screen_swap_chains.find(p_screen);
+  HashMap<WindowSystem::WindowID, RDD::FramebufferID>::ConstIterator fb_it = screen_framebuffers.find(p_screen);
+  ERR_FAIL_COND_V_MSG(surface == 0, 0, "A surface was not created for the screen.");
+  ERR_FAIL_COND_V_MSG(sc_it == screen_swap_chains.end(), INVALID_ID, "Screen was never prepared.");
+  ERR_FAIL_COND_V_MSG(fb_it == screen_framebuffers.end(), INVALID_ID, "Framebuffer was never prepared.");
+  // 这里使用了context的api，而非window_system的api
+  Rect2i viewport = Rect2i(0, 0, context->surface_get_width(surface), context->surface_get_height(surface));
+
+  _draw_list_allocate(viewport, 0);
+#ifdef DEBUG_ENABLED
+  draw_list_framebuffer_format = screen_get_framebuffer_format(p_screen);
+#endif
+  draw_list_subpass_count = 1;
+
+  RDD::RenderPassClearValue clear_value;
+  clear_value.color = p_clear_color;
+
+  RDD::RenderPassID render_pass = driver->swap_chain_get_render_pass(sc_it->value);
+  draw_graph.add_draw_list_begin(render_pass, fb_it->value, viewport, clear_value, true, false);
+
+  _draw_list_set_viewport(viewport);
+  _draw_list_set_scissor(viewport);
+
+  return int64_t(ID_TYPE_DRAW_LIST) << ID_BASE_SHIFT;
+}
+
+Error RenderingDevice::_draw_list_setup_framebuffer(Framebuffer *p_framebuffer, ColorInitialAction p_initial_color_action, ColorFinalAction p_final_color_action, InitialAction p_initial_depth_action, FinalAction p_final_depth_action, RDD::FramebufferID *r_framebuffer, RDD::RenderPassID *r_render_pass, uint32_t *r_subpass_count) {
+	Framebuffer::VersionKey vk;
+	vk.initial_color_action = p_initial_color_action;
+	vk.final_color_action = p_final_color_action;
+	vk.initial_depth_action = p_initial_depth_action;
+	vk.final_depth_action = p_final_depth_action;
+	vk.view_count = p_framebuffer->view_count;
+
+	if (!p_framebuffer->framebuffers.has(vk)) {
+		// Need to create this version.
+		Framebuffer::Version version;
+
+		version.render_pass = _render_pass_create(framebuffer_formats[p_framebuffer->format_id].E->key().attachment_formats, framebuffer_formats[p_framebuffer->format_id].E->key().passes, p_initial_color_action, p_final_color_action, p_initial_depth_action, p_final_depth_action, p_framebuffer->view_count);
+
+		LocalVector<RDD::TextureID> attachments;
+		for (int i = 0; i < p_framebuffer->texture_ids.size(); i++) {
+			Texture *texture = texture_owner.get_or_null(p_framebuffer->texture_ids[i]);
+			if (texture) {
+				attachments.push_back(texture->driver_id);
+				if (!(texture->usage_flags & TEXTURE_USAGE_VRS_ATTACHMENT_BIT)) { // VRS attachment will be a different size.
+					ERR_FAIL_COND_V(texture->width != p_framebuffer->size.x, ERR_BUG);
+					ERR_FAIL_COND_V(texture->height != p_framebuffer->size.y, ERR_BUG);
+				}
+			}
+		}
+
+		version.framebuffer = driver->framebuffer_create(version.render_pass, attachments, p_framebuffer->size.x, p_framebuffer->size.y);
+		ERR_FAIL_COND_V(!version.framebuffer, ERR_CANT_CREATE);
+
+		version.subpass_count = framebuffer_formats[p_framebuffer->format_id].E->key().passes.size();
+
+		p_framebuffer->framebuffers.insert(vk, version);
+	}
+	const Framebuffer::Version &version = p_framebuffer->framebuffers[vk];
+	*r_framebuffer = version.framebuffer;
+	*r_render_pass = version.render_pass;
+	*r_subpass_count = version.subpass_count;
+
+	return OK;
+}
+
+Error RenderingDevice::_draw_list_render_pass_begin(Framebuffer *p_framebuffer, InitialAction p_initial_color_action, FinalAction p_final_color_action, InitialAction p_initial_depth_action, FinalAction p_final_depth_action, const Vector<Color> &p_clear_colors, float p_clear_depth, uint32_t p_clear_stencil, Point2i p_viewport_offset, Point2i p_viewport_size, RDD::FramebufferID p_framebuffer_driver_id, RDD::RenderPassID p_render_pass) {
+	thread_local LocalVector<RDD::RenderPassClearValue> clear_values;
+	thread_local LocalVector<RDG::ResourceTracker *> resource_trackers;
+	thread_local LocalVector<RDG::ResourceUsage> resource_usages;
+	bool uses_color = false;
+	bool uses_depth = false;
+	clear_values.clear();
+	clear_values.resize(p_framebuffer->texture_ids.size());
+	resource_trackers.clear();
+	resource_usages.clear();
+	int clear_values_count = 0;
+	{
+		int color_index = 0;
+		for (int i = 0; i < p_framebuffer->texture_ids.size(); i++) {
+			RDD::RenderPassClearValue clear_value;
+
+			RID texture_rid = p_framebuffer->texture_ids[i];
+			Texture *texture = texture_owner.get_or_null(texture_rid);
+			if (!texture) {
+				color_index++;
+				continue;
+			}
+
+			// Indicate the texture will get modified for the shared texture fallback.
+			_texture_update_shared_fallback(texture_rid, texture, true);
+
+			if (texture->usage_flags & TEXTURE_USAGE_COLOR_ATTACHMENT_BIT) {
+				if (color_index < p_clear_colors.size()) {
+					ERR_FAIL_INDEX_V(color_index, p_clear_colors.size(), ERR_BUG); // A bug.
+					clear_value.color = p_clear_colors[color_index];
+					color_index++;
+				}
+
+				resource_trackers.push_back(texture->draw_tracker);
+				resource_usages.push_back(RDG::RESOURCE_USAGE_ATTACHMENT_COLOR_READ_WRITE);
+				uses_color = true;
+			} else if (texture->usage_flags & TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+				clear_value.depth = p_clear_depth;
+				clear_value.stencil = p_clear_stencil;
+				resource_trackers.push_back(texture->draw_tracker);
+				resource_usages.push_back(RDG::RESOURCE_USAGE_ATTACHMENT_DEPTH_STENCIL_READ_WRITE);
+				uses_depth = true;
+			}
+
+			clear_values[clear_values_count++] = clear_value;
+		}
+	}
+
+	draw_graph.add_draw_list_begin(p_render_pass, p_framebuffer_driver_id, Rect2i(p_viewport_offset, p_viewport_size), clear_values, uses_color, uses_depth);
+	draw_graph.add_draw_list_usages(resource_trackers, resource_usages);
+
+	// Mark textures as bound.
+	draw_list_bound_textures.clear();
+
+	for (int i = 0; i < p_framebuffer->texture_ids.size(); i++) {
+		Texture *texture = texture_owner.get_or_null(p_framebuffer->texture_ids[i]);
+		if (!texture) {
+			continue;
+		}
+		texture->bound = true;
+		draw_list_bound_textures.push_back(p_framebuffer->texture_ids[i]);
+	}
+
+	return OK;
+}
+
+void RenderingDevice::_draw_list_set_viewport(Rect2i p_rect) {
+	draw_graph.add_draw_list_set_viewport(p_rect);
+}
+
+void RenderingDevice::_draw_list_set_scissor(Rect2i p_rect) {
+	draw_graph.add_draw_list_set_scissor(p_rect);
+}
+
+void RenderingDevice::_draw_list_insert_clear_region(DrawList *p_draw_list, Framebuffer *p_framebuffer, Point2i p_viewport_offset, Point2i p_viewport_size, bool p_clear_color, const Vector<Color> &p_clear_colors, bool p_clear_depth, float p_depth, uint32_t p_stencil) {
+	LocalVector<RDD::AttachmentClear> clear_attachments;
+	int color_index = 0;
+	int texture_index = 0;
+	for (int i = 0; i < p_framebuffer->texture_ids.size(); i++) {
+		Texture *texture = texture_owner.get_or_null(p_framebuffer->texture_ids[i]);
+
+		if (!texture) {
+			texture_index++;
+			continue;
+		}
+
+		RDD::AttachmentClear clear_at;
+		if (p_clear_color && (texture->usage_flags & TEXTURE_USAGE_COLOR_ATTACHMENT_BIT)) {
+			Color clear_color = p_clear_colors[texture_index++];
+			clear_at.value.color = clear_color;
+			clear_at.color_attachment = color_index++;
+			clear_at.aspect = RDD::TEXTURE_ASPECT_COLOR_BIT;
+		} else if (p_clear_depth && (texture->usage_flags & TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+			clear_at.value.depth = p_depth;
+			clear_at.value.stencil = p_stencil;
+			clear_at.color_attachment = 0;
+			clear_at.aspect = RDD::TEXTURE_ASPECT_DEPTH_BIT;
+			if (format_has_stencil(texture->format)) {
+				clear_at.aspect.set_flag(RDD::TEXTURE_ASPECT_STENCIL_BIT);
+			}
+		} else {
+			ERR_CONTINUE(true);
+		}
+		clear_attachments.push_back(clear_at);
+	}
+
+	Rect2i rect = Rect2i(p_viewport_offset, p_viewport_size);
+	draw_graph.add_draw_list_clear_attachments(clear_attachments, rect);
+}
+
+RenderingDevice::DrawListID RenderingDevice::draw_list_begin(RID p_framebuffer, ColorInitialAction p_initial_color_action, ColorFinalAction p_final_color_action, InitialAction p_initial_depth_action, FinalAction p_final_depth_action, const Vector<Color> &p_clear_color_values, float p_clear_depth, uint32_t p_clear_stencil, const Rect2 &p_region) {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V_MSG(draw_list != nullptr, INVALID_ID, "Only one draw list can be active at the same time.");
+
+	Framebuffer *framebuffer = framebuffer_owner.get_or_null(p_framebuffer);
+	ERR_FAIL_NULL_V(framebuffer, INVALID_ID);
+
+	Point2i viewport_offset;
+	Point2i viewport_size = framebuffer->size;
+
+	if (p_region != Rect2() && p_region != Rect2(Vector2(), viewport_size)) { // Check custom region.
+		Rect2i viewport(viewport_offset, viewport_size);
+		Rect2i regioni = p_region;
+		if (!((regioni.position.x >= viewport.position.x) && (regioni.position.y >= viewport.position.y) &&
+					((regioni.position.x + regioni.size.x) <= (viewport.position.x + viewport.size.x)) &&
+					((regioni.position.y + regioni.size.y) <= (viewport.position.y + viewport.size.y)))) {
+			ERR_FAIL_V_MSG(INVALID_ID, "When supplying a custom region, it must be contained within the framebuffer rectangle");
+		}
+
+		viewport_offset = regioni.position;
+		viewport_size = regioni.size;
+	}
+
+	if (p_initial_color_action == INITIAL_ACTION_CLEAR) { // Check clear values.
+		int color_count = 0;
+		for (int i = 0; i < framebuffer->texture_ids.size(); i++) {
+			Texture *texture = texture_owner.get_or_null(framebuffer->texture_ids[i]);
+			// We only check for our VRS usage bit if this is not the first texture id.
+			// If it is the first we're likely populating our VRS texture.
+			// Bit dirty but...
+			if (!texture || (!(texture->usage_flags & TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) && !(i != 0 && texture->usage_flags & TEXTURE_USAGE_VRS_ATTACHMENT_BIT))) {
+				if (!texture || !texture->is_resolve_buffer) {
+					color_count++;
+				}
+			}
+		}
+		ERR_FAIL_COND_V_MSG(p_clear_color_values.size() != color_count, INVALID_ID, "Clear color values supplied (" + itos(p_clear_color_values.size()) + ") differ from the amount required for framebuffer color attachments (" + itos(color_count) + ").");
+	}
+
+	RDD::FramebufferID fb_driver_id;
+	RDD::RenderPassID render_pass;
+
+	Error err = _draw_list_setup_framebuffer(framebuffer, p_initial_color_action, p_final_color_action, p_initial_depth_action, p_final_depth_action, &fb_driver_id, &render_pass, &draw_list_subpass_count);
+	ERR_FAIL_COND_V(err != OK, INVALID_ID);
+
+	err = _draw_list_render_pass_begin(framebuffer, p_initial_color_action, p_final_color_action, p_initial_depth_action, p_final_depth_action, p_clear_color_values, p_clear_depth, p_clear_stencil, viewport_offset, viewport_size, fb_driver_id, render_pass);
+
+	if (err != OK) {
+		return INVALID_ID;
+	}
+
+	draw_list_render_pass = render_pass;
+	draw_list_vkframebuffer = fb_driver_id;
+
+	_draw_list_allocate(Rect2i(viewport_offset, viewport_size), 0);
+#ifdef DEBUG_ENABLED
+	draw_list_framebuffer_format = framebuffer->format_id;
+#endif
+	draw_list_current_subpass = 0;
+
+	_draw_list_set_viewport(Rect2i(viewport_offset, viewport_size));
+	_draw_list_set_scissor(Rect2i(viewport_offset, viewport_size));
+
+	return int64_t(ID_TYPE_DRAW_LIST) << ID_BASE_SHIFT;
+}
+
+RenderingDevice::DrawList *RenderingDevice::_get_draw_list_ptr(DrawListID p_id) {
+	if (p_id < 0) {
+		return nullptr;
+	}
+
+	if (!draw_list) {
+		return nullptr;
+	} else if (p_id == (int64_t(ID_TYPE_DRAW_LIST) << ID_BASE_SHIFT)) {
+		return draw_list;
+	} else {
+		return nullptr;
+	}
+}
+
+void RenderingDevice::draw_list_set_blend_constants(DrawListID p_list, const Color &p_color) {
+	DrawList *dl = _get_draw_list_ptr(p_list);
+	ERR_FAIL_NULL(dl);
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_MSG(!dl->validation.active, "Submitted Draw Lists can no longer be modified.");
+#endif
+
+	draw_graph.add_draw_list_set_blend_constants(p_color);
+}
+
+void RenderingDevice::draw_list_bind_render_pipeline(DrawListID p_list, RID p_render_pipeline) {
+	DrawList *dl = _get_draw_list_ptr(p_list);
+	ERR_FAIL_NULL(dl);
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_MSG(!dl->validation.active, "Submitted Draw Lists can no longer be modified.");
+#endif
+
+	const RenderPipeline *pipeline = render_pipeline_owner.get_or_null(p_render_pipeline);
+	ERR_FAIL_NULL(pipeline);
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND(pipeline->validation.framebuffer_format != draw_list_framebuffer_format && pipeline->validation.render_pass != draw_list_current_subpass);
+#endif
+
+	if (p_render_pipeline == dl->state.pipeline) {
+		return; // Redundant state, return.
+	}
+
+	dl->state.pipeline = p_render_pipeline;
+
+	draw_graph.add_draw_list_bind_pipeline(pipeline->driver_id, pipeline->stage_bits);
+
+	if (dl->state.pipeline_shader != pipeline->shader) {
+		// Shader changed, so descriptor sets may become incompatible.
+
+		uint32_t pcount = pipeline->set_formats.size(); // Formats count in this pipeline.
+		dl->state.set_count = MAX(dl->state.set_count, pcount);
+		const uint32_t *pformats = pipeline->set_formats.ptr(); // Pipeline set formats.
+
+		uint32_t first_invalid_set = UINT32_MAX; // All valid by default.
+		switch (driver->api_trait_get(RDD::API_TRAIT_SHADER_CHANGE_INVALIDATION)) {
+			case RDD::SHADER_CHANGE_INVALIDATION_ALL_BOUND_UNIFORM_SETS: {
+				first_invalid_set = 0;
+			} break;
+			case RDD::SHADER_CHANGE_INVALIDATION_INCOMPATIBLE_SETS_PLUS_CASCADE: {
+				for (uint32_t i = 0; i < pcount; i++) {
+					if (dl->state.sets[i].pipeline_expected_format != pformats[i]) {
+						first_invalid_set = i;
+						break;
+					}
+				}
+			} break;
+			case RDD::SHADER_CHANGE_INVALIDATION_ALL_OR_NONE_ACCORDING_TO_LAYOUT_HASH: {
+				if (dl->state.pipeline_shader_layout_hash != pipeline->shader_layout_hash) {
+					first_invalid_set = 0;
+				}
+			} break;
+		}
+
+		for (uint32_t i = 0; i < pcount; i++) {
+			dl->state.sets[i].bound = dl->state.sets[i].bound && i < first_invalid_set;
+			dl->state.sets[i].pipeline_expected_format = pformats[i];
+		}
+
+		for (uint32_t i = pcount; i < dl->state.set_count; i++) {
+			// Unbind the ones above (not used) if exist.
+			dl->state.sets[i].bound = false;
+		}
+
+		dl->state.set_count = pcount; // Update set count.
+
+		if (pipeline->push_constant_size) {
+#ifdef DEBUG_ENABLED
+			dl->validation.pipeline_push_constant_supplied = false;
+#endif
+		}
+
+		dl->state.pipeline_shader = pipeline->shader;
+		dl->state.pipeline_shader_driver_id = pipeline->shader_driver_id;
+		dl->state.pipeline_shader_layout_hash = pipeline->shader_layout_hash;
+	}
+
+#ifdef DEBUG_ENABLED
+	// Update render pass pipeline info.
+	dl->validation.pipeline_active = true;
+	dl->validation.pipeline_dynamic_state = pipeline->validation.dynamic_state;
+	dl->validation.pipeline_vertex_format = pipeline->validation.vertex_format;
+	dl->validation.pipeline_uses_restart_indices = pipeline->validation.uses_restart_indices;
+	dl->validation.pipeline_primitive_divisor = pipeline->validation.primitive_divisor;
+	dl->validation.pipeline_primitive_minimum = pipeline->validation.primitive_minimum;
+	dl->validation.pipeline_push_constant_size = pipeline->push_constant_size;
+#endif
+}
+
+void RenderingDevice::draw_list_bind_uniform_set(DrawListID p_list, RID p_uniform_set, uint32_t p_index) {
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_MSG(p_index >= driver->limit_get(LIMIT_MAX_BOUND_UNIFORM_SETS) || p_index >= MAX_UNIFORM_SETS,
+			"Attempting to bind a descriptor set (" + itos(p_index) + ") greater than what the hardware supports (" + itos(driver->limit_get(LIMIT_MAX_BOUND_UNIFORM_SETS)) + ").");
+#endif
+	DrawList *dl = _get_draw_list_ptr(p_list);
+	ERR_FAIL_NULL(dl);
+
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_MSG(!dl->validation.active, "Submitted Draw Lists can no longer be modified.");
+#endif
+
+	const UniformSet *uniform_set = uniform_set_owner.get_or_null(p_uniform_set);
+	ERR_FAIL_NULL(uniform_set);
+
+	if (p_index > dl->state.set_count) {
+		dl->state.set_count = p_index;
+	}
+
+	dl->state.sets[p_index].uniform_set_driver_id = uniform_set->driver_id; // Update set pointer.
+	dl->state.sets[p_index].bound = false; // Needs rebind.
+	dl->state.sets[p_index].uniform_set_format = uniform_set->format;
+	dl->state.sets[p_index].uniform_set = p_uniform_set;
+
+#ifdef DEBUG_ENABLED
+	{ // Validate that textures bound are not attached as framebuffer bindings.
+		uint32_t attachable_count = uniform_set->attachable_textures.size();
+		const UniformSet::AttachableTexture *attachable_ptr = uniform_set->attachable_textures.ptr();
+		uint32_t bound_count = draw_list_bound_textures.size();
+		const RID *bound_ptr = draw_list_bound_textures.ptr();
+		for (uint32_t i = 0; i < attachable_count; i++) {
+			for (uint32_t j = 0; j < bound_count; j++) {
+				ERR_FAIL_COND_MSG(attachable_ptr[i].texture == bound_ptr[j],
+						"Attempted to use the same texture in framebuffer attachment and a uniform (set: " + itos(p_index) + ", binding: " + itos(attachable_ptr[i].bind) + "), this is not allowed.");
+			}
+		}
+	}
+#endif
+}
+
+void RenderingDevice::draw_list_bind_vertex_array(DrawListID p_list, RID p_vertex_array) {
+	DrawList *dl = _get_draw_list_ptr(p_list);
+	ERR_FAIL_NULL(dl);
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_MSG(!dl->validation.active, "Submitted Draw Lists can no longer be modified.");
+#endif
+
+	const VertexArray *vertex_array = vertex_array_owner.get_or_null(p_vertex_array);
+	ERR_FAIL_NULL(vertex_array);
+
+	if (dl->state.vertex_array == p_vertex_array) {
+		return; // Already set.
+	}
+
+	dl->state.vertex_array = p_vertex_array;
+
+#ifdef DEBUG_ENABLED
+	dl->validation.vertex_format = vertex_array->description;
+	dl->validation.vertex_max_instances_allowed = vertex_array->max_instances_allowed;
+#endif
+	dl->validation.vertex_array_size = vertex_array->vertex_count;
+
+	draw_graph.add_draw_list_bind_vertex_buffers(vertex_array->buffers, vertex_array->offsets);
+
+	for (int i = 0; i < vertex_array->draw_trackers.size(); i++) {
+		draw_graph.add_draw_list_usage(vertex_array->draw_trackers[i], RDG::RESOURCE_USAGE_VERTEX_BUFFER_READ);
+	}
+}
+
+void RenderingDevice::draw_list_bind_index_array(DrawListID p_list, RID p_index_array) {
+	DrawList *dl = _get_draw_list_ptr(p_list);
+	ERR_FAIL_NULL(dl);
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_MSG(!dl->validation.active, "Submitted Draw Lists can no longer be modified.");
+#endif
+
+	const IndexArray *index_array = index_array_owner.get_or_null(p_index_array);
+	ERR_FAIL_NULL(index_array);
+
+	if (dl->state.index_array == p_index_array) {
+		return; // Already set.
+	}
+
+	dl->state.index_array = p_index_array;
+#ifdef DEBUG_ENABLED
+	dl->validation.index_array_max_index = index_array->max_index;
+#endif
+	dl->validation.index_array_count = index_array->indices;
+
+	const uint64_t offset_bytes = index_array->offset * (index_array->format == INDEX_BUFFER_FORMAT_UINT16 ? sizeof(uint16_t) : sizeof(uint32_t));
+	draw_graph.add_draw_list_bind_index_buffer(index_array->driver_id, index_array->format, offset_bytes);
+
+	if (index_array->draw_tracker != nullptr) {
+		draw_graph.add_draw_list_usage(index_array->draw_tracker, RDG::RESOURCE_USAGE_INDEX_BUFFER_READ);
+	}
+}
+
+void RenderingDevice::draw_list_set_line_width(DrawListID p_list, float p_width) {
+	DrawList *dl = _get_draw_list_ptr(p_list);
+	ERR_FAIL_NULL(dl);
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_MSG(!dl->validation.active, "Submitted Draw Lists can no longer be modified.");
+#endif
+
+	draw_graph.add_draw_list_set_line_width(p_width);
+}
+
+void RenderingDevice::draw_list_set_push_constant(DrawListID p_list, const void *p_data, uint32_t p_data_size) {
+	DrawList *dl = _get_draw_list_ptr(p_list);
+	ERR_FAIL_NULL(dl);
+
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_MSG(!dl->validation.active, "Submitted Draw Lists can no longer be modified.");
+#endif
+
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_MSG(p_data_size != dl->validation.pipeline_push_constant_size,
+			"This render pipeline requires (" + itos(dl->validation.pipeline_push_constant_size) + ") bytes of push constant data, supplied: (" + itos(p_data_size) + ")");
+#endif
+
+	draw_graph.add_draw_list_set_push_constant(dl->state.pipeline_shader_driver_id, p_data, p_data_size);
+
+#ifdef DEBUG_ENABLED
+	dl->validation.pipeline_push_constant_supplied = true;
+#endif
+}
+
+void RenderingDevice::draw_list_draw(DrawListID p_list, bool p_use_indices, uint32_t p_instances, uint32_t p_procedural_vertices) {
+	DrawList *dl = _get_draw_list_ptr(p_list);
+	ERR_FAIL_NULL(dl);
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_MSG(!dl->validation.active, "Submitted Draw Lists can no longer be modified.");
+#endif
+
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_MSG(!dl->validation.pipeline_active,
+			"No render pipeline was set before attempting to draw.");
+	if (dl->validation.pipeline_vertex_format != INVALID_ID) {
+		// Pipeline uses vertices, validate format.
+		ERR_FAIL_COND_MSG(dl->validation.vertex_format == INVALID_ID,
+				"No vertex array was bound, and render pipeline expects vertices.");
+		// Make sure format is right.
+		ERR_FAIL_COND_MSG(dl->validation.pipeline_vertex_format != dl->validation.vertex_format,
+				"The vertex format used to create the pipeline does not match the vertex format bound.");
+		// Make sure number of instances is valid.
+		ERR_FAIL_COND_MSG(p_instances > dl->validation.vertex_max_instances_allowed,
+				"Number of instances requested (" + itos(p_instances) + " is larger than the maximum number supported by the bound vertex array (" + itos(dl->validation.vertex_max_instances_allowed) + ").");
+	}
+
+	if (dl->validation.pipeline_push_constant_size > 0) {
+		// Using push constants, check that they were supplied.
+		ERR_FAIL_COND_MSG(!dl->validation.pipeline_push_constant_supplied,
+				"The shader in this pipeline requires a push constant to be set before drawing, but it's not present.");
+	}
+
+#endif
+
+#ifdef DEBUG_ENABLED
+	for (uint32_t i = 0; i < dl->state.set_count; i++) {
+		if (dl->state.sets[i].pipeline_expected_format == 0) {
+			// Nothing expected by this pipeline.
+			continue;
+		}
+
+		if (dl->state.sets[i].pipeline_expected_format != dl->state.sets[i].uniform_set_format) {
+			if (dl->state.sets[i].uniform_set_format == 0) {
+				ERR_FAIL_MSG("Uniforms were never supplied for set (" + itos(i) + ") at the time of drawing, which are required by the pipeline.");
+			} else if (uniform_set_owner.owns(dl->state.sets[i].uniform_set)) {
+				UniformSet *us = uniform_set_owner.get_or_null(dl->state.sets[i].uniform_set);
+				ERR_FAIL_MSG("Uniforms supplied for set (" + itos(i) + "):\n" + _shader_uniform_debug(us->shader_id, us->shader_set) + "\nare not the same format as required by the pipeline shader. Pipeline shader requires the following bindings:\n" + _shader_uniform_debug(dl->state.pipeline_shader));
+			} else {
+				ERR_FAIL_MSG("Uniforms supplied for set (" + itos(i) + ", which was just freed) are not the same format as required by the pipeline shader. Pipeline shader requires the following bindings:\n" + _shader_uniform_debug(dl->state.pipeline_shader));
+			}
+		}
+	}
+#endif
+
+	// Prepare descriptor sets if the API doesn't use pipeline barriers.
+	if (!driver->api_trait_get(RDD::API_TRAIT_HONORS_PIPELINE_BARRIERS)) {
+		for (uint32_t i = 0; i < dl->state.set_count; i++) {
+			if (dl->state.sets[i].pipeline_expected_format == 0) {
+				// Nothing expected by this pipeline.
+				continue;
+			}
+
+			draw_graph.add_draw_list_uniform_set_prepare_for_use(dl->state.pipeline_shader_driver_id, dl->state.sets[i].uniform_set_driver_id, i);
+		}
+	}
+
+	// Bind descriptor sets.
+	for (uint32_t i = 0; i < dl->state.set_count; i++) {
+		if (dl->state.sets[i].pipeline_expected_format == 0) {
+			continue; // Nothing expected by this pipeline.
+		}
+		if (!dl->state.sets[i].bound) {
+			// All good, see if this requires re-binding.
+			draw_graph.add_draw_list_bind_uniform_set(dl->state.pipeline_shader_driver_id, dl->state.sets[i].uniform_set_driver_id, i);
+
+			UniformSet *uniform_set = uniform_set_owner.get_or_null(dl->state.sets[i].uniform_set);
+			_uniform_set_update_shared(uniform_set);
+
+			draw_graph.add_draw_list_usages(uniform_set->draw_trackers, uniform_set->draw_trackers_usage);
+
+			dl->state.sets[i].bound = true;
+		}
+	}
+
+	if (p_use_indices) {
+#ifdef DEBUG_ENABLED
+		ERR_FAIL_COND_MSG(p_procedural_vertices > 0,
+				"Procedural vertices can't be used together with indices.");
+
+		ERR_FAIL_COND_MSG(!dl->validation.index_array_count,
+				"Draw command requested indices, but no index buffer was set.");
+
+		ERR_FAIL_COND_MSG(dl->validation.pipeline_uses_restart_indices != dl->validation.index_buffer_uses_restart_indices,
+				"The usage of restart indices in index buffer does not match the render primitive in the pipeline.");
+#endif
+		uint32_t to_draw = dl->validation.index_array_count;
+
+#ifdef DEBUG_ENABLED
+		ERR_FAIL_COND_MSG(to_draw < dl->validation.pipeline_primitive_minimum,
+				"Too few indices (" + itos(to_draw) + ") for the render primitive set in the render pipeline (" + itos(dl->validation.pipeline_primitive_minimum) + ").");
+
+		ERR_FAIL_COND_MSG((to_draw % dl->validation.pipeline_primitive_divisor) != 0,
+				"Index amount (" + itos(to_draw) + ") must be a multiple of the amount of indices required by the render primitive (" + itos(dl->validation.pipeline_primitive_divisor) + ").");
+#endif
+
+		draw_graph.add_draw_list_draw_indexed(to_draw, p_instances, 0);
+	} else {
+		uint32_t to_draw;
+
+		if (p_procedural_vertices > 0) {
+#ifdef DEBUG_ENABLED
+			ERR_FAIL_COND_MSG(dl->validation.pipeline_vertex_format != INVALID_ID,
+					"Procedural vertices requested, but pipeline expects a vertex array.");
+#endif
+			to_draw = p_procedural_vertices;
+		} else {
+#ifdef DEBUG_ENABLED
+			ERR_FAIL_COND_MSG(dl->validation.pipeline_vertex_format == INVALID_ID,
+					"Draw command lacks indices, but pipeline format does not use vertices.");
+#endif
+			to_draw = dl->validation.vertex_array_size;
+		}
+
+#ifdef DEBUG_ENABLED
+		ERR_FAIL_COND_MSG(to_draw < dl->validation.pipeline_primitive_minimum,
+				"Too few vertices (" + itos(to_draw) + ") for the render primitive set in the render pipeline (" + itos(dl->validation.pipeline_primitive_minimum) + ").");
+
+		ERR_FAIL_COND_MSG((to_draw % dl->validation.pipeline_primitive_divisor) != 0,
+				"Vertex amount (" + itos(to_draw) + ") must be a multiple of the amount of vertices required by the render primitive (" + itos(dl->validation.pipeline_primitive_divisor) + ").");
+#endif
+
+		draw_graph.add_draw_list_draw(to_draw, p_instances);
+	}
+
+	dl->state.draw_count++;
+}
+
+void RenderingDevice::draw_list_enable_scissor(DrawListID p_list, const Rect2 &p_rect) {
+	DrawList *dl = _get_draw_list_ptr(p_list);
+
+	ERR_FAIL_NULL(dl);
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_MSG(!dl->validation.active, "Submitted Draw Lists can no longer be modified.");
+#endif
+	Rect2i rect = p_rect;
+	rect.position += dl->viewport.position;
+
+	rect = dl->viewport.intersection(rect);
+
+	if (rect.get_area() == 0) {
+		return;
+	}
+
+	_draw_list_set_scissor(rect);
+}
+
+void RenderingDevice::draw_list_disable_scissor(DrawListID p_list) {
+	DrawList *dl = _get_draw_list_ptr(p_list);
+	ERR_FAIL_NULL(dl);
+#ifdef DEBUG_ENABLED
+	ERR_FAIL_COND_MSG(!dl->validation.active, "Submitted Draw Lists can no longer be modified.");
+#endif
+
+	_draw_list_set_scissor(dl->viewport);
+}
+
+uint32_t RenderingDevice::draw_list_get_current_pass() {
+	return draw_list_current_subpass;
+}
+
+RenderingDevice::DrawListID RenderingDevice::draw_list_switch_to_next_pass() {
+	_THREAD_SAFE_METHOD_
+	ERR_FAIL_NULL_V(draw_list, INVALID_ID);
+	ERR_FAIL_COND_V(draw_list_current_subpass >= draw_list_subpass_count - 1, INVALID_FORMAT_ID);
+
+	draw_list_current_subpass++;
+
+	Rect2i viewport;
+	_draw_list_free(&viewport);
+
+	draw_graph.add_draw_list_next_subpass(RDD::COMMAND_BUFFER_TYPE_PRIMARY);
+
+	_draw_list_allocate(viewport, draw_list_current_subpass);
+
+	return int64_t(ID_TYPE_DRAW_LIST) << ID_BASE_SHIFT;
+}
+
+
+void RenderingDevice::_draw_list_free(Rect2i *r_last_viewport) {
+	if (r_last_viewport) {
+		*r_last_viewport = draw_list->viewport;
+	}
+	// Just end the list.
+	memdelete(draw_list);
+	draw_list = nullptr;
+
+	// Draw_list is no longer active.
+	_THREAD_SAFE_UNLOCK_
+}
+
+void RenderingDevice::draw_list_end() {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_NULL_MSG(draw_list, "Immediate draw list is already inactive.");
+
+	draw_graph.add_draw_list_end();
+
+	_draw_list_free();
+
+	for (int i = 0; i < draw_list_bound_textures.size(); i++) {
+		Texture *texture = texture_owner.get_or_null(draw_list_bound_textures[i]);
+		ERR_CONTINUE(!texture); // Wtf.
+		if (texture->usage_flags & TEXTURE_USAGE_COLOR_ATTACHMENT_BIT) {
+			texture->bound = false;
+		}
+		if (texture->usage_flags & TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+			texture->bound = false;
+		}
+	}
+
+	draw_list_bound_textures.clear();
 }
