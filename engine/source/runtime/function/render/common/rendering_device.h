@@ -294,6 +294,25 @@ class RenderingDevice : public RenderingDeviceCommons {
     uint32_t load_attach = 0;
     uint32_t clear_attach = 0xffffffff;
     uint32_t discard_attach = 0;
+    InitialAction get_initial_action(int index) const {
+      if (load_attach &  1 << index) return INITIAL_ACTION_LOAD;
+      if (clear_attach & 1 << index) return INITIAL_ACTION_CLEAR;
+      if (discard_attach & 1 << index) return INITIAL_ACTION_DISCARD;
+      return INITIAL_ACTION_MAX;
+    }
+    bool has_initial_action(InitialAction p_action) const {
+      switch (p_action)
+      {
+      case INITIAL_ACTION_LOAD:
+        return load_attach != 0;
+      case INITIAL_ACTION_CLEAR:
+        return clear_attach != 0;
+      case INITIAL_ACTION_DISCARD:
+        return discard_attach != 0;
+      default:
+        return false;
+      }
+    }
     bool operator<(const ColorInitialAction& p_key) const {
       if (load_attach != p_key.load_attach) {
         return load_attach < p_key.load_attach;
@@ -591,7 +610,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   // "compatible". in order to avoid costly rebinds.
 
  private:
-  struct UniformSetFormat {
+  struct UniformSetFormat { // 整个uniform set
     Vector<ShaderUniform> uniforms;
 
     _FORCE_INLINE_ bool operator<(const UniformSetFormat& p_other) const {
@@ -633,8 +652,8 @@ class RenderingDevice : public RenderingDeviceCommons {
     String name;  // Used for debug.
     RDD::ShaderID driver_id;
     uint32_t layout_hash = 0;
-    BitField<RDD::PipelineStageBits> stage_bits;
-    Vector<uint32_t> set_formats;
+    BitField<RDD::PipelineStageBits> stage_bits; // 与stage对应
+    Vector<uint32_t> set_formats; // 在uniform_set_format_cache的value()
   };
 
   String _shader_uniform_debug(RID p_shader, int p_set = -1);
@@ -732,7 +751,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     RID shader_id;
     uint32_t shader_set = 0;  // ？
     RDD::UniformSetID driver_id;
-    struct AttachableTexture {  // ？
+    struct AttachableTexture { // 验证使用，该Uniform绑定的texture，（不能作为framebuffer的）
       uint32_t bind = 0;
       RID texture;
     };
@@ -898,7 +917,7 @@ class RenderingDevice : public RenderingDeviceCommons {
       bool pipeline_push_constant_supplied = false;
     } validation;
 #else
-    struct Validation {
+    struct Validation { // validation只包括vertex array size和 index array size
       uint32_t vertex_array_size = 0;
       uint32_t index_array_count = 0;
     } validation;
@@ -935,6 +954,10 @@ class RenderingDevice : public RenderingDeviceCommons {
   void _draw_list_free(Rect2i* r_last_viewport = nullptr);
 
  public:
+  /// @brief screen drawlist, 使用screen_framebuffers
+  /// @param p_screen 
+  /// @param p_clear_color 
+  /// @return 
   DrawListID draw_list_begin_for_screen(WindowSystem::WindowID p_screen = 0, const Color& p_clear_color = Color());
   DrawListID draw_list_begin(RID p_framebuffer, ColorInitialAction p_initial_color_action, ColorFinalAction p_final_color_action,
                              InitialAction p_initial_depth_action, FinalAction p_final_depth_action,

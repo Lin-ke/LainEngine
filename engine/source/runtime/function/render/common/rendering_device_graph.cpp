@@ -1075,7 +1075,7 @@ void RenderingDeviceGraph::add_draw_list_usage(ResourceTracker* p_tracker, Resou
   }
 #endif
 }
-
+// uniform_set 的绑定 需要调用
 void RenderingDeviceGraph::add_draw_list_usages(VectorView<ResourceTracker*> p_trackers,
                                                 VectorView<ResourceUsage> p_usages) {
   DEV_ASSERT(p_trackers.size() == p_usages.size());

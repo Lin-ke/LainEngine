@@ -142,14 +142,20 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
 
   struct ShaderInfo {
     VkShaderStageFlags vk_push_constant_stages = 0;
-    TightLocalVector<VkPipelineShaderStageCreateInfo> vk_stages_create_info;
+    TightLocalVector<VkPipelineShaderStageCreateInfo> vk_stages_create_info; // 包含shadermodel 和stage
     TightLocalVector<VkDescriptorSetLayout> vk_descriptor_set_layouts;  // 需要根据ShaderReflectionData创建
     VkPipelineLayout vk_pipeline_layout = VK_NULL_HANDLE;               // pipeline layout是由shader控制的
   };
 
  public:
+ // 通过spirv反射出内容，根据反射填shader description，压缩spirv 和 description 到 binary里，返回binary
   virtual Vector<uint8_t> shader_compile_binary_from_spirv(VectorView<ShaderStageSPIRVData> p_spirv,
                                                            const String& p_shader_name) override final;
+  // 根据上面的 binary 填 ShaderInfo
+  // vkCreateDescriptorSetLayout    
+  // vkCreatePipelineLayout        
+  // vkCreateShaderModule
+
   virtual ShaderID shader_create_from_bytecode(const Vector<uint8_t>& p_shader_binary, ShaderDescription& r_shader_desc,
                                                String& r_name) override final;
   virtual void shader_free(ShaderID p_shader) override final;
@@ -281,9 +287,9 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
     LocalVector<VkSemaphore> present_semaphores;
     LocalVector<VkSemaphore> image_semaphores;
     LocalVector<SwapChain*> image_semaphores_swap_chains;  // --- image semaphore的index 到 swap chain
-    LocalVector<uint32_t> pending_semaphores_for_execute;
+    LocalVector<uint32_t> pending_semaphores_for_execute; // 下一次提交前需要等待
     LocalVector<uint32_t> pending_semaphores_for_fence;  // 需要给fence信号的信号量
-    LocalVector<uint32_t> free_image_semaphores;         // --- 等待清理
+    LocalVector<uint32_t> free_image_semaphores;         // --- 空闲的
     LocalVector<Pair<Fence*, uint32_t>>
         image_semaphores_for_fences;  // fence to image_semaphores index，需要给fence的信号量加入这里
     uint32_t queue_family = 0;        // 通过这个索引到vkqueue
@@ -349,6 +355,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   virtual Error swap_chain_resize(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain,
                                   uint32_t p_desired_framebuffer_count) override final;
   // acquire next image
+  // 参考vulakn spec: 对可展示图像的使用，必须在vkAcquireNextImageKHR()之后，与被vkQueuePresentKHR()释放之前。
   virtual FramebufferID swap_chain_acquire_framebuffer(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain,
                                                        bool& r_resize_required) override final;
   virtual RenderPassID swap_chain_get_render_pass(SwapChainID p_swap_chain) override final;
