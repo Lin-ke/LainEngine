@@ -48,11 +48,13 @@ namespace lain {
 		//void set_mode(Mode p_mode);
 		virtual Mode get_mode() const;
 
-		virtual void SetPath(const String& p_path, bool p_take_over = false) override;
+		virtual void set_path(const String& p_path, bool p_take_over = false) override;
 		L_INLINE void set_include_path(const String& p_path) { include_path = p_path; }
 
 		L_INLINE void set_code(const String& p_code) { code = p_code; }
 		String get_code() const;
+		// virtual void _update_shader() const; //used for visual shader
+
 
 		void get_shader_uniform_list(List<PropertyInfo>* p_params, bool p_get_groups = false) const;
 
@@ -69,30 +71,6 @@ namespace lain {
 
 	};
 
-	class ResourceFormatLoaderShader : public ResourceFormatLoader {
-	public:
-		virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "", Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
-		virtual void get_possible_extensions(List<String>* p_extensions) const {
-			p_extensions->push_back("vs");
-			p_extensions->push_back("fs");
-			p_extensions->push_back("cs"); // compute shader
-		}
-	};
-
-	class ResourceFormatSaverShader : public ResourceFormatSaver {
-	public:
-		virtual Error save(const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0) override;
-		//virtual void get_recognized_extensions(const Ref<Resource>& p_resource, List<String>* p_extensions) const override;
-		
-		virtual void get_possible_extensions(List<String>* p_extensions) const {
-			p_extensions->push_back("vs");
-			p_extensions->push_back("fs");
-			p_extensions->push_back("cs"); // compute shader
-
-		}
-		virtual void get_possible_resources(List<String>* p_extensions) const {
-			p_extensions->push_back("Shader");
-		}
-	};
+	
 }
 #endif

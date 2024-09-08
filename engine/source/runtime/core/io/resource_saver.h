@@ -24,8 +24,8 @@ public:
 	virtual Error set_uid(const String& p_path, ResourceUID::ID p_uid);
 	//virtual bool recognize(const Ref<Resource>& p_resource) const;
 	virtual void get_recognized_extensions(const Ref<Resource>& p_resource, List<String>* p_extensions) const;
-	virtual void get_possible_extensions(List<String>* p_extensions) const {}
-	virtual void get_possible_resources(List<String>* p_extensions) const {}
+	virtual void get_recognized_extensions(List<String>* p_extensions) const {}
+	virtual void get_recognized_resources(List<String>* p_extensions) const {}
 
 
 	//virtual bool recognize_path(const Ref<Resource>& p_resource, const String& p_path) const;

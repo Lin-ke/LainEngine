@@ -1,5 +1,5 @@
 #include "rendering_context_driver.h"
-namespace lain::graphics {
+namespace lain {
 RenderingContextDriver::~RenderingContextDriver() {
 }
 

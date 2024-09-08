@@ -258,8 +258,8 @@ public:
 	/// @TODO
 	virtual void reload_from_file() override {}
 
-	virtual void SetPath(const String& p_path, bool p_take_over = false) override;
-	virtual void SetPathCache(const String& p_path) override;
+	virtual void set_path(const String& p_path, bool p_take_over = false) override;
+	virtual void set_pathCache(const String& p_path) override;
 	
 	
 #ifdef TOOLS_ENABLED

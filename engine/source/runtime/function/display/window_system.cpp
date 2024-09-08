@@ -144,7 +144,7 @@ WindowSystem::WindowID WindowSystem::NewWindow(const WindowCreateInfo *create_in
 		if (rendering_context) {
 			union {
 #ifdef VULKAN_ENABLED
-				graphics::RenderingContextDriverVulkanWindows::WindowPlatformData vulkan;
+				RenderingContextDriverVulkanWindows::WindowPlatformData vulkan;
 #endif
 #ifdef D3D12_ENABLED
 				RenderingContextDriverD3D12::WindowPlatformData d3d12;
@@ -274,7 +274,7 @@ WindowSystem::WindowSystem(const String &p_rendering_driver, WindowMode p_mode, 
 	// 这个define应该在premake那里
 #ifdef L_PLATFORM_WINDOWS
 	if (rendering_driver == "vulkan") {
-		rendering_context = memnew(graphics::RenderingContextDriverVulkanWindows);
+		rendering_context = memnew(RenderingContextDriverVulkanWindows);
 	}
 #endif
 	if (rendering_context) {
@@ -317,7 +317,7 @@ WindowSystem::WindowSystem(const String &p_rendering_driver, WindowMode p_mode, 
 	WindowID main_window = NewWindow(&create_info); // 这里window 的 need_resize 为true
 	// 在构造时进行screen_creates()
 	if (rendering_context) {
-		rendering_device = memnew(graphics::RenderingDevice);
+		rendering_device = memnew(RenderingDevice);
 		if (rendering_device->initialize(rendering_context, MAIN_WINDOW_ID) != OK) {
 			memdelete(rendering_device);
 			ERR_PRINT("Failed to initialize rendering device.");

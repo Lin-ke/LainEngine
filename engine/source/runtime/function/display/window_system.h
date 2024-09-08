@@ -112,17 +112,15 @@ namespace lain
 
 
 
-    namespace graphics {
-        class RenderingContextDriver;
-        class RenderingDevice;
-    }
+    class RenderingContextDriver;
+    class RenderingDevice;
     class WindowSystem
     {
 
         _THREAD_SAFE_CLASS_
         String rendering_driver;
-        graphics::RenderingContextDriver* rendering_context = nullptr;
-        graphics::RenderingDevice* rendering_device = nullptr;
+        RenderingContextDriver* rendering_context = nullptr;
+        RenderingDevice* rendering_device = nullptr;
 
     public:
         typedef int WindowID;

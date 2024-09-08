@@ -7,7 +7,7 @@
 #include "function/display/window_system.h"
 #include "core/templates/hash_set.h"
 
-namespace lain::graphics {
+namespace lain {
 	/// --- physical device management ---///
 	// 多GPU的情况下的设备管理和基础拓展的启用
 

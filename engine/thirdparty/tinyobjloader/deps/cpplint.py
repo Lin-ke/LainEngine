@@ -468,7 +468,7 @@ _ALT_TOKEN_REPLACEMENT_PATTERN = re.compile(
 _C_SYS_HEADER = 1
 _CPP_SYS_HEADER = 2
 _LIKELY_MY_HEADER = 3
-_POSSIBLE_MY_HEADER = 4
+_recognized_MY_HEADER = 4
 _OTHER_HEADER = 5
 
 # These constants define the current inline assembly state
@@ -613,7 +613,7 @@ class _IncludeState(object):
       _C_SYS_HEADER: 'C system header',
       _CPP_SYS_HEADER: 'C++ system header',
       _LIKELY_MY_HEADER: 'header this file implements',
-      _POSSIBLE_MY_HEADER: 'header this file may implement',
+      _recognized_MY_HEADER: 'header this file may implement',
       _OTHER_HEADER: 'other header',
       }
   _SECTION_NAMES = {
@@ -737,7 +737,7 @@ class _IncludeState(object):
         self._section = self._MY_H_SECTION
       else:
         self._section = self._OTHER_H_SECTION
-    elif header_type == _POSSIBLE_MY_HEADER:
+    elif header_type == _recognized_MY_HEADER:
       if self._section <= self._MY_H_SECTION:
         self._section = self._MY_H_SECTION
       else:
@@ -4562,7 +4562,7 @@ def _ClassifyInclude(fileinfo, include, is_system):
     _LIKELY_MY_HEADER
     >>> _ClassifyInclude(FileInfo('foo/foo_unknown_extension.cc'),
     ...                  'bar/foo_other_ext.h', False)
-    _POSSIBLE_MY_HEADER
+    _recognized_MY_HEADER
     >>> _ClassifyInclude(FileInfo('foo/foo.cc'), 'foo/bar.h', False)
     _OTHER_HEADER
   """
@@ -4596,7 +4596,7 @@ def _ClassifyInclude(fileinfo, include, is_system):
   if (target_first_component and include_first_component and
       target_first_component.group(0) ==
       include_first_component.group(0)):
-    return _POSSIBLE_MY_HEADER
+    return _recognized_MY_HEADER
 
   return _OTHER_HEADER
 

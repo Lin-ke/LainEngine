@@ -9,7 +9,7 @@
 #include "rendering_device_commons.h"
 #include "rendering_device_driver.h"
 #include "rendering_device_graph.h"
-namespace lain::graphics {
+namespace lain {
 
 class RenderingDevice : public RenderingDeviceCommons {
   LCLASS(RenderingDevice, Object)
@@ -1235,6 +1235,6 @@ class RenderingDevice : public RenderingDeviceCommons {
 };
 typedef RenderingDevice RD;
 
-}  // namespace lain::graphics
+}  // namespace lain
 
 #endif

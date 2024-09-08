@@ -4,7 +4,7 @@
 #endif
 #define PRINT_RENDER_GRAPH 1
 #define PRINT_COMMAND_RECORDING 1
-using namespace lain::graphics;
+using namespace lain;
 // 主要分为read和write两种
 RenderingDeviceGraph::RenderingDeviceGraph() {}
 RenderingDeviceGraph::~RenderingDeviceGraph() {}

@@ -98,7 +98,7 @@ public:
 			return;
 		}
 		Ref r; 
-		r.reference = Object::cast_to<T>(refb); // 将基类的object转换为T类型。这里会抛出异常
+		r.reference = Object::cast_to<T>(refb); // 将基类的object转换为T类型。这里会抛出异常 (dynamic_cast)
 		ref(r);
 		r.reference = nullptr;
 	}

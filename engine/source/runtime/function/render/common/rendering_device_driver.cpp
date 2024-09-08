@@ -3,7 +3,7 @@
 /****************/
 /**** SHADER ****/
 /****************/
-using namespace lain::graphics;
+using namespace lain;
 Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_spirv, ShaderReflection& r_reflection) {
 	r_reflection = {};
 	// ¶Ô²»Í¬stage

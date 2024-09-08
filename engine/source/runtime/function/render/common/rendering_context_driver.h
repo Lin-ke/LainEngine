@@ -5,7 +5,7 @@
 
 #include "core/object/object.h"
 #include "function/display/window_system.h"
-namespace lain::graphics {
+namespace lain {
 class RenderingDeviceDriver;
 
 class RenderingContextDriver {

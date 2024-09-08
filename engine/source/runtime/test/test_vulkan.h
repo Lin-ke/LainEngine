@@ -4,7 +4,7 @@
 #include "function/render/common/rendering_device.h"
 namespace lain::test {
 	void test_vulkan_driver() {
-		using namespace lain::graphics;
+		using namespace lain;
 
 		Ref<FileAccess> file = FileAccess::open("res://test1.glsl", FileAccess::READ);
 		String str = file->get_as_utf8_string();
@@ -30,7 +30,7 @@ namespace lain::test {
 		auto g = RenderingDevice::get_singleton()->framebuffer_create_empty({720, 480}, RDD::TextureSamples::TEXTURE_SAMPLES_1, d);
 		L_PRINT(f, g.get_id());
 		RenderingDevice* device = RenderingDevice::get_singleton();
-		device->compute_list_begin();
+		
 	}
 
 }

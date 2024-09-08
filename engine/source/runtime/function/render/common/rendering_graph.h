@@ -7,7 +7,6 @@
 #include "rendering_device_driver.h"
 #include "core/object/refcounted.h"
 namespace lain {
-	namespace graphics {
 		// 这里与RDD中的定义不同，基本都带着handle（指向内部需要数据结构的那个指针）
 		// 建立于Driver上的上层数据结构
 	class RenderGraph;
@@ -373,6 +372,4 @@ namespace lain {
 
 
 	}
-
-}
 #endif // !RENDERING_DEVICE_GRAPH

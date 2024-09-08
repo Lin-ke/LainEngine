@@ -1,13 +1,13 @@
 #ifndef COMMAND_QUEUE_MT_H
 #define COMMAND_QUEUE_MT_H
 
-#include "core/thread/worker_thread_pool.h"
 #include "core/os/memory.h"
 #include "core/os/mutex.h"
 #include "core/os/semaphore.h"
 #include "core/string/print_string.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/simple_type.h"
+#include "core/thread/worker_thread_pool.h"
 #include "core/typedefs.h"
 
 #define COMMA(N) _COMMA_##N
@@ -31,148 +31,148 @@
 // 1-based comma separated list of ITEMs
 #define COMMA_SEP_LIST(ITEM, LENGTH) _COMMA_SEP_LIST_##LENGTH(ITEM)
 #define _COMMA_SEP_LIST_15(ITEM) \
-	_COMMA_SEP_LIST_14(ITEM)     \
-	, ITEM(15)
+  _COMMA_SEP_LIST_14(ITEM)       \
+  , ITEM(15)
 #define _COMMA_SEP_LIST_14(ITEM) \
-	_COMMA_SEP_LIST_13(ITEM)     \
-	, ITEM(14)
+  _COMMA_SEP_LIST_13(ITEM)       \
+  , ITEM(14)
 #define _COMMA_SEP_LIST_13(ITEM) \
-	_COMMA_SEP_LIST_12(ITEM)     \
-	, ITEM(13)
+  _COMMA_SEP_LIST_12(ITEM)       \
+  , ITEM(13)
 #define _COMMA_SEP_LIST_12(ITEM) \
-	_COMMA_SEP_LIST_11(ITEM)     \
-	, ITEM(12)
+  _COMMA_SEP_LIST_11(ITEM)       \
+  , ITEM(12)
 #define _COMMA_SEP_LIST_11(ITEM) \
-	_COMMA_SEP_LIST_10(ITEM)     \
-	, ITEM(11)
+  _COMMA_SEP_LIST_10(ITEM)       \
+  , ITEM(11)
 #define _COMMA_SEP_LIST_10(ITEM) \
-	_COMMA_SEP_LIST_9(ITEM)      \
-	, ITEM(10)
+  _COMMA_SEP_LIST_9(ITEM)        \
+  , ITEM(10)
 #define _COMMA_SEP_LIST_9(ITEM) \
-	_COMMA_SEP_LIST_8(ITEM)     \
-	, ITEM(9)
+  _COMMA_SEP_LIST_8(ITEM)       \
+  , ITEM(9)
 #define _COMMA_SEP_LIST_8(ITEM) \
-	_COMMA_SEP_LIST_7(ITEM)     \
-	, ITEM(8)
+  _COMMA_SEP_LIST_7(ITEM)       \
+  , ITEM(8)
 #define _COMMA_SEP_LIST_7(ITEM) \
-	_COMMA_SEP_LIST_6(ITEM)     \
-	, ITEM(7)
+  _COMMA_SEP_LIST_6(ITEM)       \
+  , ITEM(7)
 #define _COMMA_SEP_LIST_6(ITEM) \
-	_COMMA_SEP_LIST_5(ITEM)     \
-	, ITEM(6)
+  _COMMA_SEP_LIST_5(ITEM)       \
+  , ITEM(6)
 #define _COMMA_SEP_LIST_5(ITEM) \
-	_COMMA_SEP_LIST_4(ITEM)     \
-	, ITEM(5)
+  _COMMA_SEP_LIST_4(ITEM)       \
+  , ITEM(5)
 #define _COMMA_SEP_LIST_4(ITEM) \
-	_COMMA_SEP_LIST_3(ITEM)     \
-	, ITEM(4)
+  _COMMA_SEP_LIST_3(ITEM)       \
+  , ITEM(4)
 #define _COMMA_SEP_LIST_3(ITEM) \
-	_COMMA_SEP_LIST_2(ITEM)     \
-	, ITEM(3)
+  _COMMA_SEP_LIST_2(ITEM)       \
+  , ITEM(3)
 #define _COMMA_SEP_LIST_2(ITEM) \
-	_COMMA_SEP_LIST_1(ITEM)     \
-	, ITEM(2)
+  _COMMA_SEP_LIST_1(ITEM)       \
+  , ITEM(2)
 #define _COMMA_SEP_LIST_1(ITEM) \
-	_COMMA_SEP_LIST_0(ITEM)     \
-	ITEM(1)
+  _COMMA_SEP_LIST_0(ITEM)       \
+  ITEM(1)
 #define _COMMA_SEP_LIST_0(ITEM)
 
 // 1-based semicolon separated list of ITEMs
 #define SEMIC_SEP_LIST(ITEM, LENGTH) _SEMIC_SEP_LIST_##LENGTH(ITEM)
 #define _SEMIC_SEP_LIST_15(ITEM) \
-	_SEMIC_SEP_LIST_14(ITEM);    \
-	ITEM(15)
+  _SEMIC_SEP_LIST_14(ITEM);      \
+  ITEM(15)
 #define _SEMIC_SEP_LIST_14(ITEM) \
-	_SEMIC_SEP_LIST_13(ITEM);    \
-	ITEM(14)
+  _SEMIC_SEP_LIST_13(ITEM);      \
+  ITEM(14)
 #define _SEMIC_SEP_LIST_13(ITEM) \
-	_SEMIC_SEP_LIST_12(ITEM);    \
-	ITEM(13)
+  _SEMIC_SEP_LIST_12(ITEM);      \
+  ITEM(13)
 #define _SEMIC_SEP_LIST_12(ITEM) \
-	_SEMIC_SEP_LIST_11(ITEM);    \
-	ITEM(12)
+  _SEMIC_SEP_LIST_11(ITEM);      \
+  ITEM(12)
 #define _SEMIC_SEP_LIST_11(ITEM) \
-	_SEMIC_SEP_LIST_10(ITEM);    \
-	ITEM(11)
+  _SEMIC_SEP_LIST_10(ITEM);      \
+  ITEM(11)
 #define _SEMIC_SEP_LIST_10(ITEM) \
-	_SEMIC_SEP_LIST_9(ITEM);     \
-	ITEM(10)
+  _SEMIC_SEP_LIST_9(ITEM);       \
+  ITEM(10)
 #define _SEMIC_SEP_LIST_9(ITEM) \
-	_SEMIC_SEP_LIST_8(ITEM);    \
-	ITEM(9)
+  _SEMIC_SEP_LIST_8(ITEM);      \
+  ITEM(9)
 #define _SEMIC_SEP_LIST_8(ITEM) \
-	_SEMIC_SEP_LIST_7(ITEM);    \
-	ITEM(8)
+  _SEMIC_SEP_LIST_7(ITEM);      \
+  ITEM(8)
 #define _SEMIC_SEP_LIST_7(ITEM) \
-	_SEMIC_SEP_LIST_6(ITEM);    \
-	ITEM(7)
+  _SEMIC_SEP_LIST_6(ITEM);      \
+  ITEM(7)
 #define _SEMIC_SEP_LIST_6(ITEM) \
-	_SEMIC_SEP_LIST_5(ITEM);    \
-	ITEM(6)
+  _SEMIC_SEP_LIST_5(ITEM);      \
+  ITEM(6)
 #define _SEMIC_SEP_LIST_5(ITEM) \
-	_SEMIC_SEP_LIST_4(ITEM);    \
-	ITEM(5)
+  _SEMIC_SEP_LIST_4(ITEM);      \
+  ITEM(5)
 #define _SEMIC_SEP_LIST_4(ITEM) \
-	_SEMIC_SEP_LIST_3(ITEM);    \
-	ITEM(4)
+  _SEMIC_SEP_LIST_3(ITEM);      \
+  ITEM(4)
 #define _SEMIC_SEP_LIST_3(ITEM) \
-	_SEMIC_SEP_LIST_2(ITEM);    \
-	ITEM(3)
+  _SEMIC_SEP_LIST_2(ITEM);      \
+  ITEM(3)
 #define _SEMIC_SEP_LIST_2(ITEM) \
-	_SEMIC_SEP_LIST_1(ITEM);    \
-	ITEM(2)
+  _SEMIC_SEP_LIST_1(ITEM);      \
+  ITEM(2)
 #define _SEMIC_SEP_LIST_1(ITEM) \
-	_SEMIC_SEP_LIST_0(ITEM)     \
-	ITEM(1)
+  _SEMIC_SEP_LIST_0(ITEM)       \
+  ITEM(1)
 #define _SEMIC_SEP_LIST_0(ITEM)
 
 // 1-based space separated list of ITEMs
 #define SPACE_SEP_LIST(ITEM, LENGTH) _SPACE_SEP_LIST_##LENGTH(ITEM)
 #define _SPACE_SEP_LIST_15(ITEM) \
-	_SPACE_SEP_LIST_14(ITEM)     \
-	ITEM(15)
+  _SPACE_SEP_LIST_14(ITEM)       \
+  ITEM(15)
 #define _SPACE_SEP_LIST_14(ITEM) \
-	_SPACE_SEP_LIST_13(ITEM)     \
-	ITEM(14)
+  _SPACE_SEP_LIST_13(ITEM)       \
+  ITEM(14)
 #define _SPACE_SEP_LIST_13(ITEM) \
-	_SPACE_SEP_LIST_12(ITEM)     \
-	ITEM(13)
+  _SPACE_SEP_LIST_12(ITEM)       \
+  ITEM(13)
 #define _SPACE_SEP_LIST_12(ITEM) \
-	_SPACE_SEP_LIST_11(ITEM)     \
-	ITEM(12)
+  _SPACE_SEP_LIST_11(ITEM)       \
+  ITEM(12)
 #define _SPACE_SEP_LIST_11(ITEM) \
-	_SPACE_SEP_LIST_10(ITEM)     \
-	ITEM(11)
+  _SPACE_SEP_LIST_10(ITEM)       \
+  ITEM(11)
 #define _SPACE_SEP_LIST_10(ITEM) \
-	_SPACE_SEP_LIST_9(ITEM)      \
-	ITEM(10)
+  _SPACE_SEP_LIST_9(ITEM)        \
+  ITEM(10)
 #define _SPACE_SEP_LIST_9(ITEM) \
-	_SPACE_SEP_LIST_8(ITEM)     \
-	ITEM(9)
+  _SPACE_SEP_LIST_8(ITEM)       \
+  ITEM(9)
 #define _SPACE_SEP_LIST_8(ITEM) \
-	_SPACE_SEP_LIST_7(ITEM)     \
-	ITEM(8)
+  _SPACE_SEP_LIST_7(ITEM)       \
+  ITEM(8)
 #define _SPACE_SEP_LIST_7(ITEM) \
-	_SPACE_SEP_LIST_6(ITEM)     \
-	ITEM(7)
+  _SPACE_SEP_LIST_6(ITEM)       \
+  ITEM(7)
 #define _SPACE_SEP_LIST_6(ITEM) \
-	_SPACE_SEP_LIST_5(ITEM)     \
-	ITEM(6)
+  _SPACE_SEP_LIST_5(ITEM)       \
+  ITEM(6)
 #define _SPACE_SEP_LIST_5(ITEM) \
-	_SPACE_SEP_LIST_4(ITEM)     \
-	ITEM(5)
+  _SPACE_SEP_LIST_4(ITEM)       \
+  ITEM(5)
 #define _SPACE_SEP_LIST_4(ITEM) \
-	_SPACE_SEP_LIST_3(ITEM)     \
-	ITEM(4)
+  _SPACE_SEP_LIST_3(ITEM)       \
+  ITEM(4)
 #define _SPACE_SEP_LIST_3(ITEM) \
-	_SPACE_SEP_LIST_2(ITEM)     \
-	ITEM(3)
+  _SPACE_SEP_LIST_2(ITEM)       \
+  ITEM(3)
 #define _SPACE_SEP_LIST_2(ITEM) \
-	_SPACE_SEP_LIST_1(ITEM)     \
-	ITEM(2)
+  _SPACE_SEP_LIST_1(ITEM)       \
+  ITEM(2)
 #define _SPACE_SEP_LIST_1(ITEM) \
-	_SPACE_SEP_LIST_0(ITEM)     \
-	ITEM(1)
+  _SPACE_SEP_LIST_0(ITEM)       \
+  ITEM(1)
 #define _SPACE_SEP_LIST_0(ITEM)
 
 #define ARG(N) p##N
@@ -180,226 +180,219 @@
 #define TYPE_PARAM(N) class P##N
 #define PARAM_DECL(N) typename GetSimpleTypeT<P##N>::type_t p##N
 
-#define DECL_CMD(N)                                                    \
-	template <class T, class M COMMA(N) COMMA_SEP_LIST(TYPE_PARAM, N)> \
-	struct Command##N : public CommandBase {                           \
-		T *instance;                                                   \
-		M method;                                                      \
-		SEMIC_SEP_LIST(PARAM_DECL, N);                                 \
-		virtual void call() override {                                 \
-			(instance->*method)(COMMA_SEP_LIST(ARG, N));               \
-		}                                                              \
-	};
+#define DECL_CMD(N)                                                  \
+  template <class T, class M COMMA(N) COMMA_SEP_LIST(TYPE_PARAM, N)> \
+  struct Command##N : public CommandBase {                           \
+    T* instance;                                                     \
+    M method;                                                        \
+    SEMIC_SEP_LIST(PARAM_DECL, N);                                   \
+    virtual void call() override {                                   \
+      (instance->*method)(COMMA_SEP_LIST(ARG, N));                   \
+    }                                                                \
+  };
 
-#define DECL_CMD_RET(N)                                                         \
-	template <class T, class M, COMMA_SEP_LIST(TYPE_PARAM, N) COMMA(N) class R> \
-	struct CommandRet##N : public SyncCommand {                                 \
-		R *ret;                                                                 \
-		T *instance;                                                            \
-		M method;                                                               \
-		SEMIC_SEP_LIST(PARAM_DECL, N);                                          \
-		virtual void call() override {                                          \
-			*ret = (instance->*method)(COMMA_SEP_LIST(ARG, N));                 \
-		}                                                                       \
-	};
+#define DECL_CMD_RET(N)                                                       \
+  template <class T, class M, COMMA_SEP_LIST(TYPE_PARAM, N) COMMA(N) class R> \
+  struct CommandRet##N : public SyncCommand {                                 \
+    R* ret;                                                                   \
+    T* instance;                                                              \
+    M method;                                                                 \
+    SEMIC_SEP_LIST(PARAM_DECL, N);                                            \
+    virtual void call() override {                                            \
+      *ret = (instance->*method)(COMMA_SEP_LIST(ARG, N));                     \
+    }                                                                         \
+  };
 
-#define DECL_CMD_SYNC(N)                                               \
-	template <class T, class M COMMA(N) COMMA_SEP_LIST(TYPE_PARAM, N)> \
-	struct CommandSync##N : public SyncCommand {                       \
-		T *instance;                                                   \
-		M method;                                                      \
-		SEMIC_SEP_LIST(PARAM_DECL, N);                                 \
-		virtual void call() override {                                 \
-			(instance->*method)(COMMA_SEP_LIST(ARG, N));               \
-		}                                                              \
-	};
+#define DECL_CMD_SYNC(N)                                             \
+  template <class T, class M COMMA(N) COMMA_SEP_LIST(TYPE_PARAM, N)> \
+  struct CommandSync##N : public SyncCommand {                       \
+    T* instance;                                                     \
+    M method;                                                        \
+    SEMIC_SEP_LIST(PARAM_DECL, N);                                   \
+    virtual void call() override {                                   \
+      (instance->*method)(COMMA_SEP_LIST(ARG, N));                   \
+    }                                                                \
+  };
 
 #define TYPE_ARG(N) P##N
 #define CMD_TYPE(N) Command##N<T, M COMMA(N) COMMA_SEP_LIST(TYPE_ARG, N)>
 #define CMD_ASSIGN_PARAM(N) cmd->p##N = p##N
 
-#define DECL_PUSH(N)                                                         \
-	template <class T, class M COMMA(N) COMMA_SEP_LIST(TYPE_PARAM, N)>       \
-	void push(T *p_instance, M p_method COMMA(N) COMMA_SEP_LIST(PARAM, N)) { \
-		CMD_TYPE(N) *cmd = allocate_and_lock<CMD_TYPE(N)>();                 \
-		cmd->instance = p_instance;                                          \
-		cmd->method = p_method;                                              \
-		SEMIC_SEP_LIST(CMD_ASSIGN_PARAM, N);                                 \
-		unlock();                                                            \
-		if (sync)                                                            \
-			sync->post();                                                    \
-	}
+#define DECL_PUSH(N)                                                       \
+  template <class T, class M COMMA(N) COMMA_SEP_LIST(TYPE_PARAM, N)>       \
+  void push(T* p_instance, M p_method COMMA(N) COMMA_SEP_LIST(PARAM, N)) { \
+    CMD_TYPE(N)* cmd = allocate_and_lock<CMD_TYPE(N)>();                   \
+    cmd->instance = p_instance;                                            \
+    cmd->method = p_method;                                                \
+    SEMIC_SEP_LIST(CMD_ASSIGN_PARAM, N);                                   \
+    unlock();                                                              \
+    if (sync)                                                              \
+      sync->post();                                                        \
+  }
 
 #define CMD_RET_TYPE(N) CommandRet##N<T, M, COMMA_SEP_LIST(TYPE_ARG, N) COMMA(N) R>
 
-#define DECL_PUSH_AND_RET(N)                                                                   \
-	template <class T, class M, COMMA_SEP_LIST(TYPE_PARAM, N) COMMA(N) class R>                \
-	void push_and_ret(T *p_instance, M p_method, COMMA_SEP_LIST(PARAM, N) COMMA(N) R *r_ret) { \
-		SyncSemaphore *ss = _alloc_sync_sem();                                                 \
-		CMD_RET_TYPE(N) *cmd = allocate_and_lock<CMD_RET_TYPE(N)>();                           \
-		cmd->instance = p_instance;                                                            \
-		cmd->method = p_method;                                                                \
-		SEMIC_SEP_LIST(CMD_ASSIGN_PARAM, N);                                                   \
-		cmd->ret = r_ret;                                                                      \
-		cmd->sync_sem = ss;                                                                    \
-		unlock();                                                                              \
-		if (sync)                                                                              \
-			sync->post();                                                                      \
-		ss->sem.wait();                                                                        \
-		ss->in_use = false;                                                                    \
-	}
+#define DECL_PUSH_AND_RET(N)                                                                 \
+  template <class T, class M, COMMA_SEP_LIST(TYPE_PARAM, N) COMMA(N) class R>                \
+  void push_and_ret(T* p_instance, M p_method, COMMA_SEP_LIST(PARAM, N) COMMA(N) R* r_ret) { \
+    SyncSemaphore* ss = _alloc_sync_sem();                                                   \
+    CMD_RET_TYPE(N)* cmd = allocate_and_lock<CMD_RET_TYPE(N)>();                             \
+    cmd->instance = p_instance;                                                              \
+    cmd->method = p_method;                                                                  \
+    SEMIC_SEP_LIST(CMD_ASSIGN_PARAM, N);                                                     \
+    cmd->ret = r_ret;                                                                        \
+    cmd->sync_sem = ss;                                                                      \
+    unlock();                                                                                \
+    if (sync)                                                                                \
+      sync->post();                                                                          \
+    ss->sem.wait();                                                                          \
+    ss->in_use = false;                                                                      \
+  }
 
 #define CMD_SYNC_TYPE(N) CommandSync##N<T, M COMMA(N) COMMA_SEP_LIST(TYPE_ARG, N)>
 
-#define DECL_PUSH_AND_SYNC(N)                                                         \
-	template <class T, class M COMMA(N) COMMA_SEP_LIST(TYPE_PARAM, N)>                \
-	void push_and_sync(T *p_instance, M p_method COMMA(N) COMMA_SEP_LIST(PARAM, N)) { \
-		SyncSemaphore *ss = _alloc_sync_sem();                                        \
-		CMD_SYNC_TYPE(N) *cmd = allocate_and_lock<CMD_SYNC_TYPE(N)>();                \
-		cmd->instance = p_instance;                                                   \
-		cmd->method = p_method;                                                       \
-		SEMIC_SEP_LIST(CMD_ASSIGN_PARAM, N);                                          \
-		cmd->sync_sem = ss;                                                           \
-		unlock();                                                                     \
-		if (sync)                                                                     \
-			sync->post();                                                             \
-		ss->sem.wait();                                                               \
-		ss->in_use = false;                                                           \
-	}
+#define DECL_PUSH_AND_SYNC(N)                                                       \
+  template <class T, class M COMMA(N) COMMA_SEP_LIST(TYPE_PARAM, N)>                \
+  void push_and_sync(T* p_instance, M p_method COMMA(N) COMMA_SEP_LIST(PARAM, N)) { \
+    SyncSemaphore* ss = _alloc_sync_sem();                                          \
+    CMD_SYNC_TYPE(N)* cmd = allocate_and_lock<CMD_SYNC_TYPE(N)>();                  \
+    cmd->instance = p_instance;                                                     \
+    cmd->method = p_method;                                                         \
+    SEMIC_SEP_LIST(CMD_ASSIGN_PARAM, N);                                            \
+    cmd->sync_sem = ss;                                                             \
+    unlock();                                                                       \
+    if (sync)                                                                       \
+      sync->post();                                                                 \
+    ss->sem.wait();                                                                 \
+    ss->in_use = false;                                                             \
+  }
 
 #define MAX_CMD_PARAMS 15
-namespace lain{
+namespace lain {
 class CommandQueueMT {
-	struct SyncSemaphore {
-		Semaphore sem;
-		bool in_use = false;
-	};
+  struct SyncSemaphore {
+    Semaphore sem;
+    bool in_use = false;
+  };
 
-	struct CommandBase {
-		virtual void call() = 0;
-		virtual SyncSemaphore* get_sync_semaphore() { return nullptr; }
-		virtual ~CommandBase() = default; // Won't be called.
-	};
+  struct CommandBase {
+    virtual void call() = 0;
+    virtual SyncSemaphore* get_sync_semaphore() { return nullptr; }
+    virtual ~CommandBase() = default;  // Won't be called.
+  };
 
-	struct SyncCommand : public CommandBase {
-		SyncSemaphore* sync_sem = nullptr;
+  struct SyncCommand : public CommandBase {
+    SyncSemaphore* sync_sem = nullptr;
 
-		virtual SyncSemaphore* get_sync_semaphore() override {
-			return sync_sem;
-		}
-	};
+    virtual SyncSemaphore* get_sync_semaphore() override { return sync_sem; }
+  };
 
-	DECL_CMD(0)
-		SPACE_SEP_LIST(DECL_CMD, 15)
+  DECL_CMD(0)
+  SPACE_SEP_LIST(DECL_CMD, 15)
 
-		// Commands that return.
-		DECL_CMD_RET(0)
-		SPACE_SEP_LIST(DECL_CMD_RET, 15)
+  // Commands that return.
+  DECL_CMD_RET(0)
+  SPACE_SEP_LIST(DECL_CMD_RET, 15)
 
-		/* commands that don't return but sync */
-		DECL_CMD_SYNC(0)
-		SPACE_SEP_LIST(DECL_CMD_SYNC, 15)
+  /* commands that don't return but sync */
+  DECL_CMD_SYNC(0)
+  SPACE_SEP_LIST(DECL_CMD_SYNC, 15)
 
-		/***** BASE *******/
+  /***** BASE *******/
 
-		enum {
-		DEFAULT_COMMAND_MEM_SIZE_KB = 256,
-		SYNC_SEMAPHORES = 8
-	};
+  enum { DEFAULT_COMMAND_MEM_SIZE_KB = 256, SYNC_SEMAPHORES = 8 };
 
-	LocalVector<uint8_t> command_mem;
-	SyncSemaphore sync_sems[SYNC_SEMAPHORES];
-	Mutex mutex;
-	Semaphore* sync = nullptr;
-	uint64_t flush_read_ptr = 0;
+  LocalVector<uint8_t> command_mem;
+  SyncSemaphore sync_sems[SYNC_SEMAPHORES];
+  Mutex mutex;
+  Semaphore* sync = nullptr;
+  uint64_t flush_read_ptr = 0;
 
-	template <class T>
-	T* allocate() {
-		// alloc size is size+T+safeguard
-		uint32_t alloc_size = ((sizeof(T) + 8 - 1) & ~(8 - 1));
-		uint64_t size = command_mem.size();
-		command_mem.resize(size + alloc_size + 8);
-		*(uint64_t*)&command_mem[size] = alloc_size;
-		T* cmd = memnew_placement(&command_mem[size + 8], T);
-		return cmd;
-	}
+  template <class T>
+  T* allocate() {
+    // alloc size is size+T+safeguard
+    uint32_t alloc_size = ((sizeof(T) + 8 - 1) & ~(8 - 1));
+    uint64_t size = command_mem.size();
+    command_mem.resize(size + alloc_size + 8);
+    *(uint64_t*)&command_mem[size] = alloc_size;
+    T* cmd = memnew_placement(&command_mem[size + 8], T);
+    return cmd;
+  }
 
-	template <class T>
-	T* allocate_and_lock() {
-		lock();
-		T* ret = allocate<T>();
-		return ret;
-	}
+  template <class T>
+  T* allocate_and_lock() {
+    lock();
+    T* ret = allocate<T>();
+    return ret;
+  }
 
-	void _flush() {
-		lock();
+  void _flush() {
+    lock();
 
-		WorkerThreadPool::thread_enter_command_queue_mt_flush(this);
-		while (flush_read_ptr < command_mem.size()) {
-			uint64_t size = *(uint64_t*)&command_mem[flush_read_ptr];
-			flush_read_ptr += 8;
-			CommandBase* cmd = reinterpret_cast<CommandBase*>(&command_mem[flush_read_ptr]);
+    WorkerThreadPool::thread_enter_command_queue_mt_flush(this);
+    while (flush_read_ptr < command_mem.size()) {
+      uint64_t size = *(uint64_t*)&command_mem[flush_read_ptr];
+      flush_read_ptr += 8;
+      CommandBase* cmd = reinterpret_cast<CommandBase*>(&command_mem[flush_read_ptr]);
 
-			SyncSemaphore* sync_sem = cmd->get_sync_semaphore();
-			cmd->call();
-			if (sync_sem) {
-				sync_sem->sem.post(); // Release in case it needs sync/ret.
-			}
+      SyncSemaphore* sync_sem = cmd->get_sync_semaphore();
+      cmd->call();
+      if (sync_sem) {
+        sync_sem->sem.post();  // Release in case it needs sync/ret.
+      }
 
-			if (unlikely(flush_read_ptr == 0)) {
-				// A reentrant call flushed.
-				DEV_ASSERT(command_mem.is_empty());
-				unlock();
-				return;
-			}
+      if (unlikely(flush_read_ptr == 0)) {
+        // A reentrant call flushed.
+        DEV_ASSERT(command_mem.is_empty());
+        unlock();
+        return;
+      }
 
-			flush_read_ptr += size;
-		}
-		WorkerThreadPool::thread_exit_command_queue_mt_flush();
+      flush_read_ptr += size;
+    }
+    WorkerThreadPool::thread_exit_command_queue_mt_flush();
 
-		command_mem.clear();
-		flush_read_ptr = 0;
-		unlock();
-	}
+    command_mem.clear();
+    flush_read_ptr = 0;
+    unlock();
+  }
 
-	void wait_for_flush();
-	SyncSemaphore* _alloc_sync_sem();
+  void wait_for_flush();
+  SyncSemaphore* _alloc_sync_sem();
 
-public:
-	void lock();
-	void unlock();
+ public:
+  void lock();
+  void unlock();
 
-	/* NORMAL PUSH COMMANDS */
-	DECL_PUSH(0)
-		SPACE_SEP_LIST(DECL_PUSH, 15)
+  /* NORMAL PUSH COMMANDS */
+  DECL_PUSH(0)
+  SPACE_SEP_LIST(DECL_PUSH, 15)
 
-		/* PUSH AND RET COMMANDS */
-		DECL_PUSH_AND_RET(0)
-		SPACE_SEP_LIST(DECL_PUSH_AND_RET, 15)
+  /* PUSH AND RET COMMANDS */
+  DECL_PUSH_AND_RET(0)
+  SPACE_SEP_LIST(DECL_PUSH_AND_RET, 15)
 
-		/* PUSH AND RET SYNC COMMANDS*/
-		DECL_PUSH_AND_SYNC(0)
-		SPACE_SEP_LIST(DECL_PUSH_AND_SYNC, 15)
+  /* PUSH AND RET SYNC COMMANDS*/
+  DECL_PUSH_AND_SYNC(0)
+  SPACE_SEP_LIST(DECL_PUSH_AND_SYNC, 15)
 
-		_FORCE_INLINE_ void flush_if_pending() {
-		if (unlikely(command_mem.size() > 0)) {
-			_flush();
-		}
-	}
-	void flush_all() {
-		_flush();
-	}
+  _FORCE_INLINE_ void flush_if_pending() {
+    if (unlikely(command_mem.size() > 0)) {
+      _flush();
+    }
+  }
+  void flush_all() { _flush(); }
 
-	void wait_and_flush() {
-		ERR_FAIL_NULL(sync);
-		sync->wait();
-		_flush();
-	}
+  void wait_and_flush() {
+    ERR_FAIL_NULL(sync);
+    sync->wait();
+    _flush();
+  }
 
-	CommandQueueMT(bool p_sync);
-	~CommandQueueMT();
+  CommandQueueMT(bool p_sync);
+  ~CommandQueueMT();
 };
-}
+}  // namespace lain
 
 #undef ARG
 #undef PARAM
@@ -417,4 +410,4 @@ public:
 #undef CMD_SYNC_TYPE
 #undef DECL_CMD_SYNC
 
-#endif // COMMAND_QUEUE_MT_H
+#endif  // COMMAND_QUEUE_MT_H

@@ -2,7 +2,7 @@
 #include "_generated/serializer/all_serializer.h"
 #include "core/engine/engine.h"
 #include "core/io/dir_access.h"
-using namespace lain::graphics;
+using namespace lain;
 using namespace lain;
 RenderingDevice* RenderingDevice::singleton = nullptr;
 RenderingDevice::ShaderCompileToSPIRVFunction RenderingDevice::compile_to_spirv_function = nullptr;

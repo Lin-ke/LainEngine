@@ -97,13 +97,13 @@ Error ResourceSaver::save(const Ref<Resource>& p_resource, const String& p_path,
 
 		String local_path = ProjectSettings::GetSingleton()->LocalizePath(path);
 		if (p_flags & FLAG_CHANGE_PATH) {
-			p_resource->SetPath(local_path);
+			p_resource->set_path(local_path);
 		}
 		err = saver[idx]->save(p_resource, path, p_flags);
 		if (err == OK) {
 
 			if (p_flags & FLAG_CHANGE_PATH) {
-				p_resource->SetPath(old_path);
+				p_resource->set_path(old_path);
 			}
 
 			if (save_callback && path.begins_with("res://")) {
@@ -160,9 +160,9 @@ void ResourceSaver::add_resource_format_saver(Ref<ResourceFormatSaver> p_format_
 		saver[saver_count++] = p_format_saver;
 	}
 	List<String> exts;
-	p_format_saver->get_possible_extensions(&exts);
+	p_format_saver->get_recognized_extensions(&exts);
 	List<String> res_types;
-	p_format_saver->get_possible_resources(&res_types);
+	p_format_saver->get_recognized_resources(&res_types);
 
 	for (const String& ext : exts) {
 		Vector<int>& idxs = ext_to_saver_idx[ext];
@@ -188,7 +188,7 @@ void ResourceSaver::remove_resource_format_saver(Ref<ResourceFormatSaver> p_form
 	ERR_FAIL_COND(i >= saver_count); // Not found
 
 	List<String> exts;
-	p_format_saver->get_possible_extensions(&exts);
+	p_format_saver->get_recognized_extensions(&exts);
 	for (const String& ext : exts) {
 		Vector<int>& idxs = type_to_saver_idx[ext];
 		idxs.erase(i);
@@ -198,7 +198,7 @@ void ResourceSaver::remove_resource_format_saver(Ref<ResourceFormatSaver> p_form
 	}
 
 	exts.clear();
-	p_format_saver->get_possible_resources(&exts);
+	p_format_saver->get_recognized_resources(&exts);
 	for (const String& ext : exts) {
 		Vector<int>& idxs = ext_to_saver_idx[ext];
 		idxs.erase(i);

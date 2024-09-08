@@ -45,10 +45,10 @@ namespace lain {
 			loader[loader_count++] = p_format_loader;
 		}
 		List<String> exts;
-		p_format_loader->get_possible_extensions(&exts);
+		p_format_loader->get_recognized_extensions(&exts);
 		List<String> res_types;
 
-		p_format_loader->get_possible_resources(&res_types);
+		p_format_loader->get_recognized_resources(&res_types);
 
 		for (const String& ext : exts) {
 			Vector<int>& idxs = ext_to_loader_idx[ext];
@@ -75,7 +75,7 @@ namespace lain {
 		ERR_FAIL_COND(i >= loader_count); // Not found
 
 		List<String> exts;
-		p_format_loader ->get_possible_extensions(&exts);
+		p_format_loader ->get_recognized_extensions(&exts);
 		for (const String& ext : exts) {
 			Vector<int>& idxs = type_to_loader_idx[ext];
 			idxs.erase(i);
@@ -85,7 +85,7 @@ namespace lain {
 		}
 
 		exts.clear();
-		p_format_loader->get_possible_resources(&exts);
+		p_format_loader->get_recognized_resources(&exts);
 		for (const String& ext : exts) {
 			Vector<int>& idxs = ext_to_loader_idx[ext];
 			idxs.erase(i);
@@ -294,10 +294,10 @@ namespace lain {
 						load_task.resource = old_res;
 					}
 				}
-				load_task.resource->SetPath(load_task.local_path, replacing);
+				load_task.resource->set_path(load_task.local_path, replacing);
 			}
 			else {
-				load_task.resource->SetPathCache(load_task.local_path); //只设置该资源
+				load_task.resource->set_pathCache(load_task.local_path); //只设置该资源
 			}
 
 			/*if (load_task.xl_remapped) {
@@ -526,7 +526,7 @@ namespace lain {
 
 	//// ResourceFormatLoader
 
-	/*void ResourceFormatLoader::get_possible_extensions(List<String>* p_extensions) const {
+	/*void ResourceFormatLoader::get_recognized_extensions(List<String>* p_extensions) const {
 	}*/
 
 	

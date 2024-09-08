@@ -20,12 +20,12 @@ namespace lain{
 		return saver.save(p_path, p_resource, p_flags);
 	}
 
-	void ResourceFormatLoaderText::get_possible_extensions(List<String>* p_extensions) const {
+	void ResourceFormatLoaderText::get_recognized_extensions(List<String>* p_extensions) const {
 		p_extensions->push_back("tscn");
 		p_extensions->push_back("tres");
 	}
 
-	void ResourceFormatLoaderText::get_possible_resources(List<String>* p_extensions) const {
+	void ResourceFormatLoaderText::get_recognized_resources(List<String>* p_extensions) const {
 		p_extensions->push_back("PackedScene");
 	}
 	Ref<Resource> ResourceFormatLoaderText::load(const String& p_path, const String& p_original_path, Error* r_error, bool p_use_sub_threads, float* r_progress, CacheMode p_cache_mode) {
@@ -301,12 +301,12 @@ namespace lain{
 		resource = packed_scene;
 		if (cache_mode != ResourceFormatLoader::CACHE_MODE_IGNORE) {
 			if (!ResourceCache::has(res_path)) {
-				packed_scene->SetPath(res_path);
+				packed_scene->set_path(res_path);
 			}
 		}
 		else {
 			packed_scene->get_state()->set_path(res_path);
-			packed_scene->SetPathCache(res_path);
+			packed_scene->set_pathCache(res_path);
 		}
 
 		resource_current++;
@@ -403,12 +403,12 @@ namespace lain{
 		}
 	}
 
-	void ResourceFormatSaverText::get_possible_extensions(List<String>* p_extensions) const{
+	void ResourceFormatSaverText::get_recognized_extensions(List<String>* p_extensions) const{
 		p_extensions->push_back("tscn");
 		p_extensions->push_back("tres"); // Text resource.
 
 	}
-	void ResourceFormatSaverText::get_possible_resources(List<String>* p_extensions) const {
+	void ResourceFormatSaverText::get_recognized_resources(List<String>* p_extensions) const {
 		p_extensions->push_back("PackedScene");
 
 	}

@@ -45,7 +45,7 @@ namespace lain {
 		
 		loader[loader_count] = p_loader;
 		List<String> exts;
-		p_loader->get_possible_extensions(&exts);
+		p_loader->get_recognized_extensions(&exts);
 
 		for (const String& ext : exts) {
 			Vector<int>& idxs = ext_to_id[ext];
@@ -63,7 +63,7 @@ namespace lain {
 	
 
 		List<String> exts;
-		p_loader->get_possible_extensions(&exts);
+		p_loader->get_recognized_extensions(&exts);
 
 		for (const String& ext : exts) {
 			Vector<int>& idxs = ext_to_id[ext];
@@ -112,9 +112,9 @@ namespace lain {
 		return ERR_FILE_UNRECOGNIZED;
 	}
 
-	void ImageLoader::get_possible_extensions(List<String>* p_extensions) {
+	void ImageLoader::get_recognized_extensions(List<String>* p_extensions) {
 			for (int i = 0; i < loader_count; ++i) {
-				loader[i]->get_possible_extensions(p_extensions);
+				loader[i]->get_recognized_extensions(p_extensions);
 			}
 		}
 }

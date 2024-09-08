@@ -6,7 +6,6 @@
 #include "core/meta/type_info.h"
 #define STEPIFY(m_number, m_alignment) ((((m_number) + ((m_alignment)-1)) / (m_alignment)) * (m_alignment))
 namespace lain {
-	namespace graphics {
 
 	// transform of dataformat
 	// None -> Max
@@ -916,8 +915,8 @@ public:
 
 		Vector<Vector<ShaderUniform>> uniform_sets;
 		Vector<ShaderSpecializationConstant> specialization_constants;
-		Vector<ShaderStage> stages;
-	};
+        Vector<ShaderStage> stages;
+    };
 	protected:
 	struct ShaderReflection : public ShaderDescription {
 		BitField<ShaderStage> stages;
@@ -925,7 +924,6 @@ public:
 	}; // 可能说reflection的部分是个内部的东西，不应该暴露给用户
 
 	};
-	}// namespace graphic
 } // namespace lain
 
 #endif

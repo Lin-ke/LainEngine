@@ -7,11 +7,11 @@
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include "core/engine/engine.h"
 using namespace lain;
-using lain::graphics::RD;
-using lain::graphics::RenderingDevice;
+using lain::RD;
+using lain::RenderingDevice;
 
-using lain::graphics::RDD;
-using lain::graphics::RenderingDeviceDriver;
+using lain::RDD;
+using lain::RenderingDeviceDriver;
 
 
 static Vector<uint8_t> _compile_shader_glsl(RenderingDevice::ShaderStage p_stage, const String &p_source_code, RenderingDevice::ShaderLanguage p_language, String *r_error, const RenderingDevice *p_render_device) {

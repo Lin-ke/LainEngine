@@ -31,7 +31,7 @@
 #include "rendering_device_commons.h"
 // ¶ÔÆë
 
-namespace lain::graphics {
+namespace lain {
 /*****************/
 /**** GENERIC ****/
 /*****************/

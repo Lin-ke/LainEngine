@@ -3499,7 +3499,7 @@ static int ssl_check_dtls_clihlo_cookie(
  * includes the case of MBEDTLS_ERR_SSL_CLIENT_RECONNECT and of unexpected
  * errors, and is the right thing to do in both cases).
  */
-static int ssl_handle_possible_reconnect( mbedtls_ssl_context *ssl )
+static int ssl_handle_recognized_reconnect( mbedtls_ssl_context *ssl )
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t len;
@@ -3840,7 +3840,7 @@ static int ssl_check_client_reconnect( mbedtls_ssl_context *ssl )
     {
         MBEDTLS_SSL_DEBUG_MSG( 1, ( "possible client reconnect "
                                     "from the same port" ) );
-        return( ssl_handle_possible_reconnect( ssl ) );
+        return( ssl_handle_recognized_reconnect( ssl ) );
     }
 
     return( 0 );

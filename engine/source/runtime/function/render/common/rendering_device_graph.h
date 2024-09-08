@@ -10,7 +10,7 @@
 // barriers does not, probably due to driver issues (see comment on PR #84976
 // https://github.com/godotengine/godot/pull/84976#issuecomment-1878566830).
 
-namespace lain::graphics {
+namespace lain {
 
 class RenderingDeviceGraph {
  public:
@@ -808,6 +808,6 @@ void _boost_priority_for_render_commands(RecordedCommandSort *p_sorted_commands,
 
 using RDG = RenderingDeviceGraph;
 
-}  //namespace lain::graphics
+}  //namespace lain
 
 #endif

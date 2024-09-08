@@ -9,13 +9,13 @@ namespace lain {
 	}
 
 
-	void PackedScene::SetPath(const String& p_path, bool p_take_over) {
+	void PackedScene::set_path(const String& p_path, bool p_take_over) {
 		state->set_path(p_path);
-		Resource::SetPath(p_path, p_take_over);
+		Resource::set_path(p_path, p_take_over);
 	}
-	void PackedScene::SetPathCache(const String& p_path) {
+	void PackedScene::set_pathCache(const String& p_path) {
 		state->set_path(p_path);
-		Resource::SetPathCache(p_path);
+		Resource::set_pathCache(p_path);
 	}
 	PackedScene::PackedScene() { state = Ref<SceneState>(memnew(SceneState)); }
 

@@ -11,6 +11,9 @@
 #include "resource/io/image_loader_stb.h"
 #include "core/scene/scene_stringnames.h"
 #include "core/scene/object/gobject.h"
+
+#include "resource/io/resource_format_shader.h"
+
 namespace lain {
 	static WorkerThreadPool* worker_thread_pool = nullptr;
 	static ResourceUID* resource_uid = nullptr;
@@ -33,6 +36,8 @@ namespace lain {
 	static Ref<ResourceFormatLoaderText> resource_format_loader_text;
 	static Ref<ResourceFormatSaverText> resource_format_saver_text;
 	static Ref<ResourceFormatLoaderImage> resource_format_loader_image;
+	static Ref<ResourceFormatLoaderShader> resource_format_loader_shader;
+	static Ref<ResourceFormatSaverShader> resource_format_saver_shader;
 
 
 
@@ -75,6 +80,14 @@ namespace lain {
 
 		resource_format_saver_text.instantiate();
 		ResourceSaver::add_resource_format_saver(resource_format_saver_text);
+
+		resource_format_loader_shader.instantiate();
+		ResourceLoader::add_resource_format_loader(resource_format_loader_shader);
+
+		resource_format_saver_shader.instantiate();
+		ResourceSaver::add_resource_format_saver(resource_format_saver_shader);
+
+		
 
 		/*auto&& dict = ResourceLoader::ext_to_loader_idx;
 		L_JSON(dict);*/

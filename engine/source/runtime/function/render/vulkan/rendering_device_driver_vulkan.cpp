@@ -8,9 +8,9 @@
 /*****************/
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
-using namespace lain::graphics;
 using namespace lain;
-using RDDV = lain::graphics::RenderingDeviceDriverVulkan;
+using namespace lain;
+using RDDV = lain::RenderingDeviceDriverVulkan;
 // 不要离开这个文件
 static const uint32_t SMALL_ALLOCATION_MAX_SIZE = 4096;
 

@@ -23,7 +23,7 @@ namespace lain {
 		static Ref<ResourceLoaderImage> loader[ImageLoader::MAX_LOADERS];
 		static int loader_count;
 		static HashMap<String, Vector<int>> ext_to_id;
-		static void get_possible_extensions(List<String>* p_extensions);
+		static void get_recognized_extensions(List<String>* p_extensions);
 	public:
 		enum LoaderFlags {
 			FLAG_NONE = 0,
@@ -44,7 +44,7 @@ namespace lain {
 
 		virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> f, ImageLoader::LoaderFlags p_flags = ImageLoader::FLAG_NONE, float p_scale = 1.0) { return FAILED; }
 
-		virtual void get_possible_extensions(List<String>* p_extensions) const {}
+		virtual void get_recognized_extensions(List<String>* p_extensions) const {}
 	};
 
 	class ResourceFormatLoaderImage : public ResourceFormatLoader {
@@ -53,10 +53,10 @@ namespace lain {
 		static ResourceFormatLoaderImage* singleton;
 	public:
 		virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "", Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
-		virtual void get_possible_extensions(List<String>* p_extensions) const {
-			ImageLoader::get_possible_extensions(p_extensions);
+		virtual void get_recognized_extensions(List<String>* p_extensions) const {
+			ImageLoader::get_recognized_extensions(p_extensions);
 		}
-		virtual void get_possible_resources(List<String>* p_extensions) const override {
+		virtual void get_recognized_resources(List<String>* p_extensions) const override {
 			p_extensions->push_back("Image");
 		}
 		ResourceFormatLoaderImage();

@@ -15,7 +15,7 @@ namespace lain {
 		return name;
 	}
 	// ÉèÖÃpath_cacheÎªpath£¬
-	void Resource::SetPath(const String& p_path, bool p_take_over) {
+	void Resource::set_path(const String& p_path, bool p_take_over) {
 		if (path_cache == p_path) {
 			return;
 		}

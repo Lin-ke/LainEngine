@@ -32,10 +32,10 @@ namespace lain {
 		void SetName(const String& p_name);
 		String GetName() const;
 
-		virtual void SetPath(const String& p_path, bool p_take_over = false);
+		virtual void set_path(const String& p_path, bool p_take_over = false);
 		String GetPath() const;
 		
-		virtual void SetPathCache(const String& p_path) { path_cache = p_path; }
+		virtual void set_pathCache(const String& p_path) { path_cache = p_path; }
 		static String generate_scene_unique_id();
 
 		String get_id_for_path(const String& p_path) const;
@@ -58,8 +58,8 @@ namespace lain {
 		_FORCE_INLINE_ bool IsBuiltIn() const { return path_cache.is_empty() || path_cache.contains("::") || path_cache.begins_with("local://"); }
 		~Resource();
 	protected:
-		void _set_path(const String& p_path) { SetPath(p_path, false); }
-		void _take_over_path(const String& p_path) { SetPath(p_path, true); }
+		void _set_path(const String& p_path) { set_path(p_path, false); }
+		void _take_over_path(const String& p_path) { set_path(p_path, true); }
 		virtual void reset_local_to_scene() {}
 	private:
 

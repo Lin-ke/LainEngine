@@ -8,7 +8,7 @@
 #include "rendering_context_driver_vulkan.h"
 #include "vulkan_header.h"
 
-namespace lain::graphics {
+namespace lain {
 
 // Design principles:
 // - Vulkan structs are zero-initialized and fields not requiring a non-zero value are omitted (except in cases where expresivity reasons apply).
@@ -641,6 +641,6 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   // VersatileResource::allocate<Type>(resource_allocator)
 };
 
-}  // namespace lain::graphics
+}  // namespace lain
 
 #endif  // RENDERING_DEVICE_DRIVER_VULKAN_H
