@@ -15,7 +15,6 @@ class OS {
 public:
 	static OS *p_singleton;
 	String m_execpath;
-
 	virtual void Run() = 0;
 	virtual void Finialize() = 0;
 	virtual void Initialize() = 0;
@@ -27,6 +26,10 @@ public:
 	OS() {
 		p_singleton = this;
 	}
+	///*******TIME ********** */
+	///*******TIME ********** */
+	///*******TIME ********** */
+
 	struct DateTime {
 		int64_t year;
 		Month month;
@@ -37,14 +40,15 @@ public:
 		uint8_t second;
 		bool dst;
 	};
-	// need virtual
-	virtual ~OS() {
-		p_singleton = nullptr;
-	}
+
 	virtual ui64 GetTimeUsec() const = 0;
 	virtual ui64 GetTicksUsec() const = 0;
 	virtual double GetUnixTime() const { return 0; }
 	virtual DateTime GetDateTime(bool p_utc = false) const = 0;
+	///*******TIME ********** */
+	///*******TIME ********** */
+	///*******TIME ********** */
+
 	// Absolute path to res:// ( if not reload)
 	virtual String GetResourceDir() const;
 
@@ -71,6 +75,19 @@ public:
 	int GetDefaultThreadPoolSize() const { return GetProcessorCount(); }
 	String GetCurrentRenderingMethod() const { return "OpenGL"; }
 	void EnsureUserDataDir();
+
+	enum RenderThreadMode {
+		RENDER_THREAD_UNSAFE,
+		RENDER_THREAD_SAFE,
+		RENDER_SEPARATE_THREAD
+	};
+	RenderThreadMode _render_thread_mode = RENDER_THREAD_SAFE;
+	RenderThreadMode get_render_thread_mode() const { return _render_thread_mode; }
+	void set_render_thread_mode(RenderThreadMode p_mode) { _render_thread_mode = p_mode; }
+	// need virtual
+	virtual ~OS() {
+		p_singleton = nullptr;
+	}
 };
 
 } //namespace lain

@@ -12,7 +12,6 @@
 
 // TODO:
 #define GLOBAL_GET(m_var) ProjectSettings::GetSingleton()->GetSetting(m_var)
-// 不知道为什么不用dict，不理解
 namespace lain {
 	// config manager
 	class ProjectSettings:public Object {
@@ -52,6 +51,15 @@ public:
     String GetProjectDataName() const { return project_data_dir_name; }
 	String GetProjectDataPath() const { return "res://" + project_data_dir_name; }
 	Error Save();
+	
+	void set_initial_value(const String &p_name, const Variant &p_value);
+	void set_as_basic(const String &p_name, bool p_basic);
+	void set_as_internal(const String &p_name, bool p_internal);
+	void set_restart_if_changed(const String &p_name, bool p_restart);
+	void set_ignore_value_in_docs(const String &p_name, bool p_ignore);
+	bool get_ignore_value_in_docs(const String &p_name) const;
+	void set_builtin_order(const String &p_name);
+
 protected:
 	HashSet<String> custom_features;
 	HashMap<StringName, std::vector<Pair<StringName, StringName>>> feature_overrides;
@@ -78,13 +86,15 @@ protected:
 		}
 	};
 	int last_order = NO_BUILTIN_ORDER_BASE;
+	int last_builtin_order = 0;
 
 	RBMap<StringName, VariantContainer> props; // NOTE: Key order is used e.g. in the save_custom method.
 	String project_data_dir_name = "";
 	String resource_path = "";
-	bool _set(const StringName& p_name, const Variant& p_value);
-	bool _get(const StringName& p_name, Variant& r_ret) const;
-
+public:
+	bool Set(const StringName& p_name, const Variant& p_value);
+	bool Get(const StringName& p_name, Variant& r_ret) const;
+	bool Has(const StringName& p_name) const;
 private:
 	Error _initialize(const String p_path, bool p_ignore_override = true);
 	// load settings
@@ -96,8 +106,13 @@ private:
 
 	};
 
-   
+Variant _GLOBAL_DEF(const String &p_var, const Variant &p_default, bool p_restart_if_changed = false, bool p_ignore_value_in_docs = false, bool p_basic = false, bool p_internal = false);
+// Variant _GLOBAL_DEF(const PropertyInfo &p_info, const Variant &p_default, bool p_restart_if_changed = false, bool p_ignore_value_in_docs = false, bool p_basic = false, bool p_internal = false);
 
+#define GLOBAL_DEF(m_var, m_value) _GLOBAL_DEF(m_var, m_value)
+#define GLOBAL_DEF_RST(m_var, m_value) _GLOBAL_DEF(m_var, m_value, true)
+#define GLOBAL_DEF_NOVAL(m_var, m_value) _GLOBAL_DEF(m_var, m_value, false, true)
+#define GLOBAL_DEF_RST_NOVAL(m_var, m_value) _GLOBAL_DEF(m_var, m_value, true, true)
 }
 
 #endif // !_PROJECT_SETTINGS_H__

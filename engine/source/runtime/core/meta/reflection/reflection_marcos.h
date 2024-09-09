@@ -251,4 +251,5 @@ namespace TypeWrappersRegister{     \
 #define TypeMetaDefPtr(class_name, ptr) \
     memnew(lain::Reflection::ReflectionInstance(lain::Reflection::TypeMeta::newMetaFromName(#class_name), \
                                                 (class_name*)ptr))
+
 #endif

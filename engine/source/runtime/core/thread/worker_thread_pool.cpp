@@ -1,5 +1,6 @@
 #include "worker_thread_pool.h"
 namespace lain {
+WorkerThreadPool::Task *const WorkerThreadPool::ThreadData::YIELDING = (Task *)1;
 
 WorkerThreadPool *WorkerThreadPool::singleton = nullptr;
 
@@ -10,8 +11,33 @@ WorkerThreadPool::WorkerThreadPool() {
 WorkerThreadPool::~WorkerThreadPool() {
 	finish();
 }
-WorkerThreadPool::TaskID WorkerThreadPool::add_native_task(void (*p_func)(void *), void *p_userdata, bool p_high_priority, const String &p_description) {
-	return _add_task(Callable(), p_func, p_userdata, nullptr, p_high_priority, p_description);
+
+void WorkerThreadPool::_lock_unlockable_mutexes() {
+	for (uint32_t i = 0; i < MAX_UNLOCKABLE_MUTEXES; i++) {
+		if (unlockable_mutexes[i]) {
+			if ((((uintptr_t)unlockable_mutexes[i]) & 1) == 0) {
+				((Mutex *)unlockable_mutexes[i])->lock();
+			} else {
+				((BinaryMutex *)(unlockable_mutexes[i] & ~1))->lock();
+			}
+		}
+	}
+}
+
+void WorkerThreadPool::_unlock_unlockable_mutexes() {
+	for (uint32_t i = 0; i < MAX_UNLOCKABLE_MUTEXES; i++) {
+		if (unlockable_mutexes[i]) {
+			if ((((uintptr_t)unlockable_mutexes[i]) & 1) == 0) {
+				((Mutex *)unlockable_mutexes[i])->unlock();
+			} else {
+				((BinaryMutex *)(unlockable_mutexes[i] & ~1))->unlock(); // 用最后一位标记是否是BinaryMutex
+			}
+		}
+	}
+}
+
+WorkerThreadPool::TaskID WorkerThreadPool::add_native_task(void (*p_func)(void*), void* p_userdata, bool p_high_priority, const String& p_description) {
+  return _add_task(Callable(), p_func, p_userdata, nullptr, p_high_priority, p_description);
 }
 
 bool WorkerThreadPool::is_task_completed(TaskID p_task_id) const {
@@ -84,24 +110,116 @@ void WorkerThreadPool::_post_tasks_and_unlock(Task **p_tasks, uint32_t p_count, 
 	task_mutex.unlock();
 }
 
+uint32_t WorkerThreadPool::thread_enter_unlock_allowance_zone(Mutex *p_mutex) {
+	return _thread_enter_unlock_allowance_zone(p_mutex, false);
+}
+
+uint32_t WorkerThreadPool::thread_enter_unlock_allowance_zone(BinaryMutex *p_mutex) {
+	return _thread_enter_unlock_allowance_zone(p_mutex, true);
+}
+
+// 在等待p_tasks完成的过程中p_caller_pool_thread也可以执行其他任务
+void WorkerThreadPool::_wait_collaboratively(ThreadData* p_caller_pool_thread, Task* p_task) {
+	// Keep processing tasks until the condition to stop waiting is met.
+#define IS_WAIT_OVER (unlikely(p_task == ThreadData::YIELDING) ? p_caller_pool_thread->yield_is_over : p_task->completed)
+	while (true) {
+		Task *task_to_process = nullptr;
+		bool relock_unlockables = false;
+		{
+			MutexLock lock(task_mutex);
+			bool was_signaled = p_caller_pool_thread->signaled;
+			p_caller_pool_thread->signaled = false;
+
+			if (IS_WAIT_OVER) {
+				p_caller_pool_thread->yield_is_over = false;
+				if (!exit_threads && was_signaled) {
+					// This thread was awaken for some additional reason, but it's about to exit.
+					// Let's find out what may be pending and forward the requests.
+					uint32_t to_process = task_queue.first() ? 1 : 0;
+					uint32_t to_promote = p_caller_pool_thread->current_task->low_priority && low_priority_task_queue.first() ? 1 : 0;
+					if (to_process || to_promote) {
+						// This thread must be left alone since it won't loop again.
+						p_caller_pool_thread->signaled = true;
+						_notify_threads(p_caller_pool_thread, to_process, to_promote);
+					}
+				}
+
+				break;
+			}
+
+			if (!exit_threads) {
+				if (p_caller_pool_thread->current_task->low_priority && low_priority_task_queue.first()) {
+					if (_try_promote_low_priority_task()) {
+						_notify_threads(p_caller_pool_thread, 1, 0);
+					}
+				}
+
+				if (singleton->task_queue.first()) {
+					task_to_process = task_queue.first()->self();
+					task_queue.remove(task_queue.first());
+				}
+
+				if (!task_to_process) {
+					p_caller_pool_thread->awaited_task = p_task;
+
+					_unlock_unlockable_mutexes();
+					relock_unlockables = true;
+					p_caller_pool_thread->cond_var.wait(lock);
+
+					DEV_ASSERT(exit_threads || p_caller_pool_thread->signaled || IS_WAIT_OVER);
+					p_caller_pool_thread->awaited_task = nullptr;
+				}
+			}
+		}
+
+		if (relock_unlockables) {
+			_lock_unlockable_mutexes();
+		}
+
+		if (task_to_process) {
+			_process_task(task_to_process);
+		}
+	}
+
+#undef IS_WAIT_OVER
+}
+
+uint32_t WorkerThreadPool::_thread_enter_unlock_allowance_zone(void* p_mutex, bool p_is_binary) {
+  for (uint32_t i = 0; i < MAX_UNLOCKABLE_MUTEXES; i++) {
+    if (unlikely((unlockable_mutexes[i] & ~1) == (uintptr_t)p_mutex)) {
+      // Already registered in the current thread.
+      return UINT32_MAX;
+    }
+    if (!unlockable_mutexes[i]) {
+      unlockable_mutexes[i] = (uintptr_t)p_mutex;
+      if (p_is_binary) {
+        unlockable_mutexes[i] |= 1; // 用最后一位标记（可能会导致bug？）
+      }
+      return i;
+    }
+  }
+  ERR_FAIL_V_MSG(UINT32_MAX, "No more unlockable mutex slots available. Engine bug.");
+}
+
 void WorkerThreadPool::init(int p_thread_count, float p_low_priority_task_ratio) {
-	ERR_FAIL_COND(threads.size() > 0);
-	if (p_thread_count < 0) {
-		p_thread_count = OS::GetSingleton()->GetDefaultThreadPoolSize();
-	}
+  ERR_FAIL_COND(threads.size() > 0);
+  if (p_thread_count < 0) {
+    p_thread_count = OS::GetSingleton()->GetDefaultThreadPoolSize();
+  }
 
-	max_low_priority_threads = CLAMP(p_thread_count * p_low_priority_task_ratio, 1, p_thread_count - 1);
+  max_low_priority_threads = CLAMP(p_thread_count * p_low_priority_task_ratio, 1, p_thread_count - 1);
 
-	threads.resize(p_thread_count);
-	// 插入thread index 和thread id的关系
-	for (uint32_t i = 0; i < threads.size(); i++) {
-		threads[i].index = i;
-		// 调用构造函数，线程创建，并开始运行_thread_function
-		threads[i].thread.start(&WorkerThreadPool::_thread_function, &threads[i]);
-		thread_ids.insert(threads[i].thread.get_id(), i);
-	}
+  threads.resize(p_thread_count);
+  // 插入thread index 和thread id的关系
+  for (uint32_t i = 0; i < threads.size(); i++) {
+    threads[i].index = i;
+    // 调用构造函数，线程创建，并开始运行_thread_function
+    threads[i].thread.start(&WorkerThreadPool::_thread_function, &threads[i]);
+    thread_ids.insert(threads[i].thread.get_id(), i);
+  }
 }
 // 线程：从Task queue里找到task然后执行
+// 为什么都要靠singleton->来访问？
 void WorkerThreadPool::_thread_function(void *p_user) {
 	ThreadData *thread_data = (ThreadData *)p_user;
 	while (true) {
@@ -165,7 +283,7 @@ void WorkerThreadPool::_process_task(Task *p_task) {
 			uint32_t work_index = p_task->group->index.postincrement();
 
 			if (work_index >= p_task->group->max) {
-				break;
+				break; // done，这边都是再来执行发现已经执行完的线程
 			}
 			if (p_task->native_group_func) {
 				p_task->native_group_func(p_task->native_func_userdata, work_index);
@@ -188,9 +306,10 @@ void WorkerThreadPool::_process_task(Task *p_task) {
 		}
 		// 使用done_semaphore广播这个工作完成
 		if (do_post) {
-			p_task->group->done_semaphore.post();
 			p_task->group->completed.set_to(true);
+			p_task->group->done_semaphore.post();
 		}
+		// 考虑到可能有一个额外的线程等着
 		uint32_t max_users = p_task->group->tasks_used + 1; // Add 1 because the thread waiting for it is also user. Read before to avoid another thread freeing task after increment.
 		uint32_t finished_users = p_task->group->finished.increment();
 
@@ -399,73 +518,15 @@ Error WorkerThreadPool::wait_for_task_completion(TaskID p_task_id) {
 		task->waiting_user++;
 	}
 
+
 	task_mutex.unlock();
-
 	if (caller_pool_thread) {
-		while (true) {
-			Task *task_to_process = nullptr;
-			{
-				MutexLock lock(task_mutex);
-				bool was_signaled = caller_pool_thread->signaled;
-				caller_pool_thread->signaled = false;
-
-				if (task->completed) {
-					// This thread was awaken also for some reason, but it's about to exit.
-					// Let's find out what may be pending and forward the requests.
-					if (!exit_threads && was_signaled) {
-						uint32_t to_process = task_queue.first() ? 1 : 0;
-						uint32_t to_promote = caller_pool_thread->current_task->low_priority && low_priority_task_queue.first() ? 1 : 0;
-						if (to_process || to_promote) {
-							// This thread must be left alone since it won't loop again.
-							caller_pool_thread->signaled = true;
-							_notify_threads(caller_pool_thread, to_process, to_promote);
-						}
-					}
-
-					task->waiting_pool--;
-					if (task->waiting_pool == 0 && task->waiting_user == 0) {
-						tasks.erase(p_task_id);
-						task_allocator.free(task);
-					}
-
-					break;
-				}
-
-				if (!exit_threads) {
-					// This is a thread from the pool. It shouldn't just idle.
-					// Let's try to process other tasks while we wait.
-					// 加入低优先级任务
-					if (caller_pool_thread->current_task->low_priority && low_priority_task_queue.first()) {
-						if (_try_promote_low_priority_task()) {
-							_notify_threads(caller_pool_thread, 1, 0);
-						}
-					}
-					// 有任务
-					if (singleton->task_queue.first()) {
-						task_to_process = task_queue.first()->self();
-						task_queue.remove(task_queue.first());
-					}
-
-					/*if (!task_to_process) {
-						caller_pool_thread->awaited_task = task;
-
-						if (flushing_cmd_queue) {
-							flushing_cmd_queue->unlock();
-						}
-						caller_pool_thread->cond_var.wait(lock);
-						if (flushing_cmd_queue) {
-							flushing_cmd_queue->lock();
-						}
-
-						DEV_ASSERT(exit_threads || caller_pool_thread->signaled || task->completed);
-						caller_pool_thread->awaited_task = nullptr;
-					}*/
-				}
-			}
-
-			if (task_to_process) {
-				_process_task(task_to_process);
-			}
+		_wait_collaboratively(caller_pool_thread, task);
+		task_mutex.lock(); 
+		task->waiting_pool--;
+		if (task->waiting_pool == 0 && task->waiting_user == 0) {
+			tasks.erase(p_task_id);
+			task_allocator.free(task);
 		}
 	} else {
 		task->done_semaphore.wait();
@@ -475,11 +536,21 @@ Error WorkerThreadPool::wait_for_task_completion(TaskID p_task_id) {
 			tasks.erase(p_task_id);
 			task_allocator.free(task);
 		}
-		task_mutex.unlock();
 	}
 
+	task_mutex.unlock();
 	return OK;
 }
+
+WorkerThreadPool::GroupID WorkerThreadPool::add_native_group_task(void (*p_func)(void *, uint32_t), void *p_userdata, int p_elements, int p_tasks, bool p_high_priority, const String &p_description) {
+	return _add_group_task(Callable(), p_func, p_userdata, nullptr, p_elements, p_tasks, p_high_priority, p_description);
+}
+
+WorkerThreadPool::GroupID WorkerThreadPool::add_group_task(const Callable &p_action, int p_elements, int p_tasks, bool p_high_priority, const String &p_description) {
+	return _add_group_task(p_action, nullptr, nullptr, nullptr, p_elements, p_tasks, p_high_priority, p_description);
+}
+
+
 
 WorkerThreadPool::GroupID WorkerThreadPool::_add_group_task(const Callable &p_callable, void (*p_func)(void *, uint32_t), void *p_userdata, BaseTemplateUserdata *p_template_userdata, int p_elements, int p_tasks, bool p_high_priority, const String &p_description) {
 	ERR_FAIL_COND_V(p_elements < 0, INVALID_TASK_ID);
@@ -526,8 +597,9 @@ WorkerThreadPool::GroupID WorkerThreadPool::_add_group_task(const Callable &p_ca
 
 	return id;
 }
-// @TODO read it
+
 void WorkerThreadPool::wait_for_group_task_completion(GroupID p_group) {
+	// group task 就
 	task_mutex.lock();
 	Group **groupp = groups.getptr(p_group);
 	task_mutex.unlock();
@@ -538,18 +610,14 @@ void WorkerThreadPool::wait_for_group_task_completion(GroupID p_group) {
 	{
 		Group *group = *groupp;
 
-		/*if (flushing_cmd_queue) {
-			flushing_cmd_queue->unlock();
-		}*/
-		group->done_semaphore.wait();
-		/*if (flushing_cmd_queue) {
-			flushing_cmd_queue->lock();
-		}*/
+		_unlock_unlockable_mutexes();
+		group->done_semaphore.wait(); // 在group task 的时候不进行 工作
+		_lock_unlockable_mutexes();
 
 		uint32_t max_users = group->tasks_used + 1; // Add 1 because the thread waiting for it is also user. Read before to avoid another thread freeing task after increment.
 		uint32_t finished_users = group->finished.increment(); // fetch happens before inc, so increment later.
 
-		if (finished_users == max_users) {
+		if (finished_users == max_users) { // 
 			// All tasks using this group are gone (finished before the group), so clear the group too.
 			task_mutex.lock();
 			group_allocator.free(group);
@@ -561,5 +629,49 @@ void WorkerThreadPool::wait_for_group_task_completion(GroupID p_group) {
 	groups.erase(p_group);
 	task_mutex.unlock();
 }
+
+
+void WorkerThreadPool::notify_yield_over(TaskID p_task_id) {
+	task_mutex.lock();
+	Task **taskp = tasks.getptr(p_task_id);
+	if (!taskp) {
+		task_mutex.unlock();
+		ERR_FAIL_MSG("Invalid Task ID.");
+	}
+	Task *task = *taskp;
+	if (task->pool_thread_index == -1) { // Completed or not started yet.
+		if (!task->completed) {
+			// This avoids a race condition where a task is created and yield-over called before it's processed.
+			task->pending_notify_yield_over = true;
+		}
+		task_mutex.unlock();
+		return;
+	}
+
+	ThreadData &td = threads[task->pool_thread_index];
+	td.yield_is_over = true;
+	td.signaled = true;
+	td.cond_var.notify_one();
+
+	task_mutex.unlock();
+}
+
+bool WorkerThreadPool::is_group_task_completed(GroupID p_group) const {
+	task_mutex.lock();
+	const Group *const *groupp = groups.getptr(p_group);
+	if (!groupp) {
+		task_mutex.unlock();
+		ERR_FAIL_V_MSG(false, "Invalid Group ID");
+	}
+	bool completed = (*groupp)->completed.is_set();
+	task_mutex.unlock();
+	return completed;
+}
+
+int WorkerThreadPool::get_thread_index() {
+	Thread::ID tid = Thread::get_caller_id();
+	return singleton->thread_ids.has(tid) ? singleton->thread_ids[tid] : -1;
+}
+
 
 } //namespace lain

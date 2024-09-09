@@ -2,6 +2,7 @@
 #ifndef RENDERING_SYSTEM_GLOBAL_H
 #define RENDERING_SYSTEM_GLOBAL_H
 #include "mesh_storage_api.h"
+#include "material_storage_api.h"
 namespace lain {
 
 class RenderingServerGlobals {
@@ -11,7 +12,7 @@ class RenderingServerGlobals {
 // ÎªÁË¼æÈÝÐÔ
 //   static RendererUtilities* utilities;
 //   static RendererLightStorage* light_storage;
-//   static RendererMaterialStorage* material_storage;
+static RendererMaterialStorage* material_storage;
 static RendererMeshStorage* mesh_storage;
 //   static RendererParticlesStorage* particles_storage;
 //   static RendererTextureStorage* texture_storage;

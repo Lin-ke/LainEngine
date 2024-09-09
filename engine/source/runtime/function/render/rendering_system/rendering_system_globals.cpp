@@ -2,3 +2,4 @@
 using namespace lain;
 bool RSG::threaded = false;
 RendererMeshStorage* RSG::mesh_storage = nullptr;
+RendererMaterialStorage* RSG::material_storage = nullptr;

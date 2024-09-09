@@ -80,7 +80,10 @@ class RenderingSystem : public Object {
     };
     Vector<Version> versions;
   };
-
+	virtual ShaderNativeSourceCode shader_get_native_source_code(RID p_shader) const = 0;
+  /********SHADER ******* */
+  /********SHADER ******* */
+  /********SHADER ******* */
  public:
  /* STATUS INFORMATION */
 
@@ -93,7 +96,7 @@ class RenderingSystem : public Object {
 		RENDERING_INFO_VIDEO_MEM_USED,
 		RENDERING_INFO_MAX
 	};
-	
+
   /******************
      * MESH API
      ******************/
@@ -243,6 +246,7 @@ class RenderingSystem : public Object {
 
     INSTANCE_GEOMETRY_MASK = (1 << INSTANCE_MESH) | (1 << INSTANCE_MULTIMESH) | (1 << INSTANCE_PARTICLES)
   };
+  static void init();
 };
 
 }  // namespace lain
