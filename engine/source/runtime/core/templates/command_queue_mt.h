@@ -183,6 +183,8 @@
 #define TYPE_PARAM(N) class P##N
 #define PARAM_DECL(N) typename GetSimpleTypeT<P##N>::type_t p##N
 
+// 带返回的需要sync
+
 #define DECL_CMD(N)                                                  \
   template <class T, class M COMMA(N) COMMA_SEP_LIST(TYPE_PARAM, N)> \
   struct Command##N : public CommandBase {                           \
@@ -336,7 +338,7 @@ class CommandQueueMT {
     return ret;
   }
 
-  void _flush() {
+  void _flush() { // flush是多线程的
     if (unlikely(flush_read_ptr)) {
       // Re-entrant call.
       return;
@@ -349,14 +351,14 @@ class CommandQueueMT {
       uint64_t size = *(uint64_t*)&command_mem[flush_read_ptr];
       flush_read_ptr += 8; // uint64
       CommandBase* cmd = reinterpret_cast<CommandBase*>(&command_mem[flush_read_ptr]);
-      cmd->call(); // cmd可能被reaclloc，这个事情太邪门了
+      cmd->call(); 
 
       // Handle potential realloc due to the command and unlock allowance.
       cmd = reinterpret_cast<CommandBase*>(&command_mem[flush_read_ptr]);
 
       if (unlikely(cmd->sync)) {
-        sync_head++;
-        unlock();  // Give an opportunity to awaiters right away. @?
+        sync_head++; 
+        unlock();  // Give an opportunity to awaiters right away. // 可能有人在等这个结果，这里unlock一下让他们获得锁返回，我们再继续
         sync_cond_var.notify_all();
         lock();
         // Handle potential realloc happened during unlock.
@@ -379,10 +381,10 @@ class CommandQueueMT {
 
  _FORCE_INLINE_ void _wait_for_sync(MutexLock<BinaryMutex> &p_lock) {
 		sync_awaiters++;
-		uint32_t sync_head_goal = sync_tail;
+		uint32_t sync_head_goal = sync_tail; // tail 是 我们这个任务的标识
 		do {
-			sync_cond_var.wait(p_lock);
-		} while (sync_head < sync_head_goal);
+			sync_cond_var.wait(p_lock); // wait时会释放锁
+		} while (sync_head < sync_head_goal); // sync head 是已经完成的任务的标识
 		sync_awaiters--;
 		_prevent_sync_wraparound();
 	}

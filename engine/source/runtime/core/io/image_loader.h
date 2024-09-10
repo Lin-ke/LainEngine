@@ -2,7 +2,7 @@
 #ifndef IMAGE_LOADER_H
 #define IMAGE_LOADER_H
 #include "core/io/resource_loader.h"
-#include "resource/common/image.h"
+#include "core/io/image.h"
 
 namespace lain {
 

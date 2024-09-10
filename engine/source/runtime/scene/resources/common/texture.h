@@ -8,7 +8,7 @@
 #include "core/os/mutex.h"
 #include "core/os/thread_safe.h"
 #include "core/math/rect2.h"
-#include "image.h"
+#include "core/io/image.h"
 namespace lain {
 	class Texture : public Resource {
 		Texture() {}

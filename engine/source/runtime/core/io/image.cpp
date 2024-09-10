@@ -38,7 +38,7 @@
 #include "core/string/print_string.h"
 #include "core/templates/hash_map.h"
 #include "core/variant/dictionary.h"
-#include "resource/io/image_loader.h"
+#include "core/io/image_loader.h"
 
 #include <stdio.h>
 #include <cmath>

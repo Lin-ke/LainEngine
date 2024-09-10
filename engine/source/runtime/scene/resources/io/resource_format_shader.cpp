@@ -1,5 +1,5 @@
 #include "resource_format_shader.h"
-#include "resource/common/shader.h"
+#include "scene/resources/common/shader.h"
 using namespace lain;
 
 Ref<Resource> ResourceFormatLoaderShader::load(const String& p_path, const String& p_original_path, Error* r_error, bool p_use_sub_threads, float* r_progress,

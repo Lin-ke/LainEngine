@@ -1,6 +1,7 @@
 #include "worker_thread_pool.h"
 namespace lain {
 WorkerThreadPool::Task *const WorkerThreadPool::ThreadData::YIELDING = (Task *)1;
+thread_local uintptr_t WorkerThreadPool::unlockable_mutexes[MAX_UNLOCKABLE_MUTEXES] = {};
 
 WorkerThreadPool *WorkerThreadPool::singleton = nullptr;
 
@@ -117,6 +118,8 @@ uint32_t WorkerThreadPool::thread_enter_unlock_allowance_zone(Mutex *p_mutex) {
 uint32_t WorkerThreadPool::thread_enter_unlock_allowance_zone(BinaryMutex *p_mutex) {
 	return _thread_enter_unlock_allowance_zone(p_mutex, true);
 }
+
+void WorkerThreadPool::thread_exit_unlock_allowance_zone(uint32_t p_zone_id) {}
 
 // 在等待p_tasks完成的过程中p_caller_pool_thread也可以执行其他任务
 void WorkerThreadPool::_wait_collaboratively(ThreadData* p_caller_pool_thread, Task* p_task) {
@@ -611,7 +614,7 @@ void WorkerThreadPool::wait_for_group_task_completion(GroupID p_group) {
 		Group *group = *groupp;
 
 		_unlock_unlockable_mutexes();
-		group->done_semaphore.wait(); // 在group task 的时候不进行 工作
+		group->done_semaphore.wait(); // 在group task 的时候不协作
 		_lock_unlockable_mutexes();
 
 		uint32_t max_users = group->tasks_used + 1; // Add 1 because the thread waiting for it is also user. Read before to avoid another thread freeing task after increment.

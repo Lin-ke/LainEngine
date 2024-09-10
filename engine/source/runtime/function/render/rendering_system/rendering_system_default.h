@@ -5,6 +5,7 @@
 namespace lain{
 class RenderingSystemDefault: public RenderingSystem{
 	LCLASS(RenderingSystemDefault, RenderingSystem);
+
 	Thread::ID server_thread = Thread::MAIN_ID;
 	bool create_thread = false;
 	mutable CommandQueueMT command_queue; // 和类状态无关的数据成员，const可用
@@ -36,10 +37,11 @@ class RenderingSystemDefault: public RenderingSystem{
 #endif
 	#include "rendering_system_helper.h"	
 	/***************
-	 * SHADER API
+	 * SHADER API  
 	 ***************/
+	// Shader 的 server 是 RendererMaterialStorage
 	#define ServerName RendererMaterialStorage
-	#define server_name RSG::material_storage
+	#define server_name RSG::material_storage 
 	FUNCRIDSPLIT(shader)
 	FUNC2(shader_set_code, RID, const String &)
 	FUNC2(shader_set_path_hint, RID, const String &)
@@ -55,6 +57,10 @@ class RenderingSystemDefault: public RenderingSystem{
 	
 	RenderingSystemDefault(bool p_create_thread = false);
 	~RenderingSystemDefault();
+	virtual void init() override;
+	virtual void free(RID p_rid) override;
+private:
+	void _free(RID p_rid) ;
 
 
 };

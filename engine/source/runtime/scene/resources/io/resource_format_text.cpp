@@ -3,7 +3,7 @@
 #include "core/config/project_settings.h"
 #include "core/meta/serializer/serializer.h"
 #include "core/meta/reflection/reflection.h"
-#include "resource/common/scene_res.h"
+#include "scene/resources/common/scene_res.h"
 #include "_generated/serializer/all_serializer.h"
 #include "core/templates/tuple.h"
 //#define _printerr() ERR_PRINT(String(res_path + ":" + itos(lines) + " - Parse Error: " + error_text).utf8().get_data());

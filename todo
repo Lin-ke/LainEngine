@@ -1,0 +1,3 @@
+1. 反射系统：将generator 与 propertyinfo 和 methodinfo 连接起来。
+- 利用variant
+- 考虑 ReflectBody 怎么与Variant 转换，但是似乎不行。e.g. .opeartor T 这个行为不存在。

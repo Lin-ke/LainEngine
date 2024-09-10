@@ -154,8 +154,6 @@ target("Core")
     if is_plat("windows") then
         add_defines("L_PLATFORM_WINDOWS", {public = true})
     end
-    -- resources
-    add_files("engine/source/runtime/resource/**.cpp")
 
     if is_config("mode", "debug") then
         add_defines("L_DEBUG", "DEBUG_ENABLED", {public = true})
@@ -164,13 +162,11 @@ target("Core")
         add_defines("L_RELEASE", {public = true })
     end
 --- functions
-
 static_component("Renderer", "Core")
     add_rules("mode.debug", "mode.release")
     add_deps("Spirv-Reflect", "mbedtls", "smol-v")
     set_languages("cxx17")
     add_files("engine/source/runtime/function/render/**.cpp")
-    add_headerfiles("engine/source/runtime/function/display/**.h")
 
     add_includedirs("engine/thirdparty/volk", {public = true})
     add_includedirs("engine/thirdparty/vma", {public = true})
@@ -184,15 +180,21 @@ static_component("Renderer", "Core")
      "PRINT_NATIVE_COMMANDS"
     )
     add_defines("VULKAN_ENABLED", {public = true})
--- vulkan相关的需要继承宏vulkan_enabled
+    -- vulkan相关的需要继承宏vulkan_enabled
+
 static_component("Display", "Renderer")
     set_languages("cxx17")
     add_files("engine/source/runtime/function/display/**.cpp")
 
+-- resources
+static_component("Scene", "Renderer")
+    set_languages("cxx17")
+    add_files("engine/source/runtime/scene/**.cpp")
+
 static_component("Editor", "Core")
     set_languages("cxx17")
     add_files("engine/source/editor/**.cpp")
-    
+
 
 target("main")
     set_languages("cxx17")
@@ -201,7 +203,7 @@ target("main")
     add_includedirs("engine/source/runtime", {public = true})
     add_deps("Core")
     -- functions
-    add_deps("Renderer", "Display")
+    add_deps("Renderer", "Display", "Scene")
     -- editor
     add_deps("Editor")
     -- modules?

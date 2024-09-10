@@ -3,7 +3,7 @@
 #define VIEWPORT_TEXTURE_H
 #include "core/scene/object/gobject.h"
 #include "core/scene/object/gobject_path.h"
-#include "resource/common/world.h"
+#include "scene/resources/common/world.h"
 #include "texture.h"
 namespace lain {
 	class ViewportTexture : public Texture2D {

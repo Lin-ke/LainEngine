@@ -5,14 +5,13 @@
 #include "core/io/resource_uid.h"
 #include "core/object/objectdb.h"
 #include "core/meta/serializer/serializer.h"
+#include "core/io/image_loader_stb.h"
 // scene
-#include "resource/io/resource_format_text.h"
-#include "resource/io/image_loader.h"
-#include "resource/io/image_loader_stb.h"
+#include "scene/resources/io/resource_format_text.h"
 #include "core/scene/scene_stringnames.h"
 #include "core/scene/object/gobject.h"
 
-#include "resource/io/resource_format_shader.h"
+#include "scene/resources/io/resource_format_shader.h"
 
 namespace lain {
 	static WorkerThreadPool* worker_thread_pool = nullptr;

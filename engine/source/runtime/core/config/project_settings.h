@@ -59,9 +59,11 @@ public:
 	void set_ignore_value_in_docs(const String &p_name, bool p_ignore);
 	bool get_ignore_value_in_docs(const String &p_name) const;
 	void set_builtin_order(const String &p_name);
+	void set_custom_property_info(const PropertyInfo &p_info);
 
 protected:
 	HashSet<String> custom_features;
+	HashMap<StringName, PropertyInfo> custom_prop_info;
 	HashMap<StringName, std::vector<Pair<StringName, StringName>>> feature_overrides;
 
 	struct VariantContainer {
@@ -107,7 +109,7 @@ private:
 	};
 
 Variant _GLOBAL_DEF(const String &p_var, const Variant &p_default, bool p_restart_if_changed = false, bool p_ignore_value_in_docs = false, bool p_basic = false, bool p_internal = false);
-// Variant _GLOBAL_DEF(const PropertyInfo &p_info, const Variant &p_default, bool p_restart_if_changed = false, bool p_ignore_value_in_docs = false, bool p_basic = false, bool p_internal = false);
+Variant _GLOBAL_DEF(const PropertyInfo &p_info, const Variant &p_default, bool p_restart_if_changed = false, bool p_ignore_value_in_docs = false, bool p_basic = false, bool p_internal = false);
 
 #define GLOBAL_DEF(m_var, m_value) _GLOBAL_DEF(m_var, m_value)
 #define GLOBAL_DEF_RST(m_var, m_value) _GLOBAL_DEF(m_var, m_value, true)

@@ -88,7 +88,7 @@ class WorkerThreadPool : public Object {
     Task* awaited_task = nullptr;  // Null if not awaiting the condition variable. Special value for idle-waiting.
 
 
-    ConditionVariable cond_var;    // 这个条件变量被每个线程持有，因此notify_one可以通知自己
+    ConditionVariable cond_var;    // 这个条件变量被每个线程持有，因此notify_one可以通知该线程
   };
 
   TightLocalVector<ThreadData> threads;
@@ -115,7 +115,7 @@ class WorkerThreadPool : public Object {
 
   static WorkerThreadPool* singleton;
   static const constexpr uint32_t MAX_UNLOCKABLE_MUTEXES = 2;
-  static thread_local uintptr_t unlockable_mutexes[MAX_UNLOCKABLE_MUTEXES];
+  static thread_local uintptr_t unlockable_mutexes[MAX_UNLOCKABLE_MUTEXES]; // 锁只有一个，但是 unlockable_mutexes是thread_local的
 
   TaskID _add_task(const Callable& p_callable, void (*p_func)(void*), void* p_userdata, BaseTemplateUserdata* p_template_userdata, bool p_high_priority,
                    const String& p_description);
@@ -177,6 +177,7 @@ void _unlock_unlockable_mutexes();
   uint32_t get_group_processed_element_count(GroupID p_group) const;
   bool is_group_task_completed(GroupID p_group) const;
   void wait_for_group_task_completion(GroupID p_group);
+  // 通知该任务的线程的yield结束
   void notify_yield_over(TaskID p_task_id);
 
   _FORCE_INLINE_ int get_thread_count() const { return threads.size(); }

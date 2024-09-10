@@ -1,7 +1,7 @@
 #pragma once
 #ifndef TEST_VK_H
 #define TEST_VK_H
-#include "function/render/common/rendering_device.h"
+#include "function/render/rendering_device/rendering_device.h"
 namespace lain::test {
 	void test_vulkan_driver() {
 		using namespace lain;

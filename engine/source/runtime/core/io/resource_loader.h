@@ -21,14 +21,19 @@ namespace lain {
 			CACHE_MODE_IGNORE_DEEP,
 			CACHE_MODE_REPLACE_DEEP,
 		};
-		// 目前=0
 		virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "", Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE);
 		virtual void get_recognized_extensions(List<String>* p_extensions) const {}
 		virtual void get_recognized_resources(List<String>* p_extensions) const {}
 
 		virtual bool exists(const String& p_path) const { return false; }
+
+		// 与 importer 有关
+		virtual bool is_import_valid(const String& p_path) const { return true; }
+		virtual bool is_imported(const String& p_path) const { return false; }
+		virtual int get_import_order(const String& p_path) const { return 0; }
+
 		//virtual void get_recognized_extensions_for_type(const String& p_type, List<String>* p_extensions) const;
-		//virtual bool recognize_path(const String& p_path, const String& p_for_type = String()) const; = 0
+		//virtual bool recognize_path(const String& p_path, const String& p_for_type = String()) const; = 0 // 与脚本系统有关
 		//virtual bool handles_type(const String& p_type) const;
 		//virtual void get_classes_used(const String& p_path, HashSet<StringName>* r_classes);
 		//virtual String get_resource_type(const String& p_path) const;
@@ -36,9 +41,6 @@ namespace lain {
 		//virtual ResourceUID::ID get_resource_uid(const String& p_path) const;
 		//virtual void get_dependencies(const String& p_path, List<String>* p_dependencies, bool p_add_types = false);
 		//virtual Error rename_dependencies(const String& p_path, const HashMap<String, String>& p_map);
-		//virtual bool is_import_valid(const String& p_path) const { return true; }
-		//virtual bool is_imported(const String& p_path) const { return false; }
-		//virtual int get_import_order(const String& p_path) const { return 0; }
 		//virtual String get_import_group_file(const String& p_path) const { return ""; } //no group
 
 		virtual ~ResourceFormatLoader() {}

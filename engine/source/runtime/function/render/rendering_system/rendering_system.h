@@ -5,7 +5,7 @@
 #include "core/object/object.h"
 #include "core/templates/hash_set.h"
 #include "function/display/window_system.h"
-#include "function/render/common/rendering_device.h"
+#include "function/render/rendering_device/rendering_device.h"
 namespace lain {
 
 class RenderingSystem : public Object {
@@ -246,7 +246,32 @@ class RenderingSystem : public Object {
 
     INSTANCE_GEOMETRY_MASK = (1 << INSTANCE_MESH) | (1 << INSTANCE_MULTIMESH) | (1 << INSTANCE_PARTICLES)
   };
-  static void init();
+  /// *************** ///
+  /// ***DECAL API*** ///
+  /// *************** ///
+	enum DecalFilter {
+		DECAL_FILTER_NEAREST,
+		DECAL_FILTER_LINEAR,
+		DECAL_FILTER_NEAREST_MIPMAPS,
+		DECAL_FILTER_LINEAR_MIPMAPS,
+		DECAL_FILTER_NEAREST_MIPMAPS_ANISOTROPIC,
+		DECAL_FILTER_LINEAR_MIPMAPS_ANISOTROPIC,
+	};
+
+  	enum LightProjectorFilter {
+		LIGHT_PROJECTOR_FILTER_NEAREST,
+		LIGHT_PROJECTOR_FILTER_LINEAR,
+		LIGHT_PROJECTOR_FILTER_NEAREST_MIPMAPS,
+		LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS,
+		LIGHT_PROJECTOR_FILTER_NEAREST_MIPMAPS_ANISOTROPIC,
+		LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS_ANISOTROPIC,
+	};
+
+
+
+    virtual void init(); // 
+    virtual void free(RID p_shader) = 0;
+
 };
 
 }  // namespace lain

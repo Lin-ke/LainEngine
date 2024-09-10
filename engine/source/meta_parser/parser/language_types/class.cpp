@@ -122,6 +122,8 @@ Class::Class(const Cursor& cursor, const Namespace& current_namespace, int p_cla
     if (m_name == "AABB") {
         L_PRINT("AABB find", shouldCompile());
     }
+
+    
     // 加入一点Hack
     // metadata改在child methods与 child field中找
     // 这样可以不在定义上写CLASS 导致 代码提示编译器出奇怪问题

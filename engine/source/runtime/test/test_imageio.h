@@ -1,7 +1,7 @@
 #pragma once
 #include "core/meta/serializer/serializer.h"
 #include "core/config/project_settings.h"
-#include "resource/common/image.h"
+#include "core/io/image.h"
 #include "core/io/resource_loader.h"
 namespace lain {
 	namespace test {

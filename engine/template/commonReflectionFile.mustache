@@ -95,7 +95,7 @@ namespace TypeFieldReflectionOperator{
         static const char* getFieldTypeName_{{class_field_name}}(){ return "{{{class_field_type}}}";}
         static void set_{{class_field_name}}(void* instance, void* field_value){ 
             {{^class_field_is_fixed_array}}
-            static_cast<{{class_with_namespace}}*>(instance)->{{class_field_name}} = *static_cast<{{{class_field_type}}}*>(field_value);
+            static_cast<{{class_with_namespace}}*>(instance)->{{class_field_name}} =  *static_cast<{{{class_field_type}}}*>(field_value);
             {{/class_field_is_fixed_array}}
             {{#class_field_is_fixed_array}}
             {{class_field_array_base_type}}* p_temp_array = ({{class_field_array_base_type}}*)static_cast<{{class_with_namespace}}*>(instance)->{{class_field_name}};

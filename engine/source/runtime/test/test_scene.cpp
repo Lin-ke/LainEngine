@@ -1,6 +1,6 @@
 #include "test_scene.h"
 #include "core/scene/packed_scene.h"
-#include "resource/io/resource_format_text.h"
+#include "scene/resources/io/resource_format_text.h"
 #include "core/scene/component/component.h"
 #include "core/scene/scene_tree.h"
 #include "core/meta/serializer/serializer.h"

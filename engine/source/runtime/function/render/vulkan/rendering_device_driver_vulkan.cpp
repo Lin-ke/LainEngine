@@ -2489,7 +2489,7 @@ RDD::FramebufferID RenderingDeviceDriverVulkan::swap_chain_acquire_framebuffer(C
     uint32_t free_index = command_queue->free_image_semaphores.size() - 1;
     semaphore_index = command_queue->free_image_semaphores[free_index];
     command_queue->image_semaphores_swap_chains[semaphore_index] = swap_chain;
-    command_queue->free_image_semaphores.remove_at(free_index); // 不空闲了
+    command_queue->free_image_semaphores.remove_at(free_index);  // 不空闲了
     semaphore = command_queue->image_semaphores[semaphore_index];
   }
 
