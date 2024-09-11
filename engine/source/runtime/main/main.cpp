@@ -11,7 +11,7 @@
 #include "editor/project_manager.h"
 #include "function/display/window_system.h"
 #include "function/render/rendering_system/rendering_system_default.h"
-
+#include "module/register_module_types.h"
 //  initialization part
 namespace lain {
 
@@ -56,7 +56,7 @@ Error Main::Initialize(int argc, char* argv[]) {
   Reflection::TypeMetaRegister::EnumMetaRegister();
 
   globals = memnew(ProjectSettings);
-  EditorPaths::create();  // editor需要在global之后，在ProjectManager之前
+  EditorPaths::create();  // editor闇�瑕佸湪global涔嬪悗锛屽湪ProjectManager涔嬪墠
   //L_PRINT(EditorPaths::GetSingleton()->GetDataDir(), EditorPaths::GetSingleton()->GetConfigDir());
   pmanager = memnew(ProjectManager);
   // parse parameter
@@ -92,6 +92,8 @@ Error Main::Initialize(int argc, char* argv[]) {
   globals->Initialize(project_path);
   // Initialize user data dir.
   OS::GetSingleton()->EnsureUserDataDir();
+  // initialize module
+  initialize_modules(MODULE_INITIALIZATION_LEVEL_CORE); // 鍦ㄥ叾浠栫瓑绾ф椂鍐嶅垵濮嬪寲鍒殑妯″潡
 
   Ref<DirAccess> da = DirAccess::create_for_path(project_path);
   String main_scene = GLOBAL_GET("application/config/name");

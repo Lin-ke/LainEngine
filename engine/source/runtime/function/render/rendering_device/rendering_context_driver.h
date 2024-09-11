@@ -1,7 +1,7 @@
 
 #ifndef RENDERING_CONTEXT_DRIVER_H
 #define RENDERING_CONTEXT_DRIVER_H
-// ½¨Á¢DisplayºÍ³éÏóSurfaceµÄ¹ØÏµ
+// å»ºç«‹Displayå’ŒæŠ½è±¡Surfaceçš„å…³ç³»
 
 #include "core/object/object.h"
 #include "function/display/window_system.h"
@@ -16,8 +16,8 @@ private:
 	HashMap<WindowSystem::WindowID, SurfaceID> window_surface_map;
 
 public:
-// vulkan surfaceÍ¨¹ý platform()´´½¨
-// swapchainÔÚ renderingdeviceÀï´´½¨¡£
+// vulkan surfaceé€šè¿‡ platform()åˆ›å»º
+// swapchainåœ¨ renderingdeviceé‡Œåˆ›å»ºã€‚
 	SurfaceID surface_get_from_window(WindowSystem::WindowID p_window) const;
 	Error window_create(WindowSystem::WindowID p_window, const void* p_platform_data);
 	void window_set_size(WindowSystem::WindowID p_window, uint32_t p_width, uint32_t p_height);

@@ -10,28 +10,28 @@
 #include <condition_variable>
 #include <mutex>
 namespace lain {
-// Semaphore ÊÇÓÃÌõ¼ş±äÁ¿ÊµÏÖµÄ
+// Semaphore æ˜¯ç”¨æ¡ä»¶å˜é‡å®ç°çš„
 class Semaphore {
-	// Í¨³£»á½«»¥³âËø£¨mutex£©ÉùÃ÷Îª¿É±ä£¨mutable£©£¬ÒÔ±ãÔÚ const ³ÉÔ±º¯ÊıÖĞ¶ÔÆä½øĞĞ¼ÓËøºÍ½âËø²Ù×÷
+	// é€šå¸¸ä¼šå°†äº’æ–¥é”ï¼ˆmutexï¼‰å£°æ˜ä¸ºå¯å˜ï¼ˆmutableï¼‰ï¼Œä»¥ä¾¿åœ¨ const æˆå‘˜å‡½æ•°ä¸­å¯¹å…¶è¿›è¡ŒåŠ é”å’Œè§£é”æ“ä½œ
 	mutable THREADING_NAMESPACE::mutex mutex;
 	mutable THREADING_NAMESPACE::condition_variable condition;
 	mutable uint32_t count = 0; // Initialized as locked.
-	// mutable:¿ÉÄÜ±»ÆäËûÏß³ÌĞŞ¸Ä
+	// mutable:å¯èƒ½è¢«å…¶ä»–çº¿ç¨‹ä¿®æ”¹
 #ifdef DEBUG_ENABLED
 	mutable uint32_t awaiters = 0;
 #endif
 public:
-	// ÓÃlock_guardºÍunique_lockËø×¡count×ÊÔ´
+	// ç”¨lock_guardå’Œunique_locké”ä½countèµ„æº
 	_ALWAYS_INLINE_ void post(uint32_t p_count = 1) const {
 		std::lock_guard lock(mutex);
 		count += p_count;
-		// ·ñÔò¾ÍÊÇnotify 1
+		// å¦åˆ™å°±æ˜¯notify 1
 		for (uint32_t i = 0; i < p_count; ++i) {
 			condition.notify_one();
 		}
 	}
 
-	// Ã»ÓĞ×ÊÔ´£¬µÈ £¨µ«ÊÇÍ¬Ê±¼Ó×ÅËø£¬Ö»ÓĞÒ»¸öÏß³Ì¿ÉÒÔ½øÈëÁÙ½çÇø£©
+	// æ²¡æœ‰èµ„æºï¼Œç­‰ ï¼ˆä½†æ˜¯åŒæ—¶åŠ ç€é”ï¼Œåªæœ‰ä¸€ä¸ªçº¿ç¨‹å¯ä»¥è¿›å…¥ä¸´ç•ŒåŒºï¼‰
 
 	_ALWAYS_INLINE_ void wait() const {
 		THREADING_NAMESPACE::unique_lock lock(mutex);
@@ -47,7 +47,7 @@ public:
 #endif
 	}
 	_ALWAYS_INLINE_ bool try_wait() const {
-		std::lock_guard lock(mutex); // Ëømutex£¬ÔÚÎö¹¹Ê±½âËø
+		std::lock_guard lock(mutex); // é”mutexï¼Œåœ¨ææ„æ—¶è§£é”
 		if (count) {
 			count--;
 			return true;

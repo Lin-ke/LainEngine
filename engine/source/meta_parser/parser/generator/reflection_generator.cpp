@@ -49,7 +49,7 @@ namespace Generator
         bool need_generate = false;
         // class defs
         for (auto class_temp : schema.classes)
-        {// 这里是该文件中所有的需要compile的类
+        {// 杩欓噷鏄鏂囦欢涓墍鏈夌殑闇�瑕乧ompile鐨勭被
             
             if (!class_temp->shouldCompile())
                 continue;

@@ -5,11 +5,11 @@
 namespace lain::RendererRD {
 
 class MaterialStorage : public RendererMaterialStorage {
-public:
-  enum ShaderType { SHADER_TYPE_2D, SHADER_TYPE_3D, SHADER_TYPE_PARTICLES, SHADER_TYPE_SKY, SHADER_TYPE_FOG, SHADER_TYPE_MAX };
-
  private:
   static MaterialStorage* p_singleton;
+
+ public:
+  enum ShaderType { SHADER_TYPE_2D, SHADER_TYPE_3D, SHADER_TYPE_PARTICLES, SHADER_TYPE_SKY, SHADER_TYPE_FOG, SHADER_TYPE_MAX };
   MaterialStorage();
   ~MaterialStorage() override;
   // ShaderData
@@ -34,17 +34,16 @@ public:
   };
   struct Material;
   struct Shader {
-	ShaderData *data = nullptr;
-	String code;
-	String path_hint;
-	ShaderType type;
-	HashMap<StringName, HashMap<int, RID>> default_texture_parameter;
-	HashSet<Material *> owners;
+    ShaderData* data = nullptr;
+    String code;
+    String path_hint;
+    ShaderType type;
+    HashMap<StringName, HashMap<int, RID>> default_texture_parameter;
+    HashSet<Material*> owners;
   };
   mutable RID_Owner<Shader, true> shader_owner;
 
  public:
-
   /* GLOBAL SHADER UNIFORM API */
   virtual void global_shader_parameter_add(const StringName& p_name, RS::GlobalShaderParameterType p_type, const Variant& p_value) override;
   virtual void global_shader_parameter_remove(const StringName& p_name) override;

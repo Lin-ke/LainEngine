@@ -11,8 +11,8 @@ template <class MutexT>
 class MutexLock;
 
 
-// ImplÉè¼ÆÄ£Ê½£¬½Ó¿Ú·â×°£¬¶Ôµ×²ãÒş²ØÏ¸½Ú£¨¾ßÌåÊÇÄÄÖÖËø£©
-// Ñ¼×ÓÀàĞÍ
+// Implè®¾è®¡æ¨¡å¼ï¼Œæ¥å£å°è£…ï¼Œå¯¹åº•å±‚éšè—ç»†èŠ‚ï¼ˆå…·ä½“æ˜¯å“ªç§é”ï¼‰
+// é¸­å­ç±»å‹
 template <class StdMutexT>
 class MutexImpl {
 	friend class MutexLock<MutexImpl<StdMutexT>>;
@@ -43,7 +43,7 @@ public:
 // one object of each version of the template can exists; hence the Tag argument.
 // Tags must be unique across the Godot codebase.
 // Also, don't forget to declare the thread_local variable on each use.
-// ÏñÊÇstd::recursive_mutex
+// åƒæ˜¯std::recursive_mutex
 template <int Tag>
 class SafeBinaryMutex {
 	friend class MutexLock<SafeBinaryMutex>;
@@ -103,7 +103,7 @@ public:
 
 // This specialization is needed so manual locking and MutexLock can be used
 // at the same time on a SafeBinaryMutex.
-// Ä£°åÌØ»¯ÒÔÖ§³Ösafe_binary_mutex.lock()
+// æ¨¡æ¿ç‰¹åŒ–ä»¥æ”¯æŒsafe_binary_mutex.lock()
 
 template <int Tag>
 class MutexLock<SafeBinaryMutex<Tag>> {

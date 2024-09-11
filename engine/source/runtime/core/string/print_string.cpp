@@ -114,7 +114,7 @@ namespace lain {
 
 		_global_unlock();
 	}
-	// 如果以命令行--verbose启用
+	// 濡傛灉浠ュ懡浠よ--verbose鍚敤
 	bool is_print_verbose_enabled() {
 		return true;
 	}

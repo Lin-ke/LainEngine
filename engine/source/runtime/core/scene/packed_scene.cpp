@@ -117,7 +117,7 @@ namespace lain {
 	Ref<PackedScene> SceneState::get_gobject_instance(int p_idx) const {
 		ERR_FAIL_INDEX_V(p_idx, gobjects.size(), Ref<PackedScene>());
 
-		if (gobjects[p_idx].instance >= 0) { // ÊÇÊµÀı»¯µÄ
+		if (gobjects[p_idx].instance >= 0) { // æ˜¯å®ä¾‹åŒ–çš„
 			if (gobjects[p_idx].instance & FLAG_INSTANCE_IS_PLACEHOLDER) {
 				return Ref<PackedScene>();
 			}
@@ -180,7 +180,7 @@ namespace lain {
 
 		return gobjects.size() - 1;
 	}
-	// ¸´ÖÆÖ¸Õë »¹ÊÇÖ±½ÓÖ¸£¿ÒòÎªvectorÊÇÓĞÒıÓÃ¼ÆÊıµÄ
+	// å¤åˆ¶æŒ‡é’ˆ è¿˜æ˜¯ç›´æ¥æŒ‡ï¼Ÿå› ä¸ºvectoræ˜¯æœ‰å¼•ç”¨è®¡æ•°çš„
 	void SceneState::add_components(int p_index,const Vector<Component*>& p_components ) {
 		ERR_FAIL_INDEX(p_index, gobjects.size());
 		gobjects.write[p_index].components = p_components;
@@ -218,15 +218,15 @@ namespace lain {
 		props = prop_count > 0 ? variants.ptr() : nullptr;
 
 		const GObjectData* nd = gobjects.ptr();
-		GObject** ret_gobjects = (GObject**)alloca(sizeof(GObject*)*nc); // ÎªÊ²Ã´ÒªÔÚÕ»ÉÏ·ÖÅäÒ»Ğ©Ö¸ÕëµÄ¿Õ¼ä£¿
-		bool gen_gobject_path_cache = p_edit_state != GEN_EDIT_STATE_DISABLED && gobject_path_cache.is_empty(); // ÖØĞÂÉú³ÉÂ·¾¶
+		GObject** ret_gobjects = (GObject**)alloca(sizeof(GObject*)*nc); // ä¸ºä»€ä¹ˆè¦åœ¨æ ˆä¸Šåˆ†é…ä¸€äº›æŒ‡é’ˆçš„ç©ºé—´ï¼Ÿ
+		bool gen_gobject_path_cache = p_edit_state != GEN_EDIT_STATE_DISABLED && gobject_path_cache.is_empty(); // é‡æ–°ç”Ÿæˆè·¯å¾„
 		// GObjects where instantiation failed (because something is missing.)
 		List<GObject*> stray_instances;
 
 		for (int i = 0; i < nc; ++i) {
 			const GObjectData& n = nd[i];
 			GObject* parent = nullptr;
-			// Ò»Ğ©°²È«ĞÔ´úÂë
+			// ä¸€äº›å®‰å…¨æ€§ä»£ç 
 			if (i > 0) {
 				ERR_FAIL_COND_V_MSG(n.parent == -1, nullptr, vformat("Invalid scene: node %s does not specify its parent node.", snames[n.name]));
 				GOBJ_FROM_ID(nparent, n.parent);
@@ -239,7 +239,7 @@ namespace lain {
 			}
 			GObject* gobj = nullptr;
 			if (i == 0 && base_scene_idx >=0) { 
-				// Scene inheritance on root node. ¸ù½ÚµãÊÇ¼Ì³Ğ½Úµã£¬ÊµÀı»¯½Úµã²»Ğí³ÉÎª¸ù
+				// Scene inheritance on root node. æ ¹èŠ‚ç‚¹æ˜¯ç»§æ‰¿èŠ‚ç‚¹ï¼Œå®ä¾‹åŒ–èŠ‚ç‚¹ä¸è®¸æˆä¸ºæ ¹
 				Ref<PackedScene> sdata = props[base_scene_idx];
 				ERR_FAIL_COND_V(!sdata.is_valid(), nullptr);
 				gobj = sdata->instantiate(p_edit_state == GEN_EDIT_STATE_DISABLED ? PackedScene::GEN_EDIT_STATE_DISABLED : PackedScene::GEN_EDIT_STATE_INSTANCE); //only main gets main edit state
@@ -248,8 +248,8 @@ namespace lain {
 					gobj->set_scene_inherited_state(sdata->get_state()); 
 				}
 			}
-			else if(n.instance >= 0){  // node dataÖĞÓĞÒ»Ğ©ÊµÀı»¯
-				// Õ¼Î»·û
+			else if(n.instance >= 0){  // node dataä¸­æœ‰ä¸€äº›å®ä¾‹åŒ–
+				// å ä½ç¬¦
 				if (n.instance & FLAG_INSTANCE_IS_PLACEHOLDER) {
 					const String scene_path = props[n.instance & FLAG_MASK];
 					if (disable_placeholders) {
@@ -270,7 +270,7 @@ namespace lain {
 						}
 					}
 					else { 
-						// @TODO Õ¼Î»·û£¬ÑÓ³Ù¼ÓÔØ
+						// @TODO å ä½ç¬¦ï¼Œå»¶è¿ŸåŠ è½½
 						/*InstancePlaceholder* ip = memnew(InstancePlaceholder);
 						ip->set_instance_path(scene_path);
 						node = ip;*/
@@ -362,7 +362,7 @@ namespace lain {
 			} 
 			// end of instantiate
 			if (gobj) {
-				// Ìí¼Ó properties ºÍ ¹ØÏµ
+				// æ·»åŠ  properties å’Œ å…³ç³»
 				for (int j = 0; j < n.groups.size(); j++) {
 					ERR_FAIL_INDEX_V(n.groups[j], sname_count, nullptr);
 					gobj->add_to_group(snames[n.groups[j]], true);
@@ -874,7 +874,7 @@ namespace lain {
 			//for nodes that _do_ exist in current scene, still try to look for
 			//the node in the instantiated scene, as a property may be missing
 			//from the local one
-			// ¼ÓÈëÒ»ÏÂ
+			// åŠ å…¥ä¸€ä¸‹
 			int idx = get_base_scene_state()->find_gobject_by_path(p_node);
 			if (idx != -1) {
 				base_scene_gobject_remap[nid] = idx;

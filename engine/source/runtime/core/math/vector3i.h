@@ -185,7 +185,7 @@ namespace lain
             z = static_cast<i32>(z / scalar);
             return *this;
         }
-        // int/intÊÇÕûÊı³ı·¨
+        // int/intæ˜¯æ•´æ•°é™¤æ³•
         Vector3i& operator/=(const Vector3i & rhs)
         {
             assert(rhs.x != 0 && rhs.y != 0 && rhs.z != 0);

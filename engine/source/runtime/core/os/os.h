@@ -66,7 +66,7 @@ public:
 
 	virtual String GetConfigPath() const { return "."; }
 	virtual Error SetCwd(const String &path) { return ERR_CANT_OPEN; }
-	// ¼ÓÃÜ
+	// åŠ å¯†
 	virtual Error GetEntropy(uint8_t *r_buffer, size_t p_bytes) const = 0;
 
 	virtual void SetEnvironment(const String &, const String &) const = 0;

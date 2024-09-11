@@ -20,13 +20,13 @@
 //   There's no backwards communication from the driver to query data from RenderingDevice.
 // ***********************************************************************************
 
-// DriverµÄ½Ó¿ÚÀà
-// Êµ¼ÊÉÏµÄRHI¡£Ö´ĞĞ¾ßÌåµÄAPIÏà¹ØÃüÁî£¬ÓëRenderingDevice²»Í¬¡£²¢ÇÒ£¬GraphÊÇ»ùÓÚRenderingDeviceµÄ£¬²¢²»Ö´ĞĞÃüÁî¡£
-// Éè¼ÆµÄÔ­ÔòÊÇÄÜ¶ÀÁ¢³öÀ´¾Í¾¡Á¿¶ÀÁ¢³öÀ´
+// Driverçš„æ¥å£ç±»
+// å®é™…ä¸Šçš„RHIã€‚æ‰§è¡Œå…·ä½“çš„APIç›¸å…³å‘½ä»¤ï¼Œä¸RenderingDeviceä¸åŒã€‚å¹¶ä¸”ï¼ŒGraphæ˜¯åŸºäºRenderingDeviceçš„ï¼Œå¹¶ä¸æ‰§è¡Œå‘½ä»¤ã€‚
+// è®¾è®¡çš„åŸåˆ™æ˜¯èƒ½ç‹¬ç«‹å‡ºæ¥å°±å°½é‡ç‹¬ç«‹å‡ºæ¥
 
-// Ö¸Õë´óĞ¡£¬ÎŞËùÓĞÈ¨£¬Çá±ã¡£Ê¹´úÂë¼¸ºõ¶ÀÁ¢ÓÚÓµÓĞĞòÁĞµÄÄÚÈİ£¬²¢±£ÁôÄ£°åÈİÆ÷µÄËùÓĞÏ¸½Ú
-// span; .._view; »òÕßslice
-// ÎªÁË½áºÏVectorÓëLocalVector£¬ÔÚconst&ÖĞÊ¹ÓÃ£º
+// æŒ‡é’ˆå¤§å°ï¼Œæ— æ‰€æœ‰æƒï¼Œè½»ä¾¿ã€‚ä½¿ä»£ç å‡ ä¹ç‹¬ç«‹äºæ‹¥æœ‰åºåˆ—çš„å†…å®¹ï¼Œå¹¶ä¿ç•™æ¨¡æ¿å®¹å™¨çš„æ‰€æœ‰ç»†èŠ‚
+// span; .._view; æˆ–è€…slice
+// ä¸ºäº†ç»“åˆVectorä¸LocalVectorï¼Œåœ¨const&ä¸­ä½¿ç”¨ï¼š
 // These utilities help drivers avoid allocations.
 #define ALLOCA(m_size) ((m_size != 0) ? alloca(m_size) : nullptr)
 #define ALLOCA_ARRAY(m_type, m_count) ((m_type*)ALLOCA(sizeof(m_type) * (m_count)))
@@ -65,14 +65,14 @@ class VectorView {
   VectorView(const LocalVector<T>& p_lv) : _ptr(p_lv.ptr()), _size(p_lv.size()) {}
 };
 // This helps using a single paged allocator for many resource types.
-// Ê¹ÓÃÒ»¸öpage allocator·ÖÅä¶àÖÖ×ÊÔ´ £¬£¨¿Õ¼äÊÇÆßÕÅ×î´óµÄ£©
+// ä½¿ç”¨ä¸€ä¸ªpage allocatoråˆ†é…å¤šç§èµ„æº ï¼Œï¼ˆç©ºé—´æ˜¯ä¸ƒå¼ æœ€å¤§çš„ï¼‰
 // @learnable
 template <typename... RESOURCE_TYPES>
 struct VersatileResourceTemplate {
   static constexpr size_t RESOURCE_SIZES[] = {sizeof(RESOURCE_TYPES)...};
   static constexpr size_t MAX_RESOURCE_SIZE = std::max_element(RESOURCE_SIZES, RESOURCE_SIZES + sizeof...(RESOURCE_TYPES))[0];
   uint8_t data[MAX_RESOURCE_SIZE];  // sizeof(VersatileResourceTemplate)
-  // allocateµÄÊ±ºòĞèÒªÖ¸¶¨ÌØ»¯£¬¶øfreeµÄÊ±ºòÖ±½Ó´«TÓÃÄ£°å×Ô¶¯ÍÆÀí
+  // allocateçš„æ—¶å€™éœ€è¦æŒ‡å®šç‰¹åŒ–ï¼Œè€Œfreeçš„æ—¶å€™ç›´æ¥ä¼ Tç”¨æ¨¡æ¿è‡ªåŠ¨æ¨ç†
 
   template <typename T>
   static T* allocate(PagedAllocator<VersatileResourceTemplate>& p_allocator) {
@@ -84,15 +84,15 @@ struct VersatileResourceTemplate {
   template <typename T>
   static void free(PagedAllocator<VersatileResourceTemplate>& p_allocator, T* p_object) {
     p_object->~T();
-    p_allocator.free((VersatileResourceTemplate*)p_object);  // ÕâÀï»áµ÷ÓÃVersatileResourceTemplateµÄÎö¹¹º¯Êı£¬²»»áÎö¹¹Á½´Î
+    p_allocator.free((VersatileResourceTemplate*)p_object);  // è¿™é‡Œä¼šè°ƒç”¨VersatileResourceTemplateçš„ææ„å‡½æ•°ï¼Œä¸ä¼šææ„ä¸¤æ¬¡
   }
 };
 class RenderingDeviceDriver : public RenderingDeviceCommons {
   friend class RenderingDevice;
 
  public:
-  // ÕâÀïµÄID¶¼ÊÇÖ¸Ïògraphicapi_driverÄÚ²¿µÄÖ¸Õë
-  // ÕâĞ©RIDµÄÉúÃüÖÜÆÚ¹ÜÀíĞèÒªÊÖ¶¯½øĞĞ £¨Õâ£©
+  // è¿™é‡Œçš„IDéƒ½æ˜¯æŒ‡å‘graphicapi_driverå†…éƒ¨çš„æŒ‡é’ˆ
+  // è¿™äº›RIDçš„ç”Ÿå‘½å‘¨æœŸç®¡ç†éœ€è¦æ‰‹åŠ¨è¿›è¡Œ ï¼ˆè¿™ï¼‰
   // Handle
   struct HashMapHasherID {
     template <typename T>
@@ -197,7 +197,7 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
     TextureSwizzle swizzle_b = TEXTURE_SWIZZLE_B;
     TextureSwizzle swizzle_a = TEXTURE_SWIZZLE_A;
   };
-  // Texture create info Àï»¹°üÀ¨ subresourceRange
+  // Texture create info é‡Œè¿˜åŒ…æ‹¬ subresourceRange
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkImageLayout.html
   enum TextureLayout {
     TEXTURE_LAYOUT_UNDEFINED,
@@ -258,7 +258,7 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
     uint32_t layer_count = 0;
   };
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkSubresourceLayout.html
-  // Ö»ÔÚtiling linearÓĞÓÃ
+  // åªåœ¨tiling linearæœ‰ç”¨
   struct TextureCopyableLayout {
     uint64_t offset = 0;
     uint64_t size = 0;
@@ -269,7 +269,7 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
   virtual TextureID texture_create(const TextureFormat& p_format, const TextureView& p_view) = 0;
   // already have image, create imageview
   virtual TextureID texture_create_from_extension(uint64_t p_native_texture, TextureType p_type, DataFormat p_format, uint32_t p_array_layers, bool p_depth_stencil) = 0;
-  // ¸ù¾İÒÑÓĞµÄvkimage´´½¨²»Í¬µÄview
+  // æ ¹æ®å·²æœ‰çš„vkimageåˆ›å»ºä¸åŒçš„view
   virtual TextureID texture_create_shared(TextureID p_original_texture, const TextureView& p_view) = 0;
   virtual TextureID texture_create_shared_from_slice(TextureID p_original_texture, const TextureView& p_view, TextureSliceType p_slice_type, uint32_t p_layer,
                                                      uint32_t p_layers, uint32_t p_mipmap, uint32_t p_mipmaps) = 0;
@@ -320,7 +320,7 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
   };
   // same with vulkan https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkAccessFlagBits.html
   enum BarrierAccessBits {
-    BARRIER_ACCESS_INDIRECT_COMMAND_READ_BIT = (1 << 0),  // Ò»Ğ©accessÖ»ÄÜÔÚ¶ÔÓ¦¹ÜÏßÖĞÊ¹ÓÃ
+    BARRIER_ACCESS_INDIRECT_COMMAND_READ_BIT = (1 << 0),  // ä¸€äº›accessåªèƒ½åœ¨å¯¹åº”ç®¡çº¿ä¸­ä½¿ç”¨
     BARRIER_ACCESS_INDEX_READ_BIT = (1 << 1),
     BARRIER_ACCESS_VERTEX_ATTRIBUTE_READ_BIT = (1 << 2),
     BARRIER_ACCESS_UNIFORM_READ_BIT = (1 << 3),
@@ -333,16 +333,16 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
     BARRIER_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT = (1 << 10),
     BARRIER_ACCESS_COPY_READ_BIT = (1 << 11),
     BARRIER_ACCESS_COPY_WRITE_BIT = (1 << 12),
-    BARRIER_ACCESS_HOST_READ_BIT = (1 << 13),    // Ö¸host²Ù×÷ÖĞµÄ¶Á£¬²¢·ÇÍ¨¹ıresource£¬Ö±½ÓÕë¶Ômemory
-    BARRIER_ACCESS_HOST_WRITE_BIT = (1 << 14),   // ÈçÉÏ
-    BARRIER_ACCESS_MEMORY_READ_BIT = (1 << 15),  // Ö¸ËùÓĞµÄread access
+    BARRIER_ACCESS_HOST_READ_BIT = (1 << 13),    // æŒ‡hostæ“ä½œä¸­çš„è¯»ï¼Œå¹¶éé€šè¿‡resourceï¼Œç›´æ¥é’ˆå¯¹memory
+    BARRIER_ACCESS_HOST_WRITE_BIT = (1 << 14),   // å¦‚ä¸Š
+    BARRIER_ACCESS_MEMORY_READ_BIT = (1 << 15),  // æŒ‡æ‰€æœ‰çš„read access
     BARRIER_ACCESS_MEMORY_WRITE_BIT = (1 << 16),
     BARRIER_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT = (1 << 23),
     BARRIER_ACCESS_RESOLVE_READ_BIT = (1 << 24),
     BARRIER_ACCESS_RESOLVE_WRITE_BIT = (1 << 25),
     BARRIER_ACCESS_STORAGE_CLEAR_BIT = (1 << 27),
   };
-  // ÕâÀï´ÓvulkanµÄ³éÏóÏàµ±Ö±½Ó
+  // è¿™é‡Œä»vulkançš„æŠ½è±¡ç›¸å½“ç›´æ¥
   struct MemoryBarrier {
     BitField<BarrierAccessBits> src_access;
     BitField<BarrierAccessBits> dst_access;
@@ -361,7 +361,7 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
     BitField<BarrierAccessBits> dst_access;
     TextureLayout prev_layout = TEXTURE_LAYOUT_UNDEFINED;
     TextureLayout next_layout = TEXTURE_LAYOUT_UNDEFINED;
-    TextureSubresourceRange subresources;  // ÓÃÓÚÖ¸¶¨ÄÄĞ©subresourceĞèÒªbarrier
+    TextureSubresourceRange subresources;  // ç”¨äºæŒ‡å®šå“ªäº›subresourceéœ€è¦barrier
   };
 
   virtual void command_pipeline_barrier(CommandBufferID p_cmd_buffer, BitField<PipelineStageBits> p_src_stages, BitField<PipelineStageBits> p_dst_stages,
@@ -412,7 +412,7 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
   virtual void command_queue_free(CommandQueueID p_cmd_queue) = 0;
 
   // ----- POOL -----
-  // Ö÷ÃüÁî»º³åÇø£¬¿ÉÒÔÖ´ĞĞ¸¨ÖúÃüÁî»º³åÇø£¬²¢ÇÒÌá½»µ½¶ÓÁĞ£»¸¨ÖúÃüÁî»º³åÇø£¬¿ÉÒÔÓÉÖ÷ÃüÁî»º³åÇøÖ´ĞĞ£¬²¢ÇÒ²»Ö±½ÓÌá½»µ½¶ÓÁĞ¡£
+  // ä¸»å‘½ä»¤ç¼“å†²åŒºï¼Œå¯ä»¥æ‰§è¡Œè¾…åŠ©å‘½ä»¤ç¼“å†²åŒºï¼Œå¹¶ä¸”æäº¤åˆ°é˜Ÿåˆ—ï¼›è¾…åŠ©å‘½ä»¤ç¼“å†²åŒºï¼Œå¯ä»¥ç”±ä¸»å‘½ä»¤ç¼“å†²åŒºæ‰§è¡Œï¼Œå¹¶ä¸”ä¸ç›´æ¥æäº¤åˆ°é˜Ÿåˆ—ã€‚
 
   enum CommandBufferType {
     COMMAND_BUFFER_TYPE_PRIMARY,
@@ -420,7 +420,7 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
   };
   virtual CommandPoolID command_pool_create(CommandQueueFamilyID p_cmd_queue_family, CommandBufferType p_cmd_buffer_type) = 0;
   virtual void command_pool_free(CommandPoolID p_cmd_pool) = 0;
-  // Command pool Ò»°ãÀàËÆvector<CommandPool> cmd_pools[QUEUE_INDEX_COUNT];¶øÇÒ¶àÏß³ÌÃ¿¸ö¶¼µÃµ¥¶À·ÖÅä
+  // Command pool ä¸€èˆ¬ç±»ä¼¼vector<CommandPool> cmd_pools[QUEUE_INDEX_COUNT];è€Œä¸”å¤šçº¿ç¨‹æ¯ä¸ªéƒ½å¾—å•ç‹¬åˆ†é…
   // ----- BUFFER -----
 
   virtual CommandBufferID command_buffer_create(CommandPoolID p_cmd_pool) = 0;
@@ -453,7 +453,7 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
   /*********************/
   /**** FRAMEBUFFER ****/
   /*********************/
-  // compatible renderpass; renderpass ÖĞÖ¸¶¨ÁËattachmentµÄ¸ñÊ½£¬ÔÚÕâÀïºÍÊµ¼ÊµÄimage view°ó¶¨¡£
+  // compatible renderpass; renderpass ä¸­æŒ‡å®šäº†attachmentçš„æ ¼å¼ï¼Œåœ¨è¿™é‡Œå’Œå®é™…çš„image viewç»‘å®šã€‚
   virtual FramebufferID framebuffer_create(RenderPassID p_render_pass, VectorView<TextureID> p_attachments, uint32_t p_width, uint32_t p_height) = 0;
   virtual void framebuffer_free(FramebufferID p_framebuffer) = 0;
 
@@ -462,7 +462,7 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
   /****************/
 
   // virtual String shader_get_binary_cache_key() = 0;
-  // Ê¹ÓÃVector<u8int>±íÊ¾Blob
+  // ä½¿ç”¨Vector<u8int>è¡¨ç¤ºBlob
   virtual Vector<uint8_t> shader_compile_binary_from_spirv(VectorView<ShaderStageSPIRVData> p_spirv, const String& p_shader_name) = 0;
   virtual ShaderID shader_create_from_bytecode(const Vector<uint8_t>& p_shader_binary, ShaderDescription& r_shader_desc, String& r_name) = 0;
   // Only meaningful if API_TRAIT_SHADER_CHANGE_INVALIDATION is SHADER_CHANGE_INVALIDATION_ALL_OR_NONE_ACCORDING_TO_LAYOUT_HASH.
@@ -483,7 +483,7 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
     LocalVector<ID> ids;
   };
 
-  // bindless: 1¸öset£¬¶à¸öbinding
+  // bindless: 1ä¸ªsetï¼Œå¤šä¸ªbinding
   virtual UniformSetID uniform_set_create(VectorView<BoundUniform> p_uniforms, ShaderID p_shader, uint32_t p_set_index) = 0;
   virtual void uniform_set_free(UniformSetID p_uniform_set) = 0;
 
@@ -512,7 +512,7 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
     Vector3i texture_region_size;
   };
 
-  // Õâ±ß¶¼²î²»¶àGraniteĞ´µ½ÁËCommand BufferÀàÀïÃæ£¬Õâ±ß´øÉÏID
+  // è¿™è¾¹éƒ½å·®ä¸å¤šGraniteå†™åˆ°äº†Command Bufferç±»é‡Œé¢ï¼Œè¿™è¾¹å¸¦ä¸ŠID
 
   virtual void command_clear_buffer(CommandBufferID p_cmd_buffer, BufferID p_buffer, uint64_t p_offset, uint64_t p_size) = 0;
   virtual void command_copy_buffer(CommandBufferID p_cmd_buffer, BufferID p_src_buffer, BufferID p_dst_buffer, VectorView<BufferCopyRegion> p_regions) = 0;
@@ -537,7 +537,7 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
   // push constants
   virtual void command_bind_push_constants(CommandBufferID p_cmd_buffer, ShaderID p_shader, uint32_t p_first_index, VectorView<uint32_t> p_data) = 0;
   // ----- CACHE -----
-  // ÕâÊÇpipeline cache https://docs.vulkan.org/guide/latest/pipeline_cache.html
+  // è¿™æ˜¯pipeline cache https://docs.vulkan.org/guide/latest/pipeline_cache.html
   virtual bool pipeline_cache_create(const Vector<uint8_t>& p_data) = 0;
   virtual void pipeline_cache_free() = 0;
   virtual size_t pipeline_cache_query_size() = 0;
@@ -548,23 +548,23 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
 
   // ----- SUBPASS -----
 
-  // subpassÖ÷Òª¹æ¶¨ÁËattachementµÄ¸ñÊ½
+  // subpassä¸»è¦è§„å®šäº†attachementçš„æ ¼å¼
 
   enum AttachmentLoadOp {
-    ATTACHMENT_LOAD_OP_LOAD = 0,   // ÏòÇ°ÄÚÈİ½«±»±£ÁôÎª³õÊ¼Öµ£»read
+    ATTACHMENT_LOAD_OP_LOAD = 0,   // å‘å‰å†…å®¹å°†è¢«ä¿ç•™ä¸ºåˆå§‹å€¼ï¼›read
     ATTACHMENT_LOAD_OP_CLEAR = 1,  // write
     ATTACHMENT_LOAD_OP_DONT_CARE = 2,
   };
 
   enum AttachmentStoreOp {
-    ATTACHMENT_STORE_OP_STORE = 0,          // Ö¸¶¨äÖÈ¾Í¨µÀÆÚ¼äÉú³ÉµÄÄÚÈİÒÔ¼°äÖÈ¾ÇøÓòÄÚµÄÄÚÈİĞ´ÈëÄÚ´æ
-    ATTACHMENT_STORE_OP_DONT_CARE = 1,      // Ö¸¶¨äÖÈ¾ÇøÓòÄÚµÄÄÚÈİäÖÈ¾ºó²»ÔÙĞèÒª£¬¿ÉÒÔ¶ªÆú£»¸½¼şµÄÄÚÈİÔÚäÖÈ¾ÇøÓòÄÚ½«ÊÇÎ´¶¨ÒåµÄ¡£
-    ATTACHMENT_STORE_OP_NONE = 1000301000,  // vk1.3,Ö¸¶¨Ö»ÒªÔÚäÖÈ¾¹ı³ÌÖĞÃ»ÓĞ½«ÖµĞ´Èë¸½¼ş£¬
-                                            // ´æ´¢²Ù×÷¾Í²»»á·ÃÎÊäÖÈ¾ÇøÓòÄÚµÄÄÚÈİ¡£
-    // Èç¹ûÔÚäÖÈ¾¹ı³ÌÖĞĞ´ÈëÖµ£¬ÔòÆäĞĞÎªÓë VK_ATTACHMENT_STORE_OP_DONT_CARE ÏàÍ¬£¬²¢ÇÒ¾ßÓĞÆ¥ÅäµÄ·ÃÎÊÓïÒå¡£
+    ATTACHMENT_STORE_OP_STORE = 0,          // æŒ‡å®šæ¸²æŸ“é€šé“æœŸé—´ç”Ÿæˆçš„å†…å®¹ä»¥åŠæ¸²æŸ“åŒºåŸŸå†…çš„å†…å®¹å†™å…¥å†…å­˜
+    ATTACHMENT_STORE_OP_DONT_CARE = 1,      // æŒ‡å®šæ¸²æŸ“åŒºåŸŸå†…çš„å†…å®¹æ¸²æŸ“åä¸å†éœ€è¦ï¼Œå¯ä»¥ä¸¢å¼ƒï¼›é™„ä»¶çš„å†…å®¹åœ¨æ¸²æŸ“åŒºåŸŸå†…å°†æ˜¯æœªå®šä¹‰çš„ã€‚
+    ATTACHMENT_STORE_OP_NONE = 1000301000,  // vk1.3,æŒ‡å®šåªè¦åœ¨æ¸²æŸ“è¿‡ç¨‹ä¸­æ²¡æœ‰å°†å€¼å†™å…¥é™„ä»¶ï¼Œ
+                                            // å­˜å‚¨æ“ä½œå°±ä¸ä¼šè®¿é—®æ¸²æŸ“åŒºåŸŸå†…çš„å†…å®¹ã€‚
+    // å¦‚æœåœ¨æ¸²æŸ“è¿‡ç¨‹ä¸­å†™å…¥å€¼ï¼Œåˆ™å…¶è¡Œä¸ºä¸ VK_ATTACHMENT_STORE_OP_DONT_CARE ç›¸åŒï¼Œå¹¶ä¸”å…·æœ‰åŒ¹é…çš„è®¿é—®è¯­ä¹‰ã€‚
   };
-  // Ò²Ğí¿ÉÒÔÆÁ±ÎµôattachmentÕâÒ»²½
-  // Ö±½Ó°Ñ RenderpassµÄImageView¶¼Ö¸¶¨ºÃ
+  // ä¹Ÿè®¸å¯ä»¥å±è”½æ‰attachmentè¿™ä¸€æ­¥
+  // ç›´æ¥æŠŠ Renderpassçš„ImageViewéƒ½æŒ‡å®šå¥½
 
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkAttachmentDescription.html
   struct Attachment {
@@ -625,7 +625,7 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
     RenderPassClearValue value;
   };
 
-  // ÓërenderÏà¹ØµÄcmd
+  // ä¸renderç›¸å…³çš„cmd
   virtual void command_begin_render_pass(CommandBufferID p_cmd_buffer, RenderPassID p_render_pass, FramebufferID p_framebuffer, CommandBufferType p_cmd_buffer_type,
                                          const Rect2i& p_rect, VectorView<RenderPassClearValue> p_clear_values) = 0;
   virtual void command_end_render_pass(CommandBufferID p_cmd_buffer) = 0;
@@ -662,7 +662,7 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
   virtual void command_render_set_line_width(CommandBufferID p_cmd_buffer, float p_width) = 0;
 
   // ----- PIPELINE -----
-  // pipelinecreateĞèÒª´«Èë£º
+  // pipelinecreateéœ€è¦ä¼ å…¥ï¼š
   // Shader; Vertex format; Primitive(IA); state(RR(TS),MS,DS,CB);dynamic(vulkan); attachments; constants.
   virtual PipelineID render_pipeline_create(ShaderID p_shader, VertexFormatID p_vertex_format, RenderPrimitive p_render_primitive,
                                             PipelineRasterizationState p_rasterization_state, PipelineMultisampleState p_multisample_state,
@@ -738,15 +738,15 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
     uint32_t max_view_count = 0;
     uint32_t max_instance_count = 0;
   };
-  // ÓÃÓÚ±ê¼ÇAPI£¨vulkan£¬ dx12£©Ò»Ğ©ÓĞµÄÃ»µÄÌØĞÔ£¬ĞèÒªÊµÏÖget_api_trait
-  // ÀıÈç£º vulkan¿ÉÒÔÉèÖÃpipelinebarrier
+  // ç”¨äºæ ‡è®°APIï¼ˆvulkanï¼Œ dx12ï¼‰ä¸€äº›æœ‰çš„æ²¡çš„ç‰¹æ€§ï¼Œéœ€è¦å®ç°get_api_trait
+  // ä¾‹å¦‚ï¼š vulkanå¯ä»¥è®¾ç½®pipelinebarrier
   enum ApiTrait {
-    API_TRAIT_HONORS_PIPELINE_BARRIERS,    //ĞèÒª¼Óbarrier
+    API_TRAIT_HONORS_PIPELINE_BARRIERS,    //éœ€è¦åŠ barrier
     API_TRAIT_SHADER_CHANGE_INVALIDATION,  //
     API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT,
     API_TRAIT_TEXTURE_DATA_ROW_PITCH_STEP,
     API_TRAIT_SECONDARY_VIEWPORT_SCISSOR,
-    API_TRAIT_CLEARS_WITH_COPY_ENGINE,  // copy²»ĞèÒªÏÔÊ¾clear¡£
+    API_TRAIT_CLEARS_WITH_COPY_ENGINE,  // copyä¸éœ€è¦æ˜¾ç¤ºclearã€‚
 
   };
   enum ShaderChangeInvalidation {

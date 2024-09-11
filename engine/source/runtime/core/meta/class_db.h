@@ -1,14 +1,14 @@
 #pragma once
 #ifndef CLASS_DB_H
 #define CLASS_DB_H
-// 1. resource type and solver 函数
+// 1. resource type and solver 鍑芥暟
 // 2. Base and dertived relation
 #include "core/string/string_name.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/list.h"
 #include "core/meta/json.h"
 namespace lain {
-	// 以数据库列，表的方式组织
+	// 浠ユ暟鎹簱鍒楋紝琛ㄧ殑鏂瑰紡缁勭粐
 	struct MethodDefinition {
 		StringName name;
 		Vector<StringName> args;

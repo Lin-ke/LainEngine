@@ -14,7 +14,7 @@ namespace lain {
 	String Resource::GetName() const {
 		return name;
 	}
-	// ÉèÖÃpath_cacheÎªpath£¬
+	// è®¾ç½®path_cacheä¸ºpathï¼Œ
 	void Resource::set_path(const String& p_path, bool p_take_over) {
 		if (path_cache == p_path) {
 			return;
@@ -46,7 +46,7 @@ namespace lain {
 		}
 
 		path_cache = p_path;
-		// ·Å½øÈ¥
+		// æ”¾è¿›å»
 		if (!path_cache.is_empty()) {
 			ResourceCache::resources[path_cache] = this;
 		}
@@ -80,8 +80,8 @@ namespace lain {
 			return ERR_INVALID_PARAMETER;
 		}
 		ResetState(); // May want to reset state.
-		// ÊÇµÄ·´Éä¾ÍÊÇÕâÃ´ÓÃµÄ
-		// ÓĞÁËvariant£¬PropertyInfoµÄÊµÏÖ¼òµ¥Ö±½Ó
+		// æ˜¯çš„åå°„å°±æ˜¯è¿™ä¹ˆç”¨çš„
+		// æœ‰äº†variantï¼ŒPropertyInfoçš„å®ç°ç®€å•ç›´æ¥
 		{
 			// using piccolo's reflection
 			using Reflection::TypeMeta;
@@ -95,13 +95,13 @@ namespace lain {
 				if (facc.getFieldName() == "resource_path") {
 					continue;
 				}
-				facc.set(this, facc.get(*p_resource)); // ÕâÃ´Ğ´£¬ÕæÃ»ÎÊÌâÂğ¡£¡£
-				// È»¶øÕâÀï²¢²»ÖªµÀÌîÊ²Ã´
+				facc.set(this, facc.get(*p_resource)); // è¿™ä¹ˆå†™ï¼ŒçœŸæ²¡é—®é¢˜å—ã€‚ã€‚
+				// ç„¶è€Œè¿™é‡Œå¹¶ä¸çŸ¥é“å¡«ä»€ä¹ˆ
 
 			}
 
 		}
-		// Variant±êÀàĞÍ£¬StringName±êÃû×Ö£¬hint¼ÓµãĞÅÏ¢
+		// Variantæ ‡ç±»å‹ï¼ŒStringNameæ ‡åå­—ï¼ŒhintåŠ ç‚¹ä¿¡æ¯
 		//List<PropertyInfo> pi;
 		//p_resource->get_property_list(&pi);
 
@@ -200,7 +200,7 @@ namespace lain {
 
 	// public:
 	// static:
-	// Õâ¸öµ¥Àı±È½ÏÊÊºÏlockµÄÊ¹ÓÃ
+	// è¿™ä¸ªå•ä¾‹æ¯”è¾ƒé€‚åˆlockçš„ä½¿ç”¨
 	RWLock ResourceCache::path_cache_lock;
 	HashMap<String, HashMap<String, String>> ResourceCache::resource_path_cache; // Each tscn has a set of resource paths and IDs.
 

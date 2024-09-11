@@ -9,7 +9,7 @@
 //TEST_STRINGIFY2(TEST_CONCAT2(x, TEST_CONCAT2(!= , y)))
 #define TEQ(x, y) if(x!=y) {L_PERROR("err find", #x, "!=", #y);}
 //#include "test/doctest.h"
-// @TODO ÍêÉÆDocTEST
+// @TODO å®Œå–„DocTEST
 namespace lain {
 	namespace test {
 	}

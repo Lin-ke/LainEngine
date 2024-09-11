@@ -8,7 +8,7 @@ class RenderingSystemDefault: public RenderingSystem{
 
 	Thread::ID server_thread = Thread::MAIN_ID;
 	bool create_thread = false;
-	mutable CommandQueueMT command_queue; // ºÍÀà×´Ì¬ÎŞ¹ØµÄÊı¾İ³ÉÔ±£¬const¿ÉÓÃ
+	mutable CommandQueueMT command_queue; // å’Œç±»çŠ¶æ€æ— å…³çš„æ•°æ®æˆå‘˜ï¼Œconstå¯ç”¨
 
 	#ifdef DEBUG_ENABLED
 	#define MAIN_THREAD_SYNC_WARN WARN_PRINT("Call to " + String(__FUNCTION__) + " causing RenderingServer synchronizations on every frame. This significantly affects performance.");
@@ -39,7 +39,7 @@ class RenderingSystemDefault: public RenderingSystem{
 	/***************
 	 * SHADER API  
 	 ***************/
-	// Shader µÄ server ÊÇ RendererMaterialStorage
+	// Shader çš„ server æ˜¯ RendererMaterialStorage
 	#define ServerName RendererMaterialStorage
 	#define server_name RSG::material_storage 
 	FUNCRIDSPLIT(shader)

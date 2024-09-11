@@ -5,7 +5,7 @@
 //#include "core/object/gdvirtual.gen.inc"
 #include "core/object/refcounted.h"
 namespace lain {
-	// processº¯Êý(tickº¯Êý)
+	// processå‡½æ•°(tickå‡½æ•°)
 class MainLoop : public Object {
 	LCLASS(MainLoop, Object);
 

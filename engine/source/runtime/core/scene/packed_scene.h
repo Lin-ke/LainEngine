@@ -9,7 +9,7 @@
 namespace lain {
 
 	
-	// ÒıÇæÄÚ²¿µÄ³¡¾°Êı¾İ½á¹¹
+	// å¼•æ“å†…éƒ¨çš„åœºæ™¯æ•°æ®ç»“æ„
 	class PackedScene; 
 class SceneState : public RefCounted {
 	LCLASS(SceneState, RefCounted);
@@ -38,7 +38,7 @@ class SceneState : public RefCounted {
 		int instance = 0;
 		int index = 0;
 
-		// ÔİÊ±²»¹Ü
+		// æš‚æ—¶ä¸ç®¡
 		struct Property {
 			int name = 0;
 			int value = 0;
@@ -81,7 +81,7 @@ class SceneState : public RefCounted {
 	Error _parse_gobject(GObject* p_owner, GObject* p_gobject, int p_parent_idx, HashMap<StringName, int>& name_map, HashMap<Variant, int, VariantHasher, VariantComparator>& variant_map, HashMap<GObject*, int>& gobject_map, HashMap<GObject*, int>& gobjectpath_map);
 	Error _parse_connections(GObject* p_owner, GObject* p_gobject, HashMap<StringName, int>& name_map, HashMap<Variant, int, VariantHasher, VariantComparator>& variant_map, HashMap<GObject*, int>& gobject_map, HashMap<GObject*, int>& gobjectpath_map);
 
-	String path; // Õâ¸öÂ·¾¶ÊÇÊ²Ã´Â·¾¶£¿
+	String path; // è¿™ä¸ªè·¯å¾„æ˜¯ä»€ä¹ˆè·¯å¾„ï¼Ÿ
 
 	uint64_t last_modified_time = 0;
 
@@ -103,10 +103,10 @@ protected:
 	static void _bind_methods();
 
 public:
-	enum { // ±ê¼Ç×ÊÔ´Î»ÖÃ£¬ÔÚvariantÖĞ
+	enum { // æ ‡è®°èµ„æºä½ç½®ï¼Œåœ¨variantä¸­
 		FLAG_ID_IS_PATH = (1 << 30),
-		TYPE_INSTANTIATED = 0x7FFFFFFF, // ÒÑ¾­ÊµÀı»¯
-		FLAG_INSTANCE_IS_PLACEHOLDER = (1 << 30), // placeholderÊ¾Àı
+		TYPE_INSTANTIATED = 0x7FFFFFFF, // å·²ç»å®ä¾‹åŒ–
+		FLAG_INSTANCE_IS_PLACEHOLDER = (1 << 30), // placeholderç¤ºä¾‹
 		FLAG_PATH_PROPERTY_IS_gobject = (1 << 30),
 		FLAG_PROP_NAME_MASK = FLAG_PATH_PROPERTY_IS_gobject - 1,
 		FLAG_MASK = (1 << 24) - 1,

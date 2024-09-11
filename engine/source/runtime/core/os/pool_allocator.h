@@ -10,7 +10,7 @@
  * It used as a standard way to manage allocation in a specific region of memory, such as texture memory,
  * audio sample memory, or just any kind of memory overall.
  * (@TODO) abstraction should be greater, because in many platforms, you need to manage a nonreachable memory.
- * // 然而在godot库里并没有用
+ * // 鐒惰�屽湪godot搴撻噷骞舵病鏈夌敤
  */
 namespace lain {
 

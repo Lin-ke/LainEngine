@@ -4,7 +4,7 @@
 #define __WINDOW_H__
 #include "core/string/ustring.h"
 #include <GLFW/glfw3.h>
-// ¸Ğ¾õ²»ĞèÒªwindowµÄ³éÏó Ö»ĞèÒªwindowdataµÄ³éÏó
+// æ„Ÿè§‰ä¸éœ€è¦windowçš„æŠ½è±¡ åªéœ€è¦windowdataçš„æŠ½è±¡
 
 namespace lain{
 	class WindowSystem;

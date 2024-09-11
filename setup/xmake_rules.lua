@@ -20,6 +20,21 @@ function library_dependency(dep, version, setting)
 end
 
 rule("l.module")
+    on_load(function (target)
+        local source = target:extraconf("rules", "l.module", "target_files")
+        if source then
+            target:add("files", source)
+        end
+        local links = target:extraconf("rules", "l.module", "target_links")
+        if links then
+            target:add("links", links)
+        end
+        local includedirs = target:extraconf("rules", "l.module", "target_includedirs")
+        if includedirs then
+            target:add("includedirs", includedirs)
+        end
+    end
+    )
 rule_end()
 --- godot用scons里的 import env就是这个东西,似乎
 rule("l.component")
@@ -152,6 +167,8 @@ rule("l.static_library")
         target:set("kind", "static")
     end)
 rule_end()
+
+
 
 rule("l.static_module")
     add_deps("l.module")

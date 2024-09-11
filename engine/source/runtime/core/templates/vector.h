@@ -5,7 +5,7 @@
  * @class Vector
  * Vector container. Regular Vector Container. Use with care and for smaller arrays when possible. Use Vector for large arrays.
  */
-// vector²»ÄÜÊ¹ÓÃoperator[]ĞŞ¸Ä£¬ÎªÁË±£Ö¤ĞŞ¸ÄºóÒ»¶¨½øĞĞcow¡£ĞèÒªÍ¨¹ıwrite proxy½øĞĞ¡£
+// vectorä¸èƒ½ä½¿ç”¨operator[]ä¿®æ”¹ï¼Œä¸ºäº†ä¿è¯ä¿®æ”¹åä¸€å®šè¿›è¡Œcowã€‚éœ€è¦é€šè¿‡write proxyè¿›è¡Œã€‚
 
 #include "core/error/error_macros.h"
 #include "core/os/memory.h"
@@ -199,7 +199,7 @@ namespace lain {
 					 return false;
 				 }	
 				}
-				// Èç¹û¶¼Ã»ÓĞÖØÔØ»á·¢ÉúÊ²Ã´£¿±¨Ò»Ìõ¸ù±¾²»¿É¶ÁµÄ´íÎó
+				// å¦‚æœéƒ½æ²¡æœ‰é‡è½½ä¼šå‘ç”Ÿä»€ä¹ˆï¼ŸæŠ¥ä¸€æ¡æ ¹æœ¬ä¸å¯è¯»çš„é”™è¯¯
 				
 			 }
 			 return true;

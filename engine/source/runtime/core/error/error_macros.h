@@ -7,7 +7,7 @@
 
 #include <atomic> // We'd normally use safe_numeric.h, but that would cause circular includes.
 
-// Ç°ÖÃÉùÃ÷ÃüÃû¿Õ¼äÏÂµÄÀà
+// å‰ç½®å£°æ˜å‘½åç©ºé—´ä¸‹çš„ç±»
 namespace lain {
 	class String;
 }

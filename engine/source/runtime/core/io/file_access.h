@@ -26,8 +26,8 @@ public:
 	enum ModeFlags {
 		READ = 1,
 		WRITE = 2,
-		READ_WRITE = 3, // ´ò¿ªÎÄ¼ş½øĞĞ¶ÁĞ´²Ù×÷¡£²»½Ø¶ÏÎÄ¼ş¡£¹â±êÎ»ÓÚÎÄ¼şµÄ¿ªÍ·¡£
-		WRITE_READ = 7, // ´ò¿ªÎÄ¼ş½øĞĞ¶ÁĞ´²Ù×÷¡£Èç¹ûÎÄ¼ş²»´æÔÚÔò´´½¨¸ÃÎÄ¼ş£¬Èç¹û´æÔÚÔò½Ø¶Ï¸ÃÎÄ¼ş¡£¹â±êÎ»ÓÚÎÄ¼şµÄ¿ªÍ·¡£
+		READ_WRITE = 3, // æ‰“å¼€æ–‡ä»¶è¿›è¡Œè¯»å†™æ“ä½œã€‚ä¸æˆªæ–­æ–‡ä»¶ã€‚å…‰æ ‡ä½äºæ–‡ä»¶çš„å¼€å¤´ã€‚
+		WRITE_READ = 7, // æ‰“å¼€æ–‡ä»¶è¿›è¡Œè¯»å†™æ“ä½œã€‚å¦‚æœæ–‡ä»¶ä¸å­˜åœ¨åˆ™åˆ›å»ºè¯¥æ–‡ä»¶ï¼Œå¦‚æœå­˜åœ¨åˆ™æˆªæ–­è¯¥æ–‡ä»¶ã€‚å…‰æ ‡ä½äºæ–‡ä»¶çš„å¼€å¤´ã€‚
 	};
 
 	enum CompressionMode {
@@ -42,7 +42,7 @@ public:
 
 	typedef Ref<FileAccess>(*CreateFunc)();
 	bool big_endian = false;
-	bool real_is_double = false; // Õâ¸öÓë¸ÃÎÄ¼şÓĞ¹Ø
+	bool real_is_double = false; // è¿™ä¸ªä¸è¯¥æ–‡ä»¶æœ‰å…³
 
 	//virtual uint32_t _get_unix_permissions(const String& p_file) = 0;
 	//virtual Error _set_unix_permissions(const String& p_file, uint32_t p_permissions) = 0;

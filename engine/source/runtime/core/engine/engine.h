@@ -37,7 +37,7 @@ class Engine {
   bool m_abort_on_gpu_errors = false;  // quit on gpu errors
 
   static constexpr int SERVER_SYNC_FRAME_COUNT_WARNING = 5;
-  bool m_frame_server_synced = false;  // 这是干什么？
+  bool m_frame_server_synced = false;  // 杩欐槸骞蹭粈涔堬紵
   int m_server_syncs = 0;
 
  public:

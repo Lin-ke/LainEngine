@@ -6,7 +6,7 @@
 using namespace lain;
 Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_spirv, ShaderReflection& r_reflection) {
 	r_reflection = {};
-	// ¶Ô²»Í¬stage
+	// å¯¹ä¸åŒstage
 	for (uint32_t i = 0; i < p_spirv.size(); i++) {
 		ShaderStage stage = p_spirv[i].shader_stage;
 		ShaderStage stage_flag = (ShaderStage) (1 << p_spirv[i].shader_stage);
@@ -25,7 +25,7 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 			SpvReflectResult result = spvReflectCreateShaderModule(p_spirv[i].spirv.size(), spirv, &module);
 			ERR_FAIL_COND_V_MSG(result != SPV_REFLECT_RESULT_SUCCESS, FAILED,
 				"Reflection of SPIR-V shader stage '" + String(SHADER_STAGE_NAMES[p_spirv[i].shader_stage]) + "' failed parsing shader.");
-			// ¶îÍâÓĞÒ»¸öworkgroupµÄ¸ÅÄî
+			// é¢å¤–æœ‰ä¸€ä¸ªworkgroupçš„æ¦‚å¿µ
 			if (r_reflection.is_compute) {
 				r_reflection.compute_local_size[0] = module.entry_points->local_size.x;
 				r_reflection.compute_local_size[1] = module.entry_points->local_size.y;
@@ -109,7 +109,7 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 						continue;
 					} break;
 					}
-					// ¶àÎ¬Êı×é
+					// å¤šç»´æ•°ç»„
 					
 					if (need_array_dimensions) {
 						if (binding.array.dims_count == 0) {
@@ -127,7 +127,7 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 						}
 
 					}
-					// @? block_sizeËÆºõÊÇ¶Ô×Ô¶¨ÒåstructµÄ
+					// @? block_sizeä¼¼ä¹æ˜¯å¯¹è‡ªå®šä¹‰structçš„
 					else if (need_block_size) {
 						uniform.length = binding.block.size;
 					}
@@ -166,7 +166,7 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 									"On shader stage '" + String(SHADER_STAGE_NAMES[stage]) + "', uniform '" + binding.name + "' trying to reuse location for set=" + itos(set) + ", binding=" + itos(uniform.binding) + " with different writability.");
 
 								// Just append stage mask and return.
-								r_reflection.uniform_sets.write[set].write[k].stages.set_flag(stage_flag); // Ö»ÊÇÔÚÁíÒ»¸ö½×¶ÎÒ²³öÏÖ
+								r_reflection.uniform_sets.write[set].write[k].stages.set_flag(stage_flag); // åªæ˜¯åœ¨å¦ä¸€ä¸ªé˜¶æ®µä¹Ÿå‡ºç°
 								exists = true;
 								break;
 							}
@@ -180,7 +180,7 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 					uniform.stages.set_flag(stage_flag);
 
 					if (set >= (uint32_t)r_reflection.uniform_sets.size()) {
-						r_reflection.uniform_sets.resize(set + 1); // Ìí¼Óµ½
+						r_reflection.uniform_sets.resize(set + 1); // æ·»åŠ åˆ°
 					}
 
 					r_reflection.uniform_sets.write[set].push_back(uniform);
@@ -226,7 +226,7 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 						}
 						sconst.stages.set_flag(stage_flag);
 
-						for (int k = 0; k < r_reflection.specialization_constants.size(); k++) { // Èç¹ûÕâ¸öÌØÊâ»¯³£Á¿ÒÑ¾­´æÔÚ
+						for (int k = 0; k < r_reflection.specialization_constants.size(); k++) { // å¦‚æœè¿™ä¸ªç‰¹æ®ŠåŒ–å¸¸é‡å·²ç»å­˜åœ¨
 							if (r_reflection.specialization_constants[k].constant_id == sconst.constant_id) {
 								ERR_FAIL_COND_V_MSG(r_reflection.specialization_constants[k].type != sconst.type, FAILED, "More than one specialization constant used for id (" + itos(sconst.constant_id) + "), but their types differ.");
 								ERR_FAIL_COND_V_MSG(r_reflection.specialization_constants[k].int_value != sconst.int_value, FAILED, "More than one specialization constant used for id (" + itos(sconst.constant_id) + "), but their default values differ.");
@@ -247,7 +247,7 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 				}
 			}
 
-			if (stage == SHADER_STAGE_VERTEX) { // ¶¥µã×ÅÉ«Æ÷ĞèÒª¶ÁÈëInputVariables
+			if (stage == SHADER_STAGE_VERTEX) { // é¡¶ç‚¹ç€è‰²å™¨éœ€è¦è¯»å…¥InputVariables
 				uint32_t iv_count = 0;
 				result = spvReflectEnumerateInputVariables(&module, &iv_count, nullptr);
 				ERR_FAIL_COND_V_MSG(result != SPV_REFLECT_RESULT_SUCCESS, FAILED,
@@ -256,7 +256,7 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 				if (iv_count) {
 					Vector<SpvReflectInterfaceVariable*> input_vars;
 					input_vars.resize(iv_count);
-					// ĞÎÈçlayout (location, component) in type variableName;
+					// å½¢å¦‚layout (location, component) in type variableName;
 					result = spvReflectEnumerateInputVariables(&module, &iv_count, input_vars.ptrw());
 					ERR_FAIL_COND_V_MSG(result != SPV_REFLECT_RESULT_SUCCESS, FAILED,
 						"Reflection of SPIR-V shader stage '" + String(SHADER_STAGE_NAMES[p_spirv[i].shader_stage]) + "' failed obtaining input variables.");
@@ -269,7 +269,7 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 				}
 			}
 
-			if (stage == SHADER_STAGE_FRAGMENT) { // FragmentĞèÒªoutlocation£¬ÓëvertexÏà·´
+			if (stage == SHADER_STAGE_FRAGMENT) { // Fragmentéœ€è¦outlocationï¼Œä¸vertexç›¸å
 				uint32_t ov_count = 0;
 				result = spvReflectEnumerateOutputVariables(&module, &ov_count, nullptr);
 				ERR_FAIL_COND_V_MSG(result != SPV_REFLECT_RESULT_SUCCESS, FAILED,

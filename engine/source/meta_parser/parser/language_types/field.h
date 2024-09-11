@@ -25,7 +25,7 @@ public:
     std::string m_type;
 
     std::string m_default;
-    std::string m_name_with_namespace; // ÓÃÕâ¸öÄÜÕÒµ½Ëû
+    std::string m_name_with_namespace; // ç”¨è¿™ä¸ªèƒ½æ‰¾åˆ°ä»–
 
     bool isAccessible(void) const;
 };

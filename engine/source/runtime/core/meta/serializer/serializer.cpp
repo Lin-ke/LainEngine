@@ -117,7 +117,7 @@ namespace lain
     String& Serializer::read(const Json& json_context, String& instance)
     {
         assert(json_context.is_string());
-        // ÕâÀïÓĞÒ»µã×óÖµÓÒÖµµÄÎÊÌâ
+        // è¿™é‡Œæœ‰ä¸€ç‚¹å·¦å€¼å³å€¼çš„é—®é¢˜
         instance = json_context.string_value().c_str();
         return instance;
     }
@@ -136,7 +136,7 @@ namespace lain
     Dictionary& Serializer::read(const Json& json_context, Dictionary& instance)
     {
         assert(json_context.is_object());
-        // ÕâÀïÓĞÒ»µã×óÖµÓÒÖµµÄÎÊÌâ
+        // è¿™é‡Œæœ‰ä¸€ç‚¹å·¦å€¼å³å€¼çš„é—®é¢˜
         for (const auto& pair : json_context.object_items()) {
             Variant key(pair.first.c_str());
             Variant value;
@@ -145,7 +145,7 @@ namespace lain
         }
         return instance;
     }
-   // variant ºÍ reflectptrÊÇÒ»ÑùµÄ
+   // variant å’Œ reflectptræ˜¯ä¸€æ ·çš„
      template<>
      Json Serializer::write(const Variant& instance)
     {
@@ -177,7 +177,7 @@ namespace lain
          }
          default:
          {
-             // plan A :´Ótypenameµ½Type£¬È»ºó×ª
+             // plan A :ä»typenameåˆ°Typeï¼Œç„¶åè½¬
              if (VariantHelper::is_serializable(instance)) {
                  const char* type_name = Variant::get_c_type_name(instance.get_type());
                  return Json::object{ 
@@ -257,7 +257,7 @@ namespace lain
          }
          return array_json;
     }
-     template<> // array ÊÇvariant<int>ĞèÒªĞ´Ò»ÏÂ
+     template<> // array æ˜¯variant<int>éœ€è¦å†™ä¸€ä¸‹
      Array& Serializer::read(const Json& json_context, Array& instance) {
          if (!json_context.is_array()) {
              return instance;

@@ -9,8 +9,8 @@
 #include "core/templates/simple_type.h"
 #include "core/thread/worker_thread_pool.h"
 #include "core/typedefs.h"
-// ×î¶àÖ§³Ö15¸ö²ÎÊı
-// ¿ÉÒÔ¿¿ ÈçÏÂµÄºê½øĞĞcount:
+// æœ€å¤šæ”¯æŒ15ä¸ªå‚æ•°
+// å¯ä»¥é  å¦‚ä¸‹çš„å®è¿›è¡Œcount:
 // #define CT(...) VALS(__VA_ARGS__, 5, 4, 3, 2, 1)
 
 #define COMMA(N) _COMMA_##N
@@ -183,7 +183,7 @@
 #define TYPE_PARAM(N) class P##N
 #define PARAM_DECL(N) typename GetSimpleTypeT<P##N>::type_t p##N
 
-// ´ø·µ»ØµÄĞèÒªsync
+// å¸¦è¿”å›çš„éœ€è¦sync
 
 #define DECL_CMD(N)                                                  \
   template <class T, class M COMMA(N) COMMA_SEP_LIST(TYPE_PARAM, N)> \
@@ -313,18 +313,18 @@ class CommandQueueMT {
   template <class T>
   T* allocate() {
     // alloc size is size+T+safeguard
-    uint32_t alloc_size = ((sizeof(T) + 8 - 1) & ~(8 - 1));  // 8-byte align, ÕûĞÍÊ¹ÓÃ
+    uint32_t alloc_size = ((sizeof(T) + 8 - 1) & ~(8 - 1));  // 8-byte align, æ•´å‹ä½¿ç”¨
     uint64_t size = command_mem.size();
     command_mem.resize(size + alloc_size + 8);
-    *(uint64_t*)&command_mem[size] = alloc_size;           // Ç°Ãæ8×Ö½Ú£¬4¸ö´æ·Åalloc_size£¬4¸ö²»ÖªµÀ
-    T* cmd = memnew_placement(&command_mem[size + 8], T);  // ´æ·ÅT
+    *(uint64_t*)&command_mem[size] = alloc_size;           // å‰é¢8å­—èŠ‚ï¼Œ4ä¸ªå­˜æ”¾alloc_sizeï¼Œ4ä¸ªä¸çŸ¥é“
+    T* cmd = memnew_placement(&command_mem[size + 8], T);  // å­˜æ”¾T
     return cmd;
   }
 
   _FORCE_INLINE_ void _prevent_sync_wraparound() {
 		bool safe_to_reset = !sync_awaiters;
 		bool already_sync_to_latest = sync_head == sync_tail;
-		if (safe_to_reset && already_sync_to_latest) { // °²È«µÄÖØÖÃÍ¬²½¶ÓÁĞ
+		if (safe_to_reset && already_sync_to_latest) { // å®‰å…¨çš„é‡ç½®åŒæ­¥é˜Ÿåˆ—
 			sync_head = 0;
 			sync_tail = 0;
 		}
@@ -338,7 +338,7 @@ class CommandQueueMT {
     return ret;
   }
 
-  void _flush() { // flushÊÇ¶àÏß³ÌµÄ
+  void _flush() { // flushæ˜¯å¤šçº¿ç¨‹çš„
     if (unlikely(flush_read_ptr)) {
       // Re-entrant call.
       return;
@@ -358,7 +358,7 @@ class CommandQueueMT {
 
       if (unlikely(cmd->sync)) {
         sync_head++; 
-        unlock();  // Give an opportunity to awaiters right away. // ¿ÉÄÜÓĞÈËÔÚµÈÕâ¸ö½á¹û£¬ÕâÀïunlockÒ»ÏÂÈÃËûÃÇ»ñµÃËø·µ»Ø£¬ÎÒÃÇÔÙ¼ÌĞø
+        unlock();  // Give an opportunity to awaiters right away. // å¯èƒ½æœ‰äººåœ¨ç­‰è¿™ä¸ªç»“æœï¼Œè¿™é‡Œunlockä¸€ä¸‹è®©ä»–ä»¬è·å¾—é”è¿”å›ï¼Œæˆ‘ä»¬å†ç»§ç»­
         sync_cond_var.notify_all();
         lock();
         // Handle potential realloc happened during unlock.
@@ -381,10 +381,10 @@ class CommandQueueMT {
 
  _FORCE_INLINE_ void _wait_for_sync(MutexLock<BinaryMutex> &p_lock) {
 		sync_awaiters++;
-		uint32_t sync_head_goal = sync_tail; // tail ÊÇ ÎÒÃÇÕâ¸öÈÎÎñµÄ±êÊ¶
+		uint32_t sync_head_goal = sync_tail; // tail æ˜¯ æˆ‘ä»¬è¿™ä¸ªä»»åŠ¡çš„æ ‡è¯†
 		do {
-			sync_cond_var.wait(p_lock); // waitÊ±»áÊÍ·ÅËø
-		} while (sync_head < sync_head_goal); // sync head ÊÇÒÑ¾­Íê³ÉµÄÈÎÎñµÄ±êÊ¶
+			sync_cond_var.wait(p_lock); // waitæ—¶ä¼šé‡Šæ”¾é”
+		} while (sync_head < sync_head_goal); // sync head æ˜¯å·²ç»å®Œæˆçš„ä»»åŠ¡çš„æ ‡è¯†
 		sync_awaiters--;
 		_prevent_sync_wraparound();
 	}

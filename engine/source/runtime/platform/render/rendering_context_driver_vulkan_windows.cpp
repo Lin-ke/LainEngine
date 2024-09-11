@@ -1,7 +1,7 @@
 #include "rendering_context_driver_vulkan_windows.h"
 #include "core/os/os.h"
 using namespace lain;
-// ÕâÀïÊÇÓÚsurface´´½¨Ïà¹ØµÄ´úÂë
+// è¿™é‡Œæ˜¯äºsurfaceåˆ›å»ºç›¸å…³çš„ä»£ç 
 const char* RenderingContextDriverVulkanWindows::_get_platform_surface_extension() const {
 	return VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 }

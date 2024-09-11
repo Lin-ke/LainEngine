@@ -41,8 +41,8 @@ class RenderingDevice : public RenderingDeviceCommons {
   enum IDType {
     ID_TYPE_FRAMEBUFFER_FORMAT,
     ID_TYPE_VERTEX_FORMAT,
-    ID_TYPE_DRAW_LIST,// Î¨Ò»
-    ID_TYPE_COMPUTE_LIST = 4,// Î¨Ò» 
+    ID_TYPE_DRAW_LIST,// å”¯ä¸€
+    ID_TYPE_COMPUTE_LIST = 4,// å”¯ä¸€ 
     ID_TYPE_MAX,
     ID_BASE_SHIFT = 58,  // 5 bits for ID types.
     ID_MASK = (ID_BASE_SHIFT - 1),
@@ -50,7 +50,7 @@ class RenderingDevice : public RenderingDeviceCommons {
 
   typedef int64_t FramebufferFormatID;
  private:
-  // RIDµ½ÒÀÀµËüµÄID(s)µÄÓ³Éä£¬Òò´ËÉ¾³ıÊ±ĞèÒªÉ¾³ıÒÀÀµËüµÄID
+  // RIDåˆ°ä¾èµ–å®ƒçš„ID(s)çš„æ˜ å°„ï¼Œå› æ­¤åˆ é™¤æ—¶éœ€è¦åˆ é™¤ä¾èµ–å®ƒçš„ID
   HashMap<RID, HashSet<RID>> dependency_map;          // IDs to IDs that depend on it.
   HashMap<RID, HashSet<RID>> reverse_dependency_map;  // Same as above, but in reverse.
 
@@ -83,8 +83,8 @@ class RenderingDevice : public RenderingDeviceCommons {
     RDD::BufferID driver_id;
     uint64_t frame_used = 0;
     uint32_t fill_amount = 0;
-  };  // staging bufferµÄ³Ø»¯£¬Ã¿Ö¡Ò»¸ö
-  // Èç¹û²»¹»ÓÃÁË»áÔÙ·ÖÅä
+  };  // staging bufferçš„æ± åŒ–ï¼Œæ¯å¸§ä¸€ä¸ª
+  // å¦‚æœä¸å¤Ÿç”¨äº†ä¼šå†åˆ†é…
   Vector<StagingBufferBlock> staging_buffer_blocks;
   int staging_buffer_current = 0;
   uint32_t staging_buffer_block_size = 0;
@@ -119,11 +119,11 @@ class RenderingDevice : public RenderingDeviceCommons {
 
   /// **** COMMAND
  public:
-  // Ä¿Ç°Ö»ÓĞÒ»ÖÖ
+  // ç›®å‰åªæœ‰ä¸€ç§
   enum StorageBufferUsage {
     STORAGE_BUFFER_USAGE_DISPATCH_INDIRECT = 1,
   };
-  // ÓëbufferÓĞ¹ØµÄ·½·¨
+  // ä¸bufferæœ‰å…³çš„æ–¹æ³•
   Error buffer_copy(RID p_src_buffer, RID p_dst_buffer, uint32_t p_src_offset, uint32_t p_dst_offset, uint32_t p_size);
   Error buffer_update(RID p_buffer, uint32_t p_offset, uint32_t p_size, const void* p_data);
   Error buffer_clear(RID p_buffer, uint32_t p_offset, uint32_t p_size);
@@ -152,7 +152,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   // for a framebuffer to render into it.
   struct Texture {
     struct SharedFallback {
-			uint32_t revision = 1; // ±»ĞŞ¸ÄµÄ´ÎÊı£¬ÒªÇóÓëownerµÄ±£³ÖÒ»ÖÂ£¬·ñÔò¸üĞÂ
+			uint32_t revision = 1; // è¢«ä¿®æ”¹çš„æ¬¡æ•°ï¼Œè¦æ±‚ä¸ownerçš„ä¿æŒä¸€è‡´ï¼Œå¦åˆ™æ›´æ–°
 			RDD::TextureID texture;
 			RDG::ResourceTracker *texture_tracker = nullptr;
 			RDD::BufferID buffer;
@@ -185,7 +185,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     RID owner;
 
     RDG::ResourceTracker* draw_tracker = nullptr;
-    HashMap<Rect2i, RDG::ResourceTracker*> slice_trackers; // ¿ìËÙÑ°ÕÒslice
+    HashMap<Rect2i, RDG::ResourceTracker*> slice_trackers; // å¿«é€Ÿå¯»æ‰¾slice
 		SharedFallback *shared_fallback = nullptr;
 
     RDD::TextureSubresourceRange barrier_range() const {  // texture subresource range;
@@ -228,9 +228,9 @@ class RenderingDevice : public RenderingDeviceCommons {
   void _texture_create_reinterpret_buffer(Texture* p_texture);
 
  public:
-  // Õâ¸ö½á¹¹ÌåÔÚTextureViewÀïÒ²¶¨Òå¹ı
-  // ÔÚDeviceCommonÀï¶¨ÒåµÄÊÇÄÜÔÚdeviceºÍdevice_driverÖĞÍ¬Ê±Ê¹ÓÃµÄ
-  // ÄÇÃ´£¬ÎªÊ²Ã´Õâ¸öÖ»ÄÜÔÚÕâÀïÊ¹ÓÃ£¿
+  // è¿™ä¸ªç»“æ„ä½“åœ¨TextureViewé‡Œä¹Ÿå®šä¹‰è¿‡
+  // åœ¨DeviceCommoné‡Œå®šä¹‰çš„æ˜¯èƒ½åœ¨deviceå’Œdevice_driverä¸­åŒæ—¶ä½¿ç”¨çš„
+  // é‚£ä¹ˆï¼Œä¸ºä»€ä¹ˆè¿™ä¸ªåªèƒ½åœ¨è¿™é‡Œä½¿ç”¨ï¼Ÿ
   struct TextureView {
     DataFormat format_override = DATA_FORMAT_MAX;  // // Means, use same as format.
     TextureSwizzle swizzle_r = TEXTURE_SWIZZLE_R;
@@ -254,7 +254,7 @@ class RenderingDevice : public RenderingDeviceCommons {
       }
     }
   };
-  // ÕâÀïºÍdriverÄÚ²¿µÄapiÏà²î²»´ó
+  // è¿™é‡Œå’Œdriverå†…éƒ¨çš„apiç›¸å·®ä¸å¤§
  public:
   RID texture_create(const TextureFormat& p_format, const TextureView& p_view,
                      const Vector<Vector<uint8_t>>& p_data = Vector<Vector<uint8_t>>());
@@ -286,9 +286,9 @@ class RenderingDevice : public RenderingDeviceCommons {
   /**** DRAW LISTS (I) ****/
   /************************/
   /// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkAttachmentLoadOp.html
-  /// LoadOP£¬ÎÒ¾õµÃÕâ¸öÉè¼ÆºÜÆæ¹Ö
-  /// ¶ÔÓÚÍ¬Ò»¸öframe
-  /// buffer£¬²»Í¬µÄinitialaction¹¹³ÉÁË²»Í¬µÄversion£¬ÕâÔÚÊµ¼ÊÖĞÕæµÄÓĞÓÃÂğ
+  /// LoadOPï¼Œæˆ‘è§‰å¾—è¿™ä¸ªè®¾è®¡å¾ˆå¥‡æ€ª
+  /// å¯¹äºåŒä¸€ä¸ªframe
+  /// bufferï¼Œä¸åŒçš„initialactionæ„æˆäº†ä¸åŒçš„versionï¼Œè¿™åœ¨å®é™…ä¸­çœŸçš„æœ‰ç”¨å—
   enum InitialAction { INITIAL_ACTION_LOAD, INITIAL_ACTION_CLEAR, INITIAL_ACTION_DISCARD, INITIAL_ACTION_MAX };
   struct ColorInitialAction{
     uint32_t load_attach = 0;
@@ -345,7 +345,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     bool operator==(const ColorFinalAction& p_key) const {
       return store_attach == p_key.store_attach && discard_attach == p_key.discard_attach;
     }
-  }; // ×î¶à32¸öattachment
+  }; // æœ€å¤š32ä¸ªattachment
   /*********************/
   /**** RenderPass ****/
   /*********************/
@@ -353,13 +353,13 @@ class RenderingDevice : public RenderingDeviceCommons {
   // do in OpenGL, with the exception that
   // the "format" (RDD::RenderPassID) is not dynamic
   // and must be more or less the same as the one
-  // used for the render pipelines. ĞèÒªÓërenderpassÖĞ¹æ¶¨µÄ¼æÈİ
-  // ÕâÀï¾ÍÊÇÔÚ¹æ¶¨renderpassËùÓÃµÄframebufferµÄ¸ñÊ½
+  // used for the render pipelines. éœ€è¦ä¸renderpassä¸­è§„å®šçš„å…¼å®¹
+  // è¿™é‡Œå°±æ˜¯åœ¨è§„å®šrenderpassæ‰€ç”¨çš„framebufferçš„æ ¼å¼
   struct AttachmentFormat {
     enum { UNUSED_ATTACHMENT = 0xFFFFFFFF };
-    DataFormat format;  // Êı¾İ¸ñÊ½
-    TextureSamples samples; // ÓĞ¼¸¸ösample
-    uint32_t usage_flags;  // TextureUsageBits // ÕâÀïÓÃuint32_tÊÇÎªÁË·½±ã
+    DataFormat format;  // æ•°æ®æ ¼å¼
+    TextureSamples samples; // æœ‰å‡ ä¸ªsample
+    uint32_t usage_flags;  // TextureUsageBits // è¿™é‡Œç”¨uint32_tæ˜¯ä¸ºäº†æ–¹ä¾¿
     AttachmentFormat() {
       format = DATA_FORMAT_R8G8B8A8_UNORM;
       samples = TEXTURE_SAMPLES_1;
@@ -381,9 +381,9 @@ class RenderingDevice : public RenderingDeviceCommons {
   enum DepthStencilUsage { None, ReadOnly, ReadWrite };
 
   // subpass in granite
-  // attachmentÓëÊµ¼ÊimageviewµÄ°ó¶¨Î´×ö
-  // renderpassÊÇÊ¹ÓÃattachmentinfo¶¨ÒåµÄ
-  // ¸ñÊ½ĞÅÏ¢¿ÉÒÔÒ»Ö±±£´æ
+  // attachmentä¸å®é™…imageviewçš„ç»‘å®šæœªåš
+  // renderpassæ˜¯ä½¿ç”¨attachmentinfoå®šä¹‰çš„
+  // æ ¼å¼ä¿¡æ¯å¯ä»¥ä¸€ç›´ä¿å­˜
   struct FramebufferPass {
     Vector<int32_t> color_attachments;
     Vector<int32_t> input_attachments;
@@ -393,7 +393,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     int32_t vrs_attachment = ATTACHMENT_UNUSED;  // density map for VRS, only used if supported
   };
 
-  // RenderPassformatµÄÒıÈë
+  // RenderPassformatçš„å¼•å…¥
   struct FramebufferFormatKey {
     Vector<AttachmentFormat> attachment_formats;
     Vector<FramebufferPass> passes;
@@ -408,7 +408,7 @@ class RenderingDevice : public RenderingDeviceCommons {
                                         uint32_t p_view_count = 1, Vector<TextureSamples>* r_samples = nullptr);
   // This is a cache and it's never freed, it ensures
   // IDs for a given format are always unique.
-  // ÕâÀïµÄ¼¼ÊõºÍ descriptor set pool ÖĞµÄ¼¼ÊõÊÇÒ»ÑùµÄ
+  // è¿™é‡Œçš„æŠ€æœ¯å’Œ descriptor set pool ä¸­çš„æŠ€æœ¯æ˜¯ä¸€æ ·çš„
   RBMap<FramebufferFormatKey, FramebufferFormatID> framebuffer_format_cache;
 
  public:
@@ -416,14 +416,14 @@ class RenderingDevice : public RenderingDeviceCommons {
     const RBMap<FramebufferFormatKey, FramebufferFormatID>::Element* E;
     RDD::RenderPassID render_pass;        // Here for constructing shaders, never used, see section
                                           // (7.2. Render Pass Compatibility from Vulkan spec).
-    Vector<TextureSamples> pass_samples;  // Ã¿¸öpassÖ»ÄÜÓĞÒ»¸ö¹Ì¶¨µÄsample
+    Vector<TextureSamples> pass_samples;  // æ¯ä¸ªpassåªèƒ½æœ‰ä¸€ä¸ªå›ºå®šçš„sample
     uint32_t view_count = 1;              // Number of views.
   };
   HashMap<FramebufferFormatID, FramebufferFormat> framebuffer_formats;
   struct Framebuffer {
     FramebufferFormatID format_id;
     struct VersionKey {  // version
-                         // ¸ù¾İview_count ºÍ opÀ´Çø·Ö²»Í¬µÄrenderpass
+                         // æ ¹æ®view_count å’Œ opæ¥åŒºåˆ†ä¸åŒçš„renderpass
       ColorInitialAction initial_color_action;
       ColorFinalAction final_color_action;
 
@@ -467,7 +467,7 @@ class RenderingDevice : public RenderingDeviceCommons {
  public:
   // This ID is warranted to be unique for the same formats, does not need to be
   // freed
-  // framebuffer format¾ÍÊÇrenderpass
+  // framebuffer formatå°±æ˜¯renderpass
   FramebufferFormatID framebuffer_format_create(const Vector<AttachmentFormat>& p_format, uint32_t p_view_count = 1);
   FramebufferFormatID framebuffer_format_create_multipass(const Vector<AttachmentFormat>& p_attachments,
                                                           const Vector<FramebufferPass>& p_passes, uint32_t p_view_count = 1);
@@ -544,8 +544,8 @@ class RenderingDevice : public RenderingDeviceCommons {
     RDD::VertexFormatID driver_id;
   };
 
-  HashMap<VertexFormatID, VertexDescriptionCache> vertex_formats; // ¸ù¾İid¿ìËÙÕÒµ½formatµÄ»º´æ½á¹¹
-  struct VertexArray { // ¶¥µãÊı×éµÄ³éÏó;
+  HashMap<VertexFormatID, VertexDescriptionCache> vertex_formats; // æ ¹æ®idå¿«é€Ÿæ‰¾åˆ°formatçš„ç¼“å­˜ç»“æ„
+  struct VertexArray { // é¡¶ç‚¹æ•°ç»„çš„æŠ½è±¡;
     RID buffer;
     VertexFormatID description;
     int vertex_count = 0;
@@ -558,7 +558,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     HashSet<RID> untracked_buffers;
   };
   RID_Owner<VertexArray> vertex_array_owner;
-  struct IndexBuffer : public Buffer {  // vertex buffer ²»ĞèÒªbufferÒÔÍâµÄĞÅÏ¢
+  struct IndexBuffer : public Buffer {  // vertex buffer ä¸éœ€è¦bufferä»¥å¤–çš„ä¿¡æ¯
     uint32_t max_index = 0;             // Used for validation.
     uint32_t index_count = 0;
     IndexBufferFormat format = INDEX_BUFFER_FORMAT_UINT16;
@@ -610,7 +610,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   // "compatible". in order to avoid costly rebinds.
 
  private:
-  struct UniformSetFormat { // Õû¸öuniform set
+  struct UniformSetFormat { // æ•´ä¸ªuniform set
     Vector<ShaderUniform> uniforms;
 
     _FORCE_INLINE_ bool operator<(const UniformSetFormat& p_other) const {
@@ -652,8 +652,8 @@ class RenderingDevice : public RenderingDeviceCommons {
     String name;  // Used for debug.
     RDD::ShaderID driver_id;
     uint32_t layout_hash = 0;
-    BitField<RDD::PipelineStageBits> stage_bits; // Óëstage¶ÔÓ¦
-    Vector<uint32_t> set_formats; // ÔÚuniform_set_format_cacheµÄvalue()
+    BitField<RDD::PipelineStageBits> stage_bits; // ä¸stageå¯¹åº”
+    Vector<uint32_t> set_formats; // åœ¨uniform_set_format_cacheçš„value()
   };
 
   String _shader_uniform_debug(RID p_shader, int p_set = -1);
@@ -682,7 +682,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   /******************/
   /**** UNIFORMS ****/
   /******************/
-  // uniformµÄid spirv·´ÉäÌá¹©µÄ
+  // uniformçš„id spirvåå°„æä¾›çš„
   struct Uniform {
     UniformType uniform_type = UNIFORM_TYPE_IMAGE;
     uint32_t binding = 0;  // Binding index as specified in shader.
@@ -744,14 +744,14 @@ class RenderingDevice : public RenderingDeviceCommons {
   };
 
  private:
-  // static const uint32_t MAX_UNIFORM_SETS = 32; ÔÚ¸¸ÀàÖĞÓĞÉùÃ÷
+  // static const uint32_t MAX_UNIFORM_SETS = 32; åœ¨çˆ¶ç±»ä¸­æœ‰å£°æ˜
   static const uint32_t MAX_PUSH_CONSTANT_SIZE = 128;
   struct UniformSet {
     uint32_t format = 0;
     RID shader_id;
-    uint32_t shader_set = 0;  // £¿
+    uint32_t shader_set = 0;  // ï¼Ÿ
     RDD::UniformSetID driver_id;
-    struct AttachableTexture { // ÑéÖ¤Ê¹ÓÃ£¬¸ÃUniform°ó¶¨µÄtexture£¬£¨²»ÄÜ×÷ÎªframebufferµÄ£©
+    struct AttachableTexture { // éªŒè¯ä½¿ç”¨ï¼Œè¯¥Uniformç»‘å®šçš„textureï¼Œï¼ˆä¸èƒ½ä½œä¸ºframebufferçš„ï¼‰
       uint32_t bind = 0;
       RID texture;
     };
@@ -793,7 +793,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   // default) and warn the user if something
   // was not supplied as intended.
  private:
-  // RenderPipeline½á¹¹Ìå²¢²»¿ª·Å
+  // RenderPipelineç»“æ„ä½“å¹¶ä¸å¼€æ”¾
   struct RenderPipeline {
     // Cached values for validation.
 #ifdef DEBUG_ENABLED
@@ -808,14 +808,14 @@ class RenderingDevice : public RenderingDeviceCommons {
     } validation;
 #endif
     // Actual pipeline.
-    // Õâ¸öpipeline²¢²»°üÀ¨pipelineµÄÒ»Ğ©Ï¸½Ú
+    // è¿™ä¸ªpipelineå¹¶ä¸åŒ…æ‹¬pipelineçš„ä¸€äº›ç»†èŠ‚
     RID shader;
     RDD::ShaderID shader_driver_id;
     uint32_t shader_layout_hash = 0;
-    Vector<uint32_t> set_formats;  // Õâ¸öÓĞÊ²Ã´ÓÃ
+    Vector<uint32_t> set_formats;  // è¿™ä¸ªæœ‰ä»€ä¹ˆç”¨
     RDD::PipelineID driver_id;
     BitField<RDD::PipelineStageBits> stage_bits;
-    uint32_t push_constant_size = 0;  // Õâ¸ösizeÓĞÊ²Ã´ÓÃ
+    uint32_t push_constant_size = 0;  // è¿™ä¸ªsizeæœ‰ä»€ä¹ˆç”¨
   };
   RID_Owner<RenderPipeline> render_pipeline_owner;
 
@@ -826,7 +826,7 @@ class RenderingDevice : public RenderingDeviceCommons {
 
   Vector<uint8_t> _load_pipeline_cache();
   /// @brief 
-  /// @param p_closing ¹Ø±ÕÈÎÎñ 
+  /// @param p_closing å…³é—­ä»»åŠ¡ 
   void _update_pipeline_cache(bool p_closing = false);
   static void _save_pipeline_cache(void* p_data);
 
@@ -837,8 +837,8 @@ class RenderingDevice : public RenderingDeviceCommons {
     Vector<uint32_t> set_formats;
     RDD::PipelineID driver_id;
     uint32_t push_constant_size = 0;
-    uint32_t local_group_size[3] = {0, 0, 0};  // Çø±ğÊÇlocal group
-  };  // ¿ÉÄÜÓĞ¸ü¶à
+    uint32_t local_group_size[3] = {0, 0, 0};  // åŒºåˆ«æ˜¯local group
+  };  // å¯èƒ½æœ‰æ›´å¤š
 
   RID_Owner<ComputePipeline> compute_pipeline_owner;
 
@@ -865,7 +865,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   // information used for validation. This
   // validation is cheap so most of it can
   // also run in release builds.
-  // @brief DrawList£ºÊÓ¿Ú£¬×´Ì¬£¨¹ÜÏß¡¢shader¡¢driver¡¢vertexºÍindex£©
+  // @brief DrawListï¼šè§†å£ï¼ŒçŠ¶æ€ï¼ˆç®¡çº¿ã€shaderã€driverã€vertexå’Œindexï¼‰
 
   struct DrawList {
     Rect2i viewport;
@@ -917,7 +917,7 @@ class RenderingDevice : public RenderingDeviceCommons {
       bool pipeline_push_constant_supplied = false;
     } validation;
 #else
-    struct Validation { // validationÖ»°üÀ¨vertex array sizeºÍ index array size
+    struct Validation { // validationåªåŒ…æ‹¬vertex array sizeå’Œ index array size
       uint32_t vertex_array_size = 0;
       uint32_t index_array_count = 0;
     } validation;
@@ -954,7 +954,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   void _draw_list_free(Rect2i* r_last_viewport = nullptr);
 
  public:
-  /// @brief screen drawlist, Ê¹ÓÃscreen_framebuffers
+  /// @brief screen drawlist, ä½¿ç”¨screen_framebuffers
   /// @param p_screen 
   /// @param p_clear_color 
   /// @return 
@@ -1042,7 +1042,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   /***********************/
 	/**** COMMAND GRAPH ****/
 	/***********************/
-  // ÔÚÕâÀïĞÂ½¨ resource_tracker
+  // åœ¨è¿™é‡Œæ–°å»º resource_tracker
 	bool _texture_make_mutable(Texture *p_texture, RID p_texture_id);
 	bool _buffer_make_mutable(Buffer *p_buffer, RID p_buffer_id);
 	bool _vertex_array_make_mutable(VertexArray *p_vertex_array, RID p_resource_id, RDG::ResourceTracker *p_resource_tracker);
@@ -1117,7 +1117,7 @@ class RenderingDevice : public RenderingDeviceCommons {
 
     // Swap chains prepared for drawing during the frame that must be
     // presented.
-    LocalVector<RDD::SwapChainID> swap_chains_to_present; // ½»»»Á´, ÎªÊ²Ã´Ò»Ö¡ÖĞ»áÓĞ¶à¸ö½»»»Á´£¿
+    LocalVector<RDD::SwapChainID> swap_chains_to_present; // äº¤æ¢é“¾, ä¸ºä»€ä¹ˆä¸€å¸§ä¸­ä¼šæœ‰å¤šä¸ªäº¤æ¢é“¾ï¼Ÿ
     // Extra command buffer pool used for driver workarounds.
 		RDG::CommandBufferPool command_buffer_pool;
     struct Timestamp {
@@ -1125,7 +1125,7 @@ class RenderingDevice : public RenderingDeviceCommons {
       uint64_t value = 0;
     };
 
-    RDD::QueryPoolID timestamp_pool;  // // Ó¦¸ÃÊÇÓÃÀ´²éÑ¯ĞÔÄÜ±íÏÖµÄ
+    RDD::QueryPoolID timestamp_pool;  // // åº”è¯¥æ˜¯ç”¨æ¥æŸ¥è¯¢æ€§èƒ½è¡¨ç°çš„
 
     TightLocalVector<String> timestamp_names;
     TightLocalVector<uint64_t> timestamp_cpu_values;
@@ -1137,7 +1137,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     uint64_t index = 0;
   };
 
-  uint32_t max_timestamp_query_elements = 0; // Èç¹ûÕâÖÖ²»³õÊ¼»¯£¬±àÒëÆ÷¾Í»áÌáÊ¾Î´³õÊ¼»¯´íÎó
+  uint32_t max_timestamp_query_elements = 0; // å¦‚æœè¿™ç§ä¸åˆå§‹åŒ–ï¼Œç¼–è¯‘å™¨å°±ä¼šæç¤ºæœªåˆå§‹åŒ–é”™è¯¯
 
   int frame = 0;
   TightLocalVector<Frame> frames;
@@ -1230,7 +1230,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   }
   // 
   ~RenderingDevice() {}
-  void finalize();  // Ö÷ÒªÇåÀídependency graph
+  void finalize();  // ä¸»è¦æ¸…ç†dependency graph
   void free(RID p_id);
 };
 typedef RenderingDevice RD;

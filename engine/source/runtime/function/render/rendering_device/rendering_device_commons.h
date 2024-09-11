@@ -251,7 +251,7 @@ namespace lain {
 	/*****************/
 	/**** TEXTURE ****/
 	/*****************/
-		// texture2d arrayºÍ3d»¹ÊÇÓĞËù²»Í¬µÄ
+		// texture2d arrayå’Œ3dè¿˜æ˜¯æœ‰æ‰€ä¸åŒçš„
 		enum TextureType {
 			TEXTURE_TYPE_1D,
 			TEXTURE_TYPE_2D,
@@ -275,7 +275,7 @@ namespace lain {
 		};
 		// VK_IMAGE_USAGE_TRANSFER_SRC_BIT -> TEXTURE_USAGE_CAN_COPY_FROM_BIT, see texture_create
 		// VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR -> TEXTURE_USAGE_VRS_ATTACHMENT_BIT
-		// ¿É±ä×ÅÉ«ÂÊ
+		// å¯å˜ç€è‰²ç‡
 		// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkImageUsageFlagBits.html
 		ENUM(TextureMisc, Enable) {
 			TEXTURE_MISC_GENERATE_MIPS_BIT = 1 << 0,
@@ -319,7 +319,7 @@ namespace lain {
 			uint32_t mipmaps = 1;
 			TextureType texture_type = TEXTURE_TYPE_2D;
 			TextureSamples samples = TEXTURE_SAMPLES_1;
-			uint32_t usage_bits = 0; // »ù±¾ÊÇTextureUsageBits
+			uint32_t usage_bits = 0; // åŸºæœ¬æ˜¯TextureUsageBits
 			BitField<TextureMisc> misc;
 			Vector<DataFormat> shareable_formats;
 			bool is_resolve_buffer = false;
@@ -349,8 +349,8 @@ namespace lain {
 			TEXTURE_SWIZZLE_A,
 			TEXTURE_SWIZZLE_MAX
 		};
-		// Ä¿Ç°Ö§³ÖµÄÇĞÆ¬ÀàĞÍ
-		//ÓÃ×÷imageview
+		// ç›®å‰æ”¯æŒçš„åˆ‡ç‰‡ç±»å‹
+		//ç”¨ä½œimageview
 		enum TextureSliceType {
 			TEXTURE_SLICE_2D,
 			TEXTURE_SLICE_CUBEMAP,
@@ -474,9 +474,9 @@ namespace lain {
 			UNIFORM_TYPE_TEXTURE_BUFFER, // Buffer texture (or TBO, textureBuffer type).
 			UNIFORM_TYPE_SAMPLER_WITH_TEXTURE_BUFFER, // Buffer texture with a sampler(or TBO, samplerBuffer type).
 			UNIFORM_TYPE_IMAGE_BUFFER, // Texel buffer, (imageBuffer type), for compute mostly.
-			UNIFORM_TYPE_UNIFORM_BUFFER, // Regular uniform buffer (or UBO). ¡¾Ğ¡ĞÍÖ»¶ÁÊı¾İ¡¿
-			UNIFORM_TYPE_DYNAMIC_UNIFORM_BUFFER, // ¡¾dynamic¡¿
-			UNIFORM_TYPE_STORAGE_BUFFER, // Storage buffer ("buffer" qualifier) like UBO, but supports storage, for compute mostly.¡¾²»ÖªµÀ´óĞ¡£¬»òÕßÊÇ¿ÉĞ´µÄÊı¾İ£¬Õû¸ö³¡¾°Ìî³äµ½Ò»¸ö»º³åÇøÖĞ¡¿
+			UNIFORM_TYPE_UNIFORM_BUFFER, // Regular uniform buffer (or UBO). ã€å°å‹åªè¯»æ•°æ®ã€‘
+			UNIFORM_TYPE_DYNAMIC_UNIFORM_BUFFER, // ã€dynamicã€‘
+			UNIFORM_TYPE_STORAGE_BUFFER, // Storage buffer ("buffer" qualifier) like UBO, but supports storage, for compute mostly.ã€ä¸çŸ¥é“å¤§å°ï¼Œæˆ–è€…æ˜¯å¯å†™çš„æ•°æ®ï¼Œæ•´ä¸ªåœºæ™¯å¡«å……åˆ°ä¸€ä¸ªç¼“å†²åŒºä¸­ã€‘
 			UNIFORM_TYPE_INPUT_ATTACHMENT, // Used for sub-pass read/write, for mobile mostly.
 			UNIFORM_TYPE_ACCELERATION_STRUCTURE, // Used for accelerationStructureEXT 
 
@@ -487,7 +487,7 @@ namespace lain {
 		/**** PIPELINE ****/
 		/******************/
 		// https://docs.vulkan.org/samples/latest/samples/performance/specialization_constants/README.html
-		// ±àÒëÆ÷¾²Ì¬Õ¹¿ª
+		// ç¼–è¯‘å™¨é™æ€å±•å¼€
 		enum PipelineSpecializationConstantType {
 			PIPELINE_SPECIALIZATION_CONSTANT_TYPE_BOOL,
 			PIPELINE_SPECIALIZATION_CONSTANT_TYPE_INT,
@@ -605,9 +605,9 @@ namespace lain {
 		// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkPipelineRasterizationStateCreateInfo.html
 		struct PipelineRasterizationState {
 			bool enable_depth_clamp = false;
-			// clamp£¬ÔÚVieport transformÖ®ºó½øĞĞ¡£
+			// clampï¼Œåœ¨Vieport transformä¹‹åè¿›è¡Œã€‚
 			bool discard_primitives = false;
-			// ÊÇ·ñÔÚ¹âÕ¤»¯½×¶ÎÖ®Ç°Á¢¼´¶ªÆúÍ¼Ôª¡£
+			// æ˜¯å¦åœ¨å…‰æ …åŒ–é˜¶æ®µä¹‹å‰ç«‹å³ä¸¢å¼ƒå›¾å…ƒã€‚
 			bool wireframe = false;
 			// Polygon Mode is fill/ line
 			PolygonCullMode cull_mode = POLYGON_CULL_DISABLED;
@@ -615,9 +615,9 @@ namespace lain {
 			bool depth_bias_enabled = false; // bias fragment depth values
 			float depth_bias_constant_factor = 0.0f; // scalar factor controlling the constant depth value added to each fragment
 			float depth_bias_clamp = 0.0f;
-			float depth_bias_slope_factor = 0.0f; // applied to a fragment¡¯s slope in depth bias calculations
+			float depth_bias_slope_factor = 0.0f; // applied to a fragmentâ€™s slope in depth bias calculations
 			float line_width = 1.0f; // width of rasterized line segments
-			uint32_t patch_control_points = 1; // ÔÚÇúÃæÏ¸·ÖÆôÓÃÊ±ÓĞÓÃ
+			uint32_t patch_control_points = 1; // åœ¨æ›²é¢ç»†åˆ†å¯ç”¨æ—¶æœ‰ç”¨
 		};
 		// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkPipelineMultisampleStateCreateInfo.html
 		struct PipelineMultisampleState {
@@ -642,10 +642,10 @@ namespace lain {
 			struct StencilOperationState {
 				StencilOperation fail = STENCIL_OP_ZERO;
 				StencilOperation pass = STENCIL_OP_ZERO;
-				StencilOperation depth_fail = STENCIL_OP_ZERO; // Ö¸¶¨¶ÔÍ¨¹ıÄ£°å²âÊÔµ«Î´Í¨¹ıÉî¶È²âÊÔµÄÑù±¾Ö´ĞĞµÄ²Ù×÷µÄÖµ¡£
+				StencilOperation depth_fail = STENCIL_OP_ZERO; // æŒ‡å®šå¯¹é€šè¿‡æ¨¡æ¿æµ‹è¯•ä½†æœªé€šè¿‡æ·±åº¦æµ‹è¯•çš„æ ·æœ¬æ‰§è¡Œçš„æ“ä½œçš„å€¼ã€‚
 				CompareOperator compare = COMPARE_OP_ALWAYS;
-				uint32_t compare_mask = 0; // CompareMask Ñ¡Ôñ²ÎÓëÄ£°å²âÊÔµÄÎŞ·ûºÅÕûÊıÄ£°åÖµµÄÎ»
-				uint32_t write_mask = 0; // Ñ¡ÔñÓÉÄ£°åÖ¡»º³åÇø¸½¼şÖĞµÄÄ£°å²âÊÔ¸üĞÂµÄÎŞ·ûºÅÕûÊıÄ£°åÖµµÄÎ»¡£
+				uint32_t compare_mask = 0; // CompareMask é€‰æ‹©å‚ä¸æ¨¡æ¿æµ‹è¯•çš„æ— ç¬¦å·æ•´æ•°æ¨¡æ¿å€¼çš„ä½
+				uint32_t write_mask = 0; // é€‰æ‹©ç”±æ¨¡æ¿å¸§ç¼“å†²åŒºé™„ä»¶ä¸­çš„æ¨¡æ¿æµ‹è¯•æ›´æ–°çš„æ— ç¬¦å·æ•´æ•°æ¨¡æ¿å€¼çš„ä½ã€‚
 				uint32_t reference = 0; // reference value that is used in the unsigned stencil comparison.
 			};
 
@@ -699,8 +699,8 @@ namespace lain {
 			// VkPipelineColorBlendAttachmentState
 			Color blend_constant;
 		};
-		// ¶¯Ì¬¹ÜÏß¾ÍÊÇËµÔÚcreateinfoÉèÖÃÖĞµÄ¶ÔÓ¦Öµ»á±»ºöÂÔ£¬±ØĞëÊ¹ÓÃcmdset¶¯Ì¬Ö¸¶¨
-		// vulkan ÌØÓĞ¹¦ÄÜ
+		// åŠ¨æ€ç®¡çº¿å°±æ˜¯è¯´åœ¨createinfoè®¾ç½®ä¸­çš„å¯¹åº”å€¼ä¼šè¢«å¿½ç•¥ï¼Œå¿…é¡»ä½¿ç”¨cmdsetåŠ¨æ€æŒ‡å®š
+		// vulkan ç‰¹æœ‰åŠŸèƒ½
 		enum PipelineDynamicStateFlags {
 			DYNAMIC_STATE_LINE_WIDTH = (1 << 0),
 			DYNAMIC_STATE_DEPTH_BIAS = (1 << 1),
@@ -737,7 +737,7 @@ namespace lain {
 			DEVICE_TYPE_CPU,
 			DEVICE_TYPE_MAX
 		};
-		// Ò»ÖÖÓëµ×²ãAPIÎŞ¹ØµÄ·½Ê½¶¨ÒåµÄµ×²ã×ÊÔ´
+		// ä¸€ç§ä¸åº•å±‚APIæ— å…³çš„æ–¹å¼å®šä¹‰çš„åº•å±‚èµ„æº
 		// Defined in an API-agnostic way.
 	// Some may not make sense for the underlying API; in that case, 0 is returned.
 		enum DriverResource {
@@ -812,7 +812,7 @@ namespace lain {
 			SUPPORTS_FRAGMENT_SHADER_WITH_ONLY_SIDE_EFFECTS,
 		};
 
-		// subgroupÔÊĞí¹²ÏíÊı¾İ
+		// subgroupå…è®¸å…±äº«æ•°æ®
 		enum SubgroupOperations {
 			SUBGROUP_BASIC_BIT = 1,
 			SUBGROUP_VOTE_BIT = 2,
@@ -873,7 +873,7 @@ public:
 		UniformType type = UniformType::UNIFORM_TYPE_MAX;
 		bool writable = false;
 		uint32_t binding = 0;
-		BitField<ShaderStage> stages; // Ò»¸öuniformÄÜÔÚ¶à¸östageÖĞ³öÏÖÂğ£¿
+		BitField<ShaderStage> stages; // ä¸€ä¸ªuniformèƒ½åœ¨å¤šä¸ªstageä¸­å‡ºç°å—ï¼Ÿ
 		uint32_t length = 0; // Size of arrays (in total elements), or ubos (in bytes * total elements).
 
 		bool operator!=(const ShaderUniform& p_other) const {
@@ -899,15 +899,15 @@ public:
 			return false;
 		}
 	};
-	// ¹ÜµÀÌØ»¯ÔÚcreate_render_passÖĞ´«Èë£¬shader±ÈÖ®¶àÁËstage
+	// ç®¡é“ç‰¹åŒ–åœ¨create_render_passä¸­ä¼ å…¥ï¼Œshaderæ¯”ä¹‹å¤šäº†stage
 	struct ShaderSpecializationConstant : public PipelineSpecializationConstant {
 		BitField<ShaderStage> stages;
 
 		bool operator<(const ShaderSpecializationConstant& p_other) const { return constant_id < p_other.constant_id; }
 	};
-	// @todo ¼ÓÈë¹â×·µÄ²¿·Ö
+	// @todo åŠ å…¥å…‰è¿½çš„éƒ¨åˆ†
 	struct ShaderDescription{
-		uint64_t vertex_input_mask = 0; // layout(location)µÄlocation
+		uint64_t vertex_input_mask = 0; // layout(location)çš„location
 		uint32_t fragment_output_mask = 0;
 		bool is_compute = false;
 		uint32_t compute_local_size[3] = {};
@@ -921,7 +921,7 @@ public:
 	struct ShaderReflection : public ShaderDescription {
 		BitField<ShaderStage> stages;
 		BitField<ShaderStage> push_constant_stages;
-	}; // ¿ÉÄÜËµreflectionµÄ²¿·ÖÊÇ¸öÄÚ²¿µÄ¶«Î÷£¬²»Ó¦¸Ã±©Â¶¸øÓÃ»§
+	}; // å¯èƒ½è¯´reflectionçš„éƒ¨åˆ†æ˜¯ä¸ªå†…éƒ¨çš„ä¸œè¥¿ï¼Œä¸åº”è¯¥æš´éœ²ç»™ç”¨æˆ·
 
 	};
 } // namespace lain

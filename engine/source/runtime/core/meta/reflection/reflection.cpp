@@ -10,11 +10,11 @@ namespace lain
 {
     namespace Reflection 
     {
-        // @TODO°Ñconst char*, string»»³ÉStringNameÒÔ½øĞĞ¸ßĞ§±È½Ï
+        // @TODOæŠŠconst char*, stringæ¢æˆStringNameä»¥è¿›è¡Œé«˜æ•ˆæ¯”è¾ƒ
 
         const char* k_unknown_type = "UnknownType";
         const char* k_unknown      = "Unknown";
-        // Ö»ÄÜÔÚÕâ¸öÎÄ¼şÀïĞ´
+        // åªèƒ½åœ¨è¿™ä¸ªæ–‡ä»¶é‡Œå†™
         static std::map<std::string, ClassFunctionTuple*>       m_class_map;
         static std::multimap<std::string, FieldFunctionTuple*>  m_field_map;
         static std::multimap<std::string, MethodFunctionTuple*> m_method_map;
@@ -181,7 +181,7 @@ namespace lain
         }
 
         ReflectionInstance TypeMeta::newFromJson(const Json& json_context){
-            // ÒªÇó¸ñÊ½±ØĞëÕıÈ·
+            // è¦æ±‚æ ¼å¼å¿…é¡»æ­£ç¡®
             std::string type_name = json_context["$typeName"].string_value();
             return newFromNameAndJson(type_name, json_context["$context"]);
         }

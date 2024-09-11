@@ -10,11 +10,11 @@ class DirAccessWindows :public DirAccess {
 	enum {
 		MAX_DRIVES = 26
 	};
-	// Windows¶ÔdirµÄÒýÓÃ
+	// Windowså¯¹dirçš„å¼•ç”¨
 	DirAccessWindowsPrivate* p = nullptr;
 
 	/* Windows stuff */
-	// drive£ºÇý¶¯ÅÌ
+	// driveï¼šé©±åŠ¨ç›˜
 
 	char drives[MAX_DRIVES] = { 0 }; // a-z:
 	int drive_count = 0;

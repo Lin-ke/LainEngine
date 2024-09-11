@@ -18,7 +18,7 @@ namespace lain
     template<typename T, typename U, typename = void>
     struct is_safely_castable : std::false_type
     {};
-    // ±àÒëÆ÷×ª»»£¬µ«ÊÇÒıÇæÖĞ´óÁ¿µÄÊÇÔËĞĞÆÚ×ª»»
+    // ç¼–è¯‘å™¨è½¬æ¢ï¼Œä½†æ˜¯å¼•æ“ä¸­å¤§é‡çš„æ˜¯è¿è¡ŒæœŸè½¬æ¢
     template<typename T, typename U>
     struct is_safely_castable<T, U, std::void_t<decltype(static_cast<U>(std::declval<T>()))>> : std::true_type
     {};
@@ -216,12 +216,12 @@ namespace lain
             const char*         m_element_type_name;
         };
 
-        // @TODO ÔõÃ´ÕıÈ·¹ÜÀíreflection instanceµÄÉúÃüÖÜÆÚ
+        // @TODO æ€ä¹ˆæ­£ç¡®ç®¡ç†reflection instanceçš„ç”Ÿå‘½å‘¨æœŸ
         class ReflectionInstance
         {
         public:
-            ReflectionInstance(TypeMeta meta, void* instance) : m_meta(meta), m_instance(instance) {} // ´øÒ»¸öÖ¸ÕëµÄÀàĞÍĞÅÏ¢ @TODO¿ÉÒÔ¿´¿´JavaÕâÖÖÓïÑÔÊÇÔõÃ´×öµÄ
-            //@TODO vectorÊÇcowµÄ£»»¹ÓĞ¸öÖ¸Õë£¬Ó¦¸ÃÃ»ÓĞ¶îÍâ¿ªÏú£¬ÕâÀïÒÔºó¿´¿´
+            ReflectionInstance(TypeMeta meta, void* instance) : m_meta(meta), m_instance(instance) {} // å¸¦ä¸€ä¸ªæŒ‡é’ˆçš„ç±»å‹ä¿¡æ¯ @TODOå¯ä»¥çœ‹çœ‹Javaè¿™ç§è¯­è¨€æ˜¯æ€ä¹ˆåšçš„
+            //@TODO vectoræ˜¯cowçš„ï¼›è¿˜æœ‰ä¸ªæŒ‡é’ˆï¼Œåº”è¯¥æ²¡æœ‰é¢å¤–å¼€é”€ï¼Œè¿™é‡Œä»¥åçœ‹çœ‹
             ReflectionInstance (ReflectionInstance&& r_val) noexcept: m_meta(r_val.m_meta), m_instance(r_val.m_instance) {
                 r_val.m_instance = nullptr; // is it necessary?
             }

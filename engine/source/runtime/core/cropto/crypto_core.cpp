@@ -38,7 +38,7 @@ namespace lain {
 		}
 		return OK;
 	}
-	// ¸ù¾Ý»ñÈ¡µÄìØ£¿Öµ¼ÓÃÜ
+	// æ ¹æ®èŽ·å–çš„ç†µï¼Ÿå€¼åŠ å¯†
 	int CryptoCore::RandomGenerator::_entropy_poll(void* p_data, unsigned char* r_buffer, size_t p_len, size_t* r_len) {
 		*r_len = 0;
 		Error err = OS::GetSingleton()->GetEntropy(r_buffer, p_len);

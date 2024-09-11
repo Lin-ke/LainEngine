@@ -18,8 +18,8 @@ namespace lain {
 	class VariantInternal;
 	class RID;
 	class Serializer;
-	// variantµÄÊµÏÖºÍluaÊÇÒ»ÑùµÄ£¬µ«ÊÇ¶àÒ»Ğ©»ù±¾Àà£¬Èç¹ûÖ»ÓĞÊıÑ§ÀàºÍtable¾ÍÊÇluaÁË
-	// ×¢ÒâÓĞÒ»Ğ©ÒıÓÃ¼ÆÊıµÄÇé¿ö¿ÉÄÜ»áµ¼ÖÂÎÊÌâ
+	// variantçš„å®ç°å’Œluaæ˜¯ä¸€æ ·çš„ï¼Œä½†æ˜¯å¤šä¸€äº›åŸºæœ¬ç±»ï¼Œå¦‚æœåªæœ‰æ•°å­¦ç±»å’Œtableå°±æ˜¯luaäº†
+	// æ³¨æ„æœ‰ä¸€äº›å¼•ç”¨è®¡æ•°çš„æƒ…å†µå¯èƒ½ä¼šå¯¼è‡´é—®é¢˜
 	class Variant {
 		friend class VariantInternal;
 		friend class Serializer;
@@ -75,7 +75,7 @@ namespace lain {
 			PACKED_VECTOR4_ARRAY,
 
 			// reflect
-			REFLECTIONINSTANCE, //Reflection instanceÕæµÄÓĞ±ØÒªÂğ£¿
+			REFLECTIONINSTANCE, //Reflection instanceçœŸçš„æœ‰å¿…è¦å—ï¼Ÿ
 			VARIANT_MAX,
 
 
@@ -173,7 +173,7 @@ namespace lain {
 		Variant(const Variant*);
 		Variant(const Variant**);
 
-	struct Pools { // Ê¹ÓÃÕâ¸öAllocator·ÖÅäÕâ¼¸ÖÖÀàĞÍ×ÊÔ´µÄÄÚ´æ
+	struct Pools { // ä½¿ç”¨è¿™ä¸ªAllocatoråˆ†é…è¿™å‡ ç§ç±»å‹èµ„æºçš„å†…å­˜
 		union BucketSmall {
 			BucketSmall() {}
 			~BucketSmall() {}
@@ -225,7 +225,7 @@ namespace lain {
 		Variant duplicate(bool p_deep = false) const;
 		Variant recursive_duplicate(bool p_deep, int recursion_count) const;
 		void set_type(Type p_type) { type = p_type; };
-		// ×°Ïä
+		// è£…ç®±
 		// containers
 		/// Variant transform
 		Variant(const Array& p_array);
@@ -291,7 +291,7 @@ namespace lain {
 
 		Variant() { type = NIL; }
 
-		// ²ğÏä
+		// æ‹†ç®±
 		operator bool() const;
 		operator signed int() const;
 		operator unsigned int() const; // this is the real one

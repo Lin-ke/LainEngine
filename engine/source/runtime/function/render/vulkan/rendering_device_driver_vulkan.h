@@ -12,10 +12,10 @@ namespace lain {
 
 // Design principles:
 // - Vulkan structs are zero-initialized and fields not requiring a non-zero value are omitted (except in cases where expresivity reasons apply).
-// @TODO ÔÚÎ´À´²ÉÓÃÒ»ÖÖ×´Ì¬»úµÄ·½Ê½À´¹ÜÀíÒ»Ğ©×´Ì¬£¬ÀıÈç
-// - ÄÜ·ñset viewport, ÒòÎªÕâĞèÒªÕıÔÚ»æÖÆshader object»òÕß¹ÜÏßÍ¨¹ıdynamic_state_viewport±êÖ¾´´½¨¡£
-// - etc. £¨ÀıÈç£¬ÔÚ°ó¶¨vertex Ö®ºóÊÇ·ñÖØĞÂ°ó¶¨ÁËvertex£¬ÕâÓë»º´æÓĞ¹Ø£¿
-// ²Î¿¼graniteµÄÊµÏÖ£¬ÔÚdrawÃüÁîÊ±µ÷ÓÃflushº¯Êı£¬¡£
+// @TODO åœ¨æœªæ¥é‡‡ç”¨ä¸€ç§çŠ¶æ€æœºçš„æ–¹å¼æ¥ç®¡ç†ä¸€äº›çŠ¶æ€ï¼Œä¾‹å¦‚
+// - èƒ½å¦set viewport, å› ä¸ºè¿™éœ€è¦æ­£åœ¨ç»˜åˆ¶shader objectæˆ–è€…ç®¡çº¿é€šè¿‡dynamic_state_viewportæ ‡å¿—åˆ›å»ºã€‚
+// - etc. ï¼ˆä¾‹å¦‚ï¼Œåœ¨ç»‘å®švertex ä¹‹åæ˜¯å¦é‡æ–°ç»‘å®šäº†vertexï¼Œè¿™ä¸ç¼“å­˜æœ‰å…³ï¼Ÿ
+// å‚è€ƒgraniteçš„å®ç°ï¼Œåœ¨drawå‘½ä»¤æ—¶è°ƒç”¨flushå‡½æ•°ï¼Œã€‚
 class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   /// ---apis
   struct CommandQueue;
@@ -25,8 +25,8 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   /*****************/
   /**** TEXTURE ****/
   /*****************/
-  // ÕâÀïÖ»ÓĞimageview
-  // vk imageËÆºõÃ»ÓĞÊ²Ã´ÓÃ£¬±£´æÔÚcreate_info->imageÀï
+  // è¿™é‡Œåªæœ‰imageview
+  // vk imageä¼¼ä¹æ²¡æœ‰ä»€ä¹ˆç”¨ï¼Œä¿å­˜åœ¨create_info->imageé‡Œ
 
   struct TextureInfo {
     VkImageView vk_view = VK_NULL_HANDLE;
@@ -43,7 +43,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   virtual TextureID texture_create_from_extension(uint64_t p_native_texture, TextureType p_type, DataFormat p_format,
                                                   uint32_t p_array_layers, bool p_depth_stencil) override final;
   virtual TextureID texture_create_shared(TextureID p_original_texture, const TextureView& p_view) override final;
-  // Çø±ğÔÚsub resource rangeºÍview typeÉÏ
+  // åŒºåˆ«åœ¨sub resource rangeå’Œview typeä¸Š
   virtual TextureID texture_create_shared_from_slice(TextureID p_original_texture, const TextureView& p_view,
                                                      TextureSliceType p_slice_type, uint32_t p_layer, uint32_t p_layers,
                                                      uint32_t p_mipmap, uint32_t p_mipmaps) override final;
@@ -57,7 +57,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   // virtual bool texture_can_make_shared_with_format(TextureID p_texture, DataFormat p_format, bool &r_raw_reinterpretation) override final;
   virtual BitField<TextureUsageBits> texture_get_usages_supported_by_format(DataFormat p_format, bool p_cpu_readable) override;
 
-  // ÒÑÓĞVKimage,´´½¨view
+  // å·²æœ‰VKimage,åˆ›å»ºview
 
  private:
   VkSampleCountFlagBits _ensure_supported_sample_count(TextureSamples p_requested_sample_count);
@@ -108,7 +108,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   /**** SHADER ****/
   /****************/
  private:
-  // @TODO ¹â×·
+  // @TODO å…‰è¿½
   struct ShaderBinary {
     enum { VERSION = 1 };
     struct DataBinding {
@@ -134,7 +134,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
       uint32_t compute_local_size[3] = {};
       uint32_t set_count = 0;  // uniform set count
       uint32_t push_constant_size = 0;
-      uint32_t vk_push_constant_stages_mask = 0;  // push constantsµÄshader stage
+      uint32_t vk_push_constant_stages_mask = 0;  // push constantsçš„shader stage
       uint32_t stage_count = 0;
       uint32_t shader_name_len = 0;
     };
@@ -142,16 +142,16 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
 
   struct ShaderInfo {
     VkShaderStageFlags vk_push_constant_stages = 0;
-    TightLocalVector<VkPipelineShaderStageCreateInfo> vk_stages_create_info; // °üº¬shadermodel ºÍstage
-    TightLocalVector<VkDescriptorSetLayout> vk_descriptor_set_layouts;  // ĞèÒª¸ù¾İShaderReflectionData´´½¨
-    VkPipelineLayout vk_pipeline_layout = VK_NULL_HANDLE;               // pipeline layoutÊÇÓÉshader¿ØÖÆµÄ
+    TightLocalVector<VkPipelineShaderStageCreateInfo> vk_stages_create_info; // åŒ…å«shadermodel å’Œstage
+    TightLocalVector<VkDescriptorSetLayout> vk_descriptor_set_layouts;  // éœ€è¦æ ¹æ®ShaderReflectionDataåˆ›å»º
+    VkPipelineLayout vk_pipeline_layout = VK_NULL_HANDLE;               // pipeline layoutæ˜¯ç”±shaderæ§åˆ¶çš„
   };
 
  public:
- // Í¨¹ıspirv·´Éä³öÄÚÈİ£¬¸ù¾İ·´ÉäÌîshader description£¬Ñ¹Ëõspirv ºÍ description µ½ binaryÀï£¬·µ»Øbinary
+ // é€šè¿‡spirvåå°„å‡ºå†…å®¹ï¼Œæ ¹æ®åå°„å¡«shader descriptionï¼Œå‹ç¼©spirv å’Œ description åˆ° binaryé‡Œï¼Œè¿”å›binary
   virtual Vector<uint8_t> shader_compile_binary_from_spirv(VectorView<ShaderStageSPIRVData> p_spirv,
                                                            const String& p_shader_name) override final;
-  // ¸ù¾İÉÏÃæµÄ binary Ìî ShaderInfo
+  // æ ¹æ®ä¸Šé¢çš„ binary å¡« ShaderInfo
   // vkCreateDescriptorSetLayout    
   // vkCreatePipelineLayout        
   // vkCreateShaderModule
@@ -165,7 +165,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   /*********************/
 
   static const uint32_t MAX_UNIFORM_POOL_ELEMENT = 65535;
-  // ÎªÃ¿¸öÃèÊö·û¼¯=[ÃèÊö·ûÀàĞÍ+ÊıÁ¿]´´½¨Ò»¸ö³Ø
+  // ä¸ºæ¯ä¸ªæè¿°ç¬¦é›†=[æè¿°ç¬¦ç±»å‹+æ•°é‡]åˆ›å»ºä¸€ä¸ªæ± 
 
   struct DescriptorSetPoolKey {
     uint16_t uniform_type[UNIFORM_TYPE_MAX] = {};
@@ -176,7 +176,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   };
   uint32_t max_descriptor_sets_per_pool = 0;
   using DescriptorSetPools =
-      RBMap<DescriptorSetPoolKey, HashMap<VkDescriptorPool, uint32_t>>;  // ³ØºÍÒıÓÃ´ÎÊı£¬³¬¹ıMaxÔòĞèÒªĞÂµÄ£¨ÏàÍ¬µÄ£©³Ø
+      RBMap<DescriptorSetPoolKey, HashMap<VkDescriptorPool, uint32_t>>;  // æ± å’Œå¼•ç”¨æ¬¡æ•°ï¼Œè¶…è¿‡Maxåˆ™éœ€è¦æ–°çš„ï¼ˆç›¸åŒçš„ï¼‰æ± 
   struct UniformSetInfo {
     VkDescriptorSet vk_descriptor_set = VK_NULL_HANDLE;
     VkDescriptorPool vk_descriptor_pool = VK_NULL_HANDLE;
@@ -286,13 +286,13 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   struct CommandQueue {
     LocalVector<VkSemaphore> present_semaphores;
     LocalVector<VkSemaphore> image_semaphores;
-    LocalVector<SwapChain*> image_semaphores_swap_chains;  // --- image semaphoreµÄindex µ½ swap chain
-    LocalVector<uint32_t> pending_semaphores_for_execute; // ÏÂÒ»´ÎÌá½»Ç°ĞèÒªµÈ´ı
-    LocalVector<uint32_t> pending_semaphores_for_fence;  // ĞèÒª¸øfenceĞÅºÅµÄĞÅºÅÁ¿
-    LocalVector<uint32_t> free_image_semaphores;         // --- ¿ÕÏĞµÄ
+    LocalVector<SwapChain*> image_semaphores_swap_chains;  // --- image semaphoreçš„index åˆ° swap chain
+    LocalVector<uint32_t> pending_semaphores_for_execute; // ä¸‹ä¸€æ¬¡æäº¤å‰éœ€è¦ç­‰å¾…
+    LocalVector<uint32_t> pending_semaphores_for_fence;  // éœ€è¦ç»™fenceä¿¡å·çš„ä¿¡å·é‡
+    LocalVector<uint32_t> free_image_semaphores;         // --- ç©ºé—²çš„
     LocalVector<Pair<Fence*, uint32_t>>
-        image_semaphores_for_fences;  // fence to image_semaphores index£¬ĞèÒª¸øfenceµÄĞÅºÅÁ¿¼ÓÈëÕâÀï
-    uint32_t queue_family = 0;        // Í¨¹ıÕâ¸öË÷Òıµ½vkqueue
+        image_semaphores_for_fences;  // fence to image_semaphores indexï¼Œéœ€è¦ç»™fenceçš„ä¿¡å·é‡åŠ å…¥è¿™é‡Œ
+    uint32_t queue_family = 0;        // é€šè¿‡è¿™ä¸ªç´¢å¼•åˆ°vkqueue
     uint32_t queue_index = 0;
     uint32_t present_semaphore_index = 0;
   };
@@ -332,7 +332,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   /********************/
 
  private:
-  // FrameBufferºÍVKImage¶¼ÊÇÆÁÄ»ËùÓÃµÄ
+  // FrameBufferå’ŒVKImageéƒ½æ˜¯å±å¹•æ‰€ç”¨çš„
   // FrameBuffer hold the Images, Renderpass use the format
   struct SwapChain {
     VkSwapchainKHR vk_swapchain = VK_NULL_HANDLE;
@@ -355,11 +355,11 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   virtual Error swap_chain_resize(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain,
                                   uint32_t p_desired_framebuffer_count) override final;
   // acquire next image
-  // ²Î¿¼vulakn spec: ¶Ô¿ÉÕ¹Ê¾Í¼ÏñµÄÊ¹ÓÃ£¬±ØĞëÔÚvkAcquireNextImageKHR()Ö®ºó£¬Óë±»vkQueuePresentKHR()ÊÍ·ÅÖ®Ç°¡£
+  // å‚è€ƒvulakn spec: å¯¹å¯å±•ç¤ºå›¾åƒçš„ä½¿ç”¨ï¼Œå¿…é¡»åœ¨vkAcquireNextImageKHR()ä¹‹åï¼Œä¸è¢«vkQueuePresentKHR()é‡Šæ”¾ä¹‹å‰ã€‚
   virtual FramebufferID swap_chain_acquire_framebuffer(CommandQueueID p_cmd_queue, SwapChainID p_swap_chain,
                                                        bool& r_resize_required) override final;
   virtual RenderPassID swap_chain_get_render_pass(SwapChainID p_swap_chain) override final;
-  virtual DataFormat swap_chain_get_format(SwapChainID p_swap_chain) override final;  // ÆäÊµ¾ÍÊÇRGBA8»òÕßBGRA8
+  virtual DataFormat swap_chain_get_format(SwapChainID p_swap_chain) override final;  // å…¶å®å°±æ˜¯RGBA8æˆ–è€…BGRA8
 
   // external wait needed!
   virtual void swap_chain_free(SwapChainID p_swap_chain) override final;
@@ -378,8 +378,8 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
  private:
   struct PipelineCacheHeader {
     uint32_t magic = 0;
-    uint32_t data_size = 0; // ¸üĞÂĞèÒªĞŞ¸Ä
-    uint64_t data_hash = 0; // ¸üĞÂĞèÒªĞŞ¸Ä
+    uint32_t data_size = 0; // æ›´æ–°éœ€è¦ä¿®æ”¹
+    uint64_t data_hash = 0; // æ›´æ–°éœ€è¦ä¿®æ”¹
     uint32_t vendor_id = 0;
     uint32_t device_id = 0;
     uint32_t driver_version = 0;
@@ -408,26 +408,26 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
                                             VectorView<PipelineSpecializationConstant> p_specialization_constants) override final;
 
   virtual void pipeline_free(PipelineID p_pipeline) override final;
-  // --- binding --- // ¹ÜÏßĞèÒª°ó¶¨µÄÊÇpush constants
+  // --- binding --- // ç®¡çº¿éœ€è¦ç»‘å®šçš„æ˜¯push constants
 
   virtual void command_bind_push_constants(CommandBufferID p_cmd_buffer, ShaderID p_shader, uint32_t p_first_index,
                                            VectorView<uint32_t> p_data) override final;
 
   // --- cache ---
-  /// @brief ¸ù¾İp_data´´½¨pipeline cache£¬ÆäÖĞheaderÒÑ¾­³õÊ¼»¯
+  /// @brief æ ¹æ®p_dataåˆ›å»ºpipeline cacheï¼Œå…¶ä¸­headerå·²ç»åˆå§‹åŒ–
   /// @param p_data 
   /// @return 
   virtual bool pipeline_cache_create(const Vector<uint8_t>& p_data) override final;
   virtual void pipeline_cache_free() override final;
   virtual size_t pipeline_cache_query_size() override final;
-  /// @brief vkGetPipelineCacheData£¬²¢ÇÒĞŞ¸Äheader
+  /// @brief vkGetPipelineCacheDataï¼Œå¹¶ä¸”ä¿®æ”¹header
   /// @return 
   virtual Vector<uint8_t> pipeline_cache_serialize() override final;
   /*******************/
   /**** RENDERING ****/
   /*******************/
   // ----- SUBPASS -----
-  // ÕâÀï·â×°µÄÊ®·ÖÈç·â
+  // è¿™é‡Œå°è£…çš„ååˆ†å¦‚å°
   virtual RenderPassID render_pass_create(VectorView<Attachment> p_attachments, VectorView<Subpass> p_subpasses,
                                           VectorView<SubpassDependency> p_subpass_dependencies,
                                           uint32_t p_view_count) override final;
@@ -469,7 +469,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
                                                   uint32_t p_max_draw_count, uint32_t p_stride) override final;
 
   // Buffer binding.
-  // Ö÷Òª¾ÍÊÇ°ó¶¨¶¥µãÊı×éºÍË÷ÒıÊı×é
+  // ä¸»è¦å°±æ˜¯ç»‘å®šé¡¶ç‚¹æ•°ç»„å’Œç´¢å¼•æ•°ç»„
   virtual void command_render_bind_vertex_buffers(CommandBufferID p_cmd_buffer, uint32_t p_binding_count,
                                                   const BufferID* p_buffers, const uint64_t* p_offsets) override final;
   virtual void command_render_bind_index_buffer(CommandBufferID p_cmd_buffer, BufferID p_buffer, IndexBufferFormat p_format,
@@ -509,7 +509,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
  private:
   struct Queue {
     VkQueue queue = VK_NULL_HANDLE;
-    uint32_t virtual_count = 0;  // Õâ¸ö¶ÓÁĞ±»Ê¹ÓÃµÄ´ÎÊı £¬Ôİ²»ÓÃ
+    uint32_t virtual_count = 0;  // è¿™ä¸ªé˜Ÿåˆ—è¢«ä½¿ç”¨çš„æ¬¡æ•° ï¼Œæš‚ä¸ç”¨
     BinaryMutex submit_mutex;
   };
   struct ShaderCapabilities {
@@ -527,7 +527,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
 
     Size2i texel_size;  // The texel size we'll use
   };
-  // multi-view capabilities ±»·Åµ½ÁË¸üÉÏÒ»²ã£¬ÒòÎª¸üÍ¨ÓÃ°É
+  // multi-view capabilities è¢«æ”¾åˆ°äº†æ›´ä¸Šä¸€å±‚ï¼Œå› ä¸ºæ›´é€šç”¨å§
   struct StorageBufferCapabilities {
     bool storage_buffer_16_bit_access_is_supported = false;
     bool uniform_and_storage_buffer_16_bit_access_is_supported = false;
@@ -580,13 +580,14 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   VmaAllocator allocator = nullptr;
   HashMap<uint32_t, VmaPool> small_allocs_pools;  // index to pool
   VmaPool _find_or_create_small_allocs_pool(uint32_t p_mem_type_index);
+	BufferID breadcrumb_buffer;
 
   /// --extensions ---
   VkPhysicalDeviceProperties physical_device_properties = {};
   HashSet<CharString> enabled_device_extension_names;
   HashMap<CharString, bool> requested_device_extensions;
 
-  // ÎÒ¾õµÃÕâ¸öĞÎÊ½±È½ÏºÃ
+  // æˆ‘è§‰å¾—è¿™ä¸ªå½¢å¼æ¯”è¾ƒå¥½
   struct QueueFamilyInfo {
     TightLocalVector<Queue> physical_queue;
     VkQueueFamilyProperties properties;
@@ -600,7 +601,6 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   uint32_t present_frame_latency = 0;
 
   virtual Error initialize(uint32_t p_device_index, uint32_t p_frame_count);
-  void finatialize();
 
   virtual void set_object_name(ObjectType p_type, ID p_driver_id, const String& p_name) override;
 
@@ -629,7 +629,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
 		virtual uint64_t get_total_memory_used() override final;
 
   /// --- limits --- 
-  virtual uint64_t limit_get(Limit p_limit); // ·­Òëlimitµ½physical_device_properties.limits
+  virtual uint64_t limit_get(Limit p_limit); // ç¿»è¯‘limitåˆ°physical_device_properties.limits
   const RDD::Capabilities& get_capabilities() const { return device_capabilities; }
   virtual const RDD::MultiviewCapabilities& get_multiview_capabilities() override final { return multiview_capabilities; }
   RenderingDeviceDriverVulkan(RenderingContextDriverVulkan* p_context_driver);

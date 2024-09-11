@@ -41,7 +41,7 @@ m_qualified_name(Utils::getTypeNameWithoutNamespace(cursor.getType())), m_parent
 int ENUM_::anonymous_count = 0;
 
 
-// Ä¬ÈÏ¿ªÆô£¬³ı·ÇMETA(DISABLE)
+// é»˜è®¤å¼€å¯ï¼Œé™¤éMETA(DISABLE)
 bool ENUM_::isAccessible(void) const { 
     return
         m_meta_data.getFlag(NativeProperty::Enable) && m_namespace[0]=="lain";
@@ -49,12 +49,12 @@ bool ENUM_::isAccessible(void) const {
 
 void ENUM_::generateData(Mustache::data& enum_define) const {
 
-    if (m_name == "") { // ÄäÃûÃ¶¾Ù
+    if (m_name == "") { // åŒ¿åæšä¸¾
         enum_define.set("enum_is_anonymous", true);
         std::string enum_useful_name = "AnonymousEnum" + std::to_string(anonymous_count++);
         enum_define.set("enum_useful_name", enum_useful_name);
     }
-    else { // ·ÇÄäÃûÃ¶¾Ù
+    else { // éåŒ¿åæšä¸¾
 
         enum_define.set("enum_is_anonymous", false);
         Mustache::data enum_value_defines(Mustache::data::type::list);

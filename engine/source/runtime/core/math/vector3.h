@@ -503,7 +503,7 @@ namespace lain
         }
         
         bool is_normalized() const {
-            return Math::is_equal_approx(length_squared(), 1, (real_t)UNIT_EPSILON); // ÕâÀïÈİÈÌµÄ¾«¶È´óÒ»µã
+            return Math::is_equal_approx(length_squared(), 1, (real_t)UNIT_EPSILON); // è¿™é‡Œå®¹å¿çš„ç²¾åº¦å¤§ä¸€ç‚¹
 
         }
 

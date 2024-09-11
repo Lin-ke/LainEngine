@@ -7,8 +7,8 @@
 #include "core/typedefs.h"
 namespace lain {
 /// <summary>
-/// Ë«ÏòÁ´±í£¬Í¬Ê±¾ßÓĞ¶Ô_firstºÍ_lastµÄË÷Òı
-/// add²åµ½Ç°Ãæ£¬last²åµ½ºóÃæ
+/// åŒå‘é“¾è¡¨ï¼ŒåŒæ—¶å…·æœ‰å¯¹_firstå’Œ_lastçš„ç´¢å¼•
+/// addæ’åˆ°å‰é¢ï¼Œlastæ’åˆ°åé¢
 /// </summary>
 /// <typeparam name="T"></typeparam>
 
@@ -20,7 +20,7 @@ public:
 		SelfList<T> *_last = nullptr;
 
 	public:
-		// ÔÚfirstÇ°Ãæ²åÈë
+		// åœ¨firstå‰é¢æ’å…¥
 		void add(SelfList<T> *p_elem) {
 			ERR_FAIL_COND(p_elem->_root);
 
@@ -37,7 +37,7 @@ public:
 
 			_first = p_elem;
 		}
-		// ÔÚlastºóÃæ²åÈë
+		// åœ¨laståé¢æ’å…¥
 		void add_last(SelfList<T> *p_elem) {
 			ERR_FAIL_COND(p_elem->_root);
 

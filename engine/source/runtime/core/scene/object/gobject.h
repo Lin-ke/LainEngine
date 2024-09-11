@@ -17,10 +17,10 @@ namespace lain {
     SAFE_FLAG_TYPE_PUN_GUARANTEES
         SAFE_NUMERIC_TYPE_PUN_GUARANTEES(uint32_t)
 
-        // 1. Parent; Children; SiblingµÄÊ÷¹ØÏµ
-        // 2. Owner,Ê÷ÉÏµÄ½Úµã£¬µ«ÊÇÓĞ±£´æÏà¹Ø
-        // 3. Grouped, ÀàËÆtag£¬ÓĞ×é¹ØÏµ
-        // 4. Process ²¿·Ö£¬ÓĞProcessGroup¹ØÏµ
+        // 1. Parent; Children; Siblingçš„æ ‘å…³ç³»
+        // 2. Owner,æ ‘ä¸Šçš„èŠ‚ç‚¹ï¼Œä½†æ˜¯æœ‰ä¿å­˜ç›¸å…³
+        // 3. Grouped, ç±»ä¼¼tagï¼Œæœ‰ç»„å…³ç³»
+        // 4. Process éƒ¨åˆ†ï¼Œæœ‰ProcessGroupå…³ç³»
     REFLECTION_TYPE(GObject);
     class GObject: public TickObject{
         friend class Serializer;
@@ -33,7 +33,7 @@ namespace lain {
             INTERNAL_MODE_DISABLED,
             INTERNAL_MODE_FRONT,
             INTERNAL_MODE_BACK,
-        }; // ÔÚsiblingsÇ¿ÖÆ¿¿Ç°/¿¿ºó
+        }; // åœ¨siblingså¼ºåˆ¶é å‰/é å
     
         struct GroupData {
             bool persistent = false;
@@ -41,36 +41,36 @@ namespace lain {
         };
         META(WhiteListFields)
         struct Data {
-            String scene_file_path; // Èç¹û³¡¾°ÊÇ´ÓÎÄ¼şÊµÀı»¯À´µÄ
-            Ref<SceneState> instance_state; // ÊµÀı³¡¾°µÄscenestate
-            Ref<SceneState> inherited_state; // ¼Ì³Ğ³¡¾°µÄscenestate
+            String scene_file_path; // å¦‚æœåœºæ™¯æ˜¯ä»æ–‡ä»¶å®ä¾‹åŒ–æ¥çš„
+            Ref<SceneState> instance_state; // å®ä¾‹åœºæ™¯çš„scenestate
+            Ref<SceneState> inherited_state; // ç»§æ‰¿åœºæ™¯çš„scenestate
 
 
             int depth = -1;
             StringName name;
             GObject* parent = nullptr;
-            GObject* owner = nullptr; // ¼ÇÂ¼Ë­ÊµÀı»¯ÁËÊ²Ã´
-            //bool is_prefab = false; // ºÍscene_file_pathÓ¦¸Ã×÷ÓÃÒ»Ñù
-            bool editable_instance : 1; // £¿
-            bool display_folded : 1;    // £¿
+            GObject* owner = nullptr; // è®°å½•è°å®ä¾‹åŒ–äº†ä»€ä¹ˆ
+            //bool is_prefab = false; // å’Œscene_file_pathåº”è¯¥ä½œç”¨ä¸€æ ·
+            bool editable_instance : 1; // ï¼Ÿ
+            bool display_folded : 1;    // ï¼Ÿ
             
             bool parent_owned : 1;
             bool in_constructor : 1;
             bool use_placeholder : 1;
             
             HashMap<StringName, GObject*> children;
-            HashMap<StringName, Component*> components;  // Ã¿ÖÖcomponent ×î¶àÒ»¸ö;  ÀàĞÍÃû-components
+            HashMap<StringName, Component*> components;  // æ¯ç§component æœ€å¤šä¸€ä¸ª;  ç±»å‹å-components
 
-            HashMap<StringName, GObject*> owned_unique_gobjects; // ¶ù×ÓÖĞÊ¹ÓÃ%·ÃÎÊ£¬ÎŞĞèÂ·¾¶
+            HashMap<StringName, GObject*> owned_unique_gobjects; // å„¿å­ä¸­ä½¿ç”¨%è®¿é—®ï¼Œæ— éœ€è·¯å¾„
             bool unique_name_in_owner = false;
-            // chidrencache£¬²»³£ÓÃhashmap
+            // chidrencacheï¼Œä¸å¸¸ç”¨hashmap
             mutable bool children_cache_dirty = true;
             mutable bool components_cache_dirty= true;
 
             mutable LocalVector<GObject*> children_cache;
             mutable LocalVector<Component*> components_cache; // idx get
 
-            mutable int index = -1; // relative to front, normal or back. ÓëchidrenÅÅĞòÓĞ¹Ø
+            mutable int index = -1; // relative to front, normal or back. ä¸chidrenæ’åºæœ‰å…³
             InternalMode internal_mode = INTERNAL_MODE_DISABLED;
             mutable int internal_children_front_count_cache = 0;
             mutable int internal_children_back_count_cache = 0;
@@ -92,8 +92,8 @@ namespace lain {
 
             List<GObject*>::Element* OW = nullptr; // Owned element. head?
             List<GObject*> owned; 
-            HashMap<StringName, GroupData> grouped; // ½Úµã¿ÉÒÔ¼ÓÈëµ½×éÖĞ£¬±ãÓÚ¹ÜÀí
-            // Õâ¸ögroupÎªÉ¶»¹ÊÇsceneTreeÖĞµÄ
+            HashMap<StringName, GroupData> grouped; // èŠ‚ç‚¹å¯ä»¥åŠ å…¥åˆ°ç»„ä¸­ï¼Œä¾¿äºç®¡ç†
+            // è¿™ä¸ªgroupä¸ºå•¥è¿˜æ˜¯sceneTreeä¸­çš„
 
             // view
             Viewport* viewport = nullptr;
@@ -101,7 +101,7 @@ namespace lain {
             
 
 
-        } data; // ·ÀÖ¹Ãû³Æ³åÍ»
+        } data; // é˜²æ­¢åç§°å†²çª
        
         
         GObject* get_child(int p_index, bool p_include_internal = true) const;
@@ -146,7 +146,7 @@ namespace lain {
         Component* get_component(int p_index) const;
         Vector<Component*> get_components() const;
         int get_component_count() const;
-        void add_component(Component*); // »¹ÓĞÒ»Ì×ºÍchildren¶ÔÓ¦µÄ×é¼ş
+        void add_component(Component*); // è¿˜æœ‰ä¸€å¥—å’Œchildrenå¯¹åº”çš„ç»„ä»¶
         // @TODO
         void remove_component(Component* p_child);
         void move_component(Component* p_component, int p_index) ;
@@ -162,13 +162,13 @@ namespace lain {
        
 
         static int orphan_node_count;
-        // WTODO: Process group management ´¦Àí×é¹ÜÀí
+        // WTODO: Process group management å¤„ç†ç»„ç®¡ç†
         
         void _add_all_components_to_ptg();
         void _remove_all_components_from_ptg();
 
         void _add_components_to_ptg();
-        // Ò»¸öÖ¸ÕëºÍÒ»¸öº¯ÊıÖ¸ÕëµÄ´óĞ¡ÊÇÒ»ÑùµÄ°É
+        // ä¸€ä¸ªæŒ‡é’ˆå’Œä¸€ä¸ªå‡½æ•°æŒ‡é’ˆçš„å¤§å°æ˜¯ä¸€æ ·çš„å§
 
         void _remove_tree_from_process_thread_group();
         void _add_tree_to_process_thread_group(GObject* p_owner);
@@ -180,9 +180,9 @@ namespace lain {
         GObject();
         ~GObject();
 
-        // notification»úÖÆ
-        // notification»úÖÆ¿ÉÒÔÓÃÀ´½âñî£¬²¢²»ĞèÒªÔÚÒâ
-        // ¾ÍÓÃÕâ¸önotification×÷ÎªËùÓĞµÄnotification°É
+        // notificationæœºåˆ¶
+        // notificationæœºåˆ¶å¯ä»¥ç”¨æ¥è§£è€¦ï¼Œå¹¶ä¸éœ€è¦åœ¨æ„
+        // å°±ç”¨è¿™ä¸ªnotificationä½œä¸ºæ‰€æœ‰çš„notificationå§
         enum {
             // You can make your own, but don't use the same numbers as other notifications in other nodes.
             NOTIFICATION_ENTER_TREE = 10,
@@ -260,7 +260,7 @@ namespace lain {
         void _acquire_unique_name_in_owner();
         void _validate_child_name(GObject* p_child, bool p_force_readable_name);
         void _set_tree(SceneTree* tree);
-        // Ê¹ÓÃ´«²¥º¯ÊıÒÔÍê³ÉĞŞ¸Ä
+        // ä½¿ç”¨ä¼ æ’­å‡½æ•°ä»¥å®Œæˆä¿®æ”¹
         void _propagate_enter_tree();
         void _propagate_exit_tree();
         void _propagate_ready();
@@ -272,7 +272,7 @@ namespace lain {
         /*LocalVector<Component*> & _get_components() const {
             return data.components_cache;
         }*/
-        // ÅÅĞò½Ó¿Ú
+        // æ’åºæ¥å£
         struct ComparatorByIndex {
             bool operator()(const GObject* p_left, const GObject* p_right) const {
                 static const uint32_t order[3] = { 1, 0, 2 };

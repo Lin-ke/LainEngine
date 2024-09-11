@@ -92,10 +92,10 @@ Class::Class(const Cursor& cursor, const Namespace& current_namespace, int p_cla
             }
                 break;
             case CXCursor_EnumDecl: {
-                // Ã»ÓĞÃüÃû¿Õ¼äµÄÎÊÌâ
+                // æ²¡æœ‰å‘½åç©ºé—´çš„é—®é¢˜
 
                 std::shared_ptr<ENUM_>p_enum = std::make_shared<ENUM_>(child, current_namespace, this);
-                m_enums.emplace_back(p_enum); // Óöµ½ÒÔenum¶¨ÒåµÄÀà¿ÉÄÜÓĞÓÃ
+                m_enums.emplace_back(p_enum); // é‡åˆ°ä»¥enumå®šä¹‰çš„ç±»å¯èƒ½æœ‰ç”¨
                 MetaParser::getSingleton()->addEnumIntoSchema(p_enum);
             }
                 break;
@@ -105,7 +105,7 @@ Class::Class(const Cursor& cursor, const Namespace& current_namespace, int p_cla
             {
                 std::vector<std::string> namespace_with_class = current_namespace;
                 namespace_with_class.push_back(m_name);
-                // ¼ÓÈëschema
+                // åŠ å…¥schema
                 auto class_ptr = std::make_shared<Class>(child, 
                     namespace_with_class, static_cast<int>(current_namespace.size()));
                 MetaParser::getSingleton()->addClassIntoSchema(class_ptr);
@@ -124,9 +124,9 @@ Class::Class(const Cursor& cursor, const Namespace& current_namespace, int p_cla
     }
 
     
-    // ¼ÓÈëÒ»µãHack
-    // metadata¸ÄÔÚchild methodsÓë child fieldÖĞÕÒ
-    // ÕâÑù¿ÉÒÔ²»ÔÚ¶¨ÒåÉÏĞ´CLASS µ¼ÖÂ ´úÂëÌáÊ¾±àÒëÆ÷³öÆæ¹ÖÎÊÌâ
+    // åŠ å…¥ä¸€ç‚¹Hack
+    // metadataæ”¹åœ¨child methodsä¸ child fieldä¸­æ‰¾
+    // è¿™æ ·å¯ä»¥ä¸åœ¨å®šä¹‰ä¸Šå†™CLASS å¯¼è‡´ ä»£ç æç¤ºç¼–è¯‘å™¨å‡ºå¥‡æ€ªé—®é¢˜
    /* if (m_name == "Object") {
         for ( auto& key : m_methods) {
             L_PRINT(key.get()->m_name);

@@ -40,7 +40,7 @@ namespace Utils
     {
         return getQualifiedName(cursor.getSpelling(), current_namespace);
     }
-    // 这里还需要判断是否重名之类的
+    // 杩欓噷杩橀渶瑕佸垽鏂槸鍚﹂噸鍚嶄箣绫荤殑
     std::string formatQualifiedName(std::string& source_string)
     {
         Utils::replace(source_string, '<', 'L');

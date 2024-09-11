@@ -64,8 +64,8 @@ namespace lain {
         String GetField(const String& line) {
             return line.substr(1, line.size() - 3);
         }
-        // ²»ÔÊĞíÒ»¸ö×Ö·û´®Õ¼¶àĞĞ
-        // ²»ÔÊĞíÃûÖĞ´øÓĞÒıºÅ
+        // ä¸å…è®¸ä¸€ä¸ªå­—ç¬¦ä¸²å å¤šè¡Œ
+        // ä¸å…è®¸åä¸­å¸¦æœ‰å¼•å·
         bool IsKeyValue(const String& line) {
             int equalpos = line.find_char('=');
             if (equalpos == -1) return false;
@@ -95,7 +95,7 @@ namespace lain {
             memnew_placement(instance_ptr, Reflection::ReflectionInstance(meta_instance));
             return instance_ptr;
         }
-        // »ù±¾Àà°üÀ¨£ºVector<Variant>£¬¼´[]£»double £» String
+        // åŸºæœ¬ç±»åŒ…æ‹¬ï¼šVector<Variant>ï¼Œå³[]ï¼›double ï¼› String
         Variant ConstructFromString(const String& p_str, int recursize_depth = 0, bool error_print = true);
 
         

@@ -7,14 +7,14 @@
 #include "core/thread/worker_thread_pool.h"
 #include "core/templates/hash_map.h"
 namespace lain {
-	// format loader µÄ ¸¸Àà
-	// Ê¹ÓÃgdvirtualcallÉè¼ÆÒÔÄ£Äâc++µÄÐéº¯Êý»úÖÆ£¬Óë½Å±¾ÏµÍ³ÓÐ¹Ø
+	// format loader çš„ çˆ¶ç±»
+	// ä½¿ç”¨gdvirtualcallè®¾è®¡ä»¥æ¨¡æ‹Ÿc++çš„è™šå‡½æ•°æœºåˆ¶ï¼Œä¸Žè„šæœ¬ç³»ç»Ÿæœ‰å…³
 	
 	class ResourceFormatLoader : public RefCounted {
 		LCLASS(ResourceFormatLoader, RefCounted);
 
 	public:
-		enum CacheMode { // ÈçºÎÊ¹ÓÃcache
+		enum CacheMode { // å¦‚ä½•ä½¿ç”¨cache
 			CACHE_MODE_IGNORE,
 			CACHE_MODE_REUSE,
 			CACHE_MODE_REPLACE,
@@ -27,13 +27,13 @@ namespace lain {
 
 		virtual bool exists(const String& p_path) const { return false; }
 
-		// Óë importer ÓÐ¹Ø
+		// ä¸Ž importer æœ‰å…³
 		virtual bool is_import_valid(const String& p_path) const { return true; }
 		virtual bool is_imported(const String& p_path) const { return false; }
 		virtual int get_import_order(const String& p_path) const { return 0; }
 
 		//virtual void get_recognized_extensions_for_type(const String& p_type, List<String>* p_extensions) const;
-		//virtual bool recognize_path(const String& p_path, const String& p_for_type = String()) const; = 0 // Óë½Å±¾ÏµÍ³ÓÐ¹Ø
+		//virtual bool recognize_path(const String& p_path, const String& p_for_type = String()) const; = 0 // ä¸Žè„šæœ¬ç³»ç»Ÿæœ‰å…³
 		//virtual bool handles_type(const String& p_type) const;
 		//virtual void get_classes_used(const String& p_path, HashSet<StringName>* r_classes);
 		//virtual String get_resource_type(const String& p_path) const;
@@ -133,12 +133,12 @@ namespace lain {
 		};
 
 		static void _thread_load_function(void* p_userdata);
-		static ResourceLoadedCallback _loaded_callback; // »Øµ÷
+		static ResourceLoadedCallback _loaded_callback; // å›žè°ƒ
 		static String _path_remap(const String& p_path, bool* r_translation_remapped = nullptr);
 
 
 		static Ref<Resource> _load(const String& p_path, const String& p_original_path, const String& p_type_hint, ResourceFormatLoader::CacheMode p_cache_mode, Error* r_error, bool p_use_sub_threads, float* r_progress);
-		// static ÀàÐÍ is implied 
+		// static ç±»åž‹ is implied 
 		static thread_local int load_nesting;
 		static thread_local WorkerThreadPool::TaskID caller_task_id;
 		static thread_local Vector<String>* load_paths_stack; // A pointer to avoid broken TLS implementations from double-running the destructor.

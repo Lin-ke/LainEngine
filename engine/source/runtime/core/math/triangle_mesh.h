@@ -5,7 +5,7 @@
 #include "core/math/face3.h"
 #include "core/object/refcounted.h"
 namespace lain {
-	// ·ÀÖ¹ÖØÃû£¬Ò»°ãÖ»ĞèÒª×îºóÒ»²ã
+	// é˜²æ­¢é‡åï¼Œä¸€èˆ¬åªéœ€è¦æœ€åä¸€å±‚
 	INNER_REFLECTION_TYPE(BVH, TriangleMesh);
 	REFLECTION_TYPE(TriangleMesh);
 class TriangleMesh : public RefCounted {
@@ -16,7 +16,7 @@ class TriangleMesh : public RefCounted {
 	
 
 public:
-	// Ö±½ÓÊ¹ÓÃindices
+	// ç›´æ¥ä½¿ç”¨indices
 	STRUCT(Triangle, Fields){
 		Vector3 normal;
 		int indices[3];

@@ -16,7 +16,7 @@
 #include "core/math/rect2i.h"
 namespace lain
 {
-    // @ TODO °ÑËû×ö³É½Ó¿ÚºÍÊµÏÖµÄÀàĞÍ
+    // @ TODO æŠŠä»–åšæˆæ¥å£å’Œå®ç°çš„ç±»å‹
 
     struct WindowCreateInfo;
 
@@ -88,9 +88,9 @@ namespace lain
         bool ime_suppress_next_keyup = false;
 
         bool layered_window = false;*/
-        // °ÑÕâÀï±ä³ÉvectorµÄ¿ÉÒÔ½µµÍñîºÏ
-        // ÕâÑù²»Í¬µÄº¯Êı¿ÉÒÔ³Ğµ£²»Í¬µÄÈÎÎñ
-        // Ö´ĞĞÁĞ±í
+        // æŠŠè¿™é‡Œå˜æˆvectorçš„å¯ä»¥é™ä½è€¦åˆ
+        // è¿™æ ·ä¸åŒçš„å‡½æ•°å¯ä»¥æ‰¿æ‹…ä¸åŒçš„ä»»åŠ¡
+        // æ‰§è¡Œåˆ—è¡¨
         Vector<onResetFunc>       m_onResetFunc;
         Vector < onKeyFunc>        m_onKeyFunc;
         Vector < onCharFunc>     m_onCharFunc;
@@ -253,7 +253,7 @@ namespace lain
                 auto p_window = E.value.p_window;
                 glfwMakeContextCurrent(p_window);
                 // do the rendering
-                // ÕâÑùÉè¼ÆºÏÀíÂğ£¿
+                // è¿™æ ·è®¾è®¡åˆç†å—ï¼Ÿ
                 glfwSwapBuffers(p_window);
 
             }
@@ -261,9 +261,9 @@ namespace lain
 
 
         // window event callbacks
-        // ÕâĞ©glfw°ó¶¨keycallback£¬È»ºó·¢ÉúÕâÒ»ÊÂ¼şºóµ÷ÓÃÔÚvectorÀïµÄcallback¡£
-        // TODO£ºÂú×ã¶à´°¿Ú
-        // ĞèÒªstaticÀ´°ó¶¨¡£
+        // è¿™äº›glfwç»‘å®škeycallbackï¼Œç„¶åå‘ç”Ÿè¿™ä¸€äº‹ä»¶åè°ƒç”¨åœ¨vectoré‡Œçš„callbackã€‚
+        // TODOï¼šæ»¡è¶³å¤šçª—å£
+        // éœ€è¦staticæ¥ç»‘å®šã€‚
         static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
         {
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
@@ -382,7 +382,7 @@ namespace lain
         String      title{ "Window" };
         WindowSystem::WindowMode mode  = WindowSystem::WindowMode::WINDOW_MODE_WINDOWED;
         WindowSystem::VSyncMode  vsync = WindowSystem::VSyncMode::VSYNC_ADAPTIVE;
-        uint32_t    flags = 0; // flags: ÔÚÄÄ¸öÆÁÄ»£»ÊÇ·ñÈ«ÆÁ
+        uint32_t    flags = 0; // flags: åœ¨å“ªä¸ªå±å¹•ï¼›æ˜¯å¦å…¨å±
 
         WindowCreateInfo() {}
     };

@@ -12,7 +12,7 @@
 #define THREADING_NAMESPACE std
 #endif
 
-// ¶à¶ÁÉÙÐ´
+// å¤šè¯»å°‘å†™
 class RWLock {
 	mutable THREADING_NAMESPACE::shared_timed_mutex mutex;
 

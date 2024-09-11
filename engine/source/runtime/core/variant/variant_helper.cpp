@@ -24,7 +24,7 @@ namespace lain {
 		if (is_basic) return true;
 		bool serializable = Reflection::TypeMeta::is_valid_type(type_name);
 		return serializable;
-		// 有反射或者是基本类型
+		// 鏈夊弽灏勬垨鑰呮槸鍩烘湰绫诲瀷
 	}
 
 	Variant::Type VariantHelper::get_type_from_name(const char* p_name_c_str) {

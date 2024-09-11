@@ -28,26 +28,26 @@ struct _NO_DISCARD_ Rect2i {
 			ERR_PRINT("Rect2i size is negative, this is not supported. Use Rect2i.abs() to get a Rect2i with a positive size.");
 		}
 #endif
-		// ×ó±ß´óÓÚÓÒ±ß
+		// å·¦è¾¹å¤§äºå³è¾¹
 		if (position.x >= (p_rect.position.x + p_rect.size.x)) {
 			return false;
 		}
-		// ÓÒ±ßĞ¡ÓÚ×ó±ß
+		// å³è¾¹å°äºå·¦è¾¹
 		if ((position.x + size.x) <= p_rect.position.x) {
 			return false;
 		}
-		// ÉÏ±ß´óÓÚÏÂ±ß
+		// ä¸Šè¾¹å¤§äºä¸‹è¾¹
 		if (position.y >= (p_rect.position.y + p_rect.size.y)) {
 			return false;
 		}
-		// ÏÂ±ßĞ¡ÓÚÉÏ±ß
+		// ä¸‹è¾¹å°äºä¸Šè¾¹
 		if ((position.y + size.y) <= p_rect.position.y) {
 			return false;
 		}
 
 		return true;
 	}
-	// p_rectÔÚµ±Ç°Rect2iÄÚ
+	// p_rectåœ¨å½“å‰Rect2iå†…
 	inline bool encloses(const Rect2i& p_rect) const {
 #ifdef MATH_CHECKS
 		if (unlikely(size.x < 0 || size.y < 0 || p_rect.size.x < 0 || p_rect.size.y < 0)) {

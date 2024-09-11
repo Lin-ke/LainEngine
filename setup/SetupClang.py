@@ -15,4 +15,4 @@ class ClangConfiguration:
     @classmethod
     def __ValidateClang(cls, versionMajor = 3, versionMinor = 3):
         pass
-    # @TODO 在这里拉clang并且下载
+    # @TODO 鍦ㄨ繖閲屾媺clang骞朵笖涓嬭浇

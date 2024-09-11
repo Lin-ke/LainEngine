@@ -1,5 +1,5 @@
 #pragma once
-// ¸÷ÖÖ×Ö·û´®¼ÓÃÜËã·¨
+// å„ç§å­—ç¬¦ä¸²åŠ å¯†ç®—æ³•
 #ifndef CRYPTO_CORE_H
 #define CRYPTO_CORE_H
 

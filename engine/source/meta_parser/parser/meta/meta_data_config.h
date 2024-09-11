@@ -15,5 +15,5 @@ namespace NativeProperty
     const auto WhiteListMethods = "WhiteListMethods";
     //const auto WhiteListEnums= "WhiteListEnums";
 
-    // 不支持运算符重载的method
+    // 涓嶆敮鎸佽繍绠楃閲嶈浇鐨刴ethod
 } // namespace NativeProperty

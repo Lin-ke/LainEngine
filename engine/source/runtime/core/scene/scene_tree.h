@@ -6,8 +6,8 @@
 #include "core/templates/local_vector.h"
 #include "core/templates/hash_set.h"
 namespace lain {
-	// ĞèÒªÒ»¸ömain viewport
-	// viewportÖ»±£´æäÖÈ¾ĞÅÏ¢
+	// éœ€è¦ä¸€ä¸ªmain viewport
+	// viewportåªä¿å­˜æ¸²æŸ“ä¿¡æ¯
 	class GObject;
 	class Component;
 	class TickObject;
@@ -56,7 +56,7 @@ namespace lain {
 		HashMap<StringName, Group> group_map;
 		bool process_groups_dirty = true;
 		LocalVector<ProcessGroup*> local_process_group_cache; // Used when processing to group what needs to
-		ProcessGroup default_process_group; // ÓĞp_owner¾Í¼Óµ½ÄÇ¸ö£¬·ñÔò¼Óµ½Õâ¸ö
+		ProcessGroup default_process_group; // æœ‰p_ownerå°±åŠ åˆ°é‚£ä¸ªï¼Œå¦åˆ™åŠ åˆ°è¿™ä¸ª
 
 
 		// Safety for when a node is deleted while a group is being called.

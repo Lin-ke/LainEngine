@@ -8,8 +8,8 @@ namespace lain {
 class RenderingServerGlobals {
  public:
   static bool threaded;
-// È«ÒªÍ¨¹ıÕâÖÖ·½Ê½£¨API£©À´·ÃÎÊ
-// ÎªÁË¼æÈİĞÔ
+// å…¨è¦é€šè¿‡è¿™ç§æ–¹å¼ï¼ˆAPIï¼‰æ¥è®¿é—®
+// ä¸ºäº†å…¼å®¹æ€§
 //   static RendererUtilities* utilities;
 //   static RendererLightStorage* light_storage;
 static RendererMaterialStorage* material_storage;

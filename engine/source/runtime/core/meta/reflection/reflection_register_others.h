@@ -7,7 +7,7 @@
 #include "core/meta/reflection/reflection.h"
 #include "core/meta/serializer/serializer.h"
 namespace lain {
-	// serializerËæ´¦¿ÉÒÔ¶¨Òå£¬ËùÒÔÊ¹ÓÃÕâ¸ö
+	// serializeréšå¤„å¯ä»¥å®šä¹‰ï¼Œæ‰€ä»¥ä½¿ç”¨è¿™ä¸ª
 
 	SERIALIZER(Dictionary); 
 	SERIALIZER(StringName);

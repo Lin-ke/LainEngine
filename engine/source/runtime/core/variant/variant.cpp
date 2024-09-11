@@ -325,7 +325,7 @@ Variant::Variant(const Reflection::ReflectionInstance &p_instance)
 	const TypeMeta &t = p_instance.m_meta;
 	size_t copy_size = TypeMeta::getSizeOfByName(t.getTypeName().c_str());
 	_data._ptr = memalloc(copy_size);
-	memcpy(_data._ptr, p_instance.m_instance, copy_size); // Ç³¿½±´
+	memcpy(_data._ptr, p_instance.m_instance, copy_size); // æµ…æ‹·è´
 }
 
 Variant::Variant(const Vector3 &p_vector3)
@@ -2316,7 +2316,7 @@ Variant::operator Object *() const
 	}
 }
 /// <summary>
-/// ´¦ÀíArray
+/// å¤„ç†Array
 /// </summary>
 /// <typeparam name="DA"></typeparam>
 /// <typeparam name="SA"></typeparam>
@@ -2574,7 +2574,7 @@ void Variant::_clear_internal()
 			RefCounted *ref_counted = static_cast<RefCounted *>(_get_obj().obj);
 			if (ref_counted->unreference())
 			{
-				memdelete(ref_counted); // @PBUG Õâ¿ÉÄÜµ¼ÖÂÔÚcacheÖĞ£¬µ«ÊÇ±»Îö¹¹£¬µ¼ÖÂcacheÊ§Ğ§¡£ĞèÒª±£Ö¤Õâ¸öÏÈÎö¹¹µô
+				memdelete(ref_counted); // @PBUG è¿™å¯èƒ½å¯¼è‡´åœ¨cacheä¸­ï¼Œä½†æ˜¯è¢«ææ„ï¼Œå¯¼è‡´cacheå¤±æ•ˆã€‚éœ€è¦ä¿è¯è¿™ä¸ªå…ˆææ„æ‰
 			}
 		}
 		_get_obj().obj = nullptr;
@@ -3021,7 +3021,7 @@ bool Variant::can_convert_strict(Variant::Type p_type_from, Variant::Type p_type
 
 	return false;
 }
-// @todo Ä¿Ç°variantµÄ·´ÉäÓĞÁ½Ì×£¨serializerºÍstringify£©£¬ºÏ²¢
+// @todo ç›®å‰variantçš„åå°„æœ‰ä¸¤å¥—ï¼ˆserializerå’Œstringifyï¼‰ï¼Œåˆå¹¶
 String stringify_variant_clean(const Variant &p_variant, int recursion_count)
 {
 	String s = p_variant.stringify(recursion_count);

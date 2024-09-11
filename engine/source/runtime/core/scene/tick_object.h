@@ -17,18 +17,18 @@ namespace lain {
             PROCESS_THREAD_GROUP_INHERIT,
             PROCESS_THREAD_GROUP_MAIN_THREAD,
             PROCESS_THREAD_GROUP_SUB_THREAD,
-        }; // ´¦ÀíÏß³Ì
+        }; // å¤„ç†çº¿ç¨‹
         enum ProcessMode : unsigned int {
             PROCESS_MODE_INHERIT, // same as parent node
             PROCESS_MODE_PAUSABLE, // process only if not paused
             PROCESS_MODE_WHEN_PAUSED, // process only if paused
             PROCESS_MODE_ALWAYS, // process always
             PROCESS_MODE_DISABLED, // never process
-        };// ´¦Àí·½·¨
+        };// å¤„ç†æ–¹æ³•
         struct ComparatorWithPriority {
             bool operator()(const TickObject* p_a, const TickObject* p_b) const { return p_b->tickdata.process_priority > p_a->tickdata.process_priority; }
         };
-        // Èç¹ûÃ»ÓĞÓÅÏÈ¼¶¾Í±£³Ö¼ÓÈëË³Ğò£¿µ«ÊÇÓĞ¸öÉî¶ÈË³Ğò£¬²»ÖªµÀÊÇ·ñÖØÒª£¿£¿
+        // å¦‚æœæ²¡æœ‰ä¼˜å…ˆçº§å°±ä¿æŒåŠ å…¥é¡ºåºï¼Ÿä½†æ˜¯æœ‰ä¸ªæ·±åº¦é¡ºåºï¼Œä¸çŸ¥é“æ˜¯å¦é‡è¦ï¼Ÿï¼Ÿ
         struct ComparatorWithPhysicsPriority {
             bool operator()(const TickObject* p_a, const TickObject* p_b) const { return p_b->tickdata.physics_process_priority > p_a->tickdata.physics_process_priority; }
         };
@@ -36,21 +36,21 @@ namespace lain {
 
         struct TickData {
 
-            // ½Úµã´¦ÀíË³Ğò
+            // èŠ‚ç‚¹å¤„ç†é¡ºåº
               /// process bools
             bool physics_process : 1;
             bool process : 1;
 
-            bool physics_process_internal : 1; // internal£ºÔòÆôÓÃ¸Ã½ÚµãµÄÄÚ²¿´¦Àí¡£ÄÚ²¿´¦Àí¶ÀÁ¢ÓÚÕı³£µÄ _process µ÷ÓÃ¶ø·¢Éú£¬
+            bool physics_process_internal : 1; // internalï¼šåˆ™å¯ç”¨è¯¥èŠ‚ç‚¹çš„å†…éƒ¨å¤„ç†ã€‚å†…éƒ¨å¤„ç†ç‹¬ç«‹äºæ­£å¸¸çš„ _process è°ƒç”¨è€Œå‘ç”Ÿï¼Œ
             bool process_internal : 1;
             int process_thread_group_order = 0;
             ProcessThreadGroup process_thread_group = PROCESS_THREAD_GROUP_INHERIT;
             TickObject* process_thread_group_owner = nullptr;
             void* process_group = nullptr; // to avoid cyclic dependency
-            // ÊÇ·ñ´¦Àí
+            // æ˜¯å¦å¤„ç†
             ProcessMode process_mode : ProcessMode::PROCESS_MODE_PAUSABLE; // mode
             TickObject* process_owner = nullptr;
-            // ÅÅĞò½Ó¿Ú
+            // æ’åºæ¥å£
             int process_priority = 0;
             int physics_process_priority = 0;
 
@@ -69,7 +69,7 @@ namespace lain {
         void set_process_priority(int p_priority);
         virtual SceneTree* get_tree()const { return nullptr; }
         void set_process(bool p_process);
-        // Ã»°ì·¨ÄÚÁª£¬ÒòÎªget_tree() 
+        // æ²¡åŠæ³•å†…è”ï¼Œå› ä¸ºget_tree() 
         void _remove_from_process_thread_group();
         void _add_to_process_thread_group();
         void _remove_process_group();

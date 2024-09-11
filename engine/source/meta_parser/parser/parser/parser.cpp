@@ -10,7 +10,7 @@
 
 #include "parser.h"
 
-// µİ¹é
+// é€’å½’
 
 #define RECURSE_NAMESPACES(kind, cursor, method, namespaces) \
   {                                                          \
@@ -23,8 +23,8 @@
       }                                                      \
     }                                                        \
   }
-// should compileÊÇÅĞ¶ÏÄÚ²¿ÊÇ·ñÓĞ±ê¼Ç
-// ¼Óµ½containerÖĞ
+// should compileæ˜¯åˆ¤æ–­å†…éƒ¨æ˜¯å¦æœ‰æ ‡è®°
+// åŠ åˆ°containerä¸­
 
 #define TRY_ADD_LANGUAGE_TYPE(handle, container)             \
   {                                                          \
@@ -194,7 +194,7 @@ void MetaParser::buildClassAST(const Cursor& cursor, Namespace& current_namespac
       auto class_ptr = std::make_shared<Class>(child, current_namespace);
 
       TRY_ADD_LANGUAGE_TYPE(class_ptr, classes);
-      // ÆäÊµÕâÀïÒ²ĞèÒª¼ÌĞø±éÀú
+      // å…¶å®è¿™é‡Œä¹Ÿéœ€è¦ç»§ç»­éå†
     } else {
       RECURSE_NAMESPACES(kind, child, buildClassAST, current_namespace);
     }
@@ -209,5 +209,5 @@ void MetaParser::addClassIntoSchema(std::shared_ptr<Class> p_class) {
 }
 
 void MetaParser::addEnumIntoSchema(std::shared_ptr<ENUM_> p_enums) {
-  TRY_ADD_LANGUAGE_TYPE(p_enums, enums);  // Ê¹ÓÃm_qualified_nameÎªdisplayname£¬¸øÎŞÃûp_enum¸³Ãû
+  TRY_ADD_LANGUAGE_TYPE(p_enums, enums);  // ä½¿ç”¨m_qualified_nameä¸ºdisplaynameï¼Œç»™æ— åp_enumèµ‹å
 }

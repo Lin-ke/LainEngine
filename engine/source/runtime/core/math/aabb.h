@@ -9,7 +9,7 @@
 #if defined(__REFLECTION_PARSER__)
 #define META(...) __attribute__((annotate(#__VA_ARGS__)))
 #endif
-// AABB¿ÉÄÜÊÇÌ«Ôçinclude£¬»áÓĞÎÊÌâ
+// AABBå¯èƒ½æ˜¯å¤ªæ—©includeï¼Œä¼šæœ‰é—®é¢˜
 namespace lain {
 class Variant;
 struct Vector3;

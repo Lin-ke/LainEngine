@@ -32,7 +32,7 @@ union MarshallReal {
 	uintr_t i;
 	real_t r;
 };
-// ½«32Î»ÕûÊı±àÂëµ½×Ö½ÚÊı×éÖĞ
+// å°†32ä½æ•´æ•°ç¼–ç åˆ°å­—èŠ‚æ•°ç»„ä¸­
 static inline unsigned int encode_uint32(uint32_t p_uint, uint8_t *p_arr) {
 	for (int i = 0; i < 4; i++) {
 		*p_arr = p_uint & 0xFF;

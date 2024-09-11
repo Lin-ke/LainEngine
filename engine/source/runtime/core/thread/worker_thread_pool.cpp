@@ -31,7 +31,7 @@ void WorkerThreadPool::_unlock_unlockable_mutexes() {
 			if ((((uintptr_t)unlockable_mutexes[i]) & 1) == 0) {
 				((Mutex *)unlockable_mutexes[i])->unlock();
 			} else {
-				((BinaryMutex *)(unlockable_mutexes[i] & ~1))->unlock(); // ÓÃ×îºóÒ»Î»±ê¼ÇÊÇ·ñÊÇBinaryMutex
+				((BinaryMutex *)(unlockable_mutexes[i] & ~1))->unlock(); // ç”¨æœ€åä¸€ä½æ ‡è®°æ˜¯å¦æ˜¯BinaryMutex
 			}
 		}
 	}
@@ -121,7 +121,7 @@ uint32_t WorkerThreadPool::thread_enter_unlock_allowance_zone(BinaryMutex *p_mut
 
 void WorkerThreadPool::thread_exit_unlock_allowance_zone(uint32_t p_zone_id) {}
 
-// ÔÚµÈ´ıp_tasksÍê³ÉµÄ¹ı³ÌÖĞp_caller_pool_threadÒ²¿ÉÒÔÖ´ĞĞÆäËûÈÎÎñ
+// åœ¨ç­‰å¾…p_taskså®Œæˆçš„è¿‡ç¨‹ä¸­p_caller_pool_threadä¹Ÿå¯ä»¥æ‰§è¡Œå…¶ä»–ä»»åŠ¡
 void WorkerThreadPool::_wait_collaboratively(ThreadData* p_caller_pool_thread, Task* p_task) {
 	// Keep processing tasks until the condition to stop waiting is met.
 #define IS_WAIT_OVER (unlikely(p_task == ThreadData::YIELDING) ? p_caller_pool_thread->yield_is_over : p_task->completed)
@@ -196,7 +196,7 @@ uint32_t WorkerThreadPool::_thread_enter_unlock_allowance_zone(void* p_mutex, bo
     if (!unlockable_mutexes[i]) {
       unlockable_mutexes[i] = (uintptr_t)p_mutex;
       if (p_is_binary) {
-        unlockable_mutexes[i] |= 1; // ÓÃ×îºóÒ»Î»±ê¼Ç£¨¿ÉÄÜ»áµ¼ÖÂbug£¿£©
+        unlockable_mutexes[i] |= 1; // ç”¨æœ€åä¸€ä½æ ‡è®°ï¼ˆå¯èƒ½ä¼šå¯¼è‡´bugï¼Ÿï¼‰
       }
       return i;
     }
@@ -213,23 +213,23 @@ void WorkerThreadPool::init(int p_thread_count, float p_low_priority_task_ratio)
   max_low_priority_threads = CLAMP(p_thread_count * p_low_priority_task_ratio, 1, p_thread_count - 1);
 
   threads.resize(p_thread_count);
-  // ²åÈëthread index ºÍthread idµÄ¹ØÏµ
+  // æ’å…¥thread index å’Œthread idçš„å…³ç³»
   for (uint32_t i = 0; i < threads.size(); i++) {
     threads[i].index = i;
-    // µ÷ÓÃ¹¹Ôìº¯Êı£¬Ïß³Ì´´½¨£¬²¢¿ªÊ¼ÔËĞĞ_thread_function
+    // è°ƒç”¨æ„é€ å‡½æ•°ï¼Œçº¿ç¨‹åˆ›å»ºï¼Œå¹¶å¼€å§‹è¿è¡Œ_thread_function
     threads[i].thread.start(&WorkerThreadPool::_thread_function, &threads[i]);
     thread_ids.insert(threads[i].thread.get_id(), i);
   }
 }
-// Ïß³Ì£º´ÓTask queueÀïÕÒµ½taskÈ»ºóÖ´ĞĞ
-// ÎªÊ²Ã´¶¼Òª¿¿singleton->À´·ÃÎÊ£¿
+// çº¿ç¨‹ï¼šä»Task queueé‡Œæ‰¾åˆ°taskç„¶åæ‰§è¡Œ
+// ä¸ºä»€ä¹ˆéƒ½è¦é singleton->æ¥è®¿é—®ï¼Ÿ
 void WorkerThreadPool::_thread_function(void *p_user) {
 	ThreadData *thread_data = (ThreadData *)p_user;
 	while (true) {
 		Task *task_to_process = nullptr;
 		{
 			MutexLock lock(singleton->task_mutex); // unique_lock
-			// Õâ¸öËøËøµÄÊÇÓëÈÎÎñ·Ö·¢Ïà¹ØµÄÀàµ¥Àı»¥³âÁ¿task_mutex
+			// è¿™ä¸ªé”é”çš„æ˜¯ä¸ä»»åŠ¡åˆ†å‘ç›¸å…³çš„ç±»å•ä¾‹äº’æ–¥é‡task_mutex
 			if (singleton->exit_threads) {
 				return;
 			}
@@ -238,23 +238,23 @@ void WorkerThreadPool::_thread_function(void *p_user) {
 			if (singleton->task_queue.first()) {
 				task_to_process = singleton->task_queue.first()->self();
 				singleton->task_queue.remove(singleton->task_queue.first());
-				// »ñµÃÈÎÎñ
-			} else { // Ã»ÓĞÈÎÎñ£¬µÈ´ı
+				// è·å¾—ä»»åŠ¡
+			} else { // æ²¡æœ‰ä»»åŠ¡ï¼Œç­‰å¾…
 				thread_data->cond_var.wait(lock);
 				L_PRINT("notified", Thread::get_caller_id(), thread_data->index, thread_data->thread.get_id());
-				DEV_ASSERT(singleton->exit_threads || thread_data->signaled); // Ğé¼Ù»½ĞÑ
+				DEV_ASSERT(singleton->exit_threads || thread_data->signaled); // è™šå‡å”¤é†’
 			}
 		}
-		// lock½âËø
-		// Ö´ĞĞÈÎÎñ
+		// lockè§£é”
+		// æ‰§è¡Œä»»åŠ¡
 		if (task_to_process) {
 			singleton->_process_task(task_to_process);
 		}
 	}
 }
 void WorkerThreadPool::_process_task(Task *p_task) {
-	// »ñµÃthreadid£¬¸ù¾İidÕÒthread(pool_thread_index)
-	// Thread::get_caller_id¾ÍÄÜ»ñµÃµ±Ç°Ïß³ÌidÂğ£¿
+	// è·å¾—threadidï¼Œæ ¹æ®idæ‰¾thread(pool_thread_index)
+	// Thread::get_caller_idå°±èƒ½è·å¾—å½“å‰çº¿ç¨‹idå—ï¼Ÿ
 	int pool_thread_index = thread_ids[Thread::get_caller_id()];
 	ThreadData &curr_thread = threads[pool_thread_index];
 	Task *prev_task = nullptr; // In case this is recursively called.
@@ -277,7 +277,7 @@ void WorkerThreadPool::_process_task(Task *p_task) {
 		curr_thread.current_task = p_task;
 		task_mutex.unlock();
 	}
-	// ×éÈÎÎñ
+	// ç»„ä»»åŠ¡
 	if (p_task->group) {
 		// Handling a group
 		bool do_post = false;
@@ -286,7 +286,7 @@ void WorkerThreadPool::_process_task(Task *p_task) {
 			uint32_t work_index = p_task->group->index.postincrement();
 
 			if (work_index >= p_task->group->max) {
-				break; // done£¬Õâ±ß¶¼ÊÇÔÙÀ´Ö´ĞĞ·¢ÏÖÒÑ¾­Ö´ĞĞÍêµÄÏß³Ì
+				break; // doneï¼Œè¿™è¾¹éƒ½æ˜¯å†æ¥æ‰§è¡Œå‘ç°å·²ç»æ‰§è¡Œå®Œçš„çº¿ç¨‹
 			}
 			if (p_task->native_group_func) {
 				p_task->native_group_func(p_task->native_func_userdata, work_index);
@@ -307,12 +307,12 @@ void WorkerThreadPool::_process_task(Task *p_task) {
 		if (do_post && p_task->template_userdata) {
 			memdelete(p_task->template_userdata); // This is no longer needed at this point, so get rid of it.
 		}
-		// Ê¹ÓÃdone_semaphore¹ã²¥Õâ¸ö¹¤×÷Íê³É
+		// ä½¿ç”¨done_semaphoreå¹¿æ’­è¿™ä¸ªå·¥ä½œå®Œæˆ
 		if (do_post) {
 			p_task->group->completed.set_to(true);
 			p_task->group->done_semaphore.post();
 		}
-		// ¿¼ÂÇµ½¿ÉÄÜÓĞÒ»¸ö¶îÍâµÄÏß³ÌµÈ×Å
+		// è€ƒè™‘åˆ°å¯èƒ½æœ‰ä¸€ä¸ªé¢å¤–çš„çº¿ç¨‹ç­‰ç€
 		uint32_t max_users = p_task->group->tasks_used + 1; // Add 1 because the thread waiting for it is also user. Read before to avoid another thread freeing task after increment.
 		uint32_t finished_users = p_task->group->finished.increment();
 
@@ -344,7 +344,7 @@ void WorkerThreadPool::_process_task(Task *p_task) {
 			p_task->done_semaphore.post(p_task->waiting_user);
 		}
 		// Let awaiters know.
-		// ¿´ÄÄ¸öÏß³ÌµÄawaited_taskÊÇÕâ¸ö
+		// çœ‹å“ªä¸ªçº¿ç¨‹çš„awaited_taskæ˜¯è¿™ä¸ª
 		for (uint32_t i = 0; i < threads.size(); i++) {
 			if (threads[i].awaited_task == p_task) {
 				threads[i].cond_var.notify_one();
@@ -370,7 +370,7 @@ void WorkerThreadPool::_process_task(Task *p_task) {
 
 	//set_current_thread_safe_for_nodes(safe_for_nodes_backup);
 }
-// µÍÓÅÏÈ¼¶£¬¼ÓÈëÈÎÎñ¶ÓÁĞ
+// ä½ä¼˜å…ˆçº§ï¼ŒåŠ å…¥ä»»åŠ¡é˜Ÿåˆ—
 bool WorkerThreadPool::_try_promote_low_priority_task() {
 	if (low_priority_task_queue.first()) {
 		Task *low_prio_task = low_priority_task_queue.first()->self();
@@ -488,7 +488,7 @@ Error WorkerThreadPool::wait_for_task_completion(TaskID p_task_id) {
 		ERR_FAIL_V_MSG(ERR_INVALID_PARAMETER, "Invalid Task ID"); // Invalid task
 	}
 	Task *task = *taskp;
-	// ÒÑ¾­Íê³É
+	// å·²ç»å®Œæˆ
 	if (task->completed) {
 		if (task->waiting_pool == 0 && task->waiting_user == 0) {
 			tasks.erase(p_task_id);
@@ -497,7 +497,7 @@ Error WorkerThreadPool::wait_for_task_completion(TaskID p_task_id) {
 		task_mutex.unlock();
 		return OK;
 	}
-	// ÊÇ·ñÊÇÏß³Ì³ØÖĞµÄÏß³Ì
+	// æ˜¯å¦æ˜¯çº¿ç¨‹æ± ä¸­çš„çº¿ç¨‹
 	ThreadData *caller_pool_thread = thread_ids.has(Thread::get_caller_id()) ? &threads[thread_ids[Thread::get_caller_id()]] : nullptr;
 	if (caller_pool_thread && p_task_id <= caller_pool_thread->current_task->self) {
 		// Deadlock prevention:
@@ -580,7 +580,7 @@ WorkerThreadPool::GroupID WorkerThreadPool::_add_group_task(const Callable &p_ca
 
 	} else {
 		group->tasks_used = p_tasks;
-		tasks_posted = (Task **)alloca(sizeof(Task *) * p_tasks); // Ö»ĞèÒªÔÚÕ»ÉÏ·ÖÅä
+		tasks_posted = (Task **)alloca(sizeof(Task *) * p_tasks); // åªéœ€è¦åœ¨æ ˆä¸Šåˆ†é…
 		for (int i = 0; i < p_tasks; i++) {
 			Task *task = task_allocator.alloc();
 			task->native_group_func = p_func;
@@ -602,7 +602,7 @@ WorkerThreadPool::GroupID WorkerThreadPool::_add_group_task(const Callable &p_ca
 }
 
 void WorkerThreadPool::wait_for_group_task_completion(GroupID p_group) {
-	// group task ¾Í
+	// group task å°±
 	task_mutex.lock();
 	Group **groupp = groups.getptr(p_group);
 	task_mutex.unlock();
@@ -614,7 +614,7 @@ void WorkerThreadPool::wait_for_group_task_completion(GroupID p_group) {
 		Group *group = *groupp;
 
 		_unlock_unlockable_mutexes();
-		group->done_semaphore.wait(); // ÔÚgroup task µÄÊ±ºò²»Ğ­×÷
+		group->done_semaphore.wait(); // åœ¨group task çš„æ—¶å€™ä¸åä½œ
 		_lock_unlockable_mutexes();
 
 		uint32_t max_users = group->tasks_used + 1; // Add 1 because the thread waiting for it is also user. Read before to avoid another thread freeing task after increment.

@@ -150,7 +150,7 @@ namespace lain {
 			return OK;
 		}
 	}
-	// ±ÜÃâÊ¹ÓÃ±£ÁôÎÄ¼şÃû
+	// é¿å…ä½¿ç”¨ä¿ç•™æ–‡ä»¶å
 	void FileAccessWindows::initialize() {
 		static const char* reserved_files[]{
 			"con", "prn", "aux", "nul", "com0", "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9", "lpt0", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9", nullptr
@@ -166,7 +166,7 @@ namespace lain {
 	}
 
 	
-	// ²éÊÇ·ñeof
+	// æŸ¥æ˜¯å¦eof
 	void FileAccessWindows::check_errors() const {
 		ERR_FAIL_COND(!f);
 
@@ -201,7 +201,7 @@ namespace lain {
 	String FileAccessWindows::get_path_absolute() const {
 		return path;
 	}
-	// ÔÚÎÄ¼şµÄÎ»ÖÃ¶¨ÒåÖ¸Õë
+	// åœ¨æ–‡ä»¶çš„ä½ç½®å®šä¹‰æŒ‡é’ˆ
 	void FileAccessWindows::seek(int64_t p_position) {
 		ERR_FAIL_COND(!f);
 
@@ -228,7 +228,7 @@ namespace lain {
 		}
 		return static_cast<ui64>(aux_position);
 	}
-	// µ¥Î»ÊÇ×Ö½Ú
+	// å•ä½æ˜¯å­—èŠ‚
 	uint64_t FileAccessWindows::get_length() const {
 		ERR_FAIL_COND_V(!f, 0);
 

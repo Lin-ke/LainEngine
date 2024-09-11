@@ -12,8 +12,8 @@ namespace lain {
 		current_scene = nullptr;
 		root = memnew(GObject);
 		root->set_name("root");
-		// ÔÚÕâÀïÉèÖÃÆÁÄ»Ïà¹ØÊı¾İ
-		// MSAAµÈµÈ
+		// åœ¨è¿™é‡Œè®¾ç½®å±å¹•ç›¸å…³æ•°æ®
+		// MSAAç­‰ç­‰
 		process_groups.push_back(&default_process_group);
 
 	}
@@ -138,7 +138,7 @@ namespace lain {
 				// This needs to be done when not processing to avoid problems.
 				ProcessGroup** pg_ptr = (ProcessGroup**)process_groups.ptr(); // discard constness.
 				uint32_t pg_count = process_groups.size();
-				// # È¥µôĞèÒªremove µÄ
+				// # å»æ‰éœ€è¦remove çš„
 				for (uint32_t i = 0; i < pg_count; i++) {
 					if (pg_ptr[i]->removed) {
 						// Replace removed with last.
@@ -180,7 +180,7 @@ namespace lain {
 		for (uint32_t i = 0; i <= group_count; i++) {
 			int order = i < group_count && process_groups[i]->owner ? process_groups[i]->owner->tickdata.process_thread_group_order : 0;
 			bool threaded = i < group_count && process_groups[i]->owner ? process_groups[i]->owner->tickdata.process_thread_group == GObject::PROCESS_THREAD_GROUP_SUB_THREAD : false;
-			// ½áËãÖ®Ç°µÄ
+			// ç»“ç®—ä¹‹å‰çš„
 			if (i == group_count || current_order != order || current_threaded != threaded) {
 				if (process_count > 0) {
 					// Proceed to process the group.
@@ -372,7 +372,7 @@ namespace lain {
 		process_groups.push_back(pg);
 
 		process_groups_dirty = true;
-		// ²¢²»¼ÓÈë
+		// å¹¶ä¸åŠ å…¥
 	}
 
 

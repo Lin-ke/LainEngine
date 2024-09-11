@@ -10,7 +10,7 @@ namespace lain {
 	HashMap<String, ResourceLoader::ThreadLoadTask> ResourceLoader::thread_load_tasks;
 	HashMap<String, ResourceLoader::LoadToken*> ResourceLoader::user_load_tokens;
 	bool ResourceLoader::cleaning_tasks = false;
-	ResourceLoadedCallback ResourceLoader::_loaded_callback = nullptr; // »Øµ÷
+	ResourceLoadedCallback ResourceLoader::_loaded_callback = nullptr; // å›è°ƒ
 
 	//
 	bool ResourceLoader::create_missing_resources_if_class_unavailable = false;
@@ -59,7 +59,7 @@ namespace lain {
 			idxs.append(saved_idx);
 		}
 	}
-	// ÓÃÊı×é´æ£¬µ«ÊÇºÍÁ´±íÊÇÒ»ÑùµÄÓÃ£¬xs
+	// ç”¨æ•°ç»„å­˜ï¼Œä½†æ˜¯å’Œé“¾è¡¨æ˜¯ä¸€æ ·çš„ç”¨ï¼Œxs
 
 	void ResourceLoader::remove_resource_format_loader(Ref<ResourceFormatLoader> p_format_loader) {
 		ERR_FAIL_COND(p_format_loader.is_null());
@@ -118,9 +118,9 @@ namespace lain {
 		Ref<Resource> res = _load_complete(*load_token.ptr(), r_error);
 		return res;
 	}
-	// Èç¹û»º´æ¹ı£¬Ö±½Ó×ª»»
+	// å¦‚æœç¼“å­˜è¿‡ï¼Œç›´æ¥è½¬æ¢
 	static String _validate_local_path(const String& p_path) {
-		// ×ª»»ÎªÏîÄ¿Â·¾¶Â·¾¶
+		// è½¬æ¢ä¸ºé¡¹ç›®è·¯å¾„è·¯å¾„
 		ResourceUID::ID uid = ResourceUID::get_singleton()->text_to_id(p_path);
 		if (uid != ResourceUID::INVALID_ID) {
 			return ResourceUID::get_singleton()->get_id_path(uid); 
@@ -159,7 +159,7 @@ namespace lain {
 				}
 				else {
 					if (p_cache_mode != ResourceFormatLoader::CACHE_MODE_IGNORE) {
-						return load_token; // ÕÒµ½
+						return load_token; // æ‰¾åˆ°
 					}
 				}
 			}
@@ -200,10 +200,10 @@ namespace lain {
 				else {
 					thread_load_tasks[local_path] = load_task;
 				}
-				// ·Åµ½hashmapÀï£¨ÄÚ´æ´æ×Å£©ÔÙ´«¸øthread
+				// æ”¾åˆ°hashmapé‡Œï¼ˆå†…å­˜å­˜ç€ï¼‰å†ä¼ ç»™thread
 				load_task_ptr = must_not_register ? &unregistered_load_task : &thread_load_tasks[local_path];
 			}
-			// ÔÚÕâ¸öÏß³ÌÊÇtag»ò²»×¢²á
+			// åœ¨è¿™ä¸ªçº¿ç¨‹æ˜¯tagæˆ–ä¸æ³¨å†Œ
 			run_on_current_thread = must_not_register || p_thread_mode == LOAD_THREAD_FROM_CURRENT;
 
 			if (run_on_current_thread) {
@@ -281,12 +281,12 @@ namespace lain {
 			memdelete(load_task.cond_var);
 			load_task.cond_var = nullptr;
 		}
-		// ¸üĞÂ
+		// æ›´æ–°
 		bool ignoring = load_task.cache_mode == ResourceFormatLoader::CACHE_MODE_IGNORE || load_task.cache_mode == ResourceFormatLoader::CACHE_MODE_IGNORE_DEEP;
 		bool replacing = load_task.cache_mode == ResourceFormatLoader::CACHE_MODE_REPLACE || load_task.cache_mode == ResourceFormatLoader::CACHE_MODE_REPLACE_DEEP;
 		if (load_task.resource.is_valid()) {
 			if (!ignoring) { 
-				if (replacing) { // ¸üĞÂ»º´æ
+				if (replacing) { // æ›´æ–°ç¼“å­˜
 					Ref<Resource> old_res = ResourceCache::get_ref(load_task.local_path);
 					if (old_res.is_valid() && old_res != load_task.resource) {
 						// If resource is already loaded, only replace its data, to avoid existing invalidating instances.
@@ -297,7 +297,7 @@ namespace lain {
 				load_task.resource->set_path(load_task.local_path, replacing);
 			}
 			else {
-				load_task.resource->set_pathCache(load_task.local_path); //Ö»ÉèÖÃ¸Ã×ÊÔ´
+				load_task.resource->set_pathCache(load_task.local_path); //åªè®¾ç½®è¯¥èµ„æº
 			}
 
 			/*if (load_task.xl_remapped) {
@@ -392,7 +392,7 @@ namespace lain {
 		return _load_complete_inner(p_load_token, r_error, thread_load_lock);
 	}
 
-	// ¼ÓÔØº¯Êı
+	// åŠ è½½å‡½æ•°
 	Ref<Resource> ResourceLoader::_load_complete_inner(LoadToken& p_load_token, Error* r_error, MutexLock<SafeBinaryMutex<BINARY_MUTEX_TAG>>& p_thread_load_lock) {
 		if (r_error) {
 			*r_error = OK;
@@ -428,7 +428,7 @@ namespace lain {
 				if (load_task.task_id != 0) {
 					// Loading thread is in the worker pool.
 					thread_load_mutex.unlock();
-					// ¹¤×÷
+					// å·¥ä½œ
 					Error err = WorkerThreadPool::get_singleton()->wait_for_task_completion(load_task.task_id);
 					if (err == ERR_BUSY) {
 						// The WorkerThreadPool has reported that the current task wants to await on an older one.

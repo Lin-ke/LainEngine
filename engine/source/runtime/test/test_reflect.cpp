@@ -50,9 +50,9 @@ namespace lain {
 				if (facc.getFieldName() == "resource_path") {
 					continue;
 				}
-				facc.set(&m, facc.get(&p)); // ÕâÃ´Ğ´£¬ÕæÃ»ÎÊÌâÂğ¡£¡£
-				// È»¶øÕâÀï²¢²»ÖªµÀÌîÊ²Ã´
-				// ÆäÊµ¿ÉÒÔĞòÁĞ»¯ÔÙ·´ĞòÁĞ»¯
+				facc.set(&m, facc.get(&p)); // è¿™ä¹ˆå†™ï¼ŒçœŸæ²¡é—®é¢˜å—ã€‚ã€‚
+				// ç„¶è€Œè¿™é‡Œå¹¶ä¸çŸ¥é“å¡«ä»€ä¹ˆ
+				// å…¶å®å¯ä»¥åºåˆ—åŒ–å†ååºåˆ—åŒ–
 				L_PRINT("changing", facc.getFieldName());
 			}
 			L_JSON(p);

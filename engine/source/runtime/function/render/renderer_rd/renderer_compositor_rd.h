@@ -7,15 +7,18 @@
 
 namespace lain {
 class RendererCompositorRD : public RendererCompositor {
-    protected:
-    RendererRD::MaterialStorage *material_storage = nullptr;
-    RendererRD::MeshStorage *mesh_storage = nullptr;
+ protected:
+  RendererRD::MaterialStorage* material_storage = nullptr;
+  RendererRD::MeshStorage* mesh_storage = nullptr;
+static RendererCompositorRD *singleton;
 
-    public:
-	virtual RendererMaterialStorage *get_material_storage() {
-
-    };
+ public:
+  RendererMaterialStorage* get_material_storage() override { return material_storage; };
+  RendererMeshStorage* get_mesh_storage() override { return mesh_storage; }
+static RendererCompositorRD *get_singleton() { return singleton; }
+RendererCompositorRD();
+~RendererCompositorRD() override;
 
 };
-}
+}  // namespace lain
 #endif

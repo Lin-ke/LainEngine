@@ -8,10 +8,10 @@
 #include "base.h"
 namespace lain {
 	// #do as std::vector( if not tight)
-	/// force_trivial: ¼Ù×°ÊÇ¸öÄ¬ÈÏ¹¹ÔìµÄÀà
-	// 1. ÔÚ¹¹ÔìÊ±, ! is_trivial_constructor && ! force_trivial µ÷ÓÃ placement_new(memnew_placement)
-	// 2. ÔÚÎö¹¹Ê±, ! is_trivial_deconst ... µ÷ÓÃ~T()
-	// ²»Ö§³ÖÊ¹ÓÃ³õÊ¼»¯ÁĞ±í¹¹Ôì
+	/// force_trivial: å‡è£…æ˜¯ä¸ªé»˜è®¤æ„é€ çš„ç±»
+	// 1. åœ¨æ„é€ æ—¶, ! is_trivial_constructor && ! force_trivial è°ƒç”¨ placement_new(memnew_placement)
+	// 2. åœ¨ææ„æ—¶, ! is_trivial_deconst ... è°ƒç”¨~T()
+	// ä¸æ”¯æŒä½¿ç”¨åˆå§‹åŒ–åˆ—è¡¨æ„é€ 
 	//# not cow
 template <class T, class U = uint32_t, bool force_trivial = false, bool tight = false>
 class LocalVector{

@@ -52,7 +52,7 @@ namespace lain {
 			}
 			return reinterpret_cast<s_ui32*>(m_ptr) - 2;
 		}
-		// ×î´óÖ§³Ö
+		// æœ€å¤§æ”¯æŒ
 		L_INLINE size_t _get_alloc_size(size_t element) const {
 			return next_power_of_2(static_cast<uint32_t> (element * sizeof(T)));
 		}

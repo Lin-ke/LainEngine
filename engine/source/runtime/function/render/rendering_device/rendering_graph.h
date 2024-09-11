@@ -7,8 +7,8 @@
 #include "rendering_device_driver.h"
 #include "core/object/refcounted.h"
 namespace lain {
-		// ÕâÀïÓëRDDÖĞµÄ¶¨Òå²»Í¬£¬»ù±¾¶¼´ø×Åhandle£¨Ö¸ÏòÄÚ²¿ĞèÒªÊı¾İ½á¹¹µÄÄÇ¸öÖ¸Õë£©
-		// ½¨Á¢ÓÚDriverÉÏµÄÉÏ²ãÊı¾İ½á¹¹
+		// è¿™é‡Œä¸RDDä¸­çš„å®šä¹‰ä¸åŒï¼ŒåŸºæœ¬éƒ½å¸¦ç€handleï¼ˆæŒ‡å‘å†…éƒ¨éœ€è¦æ•°æ®ç»“æ„çš„é‚£ä¸ªæŒ‡é’ˆï¼‰
+		// å»ºç«‹äºDriverä¸Šçš„ä¸Šå±‚æ•°æ®ç»“æ„
 	class RenderGraph;
 	// @?
 	enum AttachmentInfoFlagBits
@@ -136,7 +136,7 @@ namespace lain {
 		{
 			Buffer,
 			Texture,
-			Proxy // ÓÃÓÚÍ¬²½¼ÆËã
+			Proxy // ç”¨äºåŒæ­¥è®¡ç®—
 		};
 
 		enum { Unused = ~0u };
@@ -146,10 +146,10 @@ namespace lain {
 		}
 	private:
 		Type resource_type;
-		unsigned index; // Õâ¸öid¾ÍÊÇÔİÊ±·ÖÅäÒ»¸ö
+		unsigned index; // è¿™ä¸ªidå°±æ˜¯æš‚æ—¶åˆ†é…ä¸€ä¸ª
 
 		BitField<RDD::CommandQueueFamilyBits> used_queues;
-		uint32_t physical_index = Unused; // ´¦Àí¸÷ÖÖµÄaliasÇé¿ö
+		uint32_t physical_index = Unused; // å¤„ç†å„ç§çš„aliasæƒ…å†µ
 		StringName name;
 	};
 	using RR = RenderResource ;
@@ -217,7 +217,7 @@ namespace lain {
 	};
 	*/
 
-	// ½«±»×÷Îªsubpass
+	// å°†è¢«ä½œä¸ºsubpass
 	class RenderPass{
 	public:
 		struct AccessedResource
@@ -273,7 +273,7 @@ namespace lain {
 		uint32_t index;
 		uint32_t physical_pass;
 		BitField<RDD::CommandQueueFamilyBits> queue;
-		std::function<void(RDD::CommandBufferID)> render_pass_builder; // ÕâÀïÖ»ÄÜ±©Â¶CommandBufferID
+		std::function<void(RDD::CommandBufferID)> render_pass_builder; // è¿™é‡Œåªèƒ½æš´éœ²CommandBufferID
 		
 		std::function<bool (float, uint32_t)> depth_stencil_cleaner;
 		std::function<bool(unsigned, Color)> color_cleaner;
@@ -325,7 +325,7 @@ namespace lain {
 		HashMap<StringName, uint32_t> pass_to_index;
 		HashMap<StringName, uint32_t> resource_to_index;
 		StringName backbuffer_source;
-		Vector<uint32_t> pass_stack; // ´æ´¢Ğ´ÈëbackbufferÒÔ¼°Ïà¹ØÒÀÀµµÄpass
+		Vector<uint32_t> pass_stack; // å­˜å‚¨å†™å…¥backbufferä»¥åŠç›¸å…³ä¾èµ–çš„pass
 
 		/********
 		Barrier
@@ -341,8 +341,8 @@ namespace lain {
 
 		struct Barriers
 		{
-			LocalVector<Barrier> invalidate; // ÄÚ´æ¿É¼û¹ı³Ì
-			LocalVector<Barrier> flush; // ÄÚ´æ¿ÉÓÃ¹ı³Ì
+			LocalVector<Barrier> invalidate; // å†…å­˜å¯è§è¿‡ç¨‹
+			LocalVector<Barrier> flush; // å†…å­˜å¯ç”¨è¿‡ç¨‹
 		};
 
 		LocalVector<Barriers> pass_barriers;
@@ -352,7 +352,7 @@ namespace lain {
 		void _build_barriers();
 
 		RR::ResourceDimensions swapchain_dimensions;
-		// RenderPass£¬°üÀ¨Ò»Ğ©subpass
+		// RenderPassï¼ŒåŒ…æ‹¬ä¸€äº›subpass
 
 		struct PhysicalPass {
 			LocalVector<uint32_t> passes;

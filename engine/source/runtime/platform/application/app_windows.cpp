@@ -14,7 +14,7 @@ int main() {
 
 	// main function
 	OSWindows os = OSWindows();
-	char* argv[] = { "D:/LainEngine/game" }; //³¡¾°1
+	char* argv[] = { "D:/LainEngine/game" }; //åœºæ™¯1
 	Error err = Main::Initialize(1, argv);
 	if (err != OK) {
 		L_PERROR("initialize failed");
@@ -30,7 +30,7 @@ int main() {
 
 	// main function
 	OSWindows os = OSWindows();
-	char* argv[] = { "D:/LainEngine/game" }; //³¡¾°1
+	char* argv[] = { "D:/LainEngine/game" }; //åœºæ™¯1
 	Error err = Main::Initialize(1, argv);
 	os.main_loop->initialize(); // scenetree
 	/*test::test_scene();

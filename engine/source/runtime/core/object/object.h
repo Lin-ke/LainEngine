@@ -14,9 +14,9 @@
 #include "signal.h"
 
 // m_class::_get_notification() != m_inherits::_get_notification()
-// ÅĞ¶ÏÊÇ·ñÖØÔØÁË_notificationº¯ÊıÖ¸Õë
+// åˆ¤æ–­æ˜¯å¦é‡è½½äº†_notificationå‡½æ•°æŒ‡é’ˆ
 //
-// ·´Éä×Ü¹éÊÇÍ¨¹ı×ÖµäÊµÏÖµÄ£¬µ«ÊÇA.´«°ü×°¹ıµÄvariant£¬B.Ö±½Ó´«Ö¸Õë£¬ÎÒ¾õµÃ»¹ÊÇB¸ü¿ÉĞĞ£¬±ÈÈçÒ»Ğ©×Ô¶¨ÒåÀà£¬ÔÚµ±Ç°ÊµÏÖÖĞĞèÒªÍ¨¹ıobject* È»ºó variantÀ´´«
+// åå°„æ€»å½’æ˜¯é€šè¿‡å­—å…¸å®ç°çš„ï¼Œä½†æ˜¯A.ä¼ åŒ…è£…è¿‡çš„variantï¼ŒB.ç›´æ¥ä¼ æŒ‡é’ˆï¼Œæˆ‘è§‰å¾—è¿˜æ˜¯Bæ›´å¯è¡Œï¼Œæ¯”å¦‚ä¸€äº›è‡ªå®šä¹‰ç±»ï¼Œåœ¨å½“å‰å®ç°ä¸­éœ€è¦é€šè¿‡object* ç„¶å variantæ¥ä¼ 
 // Macros
 
 #define LCLASS(m_class, m_inherits)                                                                    \
@@ -176,7 +176,7 @@ class Connection {
  public:
   META(WhiteListFields)
   Signal signal;
-  Callable callable;  // Ê²Ã´ÀàĞÍµÄÊ²Ã´·½·¨
+  Callable callable;  // ä»€ä¹ˆç±»å‹çš„ä»€ä¹ˆæ–¹æ³•
 
   uint32_t flags = 0;
   bool operator<(const Connection& p_conn) const;
@@ -286,7 +286,7 @@ class Object {
     }
     return *_class_name_ptr;
   }
-  // ÆäÄ¿µÄÊÇÔÊĞí¶ÔÏóÏìÓ¦¿ÉÄÜÓëÆäÏà¹ØµÄ¸÷ÖÖÒıÇæ¼¶»Øµ÷
+  // å…¶ç›®çš„æ˜¯å…è®¸å¯¹è±¡å“åº”å¯èƒ½ä¸å…¶ç›¸å…³çš„å„ç§å¼•æ“çº§å›è°ƒ
   void notification(int p_notification, bool p_reversed = false);
   virtual void _notificationv(int p_notification, bool p_reversed) {}
   void _notification(int p_notification) {}
@@ -317,6 +317,6 @@ class Object {
 };
 }  // namespace lain
 
-// const ÏŞ¶¨·ûÊÇ±ØÒªµÄ£¬ÒòÎªconst¶ÔÏó¾Ü¾øµ÷ÓÃ·Çconst·½·¨
+// const é™å®šç¬¦æ˜¯å¿…è¦çš„ï¼Œå› ä¸ºconstå¯¹è±¡æ‹’ç»è°ƒç”¨éconstæ–¹æ³•
 
 #endif  // !__CORE_OBJECT_H__

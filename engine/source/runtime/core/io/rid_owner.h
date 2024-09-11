@@ -44,7 +44,7 @@ template <typename T, bool THREAD_SAFE = false>
 class RID_Alloc : public RID_AllocBase {
 	T** chunks = nullptr;
 	uint32_t** free_list_chunks = nullptr;
-	uint32_t** validator_chunks = nullptr; // 存储了所有的validator
+	uint32_t** validator_chunks = nullptr; // 瀛樺偍浜嗘墍鏈夌殑validator
 
 	uint32_t elements_in_chunk;
 	uint32_t max_alloc = 0;

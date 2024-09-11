@@ -161,11 +161,11 @@ static inline int get_shift_from_power_of_2(unsigned int p_bits) {
 template <class T>
 static _FORCE_INLINE_ T nearest_power_of_2_templated(T x) {
 	--x;
-	// ·ÀÖ¹³¬¹ıx£¨Èç¹ûxÕıºÃÊÇ1ºóÃæ0£©£¬
+	// é˜²æ­¢è¶…è¿‡xï¼ˆå¦‚æœxæ­£å¥½æ˜¯1åé¢0ï¼‰ï¼Œ
 
 	// The number of operations on x is the base two logarithm
 	// of the number of bits in the type. Add three to account
-	// for sizeof(T) being in bytes. £¨+3Ïàµ±ÓÚ*8£¬log2£©
+	// for sizeof(T) being in bytes.ï¼ˆ+3ç›¸å½“äº*8ï¼Œlog2ï¼‰
 	size_t num = get_shift_from_power_of_2(sizeof(T)) + 3;
 
 	// If the compiler is smart, it unrolls this loop.
@@ -173,9 +173,8 @@ static _FORCE_INLINE_ T nearest_power_of_2_templated(T x) {
 	for (size_t i = 0; i < num; i++) {
 		x |= x >> (1 << i);
 	}
-	// ÕâÑùÑ­»·log´Î£¬·ñÔòÊÇo(n)´Î
-	// Õâ²»¿¼ÂÇ´óĞ¡¶ËµÄÎÊÌâÂğ
-
+	// è¿™æ ·å¾ªç¯logæ¬¡ï¼Œå¦åˆ™æ˜¯o(n)æ¬¡
+	// è¿™ä¸è€ƒè™‘å¤§å°ç«¯çš„é—®é¢˜å—
 	return ++x;
 }
 

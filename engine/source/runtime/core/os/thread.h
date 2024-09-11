@@ -6,9 +6,9 @@
 #include "core/templates/safe_numeric.h"
 #include <malloc.h>
 namespace lain {
-	// ±È½Ï¼òµ¥µÄThreadµÄ°ü×°
-	// ×¢Òâ¹ØÓÚPlatformfunctionµÄ³éÏó
-	// ÒÔ¼°ÀûÓÃº¯ÊıÖ¸ÕëÊµÏÖÑ¼×ÓÀàĞÍ£¨ÔËĞĞÊ±£©
+	// æ¯”è¾ƒç®€å•çš„Threadçš„åŒ…è£…
+	// æ³¨æ„å…³äºPlatformfunctionçš„æŠ½è±¡
+	// ä»¥åŠåˆ©ç”¨å‡½æ•°æŒ‡é’ˆå®ç°é¸­å­ç±»å‹ï¼ˆè¿è¡Œæ—¶ï¼‰
 	class String;
 	class Thread {
 	public:
@@ -45,7 +45,7 @@ namespace lain {
 
 		ID id = UNASSIGNED_ID;
 		static SafeNumeric<uint64_t> id_counter;
-		static thread_local ID caller_id; // µ÷ÓÃÕßid
+		static thread_local ID caller_id; // è°ƒç”¨è€…id
 		THREADING_NAMESPACE::thread thread;
 
 		static void callback(ID p_caller_id, const Settings& p_settings, Thread::Callback p_callback, void* p_userdata);

@@ -8,7 +8,7 @@
 #include "core/templates/pair.h"
 
 namespace lain {
-	// ³¡¾°Ê÷
+	// åœºæ™¯æ ‘
 class ResourceFormatLoaderText : public ResourceFormatLoader {
 public:
 	static ResourceFormatLoaderText* singleton;
@@ -74,7 +74,7 @@ public:
 
 class ResourceFormatSaverText;
 
-// Êµ¼ÊÖ´ĞĞ²Ù×÷µÄÀà
+// å®é™…æ‰§è¡Œæ“ä½œçš„ç±»
 class ResourceLoaderText {
 	friend class ResourceFormatLoaderText;
 	friend class ResourceFormatSaverText;
@@ -93,7 +93,7 @@ class ResourceLoaderText {
 	String res_path;
 	String error_text;
 	ResourceUID::ID res_uid = ResourceUID::INVALID_ID;
-	// Íâ²¿×ÊÔ´¼ÓÔØ
+	// å¤–éƒ¨èµ„æºåŠ è½½
 	HashMap<String, ExtResource> ext_resources;
 	HashMap<String, Ref<Resource>> int_resources;
 
@@ -101,7 +101,7 @@ class ResourceLoaderText {
 	int resource_current = 0;
 	ResourceFormatLoader::CacheMode cache_mode = ResourceFormatLoader::CACHE_MODE_REUSE;
 	ResourceFormatLoader::CacheMode cache_mode_for_external = ResourceFormatLoader::CACHE_MODE_REUSE;
-	// Èç¹ûmissing
+	// å¦‚æœmissing
 	
 public:
 	Error load();

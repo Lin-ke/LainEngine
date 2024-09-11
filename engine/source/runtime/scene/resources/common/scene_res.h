@@ -4,7 +4,7 @@
 #include "core/meta/reflection/reflection.h"
 #include "gobject_res.h"
 #include "core/string/string_name.h"
-// ½¨Òé£ºreflection typeÖ»¸ºÔğĞòÁĞ»¯/·´ĞòÁĞ»¯£¬¶ø²»×öµÄÊÂ
+// å»ºè®®ï¼šreflection typeåªè´Ÿè´£åºåˆ—åŒ–/ååºåˆ—åŒ–ï¼Œè€Œä¸åšçš„äº‹
 namespace lain {
     REFLECTION_TYPE(PackedSceneRes)
         CLASS(PackedSceneRes, Fields) {

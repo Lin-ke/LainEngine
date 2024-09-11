@@ -5,7 +5,7 @@
 #define PRINT_RENDER_GRAPH 1
 #define PRINT_COMMAND_RECORDING 1
 using namespace lain;
-// Ö÷Òª·ÖÎªreadºÍwriteÁ½ÖÖ
+// ä¸»è¦åˆ†ä¸ºreadå’Œwriteä¸¤ç§
 RenderingDeviceGraph::RenderingDeviceGraph() {}
 RenderingDeviceGraph::~RenderingDeviceGraph() {}
 
@@ -49,7 +49,7 @@ RDD::TextureLayout RenderingDeviceGraph::_usage_to_image_layout(ResourceUsage p_
       return RDD::TEXTURE_LAYOUT_RESOLVE_DST_OPTIMAL;
     case RESOURCE_USAGE_TEXTURE_SAMPLE:
       return RDD::TEXTURE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    case RESOURCE_USAGE_STORAGE_IMAGE_READ:  // image read, ºÍ image read-write¶¼ÊÇ storage optimal
+    case RESOURCE_USAGE_STORAGE_IMAGE_READ:  // image read, å’Œ image read-writeéƒ½æ˜¯ storage optimal
     case RESOURCE_USAGE_STORAGE_IMAGE_READ_WRITE:
       return RDD::TEXTURE_LAYOUT_STORAGE_OPTIMAL;
     case RESOURCE_USAGE_ATTACHMENT_COLOR_READ_WRITE:
@@ -120,7 +120,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
     // If a label is active, tag the command with the label.
     r_command->label_index = command_label_index;
   }
-  // timestampºÍsynchronizationÊÇÌØÊâµÄcommand£¬ĞèÒªµ¥¶À´¦Àí(ĞèÒª½«Ö®Ç°µÄÃüÁîÓë¸ÃÃüÁîÏàÁ¬)
+  // timestampå’Œsynchronizationæ˜¯ç‰¹æ®Šçš„commandï¼Œéœ€è¦å•ç‹¬å¤„ç†(éœ€è¦å°†ä¹‹å‰çš„å‘½ä»¤ä¸è¯¥å‘½ä»¤ç›¸è¿)
   if (r_command->type == RecordedCommand::TYPE_CAPTURE_TIMESTAMP) {
     // All previous commands starting from the previous timestamp should be adjacent to this command.
     int32_t start_command_index = uint32_t(MAX(command_timestamp_index, 0));
@@ -134,7 +134,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
     // Timestamp command should be adjacent to this command.
     _add_adjacent_command(command_timestamp_index, p_command_index, r_command);
   }
-  // ´¦ÓÚsynchronizationµÄ×´Ì¬
+  // å¤„äºsynchronizationçš„çŠ¶æ€
   if (command_synchronization_pending) {
     // All previous commands should be adjacent to this command.
     int32_t start_command_index = uint32_t(MAX(command_synchronization_index, 0));
@@ -170,7 +170,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
         resource_tracker->slice_cmd_idx = p_command_index;
       }
       if (parent_traker->usage == ResourceUsage::RESOURCE_USAGE_NONE) {
-        if (parent_traker->is_texture()) {  // ĞèÒª×ª»»parentµÄlayout
+        if (parent_traker->is_texture()) {  // éœ€è¦è½¬æ¢parentçš„layout
           // If the resource is a texture, we transition it entirely to the layout determined by the first slice that uses it.
           _add_texture_barrier_to_command(
               parent_traker->texture_driver_id, RDD::BarrierAccessBits(0), new_usage_access,
@@ -194,7 +194,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
           ResourceTracker* previous_tracker = nullptr;
           ResourceTracker* current_tracker = parent_traker->dirty_shared_list;
           bool initialized_dirty_rect = false;
-          while (current_tracker != nullptr) {  //  ÕÒµ½ resource_tracker
+          while (current_tracker != nullptr) {  //  æ‰¾åˆ° resource_tracker
             current_tracker->reset_if_outdated(tracking_frame);
 
             if (current_tracker == resource_tracker) {
@@ -208,7 +208,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
 
               current_tracker = current_tracker->next_shared;
             } else {
-              if (initialized_dirty_rect) {  // ·Çresource_trackerµÄÖØĞÂÈÚºÏÒ»±é
+              if (initialized_dirty_rect) {  // éresource_trackerçš„é‡æ–°èåˆä¸€é
                 parent_traker->slice_or_dirty_rect =
                     parent_traker->slice_or_dirty_rect.merge(current_tracker->slice_or_dirty_rect);
               } else {
@@ -237,8 +237,8 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
               if (_curr->slice_cmd_idx == p_command_index) {
                 ERR_FAIL_MSG("Texture slices that overlap can't be used in the same command.");
               } else {
-                // ½«Óë¸ÃsliceÓĞ½»¼¯µÄslice»Ö¸´Îª¸¸ÎÆÀíµÄÊ¹ÓÃ
-                //Èç¹ûĞÂÃüÁîÏëÒªÊ¹ÓÃÓëÔàÇøÓòÖØµşµÄÇĞÆ¬£¬ÔàÁĞ±íÖĞ´æÔÚµÄÇĞÆ¬Ò²¿ÉÒÔµ¥¶À½øĞĞ¹æ·¶»¯ºÍÉ¾³ı¡£
+                // å°†ä¸è¯¥sliceæœ‰äº¤é›†çš„sliceæ¢å¤ä¸ºçˆ¶çº¹ç†çš„ä½¿ç”¨
+                //å¦‚æœæ–°å‘½ä»¤æƒ³è¦ä½¿ç”¨ä¸è„åŒºåŸŸé‡å çš„åˆ‡ç‰‡ï¼Œè„åˆ—è¡¨ä¸­å­˜åœ¨çš„åˆ‡ç‰‡ä¹Ÿå¯ä»¥å•ç‹¬è¿›è¡Œè§„èŒƒåŒ–å’Œåˆ é™¤ã€‚
                 // Delete the slice from the dirty list and revert it to the usage of the parent.
                 if (_curr->is_texture()) {
                   _add_texture_barrier_to_command(
@@ -247,7 +247,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
                       command_normalization_barriers, r_command->normalization_barrier_index,
                       r_command->normalization_barrier_count);
                   search_tracker_rect =
-                      search_tracker_rect.merge(_curr->slice_or_dirty_rect);  // ÊÜµ½Ó°ÏìµÄ²¿·Ö
+                      search_tracker_rect.merge(_curr->slice_or_dirty_rect);  // å—åˆ°å½±å“çš„éƒ¨åˆ†
                   write_usage = true;
                 }
                 _curr->in_parent_dirty_list = false;
@@ -290,7 +290,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
         }
       }
     } else {  // not slice
-      //Èç¹ûÔÚÃüÁîÖĞÖ±½ÓÊ¹ÓÃ¸¸ÎÆÀí£¬ÔòÔàÁĞ±íÖĞµÄËùÓĞÇĞÆ¬¶¼½«Í¨¹ı½«ÎÆÀí¡°¹æ·¶»¯¡±ÎªÒ»¸öÄÚ´æ²¼¾Ö¶ø»Ö¸´Îª¸¸ÎÆÀíµÄÊ¹ÓÃ¡£
+      //å¦‚æœåœ¨å‘½ä»¤ä¸­ç›´æ¥ä½¿ç”¨çˆ¶çº¹ç†ï¼Œåˆ™è„åˆ—è¡¨ä¸­çš„æ‰€æœ‰åˆ‡ç‰‡éƒ½å°†é€šè¿‡å°†çº¹ç†â€œè§„èŒƒåŒ–â€ä¸ºä¸€ä¸ªå†…å­˜å¸ƒå±€è€Œæ¢å¤ä¸ºçˆ¶çº¹ç†çš„ä½¿ç”¨ã€‚
       ResourceTracker* current_tracker = resource_tracker->dirty_shared_list;
       if (current_tracker != nullptr) {
         // Consider the usage as write if we must transition any of the slices.
@@ -299,7 +299,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
 
       while (current_tracker != nullptr) {
         current_tracker->reset_if_outdated(tracking_frame);
-        // ÔàÁĞ±íÒ»¶¨Óë¸¸ÎÆÀíµÄlayout²»Í¬
+        // è„åˆ—è¡¨ä¸€å®šä¸çˆ¶çº¹ç†çš„layoutä¸åŒ
         if (current_tracker->is_texture()) {
           DEV_ASSERT(_usage_to_image_layout(current_tracker->usage) ==
                      _usage_to_image_layout(new_resource_usage));
@@ -318,9 +318,9 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
       resource_tracker->dirty_shared_list = nullptr;
     }
 
-    // ÉÏÃæÖ÷Òª´¦ÀíÁËdirty list
+    // ä¸Šé¢ä¸»è¦å¤„ç†äº†dirty list
 
-    // Èç¹ûÖ»ÊÇÒ»¸öÇĞÆ¬¾ÍÓÃ¸¸Ç×µÄ
+    // å¦‚æœåªæ˜¯ä¸€ä¸ªåˆ‡ç‰‡å°±ç”¨çˆ¶äº²çš„
     bool resource_has_parent = resource_tracker->parent != nullptr;
     ResourceTracker* search_tracker =
         resource_has_parent ? resource_tracker->parent : resource_tracker;
@@ -329,16 +329,16 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
     bool diff_layout = _usage_to_image_layout(resource_tracker->usage) !=
                        _usage_to_image_layout(new_resource_usage);
     bool write_usage_after_write = (write_usage && search_tracker->write_cmd_idx >= 0);
-    // Èç¹ûĞèÒªtransition ÒÔ¼° writeºówrite Ìí¼Óbarrier
+    // å¦‚æœéœ€è¦transition ä»¥åŠ writeåwrite æ·»åŠ barrier
     if (diff_layout || write_usage_after_write) {
       // A barrier must be pushed if the usage is different of it's a write usage and there was already a command that wrote to this resource previously.
-      // ÔÚÖ®Ç°cmdÍê³ÉÖ®Ç°µÈ´ı
+      // åœ¨ä¹‹å‰cmdå®Œæˆä¹‹å‰ç­‰å¾…
       if (resource_tracker->is_texture()) {
         if (resource_tracker->usage_access.is_empty()) {
           // FIXME: If the tracker does not know the previous type of usage, assume the generic memory write one.
           // Tracking access bits across texture slices can be tricky, so this failsafe can be removed once that's improved.
           resource_tracker->usage_access =
-              RDD::BARRIER_ACCESS_MEMORY_WRITE_BIT;  // ¼Ù¶¨Ö®Ç°ÊÇĞ´£¬ÏÖÔÚÓÖĞ´
+              RDD::BARRIER_ACCESS_MEMORY_WRITE_BIT;  // å‡å®šä¹‹å‰æ˜¯å†™ï¼Œç°åœ¨åˆå†™
         }
         _add_texture_barrier_to_command(
             resource_tracker->texture_driver_id, resource_tracker->usage_access, new_usage_access,
@@ -371,25 +371,25 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
     if (search_tracker->has_write() && search_tracker->write_cmd_list_enable) {
       // Make this command adjacent to any commands that wrote to this resource and intersect with the slice if it applies.
       // For buffers or textures that never use slices, this list will only be one element long at most.
-      int32_t write_cmd_idx = search_tracker->write_cmd_idx;  // ÄÜ±£Ö¤write_cmd_idx¶¼ÊÇÊôÓÚ¸Ã×ÊÔ´µÄ
+      int32_t write_cmd_idx = search_tracker->write_cmd_idx;  // èƒ½ä¿è¯write_cmd_idxéƒ½æ˜¯å±äºè¯¥èµ„æºçš„
       int32_t previous_write_cmd_idx = -1;
       while (write_cmd_idx >= 0) {
-        // ²éÕÒËùÓĞµÄwrite£¬Èç¹ûÓĞ½»¼¯¾ÍÌí¼ÓÒÀÀµ
+        // æŸ¥æ‰¾æ‰€æœ‰çš„writeï¼Œå¦‚æœæœ‰äº¤é›†å°±æ·»åŠ ä¾èµ–
         const RecordedSliceListNode& write_list_node = write_slice_list_nodes[write_cmd_idx];
-        // Èç¹ûÖ±½Ó¶Ôfather×ÊÔ´Ğ´£¬»òÕß¶ÔÇĞÆ¬Ğ´µ«ÊÇÓĞ½»¼¯
+        // å¦‚æœç›´æ¥å¯¹fatherèµ„æºå†™ï¼Œæˆ–è€…å¯¹åˆ‡ç‰‡å†™ä½†æ˜¯æœ‰äº¤é›†
         if (!resource_has_parent || search_tracker_rect.intersects(write_list_node.subresources)) {
           if (write_list_node.command_index == p_command_index) {
             ERR_FAIL_COND_MSG(!resource_has_parent, "Command can't have itself as a dependency.");
           } else {
             // Command is dependent on this command. Add this command to the adjacency list of the write command.
-            // ±¾Ğ´Ö¸ÁîÒÀÀµÓÚ¸ÃÃüÁî¡£
+            // æœ¬å†™æŒ‡ä»¤ä¾èµ–äºè¯¥å‘½ä»¤ã€‚
             _add_adjacent_command(write_list_node.command_index, p_command_index, r_command);
 
             if (resource_has_parent && write_usage &&
                 search_tracker_rect.encloses(write_list_node.subresources)) {
               // Eliminate redundant writes from the list.
-              // Èç¹ûÒªĞ´ÇĞÆ¬£¬²¢ÇÒĞ´µÄ·¶Î§±È¸ÃÃüÁîµÄ·¶Î§´ó£¬¾Í²»ĞèÒªÖ®Ç°µÄĞ´ÁË£¬ÒÔºó²éÔÄÕâ¸öĞ´
-              // Ğ´ÃüÁîÈÔÈ»´æÔÚ
+              // å¦‚æœè¦å†™åˆ‡ç‰‡ï¼Œå¹¶ä¸”å†™çš„èŒƒå›´æ¯”è¯¥å‘½ä»¤çš„èŒƒå›´å¤§ï¼Œå°±ä¸éœ€è¦ä¹‹å‰çš„å†™äº†ï¼Œä»¥åæŸ¥é˜…è¿™ä¸ªå†™
+              // å†™å‘½ä»¤ä»ç„¶å­˜åœ¨
 
               if (previous_write_cmd_idx >= 0) {
                 RecordedSliceListNode& previous_list_node =
@@ -415,10 +415,10 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
       } else {
         _add_adjacent_command(search_tracker->write_cmd_idx, p_command_index, r_command);
       }
-    }  // else : ¸Ã×ÊÔ´Ã»ÓĞĞ´
+    }  // else : è¯¥èµ„æºæ²¡æœ‰å†™
     // update write_cmd_list
     if (write_usage) {
-      // ÓÉ´Ë¿É¼û¸¸µÄwrite°üº¬ÁËËùÓĞ¶ÔÇĞÆ¬µÄĞ´
+      // ç”±æ­¤å¯è§çˆ¶çš„writeåŒ…å«äº†æ‰€æœ‰å¯¹åˆ‡ç‰‡çš„å†™
       if (resource_has_parent) {
         if (!search_tracker->write_cmd_list_enable && search_tracker->write_cmd_idx >= 0) {
           // Write command list was not being used but there was a write command recorded. Add a new node with the entire parent resource's subresources and the recorded command index to the list.
@@ -429,7 +429,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
         search_tracker->write_cmd_idx =
             _add_to_write_list(p_command_index, search_tracker_rect, search_tracker->write_cmd_idx);
         search_tracker->write_cmd_list_enable = true;
-      } else {  // Èç¹û²»ÊÇÇĞÆ¬£¬Ö±½ÓÌí¼Ó
+      } else {  // å¦‚æœä¸æ˜¯åˆ‡ç‰‡ï¼Œç›´æ¥æ·»åŠ 
         search_tracker->write_cmd_idx = p_command_index;
         search_tracker->write_cmd_list_enable = false;
       }
@@ -461,7 +461,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
       while (read_slice_command_list_index >= 0) {
         const RecordedSliceListNode& read_list_node =
             read_slice_list_nodes[read_slice_command_list_index];
-        // Èç¹û²»ÊÇÇĞÆ¬»òÕßÇĞÆ¬ÇÒÍêÈ«°üº¬¸ÃÃüÁî(ºóÃæ»á¼ÓÈëÕâ¸ö×÷ÎªĞÂµÄ)
+        // å¦‚æœä¸æ˜¯åˆ‡ç‰‡æˆ–è€…åˆ‡ç‰‡ä¸”å®Œå…¨åŒ…å«è¯¥å‘½ä»¤(åé¢ä¼šåŠ å…¥è¿™ä¸ªä½œä¸ºæ–°çš„)
         if (!resource_has_parent || search_tracker_rect.encloses(read_list_node.subresources)) {
           if (previous_slice_command_list_index >= 0) {
             // Erase this element and connect the previous one to the next element.
@@ -567,7 +567,7 @@ void RenderingDeviceGraph::_add_texture_barrier_to_command(
 
   RDD::TextureBarrier texture_barrier;
   texture_barrier.texture = p_texture_id;
-  texture_barrier.src_access = p_src_access;  // @info: 0 Ê±Îª²¼¾Ö×ª»»
+  texture_barrier.src_access = p_src_access;  // @info: 0 æ—¶ä¸ºå¸ƒå±€è½¬æ¢
   texture_barrier.dst_access = p_dst_access;
   texture_barrier.prev_layout = _usage_to_image_layout(p_prev_usage);
   texture_barrier.next_layout = _usage_to_image_layout(p_next_usage);
@@ -583,7 +583,7 @@ void RenderingDeviceGraph::_add_adjacent_command(int32_t p_previous_command_inde
   RecordedCommand& previous_command =
       *reinterpret_cast<RecordedCommand*>(&command_data[previous_command_data_offset]);
   previous_command.adjacent_command_list_index = _add_to_command_list(
-      p_command_index, previous_command.adjacent_command_list_index);  // µ¹×Å²åÈë
+      p_command_index, previous_command.adjacent_command_list_index);  // å€’ç€æ’å…¥
   previous_command.next_stages = previous_command.next_stages | r_command->self_stages;
   r_command->previous_stages = r_command->previous_stages | previous_command.self_stages;
 }
@@ -638,10 +638,10 @@ RenderingDeviceGraph::RecordedCommand* RenderingDeviceGraph::_allocate_command(
   uint32_t command_data_offset = command_data.size();
   command_data_offsets.push_back(command_data_offset);
   command_data.resize(command_data_offset + p_command_size);
-  r_command_index = command_count++;  // ¶îÍâĞèÒªÔö¼ÓÕâ¸ö
+  r_command_index = command_count++;  // é¢å¤–éœ€è¦å¢åŠ è¿™ä¸ª
   RecordedCommand* new_command =
       reinterpret_cast<RecordedCommand*>(&command_data[command_data_offset]);
-  *new_command = RecordedCommand();  // ĞèÒª³õÊ¼»¯
+  *new_command = RecordedCommand();  // éœ€è¦åˆå§‹åŒ–
   return new_command;
 }
 
@@ -711,7 +711,7 @@ void RenderingDeviceGraph::add_buffer_get_data(RDD::BufferID p_src, ResourceTrac
   }
 }
 
-// @? buffer_updateÊÇ¸´ÖÆpDataµ½buffer¡£ÕâÀïÊÇ¸´ÖÆÈô¸É¸öbufferµ½¸Ãbuffer
+// @? buffer_updateæ˜¯å¤åˆ¶pDataåˆ°bufferã€‚è¿™é‡Œæ˜¯å¤åˆ¶è‹¥å¹²ä¸ªbufferåˆ°è¯¥buffer
 void RenderingDeviceGraph::add_buffer_update(RDD::BufferID p_dst, ResourceTracker* p_dst_tracker,
                                              VectorView<RecordedBufferCopy> p_buffer_copies) {
   DEV_ASSERT(p_dst_tracker != nullptr);
@@ -837,8 +837,8 @@ void RenderingDeviceGraph::add_compute_list_usages(VectorView<ResourceTracker*> 
     add_compute_list_usage(p_trackers[i], p_usages[i]);
   }
 }
-// °ÑËùÓĞcompute commandsÈûµ½Ò»Æğ
-// Ã»ÓĞ¶àÏß³ÌµÄ²¿·Ö£¿
+// æŠŠæ‰€æœ‰compute commandså¡åˆ°ä¸€èµ·
+// æ²¡æœ‰å¤šçº¿ç¨‹çš„éƒ¨åˆ†ï¼Ÿ
 void RenderingDeviceGraph::add_compute_list_end() {
   int32_t command_index;
   uint32_t instruction_data_size = compute_instruction_list.data.size();
@@ -1075,7 +1075,7 @@ void RenderingDeviceGraph::add_draw_list_usage(ResourceTracker* p_tracker, Resou
   }
 #endif
 }
-// uniform_set µÄ°ó¶¨ ĞèÒªµ÷ÓÃ
+// uniform_set çš„ç»‘å®š éœ€è¦è°ƒç”¨
 void RenderingDeviceGraph::add_draw_list_usages(VectorView<ResourceTracker*> p_trackers,
                                                 VectorView<ResourceUsage> p_usages) {
   DEV_ASSERT(p_trackers.size() == p_usages.size());
@@ -1090,7 +1090,7 @@ void RenderingDeviceGraph::add_draw_list_end() {
   const uint32_t instruction_data_threshold_for_secondary = 1000;
   RDD::CommandBufferType command_buffer_type;
   uint32_t& secondary_buffers_used = frames[frame].secondary_command_buffers_used;
-  // Èç¹û´óÓÚãĞÖµ£¬¾ÍÓÃsecondary command buffer£¬·ñÔòÓÃprimary
+  // å¦‚æœå¤§äºé˜ˆå€¼ï¼Œå°±ç”¨secondary command bufferï¼Œå¦åˆ™ç”¨primary
   if (draw_instruction_list.data.size() > instruction_data_threshold_for_secondary &&
       secondary_buffers_used < frames[frame].secondary_command_buffers.size()) {
     // Copy the current instruction list data into another array that will be used by the secondary command buffer worker.
@@ -1402,7 +1402,7 @@ void RenderingDeviceGraph::_run_compute_list_command(RDD::CommandBufferID p_comm
         instruction_data_cursor += sizeof(ComputeListSetPushConstantInstruction);
         instruction_data_cursor += set_push_constant_instruction->size;
       } break;
-        // d3d12ĞèÒª
+        // d3d12éœ€è¦
       case ComputeListInstruction::TYPE_UNIFORM_SET_PREPARE_FOR_USE: {
         const ComputeListUniformSetPrepareForUseInstruction*
             uniform_set_prepare_for_use_instruction =
@@ -1416,10 +1416,10 @@ void RenderingDeviceGraph::_run_compute_list_command(RDD::CommandBufferID p_comm
     }
   }
 }
-// ¸Ğ¾õÕâÀïµÄÉè¼ÆÊÇ±È½Ï²ÚµÄ£¬ÕâÑùÃ¿´ÎÔö¼ÓÒ»¸ö×Ö¶ÎĞèÒªÔÚºÃ¶àµØ·½¸ü¸Ä
-// ·½°¸£ºÊ¹ÓÃĞéº¯Êı£¬´ú¼ÛÊÇ¶à4¸ö×Ö½Ú£¨Ğéº¯Êı±í£©
-// @todo ²âÊÔ¡£ ¿¼ÂÇµ½PSOÕ¼ÓÃÄÚ´æºÜ´ó£¬Î´±ØºÃÓÃ¡£
-// ¿ÉÒÔ¿¼ÂÇ×î½ü´ó¼ÒÑĞ¾¿µÄproxy»úÖÆ£¨Í¨¹ıconcept£¿£©
+// æ„Ÿè§‰è¿™é‡Œçš„è®¾è®¡æ˜¯æ¯”è¾ƒç³™çš„ï¼Œè¿™æ ·æ¯æ¬¡å¢åŠ ä¸€ä¸ªå­—æ®µéœ€è¦åœ¨å¥½å¤šåœ°æ–¹æ›´æ”¹
+// æ–¹æ¡ˆï¼šä½¿ç”¨è™šå‡½æ•°ï¼Œä»£ä»·æ˜¯å¤š4ä¸ªå­—èŠ‚ï¼ˆè™šå‡½æ•°è¡¨ï¼‰
+// @todo æµ‹è¯•ã€‚ è€ƒè™‘åˆ°PSOå ç”¨å†…å­˜å¾ˆå¤§ï¼Œæœªå¿…å¥½ç”¨ã€‚
+// å¯ä»¥è€ƒè™‘æœ€è¿‘å¤§å®¶ç ”ç©¶çš„proxyæœºåˆ¶ï¼ˆé€šè¿‡conceptï¼Ÿï¼‰
 /* 
 while(instruction_data_cursor < p_instruction_data_size) {
   const DrawListInstruction *instruction = reinterpret_cast<const DrawListInstruction *>(&p_instruction_data[instruction_data_cursor]);
@@ -1427,7 +1427,7 @@ while(instruction_data_cursor < p_instruction_data_size) {
   instruction_data_cursor += instruction->length();
 }
 */
-// Ö´ĞĞ£¨¿ªÊ¼Ïò»º³åÇøÖĞ¼ÇÂ¼ÃüÁî£¬È»ºóÌá½»¸øGPU£© ÔÚworkerthreadÖĞÖ´ĞĞ
+// æ‰§è¡Œï¼ˆå¼€å§‹å‘ç¼“å†²åŒºä¸­è®°å½•å‘½ä»¤ï¼Œç„¶åæäº¤ç»™GPUï¼‰ åœ¨workerthreadä¸­æ‰§è¡Œ
 
 void RenderingDeviceGraph::_run_draw_list_command(RDD::CommandBufferID p_command_buffer,
                                                   const uint8_t* p_instruction_data,
@@ -1610,7 +1610,7 @@ void RenderingDeviceGraph::_run_render_command(
         }
       } break;
       case RecordedCommand::TYPE_COMPUTE_LIST: {
-        // Adreno 6xx»áÓĞÎÊÌâ£¬ºÜÉñÆæ£¬ÕâÒ²ÄÜ·¢ÏÖ
+        // Adreno 6xxä¼šæœ‰é—®é¢˜ï¼Œå¾ˆç¥å¥‡ï¼Œè¿™ä¹Ÿèƒ½å‘ç°
         // if (device.workarounds.avoid_compute_after_draw && workarounds_state.draw_list_found) {
         //   // Avoid compute after draw workaround. Refer to the comment that enables this in the Vulkan driver for more information.
         //   workarounds_state.draw_list_found = false;
@@ -1866,8 +1866,8 @@ void RenderingDeviceGraph::end(bool p_reorder_commands, bool p_full_barriers,
   thread_local LocalVector<RecordedCommandSort> commands_sorted;
 
   if (p_reorder_commands) {  //
-    // ¼ÆËãÃ¿¸ö¶¥µãµÄÈë¶È£¬´ÓÃ¿¸ö¸ù½Úµã½øĞĞBFS±éÀú
-    // ÎªÊ²Ã´¶¼Ê¹ÓÃthread_local?
+    // è®¡ç®—æ¯ä¸ªé¡¶ç‚¹çš„å…¥åº¦ï¼Œä»æ¯ä¸ªæ ¹èŠ‚ç‚¹è¿›è¡ŒBFSéå†
+    // ä¸ºä»€ä¹ˆéƒ½ä½¿ç”¨thread_local?
     thread_local LocalVector<uint32_t> command_degrees;
     command_degrees.resize(command_count);
 
@@ -1882,7 +1882,7 @@ void RenderingDeviceGraph::end(bool p_reorder_commands, bool p_full_barriers,
         adjcent_list_idx = command_list_node.next_list_index;
       }
     }
-    // ¸ù½Úµã
+    // æ ¹èŠ‚ç‚¹
     thread_local LocalVector<int32_t> command_stack;
     command_stack.clear();
     for (int32_t i = 0; i < command_count; i++) {
@@ -1893,19 +1893,19 @@ void RenderingDeviceGraph::end(bool p_reorder_commands, bool p_full_barriers,
     thread_local LocalVector<int32_t> sorted_command_indices;
     // BFS
     sorted_command_indices.clear();
-    int32_t adjacent_list_idx = 0;  // ÓÃÓÚ±éÀúÁÚ½Ó±í
+    int32_t adjacent_list_idx = 0;  // ç”¨äºéå†é‚»æ¥è¡¨
 
-    while (!command_stack.is_empty()) {  // ²ãĞò±éÀú
+    while (!command_stack.is_empty()) {  // å±‚åºéå†
       const RecordedCommand* recorded_command = _get_command(command_stack.back());
       command_stack.resize(command_stack.size() - 1);
       sorted_command_indices.push_back(command_stack.back());
       adjacent_list_idx = recorded_command->adjacent_command_list_index;
       while (adjacent_list_idx >= 0) {
         const RecordedCommandListNode& command_list_node = command_list_nodes[adjacent_list_idx];
-        // ÈëÕ»
+        // å…¥æ ˆ
         uint32_t& command_degree = command_degrees[command_list_node.command_index];
         command_degree -= 1;
-        if (command_degree == 0) {  // ËµÃ÷¾ÍÔÚÕâÒ»²ã£¨×îÉîµÄ¸¸Ç×£©
+        if (command_degree == 0) {  // è¯´æ˜å°±åœ¨è¿™ä¸€å±‚ï¼ˆæœ€æ·±çš„çˆ¶äº²ï¼‰
           command_stack.push_back(command_list_node.command_index);
         }
         adjacent_list_idx = command_list_node.next_list_index;
@@ -1914,13 +1914,13 @@ void RenderingDeviceGraph::end(bool p_reorder_commands, bool p_full_barriers,
 
     commands_sorted.clear();
     commands_sorted.resize(command_count);
-    // ÌîĞ´commands_sortedµÄindexºÍlevel£¬¸ù¾İsorted_command_indices
+    // å¡«å†™commands_sortedçš„indexå’Œlevelï¼Œæ ¹æ®sorted_command_indices
     for (int32_t i = 0; i < command_count; i++) {
       int32_t sorted_command_index = sorted_command_indices[i];
       const RecordedCommand* recorded_command = _get_command(sorted_command_index);
       const uint32_t next_command_level = commands_sorted[sorted_command_index].level + 1;
       adjacent_list_idx = recorded_command->adjacent_command_list_index;
-      // ¸üĞÂËùÓĞ¶ù×ÓµÄ²ã£¬È¡¸ü´óµÄ
+      // æ›´æ–°æ‰€æœ‰å„¿å­çš„å±‚ï¼Œå–æ›´å¤§çš„
       while (adjacent_list_idx >= 0) {
         const RecordedCommandListNode& command_list_node = command_list_nodes[adjacent_list_idx];
         uint32_t& adjacent_command_level = commands_sorted[command_list_node.command_index].level;
@@ -1957,7 +1957,7 @@ void RenderingDeviceGraph::end(bool p_reorder_commands, bool p_full_barriers,
     commands_sorted.sort();
 
 #if PRINT_RENDER_GRAPH
-    print_line("AFTER SORT");  // Ã¿Ò»²ã¸ù¾İÓÅÏÈ¼¶ÅÅĞò
+    print_line("AFTER SORT");  // æ¯ä¸€å±‚æ ¹æ®ä¼˜å…ˆçº§æ’åº
     _print_render_commands(commands_sorted.ptr(), command_count);
 #endif
 
@@ -1981,7 +1981,7 @@ void RenderingDeviceGraph::end(bool p_reorder_commands, bool p_full_barriers,
         current_level_start = i;
       }
     }
-    // ×îºóÒ»²ã
+    // æœ€åä¸€å±‚
     RecordedCommandSort* level_command_ptr = &commands_sorted[current_level_start];
     uint32_t level_command_count = command_count - current_level_start;
     _boost_priority_for_render_commands(level_command_ptr, level_command_count, boosted_priority);
@@ -1996,7 +1996,7 @@ void RenderingDeviceGraph::end(bool p_reorder_commands, bool p_full_barriers,
 
   } else {
     for (uint32_t i = 0; i < command_count; i++) {
-      // °¤¸ö¼Óbarrier
+      // æŒ¨ä¸ªåŠ barrier
       _group_barriers_for_render_commands(r_command_buffer, &commands_sorted[i], 1,
                                           p_full_barriers);
       _run_render_command(i, &commands_sorted[i], 1, r_command_buffer, r_command_buffer_pool,
@@ -2031,7 +2031,7 @@ void RenderingDeviceGraph::_boost_priority_for_render_commands(
       command_sorter.sort(p_sorted_commands, p_sorted_commands_count);
     }
   }
-  // ×îºóÒ»¸öÖ¸ÁîµÄÓÅÏÈ¼¶£»½«Óë¸ÃÓÅÏÈ¼¶ÏàÍ¬µÄÖ¸ÁîÉèÖÃÎª0 £¨ÎªÊ²Ã´£¿ÒÔ·½±ãÏÂ´ÎÖ´ĞĞÂğ£©
+  // æœ€åä¸€ä¸ªæŒ‡ä»¤çš„ä¼˜å…ˆçº§ï¼›å°†ä¸è¯¥ä¼˜å…ˆçº§ç›¸åŒçš„æŒ‡ä»¤è®¾ç½®ä¸º0 ï¼ˆä¸ºä»€ä¹ˆï¼Ÿä»¥æ–¹ä¾¿ä¸‹æ¬¡æ‰§è¡Œå—ï¼‰
   // 
   if (p_sorted_commands[p_sorted_commands_count - 1].priority != boosted_priority_value) {
     r_boosted_priority = p_sorted_commands[p_sorted_commands_count - 1].priority;

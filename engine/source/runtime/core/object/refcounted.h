@@ -13,7 +13,7 @@ private:
 	SafeRefCount refcount_init;
 	SafeRefCount refcount;
 public:
-	// ÒòÎª±»ÒıÓÃ1Ò²ÊÇ1£¬Ò»¿ªÊ¼Ò²ÊÇ1£¬ËùÒÔ°ÑÒıÓÃÁËµÄrefcount_initÉèÖÃÎª0£»²»ÊÇ1ËµÃ÷±»ÒıÓÃ
+	// å› ä¸ºè¢«å¼•ç”¨1ä¹Ÿæ˜¯1ï¼Œä¸€å¼€å§‹ä¹Ÿæ˜¯1ï¼Œæ‰€ä»¥æŠŠå¼•ç”¨äº†çš„refcount_initè®¾ç½®ä¸º0ï¼›ä¸æ˜¯1è¯´æ˜è¢«å¼•ç”¨
 	_FORCE_INLINE_ bool is_referenced() const { return refcount_init.get() != 1; }
 	bool init_ref();
 	bool reference(); // returns false if refcount is at zero and didn't get increased
@@ -98,7 +98,7 @@ public:
 			return;
 		}
 		Ref r; 
-		r.reference = Object::cast_to<T>(refb); // ½«»ùÀàµÄobject×ª»»ÎªTÀàĞÍ¡£ÕâÀï»áÅ×³öÒì³£ (dynamic_cast)
+		r.reference = Object::cast_to<T>(refb); // å°†åŸºç±»çš„objectè½¬æ¢ä¸ºTç±»å‹ã€‚è¿™é‡Œä¼šæŠ›å‡ºå¼‚å¸¸ (dynamic_cast)
 		ref(r);
 		r.reference = nullptr;
 	}
@@ -184,7 +184,7 @@ public:
 		}
 		reference = nullptr;
 	}
-	// ĞÂ½¨µÄ±äÁ¿Í¨¹ıÕâ¸ö
+	// æ–°å»ºçš„å˜é‡é€šè¿‡è¿™ä¸ª
 	void instantiate() {
 		ref(memnew(T));
 	}

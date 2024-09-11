@@ -10,8 +10,8 @@
 #include <type_traits>
 #include <typeinfo>
 namespace lain {
-	// Ò»Ò³Ò»Ò³µÄ·ÖÅäÄÚ´æ£¬Ã¿Ò³pagesize´óĞ¡¡£
-	// Ã¿´Î·ÖÅäÒ»¸öavailableÖ¸Ïò¿ÉÓÃµÄ
+	// ä¸€é¡µä¸€é¡µçš„åˆ†é…å†…å­˜ï¼Œæ¯é¡µpagesizeå¤§å°ã€‚
+	// æ¯æ¬¡åˆ†é…ä¸€ä¸ªavailableæŒ‡å‘å¯ç”¨çš„
 template <class T, bool thread_safe = false, uint32_t DEFAULT_PAGE_SIZE = 4096>
 class PagedAllocator {
 	T** page_pool = nullptr;
@@ -31,7 +31,7 @@ public:
 		DEFAULT_PAGE_SIZE = 4096
 	};
 	template <class... Args>
-	// alloc²»ÓÃconst
+	// allocä¸ç”¨const
 	T* alloc(Args &&...p_args) {
 		if (thread_safe) {
 			spin_lock.lock();
@@ -40,23 +40,23 @@ public:
 			uint32_t pages_used = pages_allocated;
 
 			pages_allocated++;
-			// Ò³Ãæ³ØÊÇÒ»¸öÖ¸ÕëÊı×é(T**)£¬ÕâĞ©Ö¸ÕëÖ¸ÏòTµÄËùÔÚÄÚ´æ(¶şÎ¬Êı×é£¬ÁĞÊÇË÷Òı£©
+			// é¡µé¢æ± æ˜¯ä¸€ä¸ªæŒ‡é’ˆæ•°ç»„(T**)ï¼Œè¿™äº›æŒ‡é’ˆæŒ‡å‘Tçš„æ‰€åœ¨å†…å­˜(äºŒç»´æ•°ç»„ï¼Œåˆ—æ˜¯ç´¢å¼•ï¼‰
 			page_pool = (T**)memrealloc(page_pool, sizeof(T*) * pages_allocated);
 			available_pool = (T***)memrealloc(available_pool, sizeof(T**) * pages_allocated);
-			// ·ÖÅäĞÂÒ³ÃæµÄÄÚ´æ¿Õ¼ä
+			// åˆ†é…æ–°é¡µé¢çš„å†…å­˜ç©ºé—´
 			page_pool[pages_used] = (T*)memalloc(sizeof(T) * page_size);
 			available_pool[pages_used] = (T**)memalloc(sizeof(T*) * page_size);
 
-			// ½«ĞÂÒ³ÃæµÄ¶ÔÏóÖ¸ÕëÌí¼Óµ½¿ÉÓÃ¶ÔÏóÖ¸ÕëÊı×éÖĞ
+			// å°†æ–°é¡µé¢çš„å¯¹è±¡æŒ‡é’ˆæ·»åŠ åˆ°å¯ç”¨å¯¹è±¡æŒ‡é’ˆæ•°ç»„ä¸­
 			for (uint32_t i = 0; i < page_size; i++) {
-				available_pool[0][i] = &page_pool[pages_used][i]; // ÒòÎªÕâ¸öÊ±ºòavailableÊÇ¿ÕµÄ£¬ËùÒÔ·ÅÔÚµÚÒ»
+				available_pool[0][i] = &page_pool[pages_used][i]; // å› ä¸ºè¿™ä¸ªæ—¶å€™availableæ˜¯ç©ºçš„ï¼Œæ‰€ä»¥æ”¾åœ¨ç¬¬ä¸€
 			}
-			// Ôö¼Ó¿ÉÓÃ¶ÔÏó¼ÆÊı
+			// å¢åŠ å¯ç”¨å¯¹è±¡è®¡æ•°
 			allocs_available += page_size; 
 		}
 
 		allocs_available--;
-		// ĞĞË÷ÒıÎ»Êı£¨¸ßÎ»£©ºÍÁĞË÷ÒıÎ»Êı£¨µÍÎ»£©
+		// è¡Œç´¢å¼•ä½æ•°ï¼ˆé«˜ä½ï¼‰å’Œåˆ—ç´¢å¼•ä½æ•°ï¼ˆä½ä½ï¼‰
 		T* alloc = available_pool[allocs_available >> page_shift][allocs_available & page_mask];
 
 		if (thread_safe) {
@@ -120,7 +120,7 @@ public:
 		}
 		return result;
 	}
-	// ÔÚÕâÀïÈ·¶¨Ë÷ÒıÎ»Êı
+	// åœ¨è¿™é‡Œç¡®å®šç´¢å¼•ä½æ•°
 	void configure(uint32_t p_page_size) {
 		if (thread_safe) {
 			spin_lock.lock();

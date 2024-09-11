@@ -27,7 +27,7 @@ class Shader : public Resource {
 
  public:
   RID shader;
-  Mode mode = MODE_SPATIAL;  // 我感觉这不是一个好设计
+  Mode mode = MODE_SPATIAL;  // 鎴戞劅瑙夎繖涓嶆槸涓�涓ソ璁捐
   //HashSet<Ref<ShaderInclude>> include_dependencies;
   String code;
   String include_path;

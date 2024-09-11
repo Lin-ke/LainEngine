@@ -27,7 +27,7 @@ class RenderingDeviceGraph {
 
     Type type = TYPE_NONE;
   };
-  /// @brief DrawListÖĞµÄÃüÁî
+  /// @brief DrawListä¸­çš„å‘½ä»¤
   struct DrawListInstruction {
     enum Type {
       TYPE_NONE,
@@ -50,7 +50,7 @@ class RenderingDeviceGraph {
 
     Type type = TYPE_NONE;
   };
-  /// @brief ÃüÁîµÄÀàĞÍ
+  /// @brief å‘½ä»¤çš„ç±»å‹
   struct RecordedCommand {
     enum Type {
       TYPE_NONE,
@@ -76,18 +76,18 @@ class RenderingDeviceGraph {
     int32_t label_index = -1;
 
     // barries
-    // MemoryBarrierÖ»ÓĞÒ»¸ö£¿
+    // MemoryBarrieråªæœ‰ä¸€ä¸ªï¼Ÿ
     RDD::MemoryBarrier memory_barrier;
-    int32_t normalization_barrier_index = -1;  // ¹æ·¶µ½ÎÆÀí²¼¾Ö£¬Ö¸Ïòcommand_normalization_barriers
+    int32_t normalization_barrier_index = -1;  // è§„èŒƒåˆ°çº¹ç†å¸ƒå±€ï¼ŒæŒ‡å‘command_normalization_barriers
     int normalization_barrier_count = 0;
-    int32_t transition_barrier_index = -1;  // ÕâÀïµÄindexÖ¸Ïòcommand_transition_barriers
+    int32_t transition_barrier_index = -1;  // è¿™é‡Œçš„indexæŒ‡å‘command_transition_barriers
     int32_t transition_barrier_count = 0;
 #if USE_BUFFER_BARRIERS
     int32_t buffer_barrier_index = -1;
     int32_t buffer_barrier_count = 0;
 #endif
 
-    // Í¼£ºÁÚ½Ó±í adjacent commands
+    // å›¾ï¼šé‚»æ¥è¡¨ adjacent commands
     int32_t adjacent_command_list_index = -1;
   };
 
@@ -101,7 +101,7 @@ class RenderingDeviceGraph {
     uint32_t buffers_used = 0;
   };
 
-  // copyËùĞèÊı¾İµÄ½á¹¹ (ÔÚupdateÖĞÊ¹ÓÃ)
+  // copyæ‰€éœ€æ•°æ®çš„ç»“æ„ (åœ¨updateä¸­ä½¿ç”¨)
   struct RecordedBufferCopy {
     RDD::BufferID source;
     RDD::BufferCopyRegion region;
@@ -132,10 +132,10 @@ class RenderingDeviceGraph {
     RESOURCE_USAGE_ATTACHMENT_COLOR_READ_WRITE,
     RESOURCE_USAGE_ATTACHMENT_DEPTH_STENCIL_READ_WRITE
   };
-  // tracker±£´æ¶Ô×ÊÔ´Ğ´ÈëºÍ¶ÁÈ¡µÄÃüÁîµÄÒıÓÃ
-  //  µ±ÃüÁîÒÔÖ»¶Á·½Ê½Ê¹ÓÃ×ÊÔ´Ê±£¬¶Ô¸ÃÃüÁîµÄÒıÓÃ½«´æ´¢ÔÚ×ÊÔ´¸ú×ÙÆ÷µÄÁĞ±íÖĞ¡£¶ÔÃüÁîµÄÒıÓÃ·ÅÖÃÔÚĞ´Èë×ÊÔ´µÄ×îºóÒ»¸ö²Ù×÷µÄÁÚ½ÓÁĞ±íÖĞ¡£
-  // µ±ÃüÁîÒÔ¶ÁĞ´·½Ê½Ê¹ÓÃ×ÊÔ´Ê±£¬¶Ô¸ÃÃüÁîµÄÒıÓÃ½«´æ´¢ÔÚ×ÊÔ´¸ú×ÙÆ÷ÖĞ£¬Ìæ»»Ç°Ò»¸öÃüÁî²¢Çå³ı´Ó¸Ã×ÊÔ´¶ÁÈ¡µÄÃüÁîÁĞ±í¡£¶ÔÃüÁîµÄÒıÓÃ·ÅÖÃÔÚ¶ÁÈ¡»òĞ´Èë×ÊÔ´µÄËùÓĞ²Ù×÷µÄÁÚ½ÓÁĞ±íÖĞ¡£
-  // ÎÆÀíÓĞÒ»¸öÀıÍâ£ºÈç¹û²Ù×÷±ØĞë¸ü¸ÄÊ¹ÓÃÀàĞÍ£¬Ôò¸Ã²Ù×÷½«±»ÊÓÎªÕıÔÚĞ´Èë×ÊÔ´£¬ÒòÎªĞèÒªÄÚ´æ²¼¾Ö×ª»»¡£Á½¸ö²Ù×÷ÊÇ·ñ¶¼ÊÇÖ»¶Á²¢²»ÖØÒª£ºÎŞÂÛÈçºÎ¶¼»á½¨Á¢Ğ´ÈëÒÀÀµ¹ØÏµ¡£ÕâÊÇÖµµÃ¼Ç×¡µÄ£¬ÒòÎªÈç¹ûÎÆÀíµÄÊ¹ÓÃ¾­³£±ä»¯£¬Í¼±í¾Í»áÈÏÎª²Ù×÷ÊÇÏà¹ØµÄ¡£
+  // trackerä¿å­˜å¯¹èµ„æºå†™å…¥å’Œè¯»å–çš„å‘½ä»¤çš„å¼•ç”¨
+  //  å½“å‘½ä»¤ä»¥åªè¯»æ–¹å¼ä½¿ç”¨èµ„æºæ—¶ï¼Œå¯¹è¯¥å‘½ä»¤çš„å¼•ç”¨å°†å­˜å‚¨åœ¨èµ„æºè·Ÿè¸ªå™¨çš„åˆ—è¡¨ä¸­ã€‚å¯¹å‘½ä»¤çš„å¼•ç”¨æ”¾ç½®åœ¨å†™å…¥èµ„æºçš„æœ€åä¸€ä¸ªæ“ä½œçš„é‚»æ¥åˆ—è¡¨ä¸­ã€‚
+  // å½“å‘½ä»¤ä»¥è¯»å†™æ–¹å¼ä½¿ç”¨èµ„æºæ—¶ï¼Œå¯¹è¯¥å‘½ä»¤çš„å¼•ç”¨å°†å­˜å‚¨åœ¨èµ„æºè·Ÿè¸ªå™¨ä¸­ï¼Œæ›¿æ¢å‰ä¸€ä¸ªå‘½ä»¤å¹¶æ¸…é™¤ä»è¯¥èµ„æºè¯»å–çš„å‘½ä»¤åˆ—è¡¨ã€‚å¯¹å‘½ä»¤çš„å¼•ç”¨æ”¾ç½®åœ¨è¯»å–æˆ–å†™å…¥èµ„æºçš„æ‰€æœ‰æ“ä½œçš„é‚»æ¥åˆ—è¡¨ä¸­ã€‚
+  // çº¹ç†æœ‰ä¸€ä¸ªä¾‹å¤–ï¼šå¦‚æœæ“ä½œå¿…é¡»æ›´æ”¹ä½¿ç”¨ç±»å‹ï¼Œåˆ™è¯¥æ“ä½œå°†è¢«è§†ä¸ºæ­£åœ¨å†™å…¥èµ„æºï¼Œå› ä¸ºéœ€è¦å†…å­˜å¸ƒå±€è½¬æ¢ã€‚ä¸¤ä¸ªæ“ä½œæ˜¯å¦éƒ½æ˜¯åªè¯»å¹¶ä¸é‡è¦ï¼šæ— è®ºå¦‚ä½•éƒ½ä¼šå»ºç«‹å†™å…¥ä¾èµ–å…³ç³»ã€‚è¿™æ˜¯å€¼å¾—è®°ä½çš„ï¼Œå› ä¸ºå¦‚æœçº¹ç†çš„ä½¿ç”¨ç»å¸¸å˜åŒ–ï¼Œå›¾è¡¨å°±ä¼šè®¤ä¸ºæ“ä½œæ˜¯ç›¸å…³çš„ã€‚
   struct ResourceTracker {
     uint32_t ref_count = 0;
     int64_t command_frame = -1;
@@ -149,8 +149,8 @@ class RenderingDeviceGraph {
     int32_t compute_idx = -1;
     ResourceUsage compute_usage = RESOURCE_USAGE_NONE;
 
-    bool write_cmd_list_enable = false;  // ÒÑ¾­ÓĞĞ´ÃüÁî
-    bool read_cmd_list_enable = false;   // ÒÑ¾­ÓĞ¶ÁÃüÁî
+    bool write_cmd_list_enable = false;  // å·²ç»æœ‰å†™å‘½ä»¤
+    bool read_cmd_list_enable = false;   // å·²ç»æœ‰è¯»å‘½ä»¤
 
     ResourceUsage usage = RESOURCE_USAGE_NONE;
     BitField<RDD::BarrierAccessBits> usage_access;
@@ -162,12 +162,12 @@ class RenderingDeviceGraph {
     RDD::TextureSubresourceRange texture_subresources;
 
     uint32_t texture_usage;
-    int32_t slice_cmd_idx = -1;  // ×î½üÊ¹ÓÃµÄÇĞÆ¬ÃüÁîµÄË÷Òı
+    int32_t slice_cmd_idx = -1;  // æœ€è¿‘ä½¿ç”¨çš„åˆ‡ç‰‡å‘½ä»¤çš„ç´¢å¼•
 
     ResourceTracker* parent = nullptr;
-    // ±£´æÔàÁĞ±í£¬°üº¬Óë¸¸ÎÆÀíÊ¹ÓÃµÄÄÚ´æ²¼¾Ö²»Í¬µÄÇĞÆ¬¡£
-    // Ò»¸öÃüÁî²»ÔÊĞíÊ¹ÓÃÖØµşµÄÏàÍ¬ÎÆÀíµÄÇĞÆ¬£¨UB£©
-    ResourceTracker* dirty_shared_list = nullptr;  // Ë«ÏòÁ´±í£¨to child£©
+    // ä¿å­˜è„åˆ—è¡¨ï¼ŒåŒ…å«ä¸çˆ¶çº¹ç†ä½¿ç”¨çš„å†…å­˜å¸ƒå±€ä¸åŒçš„åˆ‡ç‰‡ã€‚
+    // ä¸€ä¸ªå‘½ä»¤ä¸å…è®¸ä½¿ç”¨é‡å çš„ç›¸åŒçº¹ç†çš„åˆ‡ç‰‡ï¼ˆUBï¼‰
+    ResourceTracker* dirty_shared_list = nullptr;  // åŒå‘é“¾è¡¨ï¼ˆto childï¼‰
     ResourceTracker* next_shared = nullptr;        // to parent
     Rect2i slice_or_dirty_rect;
     bool in_parent_dirty_list = false;
@@ -208,7 +208,7 @@ class RenderingDeviceGraph {
     LocalVector<ResourceTracker*> command_trackers;
     LocalVector<ResourceUsage> command_tracker_usages;
     BitField<RDD::PipelineStageBits> stages;
-    int32_t index = 0;  // µ±Ç°ÊÇµÚ¼¸¸öcompute index
+    int32_t index = 0;  // å½“å‰æ˜¯ç¬¬å‡ ä¸ªcompute index
 
     void clear() {
       data.clear();
@@ -232,7 +232,7 @@ class RenderingDeviceGraph {
   struct RecordedCommandSort {
     uint32_t level = 0;
     uint32_t priority = 0;
-    int32_t index = -1; // Í¨¹ıindex»ñÈ¡offsetÔÙ»ñµÃcommand
+    int32_t index = -1; // é€šè¿‡indexè·å–offsetå†è·å¾—command
     static const uint32 PriorityTable[RecordedCommand::Type::TYPE_MAX];
 
     RecordedCommandSort() = default;
@@ -258,12 +258,12 @@ class RenderingDeviceGraph {
     int32_t command_index = -1;
     int32_t next_list_index = -1;
   };
-  // ¼ÇÂ¼¹ØÓÚÇĞÆ¬µÄÃüÁî
+  // è®°å½•å…³äºåˆ‡ç‰‡çš„å‘½ä»¤
   struct RecordedSliceListNode {
     int32_t command_index = -1;
     int32_t next_list_index = -1;
     Rect2i
-        subresources;  // ÓÃrect2i¼ÇÂ¼subresource£¬¿ÉÒÔ¸²¸Çtexturesubresourcerange ºÍ buffer range
+        subresources;  // ç”¨rect2iè®°å½•subresourceï¼Œå¯ä»¥è¦†ç›–texturesubresourcerange å’Œ buffer range
   };
 
   struct RecordedBufferClearCommand : RecordedCommand {
@@ -289,11 +289,11 @@ class RenderingDeviceGraph {
     uint32_t buffer_copies_count = 0;
 
     _FORCE_INLINE_ RecordedBufferCopy* buffer_copies() {
-      // this[1] ÊÇ µ½thisºó£¬Ò»¸ösizeof(this)µÄÎ»ÖÃ
-      // Ò²¾ÍÊÇËµ£¬this[1]ÊÇÒ»¸öRecordedBufferCopyµÄÊı×é
-      // Æä³¤¶ÈÓÉbuffer_copies_count¾ö¶¨
-      // Ïàµ±ÓÚRecordedBufferCopy *buffer_copies = nullptr;
-      // ¿ÉÒÔ²Î¿´º¯Êı_run_draw_list_command
+      // this[1] æ˜¯ åˆ°thisåï¼Œä¸€ä¸ªsizeof(this)çš„ä½ç½®
+      // ä¹Ÿå°±æ˜¯è¯´ï¼Œthis[1]æ˜¯ä¸€ä¸ªRecordedBufferCopyçš„æ•°ç»„
+      // å…¶é•¿åº¦ç”±buffer_copies_countå†³å®š
+      // ç›¸å½“äºRecordedBufferCopy *buffer_copies = nullptr;
+      // å¯ä»¥å‚çœ‹å‡½æ•°_run_draw_list_command
       return reinterpret_cast<RecordedBufferCopy*>(&this[1]);
     }
 
@@ -327,7 +327,7 @@ class RenderingDeviceGraph {
     _FORCE_INLINE_ const RDD::RenderPassClearValue* clear_values() const {
       return reinterpret_cast<const RDD::RenderPassClearValue*>(&this[1]);
     }
-    // Ìì²Å
+    // å¤©æ‰
     _FORCE_INLINE_ uint8_t* instruction_data() {
       return reinterpret_cast<uint8_t*>(&clear_values()[clear_values_count]);
     }
@@ -416,7 +416,7 @@ class RenderingDeviceGraph {
 
   struct DrawListBindVertexBuffersInstruction : DrawListInstruction {
     uint32_t vertex_buffers_count = 0;
-    // vertex_bufferÔÚthis£¨¸Ã¶ÔÏó£©ºóµÄµÚÒ»¸öÎ»ÖÃ£¬³¤¶ÈÎªcount
+    // vertex_bufferåœ¨thisï¼ˆè¯¥å¯¹è±¡ï¼‰åçš„ç¬¬ä¸€ä¸ªä½ç½®ï¼Œé•¿åº¦ä¸ºcount
     _FORCE_INLINE_ RDD::BufferID* vertex_buffers() {
       return reinterpret_cast<RDD::BufferID*>(&this[1]);
     }
@@ -424,7 +424,7 @@ class RenderingDeviceGraph {
     _FORCE_INLINE_ const RDD::BufferID* vertex_buffers() const {
       return reinterpret_cast<const RDD::BufferID*>(&this[1]);
     }
-    // vertex_buffer_offsets ÔÚvertex_buffersºóµÄµÚÒ»¸öÎ»ÖÃ
+    // vertex_buffer_offsets åœ¨vertex_buffersåçš„ç¬¬ä¸€ä¸ªä½ç½®
     _FORCE_INLINE_ uint64_t* vertex_buffer_offsets() {
       return reinterpret_cast<uint64_t*>(&vertex_buffers()[vertex_buffers_count]);
     }
@@ -566,12 +566,12 @@ class RenderingDeviceGraph {
       memory_barrier.dst_access.clear();
       normalization_barriers.clear();
       transition_barriers.clear();
-#if USE_BUFFER_BARRIERS  // Èç¹ûdefineÁËÇÒ·Ç0
+#if USE_BUFFER_BARRIERS  // å¦‚æœdefineäº†ä¸”é0
       buffer_barriers.clear();
 #endif
     }
   };
-  //ÔÚinitializeÖĞ³õÊ¼»¯command_poolºÍcommand_buffer
+  //åœ¨initializeä¸­åˆå§‹åŒ–command_poolå’Œcommand_buffer
   struct SecondaryCommandBuffer {
     LocalVector<uint8_t> instruction_data;
     RDD::CommandBufferID command_buffer;
@@ -587,7 +587,7 @@ class RenderingDeviceGraph {
   };
 
  private:
-  /// @brief Ìí¼ÓÒ»¸öÃüÁîµ½Í¼ÖĞ
+  /// @brief æ·»åŠ ä¸€ä¸ªå‘½ä»¤åˆ°å›¾ä¸­
   /// @param p_resource_trackers
   /// @param p_resource_usages
   /// @param p_resource_count
@@ -645,7 +645,7 @@ class RenderingDeviceGraph {
                            uint32_t p_sorted_commands_count, RDD::CommandBufferID& r_command_buffer,
                            CommandBufferPool& r_command_buffer_pool, int32_t& r_current_label_index,
                            int32_t& r_current_label_level);
-  /// @brief command_end_labelºÍcommand_begin_label
+  /// @brief command_end_labelå’Œcommand_begin_label
   /// @param 
 
   void _run_label_command_change(RDD::CommandBufferID p_command_buffer, int32_t p_new_label_index,
@@ -661,7 +661,7 @@ class RenderingDeviceGraph {
                                            bool p_full_memory_barrier);
 void _boost_priority_for_render_commands(RecordedCommandSort *p_sorted_commands, uint32_t p_sorted_commands_count, uint32_t &r_boosted_priority);
 
-    // ¹¤¾ß
+    // å·¥å…·
     RecordedCommand* _get_command(int32_t p_command_index) {
       return reinterpret_cast<RecordedCommand*>(
           &command_data[command_data_offsets[p_command_index]]);
@@ -673,8 +673,8 @@ void _boost_priority_for_render_commands(RecordedCommandSort *p_sorted_commands,
     void initialize(RDD * p_driver, RenderingContextDriver::Device p_device, uint32_t p_frame_count,
                     RDD::CommandQueueFamilyID p_secondary_command_queue_family,
                     uint32_t p_secondary_command_buffers_per_frame);
-    // ÊÍ·Åcommand_poolµÄ×ÊÔ´£¬ secondary_command_buffersµÄ×ÊÔ´¿ÉÒÔ¼ÌĞøÓÃ
-    // frame ĞèÒªclear
+    // é‡Šæ”¾command_poolçš„èµ„æºï¼Œ secondary_command_buffersçš„èµ„æºå¯ä»¥ç»§ç»­ç”¨
+    // frame éœ€è¦clear
     void finalize();
     void begin();
     void add_buffer_clear(RDD::BufferID p_dst, ResourceTracker * p_dst_tracker, uint32_t p_offset,
@@ -757,18 +757,18 @@ void _boost_priority_for_render_commands(RecordedCommandSort *p_sorted_commands,
     static void resource_tracker_free(ResourceTracker * tracker);
 
     bool driver_honors_barriers =
-        false;  // ÊÇ·ñÖ§³Öbarrier£¬vulkanÄ¬ÈÏÊÇ1£¬d3d12ÔòÓĞenhanced_barriers_supported±êÖ¾Î»
-    bool driver_clears_with_copy_engine = false;  // ÊÇ·ñÖ§³ÖÍ¨¹ıcopyÃüÁîÀ´½øĞĞclear
+        false;  // æ˜¯å¦æ”¯æŒbarrierï¼Œvulkané»˜è®¤æ˜¯1ï¼Œd3d12åˆ™æœ‰enhanced_barriers_supportedæ ‡å¿—ä½
+    bool driver_clears_with_copy_engine = false;  // æ˜¯å¦æ”¯æŒé€šè¿‡copyå‘½ä»¤æ¥è¿›è¡Œclear
     RDD* driver = nullptr;
     RenderingContextDriver::Device device;
-    int64_t tracking_frame = 0;  // µ±Ç°Ö¡
+    int64_t tracking_frame = 0;  // å½“å‰å¸§
     uint32_t command_count = 0;
     // label
     uint32_t command_label_count = 0;
     LocalVector<char> command_label_chars;
 	LocalVector<Color> command_label_colors;
-	LocalVector<uint32_t> command_label_offsets; // ÔÚcharsÖĞµÄoffset
-	int32_t command_label_index = -1; // countÊ±ÎªÔÚlabelÖĞ£¬ -1Ôò·ñ
+	LocalVector<uint32_t> command_label_offsets; // åœ¨charsä¸­çš„offset
+	int32_t command_label_index = -1; // countæ—¶ä¸ºåœ¨labelä¸­ï¼Œ -1åˆ™å¦
   // frame
   uint32_t frame = 0;
   TightLocalVector<Frame> frames;
@@ -777,24 +777,24 @@ void _boost_priority_for_render_commands(RecordedCommandSort *p_sorted_commands,
 
   int32_t command_timestamp_index = -1;  // previous timestamp command index
 
-  // ÔÚµ±Ç°ÃüÁîÍ¬²½£¨Í¨¹ıadd_synchronization ÉèÖÃÎªtrue£©
+  // åœ¨å½“å‰å‘½ä»¤åŒæ­¥ï¼ˆé€šè¿‡add_synchronization è®¾ç½®ä¸ºtrueï¼‰
   bool command_synchronization_pending = false;
   int32_t command_synchronization_index = -1;  // previous synchronization command index
                                                // Texture
   LocalVector<RDD::TextureBarrier> command_transition_barriers;  // transition barrier
   LocalVector<RDD::TextureBarrier>
-      command_normalization_barriers;  // normalization barrier,×ª±älayout
+      command_normalization_barriers;  // normalization barrier,è½¬å˜layout
 #if USE_BUFFER_BARRIERS
   LocalVector<RDD::BufferBarrier> command_buffer_barriers;  // buffer barrier
 #endif
 
-  LocalVector<uint32_t> command_data_offsets;  // ±ê¼ÇÁËÃ¿¸ödataµÄoffset
-  LocalVector<uint8_t> command_data;           // ´æ´¢ÁËËùÓĞµÄcommand data
+  LocalVector<uint32_t> command_data_offsets;  // æ ‡è®°äº†æ¯ä¸ªdataçš„offset
+  LocalVector<uint8_t> command_data;           // å­˜å‚¨äº†æ‰€æœ‰çš„command data
 
   LocalVector<RecordedCommandListNode>
-      command_list_nodes;  // ÁÚ½Ó±í½ÚµãÊı×é£¬ÔÚrecordcommandÖĞÍ¨¹ıidË÷Òı£¬²åÈëÊÇµ¹×ÅµÄ
-  LocalVector<RecordedSliceListNode> write_slice_list_nodes;  // Ğ´ÈëÇĞÆ¬½ÚµãÊı×é
-  LocalVector<RecordedSliceListNode> read_slice_list_nodes;   // ¶ÁÇĞÆ¬½ÚµãÊı×é
+      command_list_nodes;  // é‚»æ¥è¡¨èŠ‚ç‚¹æ•°ç»„ï¼Œåœ¨recordcommandä¸­é€šè¿‡idç´¢å¼•ï¼Œæ’å…¥æ˜¯å€’ç€çš„
+  LocalVector<RecordedSliceListNode> write_slice_list_nodes;  // å†™å…¥åˆ‡ç‰‡èŠ‚ç‚¹æ•°ç»„
+  LocalVector<RecordedSliceListNode> read_slice_list_nodes;   // è¯»åˆ‡ç‰‡èŠ‚ç‚¹æ•°ç»„
 
   DrawInstructionList draw_instruction_list;
   ComputeInstructionList compute_instruction_list;

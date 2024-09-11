@@ -8,11 +8,11 @@ namespace lain {
 
 	class ResourceFormatLoaderImage;
 
-	// ¸É»î¶ùµÄÀà
+	// å¹²æ´»å„¿çš„ç±»
 	class ResourceLoaderImage;
 
-	// ³éÏó³öÕâ¸ö£¬ÒÔÊµÏÖloader_image´øRef<Image> p_imageµÄ½Ó¿Ú
-	// ÒÔ¼°ÔÚÈ·¶¨ÊÇimageµÄÇé¿öÏÂ±ÜÃâµ÷ÓÃresource
+	// æŠ½è±¡å‡ºè¿™ä¸ªï¼Œä»¥å®ç°loader_imageå¸¦Ref<Image> p_imageçš„æ¥å£
+	// ä»¥åŠåœ¨ç¡®å®šæ˜¯imageçš„æƒ…å†µä¸‹é¿å…è°ƒç”¨resource
 	class ImageLoader {
 		friend class ResourceFormatLoaderImage;
 		friend class ResourceLoaderImage;

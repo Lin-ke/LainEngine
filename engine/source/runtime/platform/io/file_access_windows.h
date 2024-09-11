@@ -16,14 +16,14 @@ private:
 	void check_errors() const;
 	mutable int prev_op = 0;
 	mutable Error last_error = OK;
-	String path;	  // ¾ø¶ÔÂ·¾¶
-	String path_src;  // ×ÊÔ´Â·¾¶
-	String save_path; // ±£´æÂ·¾¶
+	String path;	  // ç»å¯¹è·¯å¾„
+	String path_src;  // èµ„æºè·¯å¾„
+	String save_path; // ä¿å­˜è·¯å¾„
 
 	void _close();
 
 	static bool is_path_invalid(const String& p_path);
-	static HashSet<String> invalid_files; // ±£ÁôÎÄ¼şÃû
+	static HashSet<String> invalid_files; // ä¿ç•™æ–‡ä»¶å
 public:
 	virtual String fix_path(const String& p_path) const override;
 	virtual Error open_internal(const String& p_path, int p_mode_flags) override; ///< open a file

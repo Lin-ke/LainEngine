@@ -92,7 +92,7 @@ namespace lain {
 					subscene->set_owner(newscene);
 					s->pack(newscene);
 					draw_tree(newscene);
-					// 查看是否reuse 可以
+					// 鏌ョ湅鏄惁reuse 鍙互
 
 					ResourceSaver::save(s, "3.tscn");
 				}
@@ -110,7 +110,7 @@ namespace lain {
 				Ref<PackedScene> s3 = ResourceLoader::load("3.tscn", "PackedScene");
 				auto newscene_dup = s3->instantiate();
 				draw_tree(newscene_dup);
-				// @TODO 清理todo ext resource
+				// @TODO 娓呯悊todo ext resource
 				L_PRINT("---------");
 
 

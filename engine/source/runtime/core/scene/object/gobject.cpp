@@ -50,7 +50,7 @@ namespace lain {
 		}*/
 	}
 
-	// ½âÎögobjectpath
+	// è§£ægobjectpath
 	GObject* GObject::get_gobject_or_null(const GObjectPath& p_path) const {
 		//ERR_THREAD_GUARD_V(nullptr);
 		if (p_path.is_empty()) {
@@ -107,7 +107,7 @@ namespace lain {
 			}
 			else {
 				next = nullptr;
-				// gobjÖ¸ÕëÖ¸ÏòÒ»¸öconstÖ¸Õë
+				// gobjæŒ‡é’ˆæŒ‡å‘ä¸€ä¸ªconstæŒ‡é’ˆ
 				const GObject* const* gobj = current->data.children.getptr(name);
 				if (gobj) {
 					next = const_cast<GObject*>(*gobj);
@@ -203,7 +203,7 @@ namespace lain {
 		}
 		return arr;
 	}
-	// ÔÚchildrenĞŞ¸ÄºóĞèÒª
+	// åœ¨childrenä¿®æ”¹åéœ€è¦
 	void GObject::_update_children_cache_impl() const {
 		// Assign children
 		data.children_cache.resize(data.children.size());
@@ -370,7 +370,7 @@ namespace lain {
 		//ERR_FAIL_COND(p_scene && data.parent && !data.parent->data.scene); //nobug if both are null
 
 		if (data.tree) {
-			_propagate_exit_tree(); //ÑØ×ÅÊ÷´«²¥ÍË³öÊ÷µÄÏûÏ¢
+			_propagate_exit_tree(); //æ²¿ç€æ ‘ä¼ æ’­é€€å‡ºæ ‘çš„æ¶ˆæ¯
 
 			tree_changed_a = data.tree;
 		}
@@ -378,7 +378,7 @@ namespace lain {
 		data.tree = p_tree;
 
 		if (data.tree) {
-			_propagate_enter_tree(); //ÑØ×ÅÊ÷´«²¥½øÈëÊ÷µÄÏûÏ¢
+			_propagate_enter_tree(); //æ²¿ç€æ ‘ä¼ æ’­è¿›å…¥æ ‘çš„æ¶ˆæ¯
 			if (!data.parent || data.parent->data.ready_notified) { // no parent (root) or parent ready
 				_propagate_ready(); //reverse_notification(notification_ready);
 			}
@@ -410,7 +410,7 @@ namespace lain {
 			data.tree->node_removed(this);
 		}
 		for (HashMap<StringName, Component*>::Iterator I = data.components.last(); I; --I) {
-			I->value->notification(NOTIFICATION_EXIT_TREE, true); // @TODO Ğéº¯ÊıÁ´µÄµ÷ÓÃË³Ğò
+			I->value->notification(NOTIFICATION_EXIT_TREE, true); // @TODO è™šå‡½æ•°é“¾çš„è°ƒç”¨é¡ºåº
 			I->value->set_inside_tree(false);
 		}
 		data.viewport = nullptr;
@@ -429,7 +429,7 @@ namespace lain {
 		else {
 			data.depth = 1;
 		}
-		// Èç¹ûÕâÊÇviewport£¬Ö±½ÓÓÃ
+		// å¦‚æœè¿™æ˜¯viewportï¼Œç›´æ¥ç”¨
 		//data.viewport = dynamic_cast<ViewPort*>(this);
 		if (!data.viewport && data.parent) {
 			data.viewport = data.parent->data.viewport;
@@ -667,7 +667,7 @@ namespace lain {
 			n = n->data.parent;
 		}
 
-		const GObject* common_parent = p_node; // ¹²Í¬×æÏÈ
+		const GObject* common_parent = p_node; // å…±åŒç¥–å…ˆ
 
 		while (common_parent) {
 			if (visited.has(common_parent)) {
@@ -720,7 +720,7 @@ namespace lain {
 				}
 			}
 		}
-		else { // ´ÓÕâ¸öµ½commonparentÔÙµ½ÄÇ¸ö
+		else { // ä»è¿™ä¸ªåˆ°commonparentå†åˆ°é‚£ä¸ª
 			n = p_node;
 
 			while (n != common_parent) {
@@ -753,7 +753,7 @@ namespace lain {
 	}
 
 
-	// ¸´ÓÃ
+	// å¤ç”¨
 	void GObject::add_sibling(GObject* p_sibling, bool p_force_readable_name) {
 		ERR_FAIL_COND_MSG(data.inside_tree && !Thread::is_main_thread(), "Adding a sibling to a node inside the SceneTree is only allowed from the main thread. Use call_deferred(\"add_sibling\",node).");
 		ERR_FAIL_NULL(p_sibling);
@@ -779,7 +779,7 @@ namespace lain {
 		}
 	}
 
-	// ÕâĞèÒª±éÀúÁ½±ß×ÓÊ÷£¬Õâ¸Ğ¾õ²»ºÏÀí
+	// è¿™éœ€è¦éå†ä¸¤è¾¹å­æ ‘ï¼Œè¿™æ„Ÿè§‰ä¸åˆç†
 
 	void GObject::remove_child(GObject* p_child) {
 		ERR_FAIL_COND_MSG(data.inside_tree && !Thread::is_main_thread(), "Removing children from a node inside the SceneTree is only allowed from the main thread. Use call_deferred(\"remove_child\",node).");
@@ -817,7 +817,7 @@ namespace lain {
 		//emit_signal(SNAME("child_order_changed"));
 
 		if (data.inside_tree) {
-			p_child->_propagate_after_exit_tree(); // ´ø×Åº¢×ÓÒ²ÒªÀë¿ªÊ÷
+			p_child->_propagate_after_exit_tree(); // å¸¦ç€å­©å­ä¹Ÿè¦ç¦»å¼€æ ‘
 		}
 	}
 
@@ -837,12 +837,12 @@ namespace lain {
 				parent = parent->data.parent;
 			}
 
-			if (!found) { // owner²»ÔÚÕâ¿ÃÊ÷
+			if (!found) { // ownerä¸åœ¨è¿™æ£µæ ‘
 				_clean_up_owner();
 			}
 		}
 
-		data.blocked++; // Õâ¸ö»úÖÆºÜÓĞÒâË¼°¡
+		data.blocked++; // è¿™ä¸ªæœºåˆ¶å¾ˆæœ‰æ„æ€å•Š
 
 		for (HashMap<StringName, GObject*>::Iterator I = data.children.last(); I; --I) {
 			I->value->_propagate_after_exit_tree();
@@ -1026,14 +1026,14 @@ namespace lain {
 	void GObject::_add_all_components_to_ptg() {
 		_update_components_cache();
 		for (auto& component : data.components_cache) {
-			ERR_FAIL_COND(component->m_parent != this); // ²»ÊÇÄãµÄÄã»¹ÒªÉè¼Æ
+			ERR_FAIL_COND(component->m_parent != this); // ä¸æ˜¯ä½ çš„ä½ è¿˜è¦è®¾è®¡
 			component->_add_to_process_thread_group();
 		}
 	}
 	void GObject::_remove_all_components_from_ptg() {
 		_update_components_cache();
 		for (auto& component : data.components_cache) {
-			ERR_FAIL_COND(component->m_parent != this); // ²»ÊÇÄãµÄÄã»¹ÒªÉè¼Æ
+			ERR_FAIL_COND(component->m_parent != this); // ä¸æ˜¯ä½ çš„ä½ è¿˜è¦è®¾è®¡
 			component->_remove_from_process_thread_group();
 		}
 	}
@@ -1137,15 +1137,15 @@ namespace lain {
 	void GObject::_notification(int p_notification) {
 		L_PRINT("[Node notification]", "name", CSTR(data.name.operator lain::String()),p_notification);
 		switch (p_notification) {
-			// ÕâÀïÈ¥µ÷ÓÃ½Å±¾ÁË
-			// ÔÚunityÖĞ£¬½Å±¾Ò²ÊÇcomponentµÄÒ»²¿·Ö
+			// è¿™é‡Œå»è°ƒç”¨è„šæœ¬äº†
+			// åœ¨unityä¸­ï¼Œè„šæœ¬ä¹Ÿæ˜¯componentçš„ä¸€éƒ¨åˆ†
 		case NOTIFICATION_PROCESS: {
 			// call _process in script
 		} break;
 		case NOTIFICATION_ENTER_TREE: {
 			// #like in unreal begin play, adding to tick function set.
-			// # ¿Ï¶¨²»ÈçunrealµÄÈÎÎñÍ¼£¬ÔõÃ´×öµ½¸ºÔØ¾ùºâ£¿£¨Ã¿¸öÏß³Ì·ÖÅäÒ»¸öÈÎÎñ£©
-			// µ«ÊÇUEµÄÈÎÎñÍ¼¿Ï¶¨»áĞèÒª´óÁ¿µÄ¶îÍâÊ±¼ä£¨µ«ÊÇÕâ²¿·Ö¿ªÏú²¢²»ÔÚ_tickÖĞ£©
+			// # è‚¯å®šä¸å¦‚unrealçš„ä»»åŠ¡å›¾ï¼Œæ€ä¹ˆåšåˆ°è´Ÿè½½å‡è¡¡ï¼Ÿï¼ˆæ¯ä¸ªçº¿ç¨‹åˆ†é…ä¸€ä¸ªä»»åŠ¡ï¼‰
+			// ä½†æ˜¯UEçš„ä»»åŠ¡å›¾è‚¯å®šä¼šéœ€è¦å¤§é‡çš„é¢å¤–æ—¶é—´ï¼ˆä½†æ˜¯è¿™éƒ¨åˆ†å¼€é”€å¹¶ä¸åœ¨_tickä¸­ï¼‰
 			ERR_FAIL_NULL(get_tree());
 			if (tickdata.process_mode == PROCESS_MODE_INHERIT) {
 				if (data.parent) {

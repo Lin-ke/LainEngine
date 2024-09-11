@@ -12,7 +12,7 @@ namespace lain {
 	template <int32_t _Idx,
 		typename _Head, bool = is_heritable<_Head>::value>
 	struct _Head_warp;
-	// ¼Ì³Ğ
+	// ç»§æ‰¿
     template<int32_t _Idx, typename _Head>
     struct _Head_warp <_Idx, _Head, true>
     {
@@ -32,7 +32,7 @@ namespace lain {
 
         _Head _M_head_impl;
     };
-    // ²»¼Ì³Ğ
+    // ä¸ç»§æ‰¿
     template<int32_t _Idx, typename _Head>
     struct _Head_warp<_Idx, _Head, false>
         : public _Head
@@ -60,24 +60,24 @@ namespace lain {
     template <int32_t _Idx, typename _Head, typename... _Tail>
     struct _Tuple_impl<_Idx, _Head, _Tail...>
         : public _Tuple_impl<_Idx + 1, _Tail...>, // father
-        private _Head_warp<_Idx, _Head>         // ±¾¼¶
+        private _Head_warp<_Idx, _Head>         // æœ¬çº§
     {
-        typedef _Tuple_impl<_Idx + 1, _Tail...>  _Inherited;  // ¸¸Àà
-        typedef _Head_warp<_Idx, _Head>         _Base;        // µ±Ç°½ÚµãÀàĞÍ        
+        typedef _Tuple_impl<_Idx + 1, _Tail...>  _Inherited;  // çˆ¶ç±»
+        typedef _Head_warp<_Idx, _Head>         _Base;        // å½“å‰èŠ‚ç‚¹ç±»å‹        
 
-        // Ä¬ÈÏ¹¹Ôìº¯Êı
-         _Tuple_impl() : _Inherited(), _Base() // µ¹Ğò£¬ÏÈ¸¸Àà£¬ËùÒÔ½ÚµãÔ½ÍùºóÔ½ÏÈ·ÖÅä
+        // é»˜è®¤æ„é€ å‡½æ•°
+         _Tuple_impl() : _Inherited(), _Base() // å€’åºï¼Œå…ˆçˆ¶ç±»ï¼Œæ‰€ä»¥èŠ‚ç‚¹è¶Šå¾€åè¶Šå…ˆåˆ†é…
         { }
 
-        // Öğ½Úµã¸´ÖÆ
+        // é€èŠ‚ç‚¹å¤åˆ¶
         explicit  _Tuple_impl(const _Head& __head, const _Tail &...__tail)
             : _Inherited(__tail...), _Base(__head)
         { }
 
-        // Öğ½ÚµãÒÆ¶¯
+        // é€èŠ‚ç‚¹ç§»åŠ¨
         template <typename _UHead,
             typename... _UTail,
-            typename = typename std::enable_if<sizeof...(_Tail) == sizeof...(_UTail)>::type> // ÔªËØ¸öÊıÒªÒ»ÖÂ
+            typename = typename std::enable_if<sizeof...(_Tail) == sizeof...(_UTail)>::type> // å…ƒç´ ä¸ªæ•°è¦ä¸€è‡´
         explicit  _Tuple_impl(_UHead&& __head, _UTail &&...__tail)
             : _Inherited(std::forward<_UTail>(__tail)...),
             _Base(std::forward<_UHead>(__head))
@@ -134,24 +134,24 @@ namespace lain {
 
     };
 
-    // ×îºóÒ»¸ö½Úµã£¬_Head ÊÇ×îºóÒ»¸ö½ÚµãµÄÀàĞÍ
+    // æœ€åä¸€ä¸ªèŠ‚ç‚¹ï¼Œ_Head æ˜¯æœ€åä¸€ä¸ªèŠ‚ç‚¹çš„ç±»å‹
     template <int32_t _Idx, typename _Head>
     struct _Tuple_impl<_Idx, _Head> : private _Head_warp<_Idx, _Head>
     {
         template<int32_t, typename...> friend struct _Tuple_impl;
 
-        typedef _Head_warp<_Idx, _Head>         _Base;       // ÓÃÓÚ¹¹Ôìµ±Ç°½Úµã   
+        typedef _Head_warp<_Idx, _Head>         _Base;       // ç”¨äºæ„é€ å½“å‰èŠ‚ç‚¹   
 
 
-        // ¹¹Ôìº¯Êı
+        // æ„é€ å‡½æ•°
          _Tuple_impl() : _Base()
         { }
 
-        // ¸´ÖÆµ±Ç°½Úµã
+        // å¤åˆ¶å½“å‰èŠ‚ç‚¹
         explicit  _Tuple_impl(const _Head& __head) : _Base(__head)
         { }
 
-        // ÒÆ¶¯µ±Ç°½Úµã
+        // ç§»åŠ¨å½“å‰èŠ‚ç‚¹
         template <typename _UHead>
         explicit  _Tuple_impl(_UHead&& __head)
             : _Base(std::forward<_UHead>(__head))
@@ -256,7 +256,7 @@ namespace lain {
     template<typename _Head, typename... _Tail>
     struct Tuple_element<0, Tuple<_Head, _Tail...> >
     {
-        typedef _Head type; // public¼Ì³Ğ
+        typedef _Head type; // publicç»§æ‰¿
     };
     template<size_t __i>
     struct Tuple_element<__i, Tuple<>>
@@ -296,7 +296,7 @@ namespace lain {
     /// get function
     /// </summary>
     /// <typeparam name="_Tp">index</typeparam>
-    /// <typeparam name="..._Types">Í¨¹ıÀàĞÍÍÆµ¼</typeparam>
+    /// <typeparam name="..._Types">é€šè¿‡ç±»å‹æ¨å¯¼</typeparam>
     /// <param name="__t">Tuple</param>
     /// <returns></returns>
     template <typename _Tp, typename... _Types>

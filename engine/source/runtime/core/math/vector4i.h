@@ -81,7 +81,7 @@ STRUCT(_NO_DISCARD_ Vector4i, Fields)
 	_FORCE_INLINE_ Vector4i& operator%=(int32_t p_scalar);
 	_FORCE_INLINE_ Vector4i operator%(int32_t p_scalar) const;
 
-	_FORCE_INLINE_ Vector4i& operator*=(float p_scalar); // ³Ë·¨µÄ¼ÆËãÊÇstatic_castÖ®ºóÔÙ¼ÆËã
+	_FORCE_INLINE_ Vector4i& operator*=(float p_scalar); // ä¹˜æ³•çš„è®¡ç®—æ˜¯static_castä¹‹åå†è®¡ç®—
 	_FORCE_INLINE_ Vector4i operator*(float p_scalar) const;
 
 	_FORCE_INLINE_ Vector4i& operator*=(double p_scalar);

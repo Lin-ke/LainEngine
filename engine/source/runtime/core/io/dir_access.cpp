@@ -93,7 +93,7 @@ public:
 		p_da->change_dir(p_dir);
 	}
 
-	~DirChanger() { // 负责在析构的时候换回来
+	~DirChanger() { // 璐熻矗鍦ㄦ瀽鏋勭殑鏃跺�欐崲鍥炴潵
 		da->change_dir(original_dir);
 	}
 };

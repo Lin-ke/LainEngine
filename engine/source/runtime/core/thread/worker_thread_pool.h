@@ -32,16 +32,16 @@ class WorkerThreadPool : public Object {
     virtual void callback_indexed(uint32_t p_index) {}
     virtual ~BaseTemplateUserdata() {}
   };
-	// Ã¿´ÎÖ´ĞĞÖ»ÓĞindexµÄÇø±ğ£¬Ö´ĞĞ´ÎÊı¾ÍÊÇPTGµÄ¸öÊı
+	// æ¯æ¬¡æ‰§è¡Œåªæœ‰indexçš„åŒºåˆ«ï¼Œæ‰§è¡Œæ¬¡æ•°å°±æ˜¯PTGçš„ä¸ªæ•°
   struct Group {
     GroupID self = -1;
-    SafeNumeric<uint32_t> index; // Ã¿´ÎÖ´ĞĞµÄindex
+    SafeNumeric<uint32_t> index; // æ¯æ¬¡æ‰§è¡Œçš„index
     SafeNumeric<uint32_t> completed_index;
-    uint32_t max = 0; // ÓĞ¼¸¸öÈÎÎñ
-    Semaphore done_semaphore;  // Ö÷Ïß³ÌµÈÔÚÕâ¸öĞÅºÅÁ¿ÉÏ
+    uint32_t max = 0; // æœ‰å‡ ä¸ªä»»åŠ¡
+    Semaphore done_semaphore;  // ä¸»çº¿ç¨‹ç­‰åœ¨è¿™ä¸ªä¿¡å·é‡ä¸Š
     SafeFlag completed;
     SafeNumeric<uint32_t> finished;
-    uint32_t tasks_used = 0; // Ïß³ÌÖ´ĞĞµÄÊıÁ¿
+    uint32_t tasks_used = 0; // çº¿ç¨‹æ‰§è¡Œçš„æ•°é‡
   };
 
   struct Task {
@@ -55,7 +55,7 @@ class WorkerThreadPool : public Object {
     bool completed = false;
 	bool pending_notify_yield_over = false;
 
-    Group* group = nullptr;  // ×éÈÎÎñ£¬ÓÉ¶à¸öÏß³ÌÖ´ĞĞ
+    Group* group = nullptr;  // ç»„ä»»åŠ¡ï¼Œç”±å¤šä¸ªçº¿ç¨‹æ‰§è¡Œ
     SelfList<Task> task_elem;
     uint32_t waiting_pool = 0;
     uint32_t waiting_user = 0;
@@ -76,7 +76,7 @@ class WorkerThreadPool : public Object {
   BinaryMutex task_mutex;
   struct ThreadData {
 	static Task *const YIELDING; // Too bad constexpr doesn't work here.
-	// ÔÊĞíÖµ±»ĞŞ¸Ä£¬µ«ÊÇ²»ÔÊĞíÕâ¸öÖ¸Õë±ä»¯
+	// å…è®¸å€¼è¢«ä¿®æ”¹ï¼Œä½†æ˜¯ä¸å…è®¸è¿™ä¸ªæŒ‡é’ˆå˜åŒ–
 
     uint32_t index = 0;
     Thread thread;
@@ -88,13 +88,13 @@ class WorkerThreadPool : public Object {
     Task* awaited_task = nullptr;  // Null if not awaiting the condition variable. Special value for idle-waiting.
 
 
-    ConditionVariable cond_var;    // Õâ¸öÌõ¼ş±äÁ¿±»Ã¿¸öÏß³Ì³ÖÓĞ£¬Òò´Ënotify_one¿ÉÒÔÍ¨Öª¸ÃÏß³Ì
+    ConditionVariable cond_var;    // è¿™ä¸ªæ¡ä»¶å˜é‡è¢«æ¯ä¸ªçº¿ç¨‹æŒæœ‰ï¼Œå› æ­¤notify_oneå¯ä»¥é€šçŸ¥è¯¥çº¿ç¨‹
   };
 
   TightLocalVector<ThreadData> threads;
   bool exit_threads = false;
 
-  HashMap<Thread::ID, int> thread_ids; // idµ½index
+  HashMap<Thread::ID, int> thread_ids; // idåˆ°index
   HashMap<TaskID, Task*, HashMapHasherDefault, HashMapComparatorDefault<TaskID>, PagedAllocator<HashMapElement<TaskID, Task*>, false, TASKS_PAGE_SIZE>> tasks;
   HashMap<GroupID, Group*, HashMapHasherDefault, HashMapComparatorDefault<GroupID>, PagedAllocator<HashMapElement<GroupID, Group*>, false, GROUPS_PAGE_SIZE>> groups;
 
@@ -115,7 +115,7 @@ class WorkerThreadPool : public Object {
 
   static WorkerThreadPool* singleton;
   static const constexpr uint32_t MAX_UNLOCKABLE_MUTEXES = 2;
-  static thread_local uintptr_t unlockable_mutexes[MAX_UNLOCKABLE_MUTEXES]; // ËøÖ»ÓĞÒ»¸ö£¬µ«ÊÇ unlockable_mutexesÊÇthread_localµÄ
+  static thread_local uintptr_t unlockable_mutexes[MAX_UNLOCKABLE_MUTEXES]; // é”åªæœ‰ä¸€ä¸ªï¼Œä½†æ˜¯ unlockable_mutexesæ˜¯thread_localçš„
 
   TaskID _add_task(const Callable& p_callable, void (*p_func)(void*), void* p_userdata, BaseTemplateUserdata* p_template_userdata, bool p_high_priority,
                    const String& p_description);
@@ -177,7 +177,7 @@ void _unlock_unlockable_mutexes();
   uint32_t get_group_processed_element_count(GroupID p_group) const;
   bool is_group_task_completed(GroupID p_group) const;
   void wait_for_group_task_completion(GroupID p_group);
-  // Í¨Öª¸ÃÈÎÎñµÄÏß³ÌµÄyield½áÊø
+  // é€šçŸ¥è¯¥ä»»åŠ¡çš„çº¿ç¨‹çš„yieldç»“æŸ
   void notify_yield_over(TaskID p_task_id);
 
   _FORCE_INLINE_ int get_thread_count() const { return threads.size(); }

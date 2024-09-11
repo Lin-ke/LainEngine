@@ -5,7 +5,7 @@ void Object::_construct_object(bool p_is_ref) {
   m_type_is_reference = p_is_ref;
   m_instance_id = ObjectDB::add_instance(this);
 }
-// reverse£ºÏÈµ÷¸¸ÀàÔÙµ÷×ÓÀà
+// reverseï¼šå…ˆè°ƒçˆ¶ç±»å†è°ƒå­ç±»
 void Object::notification(int p_notification, bool p_reversed) {
   if (p_reversed) {
     /*if (script_instance) {

@@ -42,7 +42,7 @@ namespace lain{
 		}
 
 	} // namespace reflection
-	// 64位bits的封装，只能用对应T类的
+	// 64浣峛its鐨勫皝瑁咃紝鍙兘鐢ㄥ搴擳绫荤殑
 	// @Learn
 	template <typename T>
 	class BitField {

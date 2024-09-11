@@ -15,7 +15,7 @@ namespace lain
     class Object;
     template<typename...>
     inline constexpr bool always_false = false;
-    // Ó¦¸Ã½¨Á¢Ò»¸ö Map:<String(type_name), read\write> Õâ¸öÊÇÓĞµÄ£¬È»ºóÏòÄÚ²¿×¢ÈëÓĞ¹ØÖ»serializer²»·´ÉäµÄÀà
+    // åº”è¯¥å»ºç«‹ä¸€ä¸ª Map:<String(type_name), read\write> è¿™ä¸ªæ˜¯æœ‰çš„ï¼Œç„¶åå‘å†…éƒ¨æ³¨å…¥æœ‰å…³åªserializerä¸åå°„çš„ç±»
     class Serializer
     {
     public:
@@ -118,7 +118,7 @@ namespace lain
             for (int i = 0; i < json_array.size(); i++) {
                 T newT;
                 Serializer::read(json_array[i], instance.write[i]);
-                instance.set(i,newT); // ÕâÀï½»¸øÁËTµÄ=ÊµÏÖ¡£
+                instance.set(i,newT); // è¿™é‡Œäº¤ç»™äº†Tçš„=å®ç°ã€‚
 			}
 
             return instance;

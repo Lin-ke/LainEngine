@@ -80,8 +80,8 @@ Point2i WindowSystem::_get_screens_origin() const {
 }
 
 /// <summary>
-/// @TODO: ¼ÓÈëÉèÖÃ´°¿Ú³õÊ¼»¯Î»ÖÃµÄ´úÂë
-/// //@TODO Ôö¼ÓÑ¡ÔñÏÔÊ¾Æ÷µÄ²¿·Ö
+/// @TODO: åŠ å…¥è®¾ç½®çª—å£åˆå§‹åŒ–ä½ç½®çš„ä»£ç 
+/// //@TODO å¢åŠ é€‰æ‹©æ˜¾ç¤ºå™¨çš„éƒ¨åˆ†
 ///
 /// </summary>
 /// <param name="create_info"></param>
@@ -140,7 +140,7 @@ WindowSystem::WindowID WindowSystem::NewWindow(const WindowCreateInfo *create_in
 		wd.p_window = window;
 		wd.hWnd = hwnd;
 
-		// ×¢ÒâÕâÀï´«ÈëwindowdataĞÅÏ¢µ½context driver
+		// æ³¨æ„è¿™é‡Œä¼ å…¥windowdataä¿¡æ¯åˆ°context driver
 		if (rendering_context) {
 			union {
 #ifdef VULKAN_ENABLED
@@ -271,7 +271,7 @@ WindowSystem::WindowSystem(const String &p_rendering_driver, WindowMode p_mode, 
 	p_singleton = this;
 
 	rendering_driver = p_rendering_driver;
-	// Õâ¸ödefineÓ¦¸ÃÔÚpremakeÄÇÀï
+	// è¿™ä¸ªdefineåº”è¯¥åœ¨premakeé‚£é‡Œ
 #ifdef L_PLATFORM_WINDOWS
 	if (rendering_driver == "vulkan") {
 		rendering_context = memnew(RenderingContextDriverVulkanWindows);
@@ -293,7 +293,7 @@ WindowSystem::WindowSystem(const String &p_rendering_driver, WindowMode p_mode, 
 			p_screen = SCREEN_PRIMARY;
 		}
 		Rect2i scr_rect = screen_get_usable_rect(p_screen);
-		window_position = scr_rect.position + (scr_rect.size - p_resolution) / 2; // ÉèÖÃ´°¿ÚÎ»ÖÃÎªscr_rect
+		window_position = scr_rect.position + (scr_rect.size - p_resolution) / 2; // è®¾ç½®çª—å£ä½ç½®ä¸ºscr_rect
 	}
 
 	{ // GLFW initialize
@@ -314,8 +314,8 @@ WindowSystem::WindowSystem(const String &p_rendering_driver, WindowMode p_mode, 
 	create_info.vsync = p_vsync_mode;
 	create_info.mode = p_mode;
 	create_info.title = GLOBAL_GET("application/config/name");
-	WindowID main_window = NewWindow(&create_info); // ÕâÀïwindow µÄ need_resize Îªtrue
-	// ÔÚ¹¹ÔìÊ±½øĞĞscreen_creates()
+	WindowID main_window = NewWindow(&create_info); // è¿™é‡Œwindow çš„ need_resize ä¸ºtrue
+	// åœ¨æ„é€ æ—¶è¿›è¡Œscreen_creates()
 	if (rendering_context) {
 		rendering_device = memnew(RenderingDevice);
 		if (rendering_device->initialize(rendering_context, MAIN_WINDOW_ID) != OK) {

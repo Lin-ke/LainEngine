@@ -163,7 +163,7 @@ public : static const char* getClassName() { return #CLASS; } \
            Serializer::read(json, *reinterpret_cast<CLASS*>(instance));      \
     }                                                   \
 
-// manualµÄÇé¿öÏÂ£¬ÓÃnamespace¶ø²»ÊÇÀà
+// manualçš„æƒ…å†µä¸‹ï¼Œç”¨namespaceè€Œä¸æ˜¯ç±»
 
 #define REFLECT_FIELD_DEF(CLASS, FName, TYPE, SetF, GetF, IsArray) \
 	namespace Reflection{			\
@@ -184,7 +184,7 @@ public : static const char* getClassName() { return #CLASS; } \
 	}}\
 }
 
-// safetyµÄÇé¿öÏÂ£¬ÓÃÀà
+// safetyçš„æƒ…å†µä¸‹ï¼Œç”¨ç±»
 
 #define REFLECT_FIELD_DEF_SAFETY(CLASS, FName, TYPE, SetF, GetF, IsArray) \
 			static const char* get_fieldname_##FName(){return #FName;}\
@@ -200,7 +200,7 @@ public : static const char* getClassName() { return #CLASS; } \
 		&TypeFieldReflectionOperator::Type##CLASS##Operator::isArray_##FName));\
 	}
 
-// ct ´ÓÇ°Ïòºó¶¥£¬ valsÆ¥Åä
+// ct ä»å‰å‘åé¡¶ï¼Œ valsåŒ¹é…
 // 
 
 #define VALS(N1, N2, N3, N4, N5, N, ...) N

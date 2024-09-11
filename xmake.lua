@@ -1,5 +1,6 @@
 add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
 includes("setup/xmake_rules.lua")
+set_encodings("utf-8")
 engine_version = "0.1.0"
 default_unity_batch = 16
 set_warnings("all")
@@ -103,8 +104,8 @@ target("CompileShader")
                 for _, v in ipairs(v1) do
                 try {
                     function ()
-                        print("glslangValidator.exe -o " .. v ..".spv -V ".. v)
-                        os.run("glslangValidator.exe -o " .. v ..".spv -V ".. v)
+                        -- print("glslangValidator.exe -o " .. v ..".spv -V ".. v)
+                        -- os.run("glslangValidator.exe -o " .. v ..".spv -V ".. v)
                     end,
                     catch {
                         function (v) 
@@ -161,8 +162,8 @@ target("Core")
     if is_config("mode", "release") then
         add_defines("L_RELEASE", {public = true })
     end
---- functions
-static_component("Renderer", "Core")
+--- functions (servers)
+static_component("Renderer", "Core") 
     add_rules("mode.debug", "mode.release")
     add_deps("Spirv-Reflect", "mbedtls", "smol-v")
     set_languages("cxx17")
@@ -173,7 +174,7 @@ static_component("Renderer", "Core")
      -- spirv-reflect 用自己的
     add_includedirs("engine/thirdparty/spirv-reflect")
     
-    add_includedirs("$(env VULKAN_SDK)/Include")
+    add_includedirs("$(env VULKAN_SDK)/Include", {public = true})
     add_linkdirs("$(env VULKAN_SDK)/Lib", {public = true})
     add_defines(
     "_CRT_SECURE_NO_WARNINGS",
@@ -186,24 +187,31 @@ static_component("Display", "Renderer")
     set_languages("cxx17")
     add_files("engine/source/runtime/function/display/**.cpp")
 
--- resources
+-- resources (scenes)
 static_component("Scene", "Renderer")
     set_languages("cxx17")
     add_files("engine/source/runtime/scene/**.cpp")
 
-static_component("Editor", "Core")
+-- editors
+static_component("Editor", "Scene")
     set_languages("cxx17")
     add_files("engine/source/editor/**.cpp")
+
+-- modules
+includes("engine/source/module/**/xmake.lua")
+
 
 
 target("main")
     set_languages("cxx17")
     set_kind("static")
     add_files("engine/source/runtime/main/**.cpp")
+    add_files("engine/source/module/register_module_types.cpp")
+
     add_includedirs("engine/source/runtime", {public = true})
     add_deps("Core")
     -- functions
-    add_deps("Renderer", "Display", "Scene")
+    add_deps("Renderer", "Display", "Scene", "lglslang")
     -- editor
     add_deps("Editor")
     -- modules?

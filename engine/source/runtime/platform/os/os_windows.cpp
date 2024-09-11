@@ -59,7 +59,7 @@ namespace lain {
 
 
 		while (true) {
-			//ÈË»ú½»»¥
+			//äººæœºäº¤äº’
 			// display.send_events;
 			bool exit = WindowSystem::GetSingleton()->ShouldClose();
 
@@ -78,12 +78,12 @@ namespace lain {
 	void OSWindows::SetMainLoop(MainLoop* p_main_loop) {
 		main_loop = p_main_loop;
 	}
-	// Ìî±ØÒªµÄ»·¾³±äÁ¿¡¢ÎÄ¼ş²Ù×÷
+	// å¡«å¿…è¦çš„ç¯å¢ƒå˜é‡ã€æ–‡ä»¶æ“ä½œ
 	void OSWindows::Initialize() {
 		
-		// ÔÚÕâÀï³õÊ¼»¯£¬½«FileAccessÀàµÄcreate_functionº¯ÊıÊı×é·ÅÈëmake_default(memnew)<T> ¹¤³§
-		// ÕâÑùÒÔºóÔÚfileaccessÀïÖ´ĞĞcreate()µÃµ½µÄ¾ÍÊÇ¶ÔÓ¦µÄ×ÓÀà
-		// ¶øRef<> = 
+		// åœ¨è¿™é‡Œåˆå§‹åŒ–ï¼Œå°†FileAccessç±»çš„create_functionå‡½æ•°æ•°ç»„æ”¾å…¥make_default(memnew)<T> å·¥å‚
+		// è¿™æ ·ä»¥ååœ¨fileaccessé‡Œæ‰§è¡Œcreate()å¾—åˆ°çš„å°±æ˜¯å¯¹åº”çš„å­ç±»
+		// è€ŒRef<> = 
 
 		FileAccess::make_default<FileAccessWindows>(FileAccess::ACCESS_RESOURCES);
 		FileAccess::make_default<FileAccessWindows>(FileAccess::ACCESS_USERDATA);

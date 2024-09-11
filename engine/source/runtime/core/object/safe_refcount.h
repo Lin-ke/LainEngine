@@ -2,7 +2,7 @@
 #ifndef __SAFE_refCOUNT_H__
 #define __SAFE_refCOUNT_H__
 #include "base.h"
-// 引用计数
+// 寮曠敤璁℃暟
 //#include <memory>
 //template <typename T>
 //using Ref = std::shared_ptr<T>;

@@ -91,7 +91,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL RenderingContextDriverVulkan::_debug_messenger_ca
 
 	return VK_FALSE;
 }
-// ÏÖÒÑ·ÏÆú
+// ç°å·²åºŸå¼ƒ
 VKAPI_ATTR VkBool32 VKAPI_CALL RenderingContextDriverVulkan::_debug_report_callback(VkDebugReportFlagsEXT p_flags, VkDebugReportObjectTypeEXT p_object_type, uint64_t p_object, size_t p_location, int32_t p_message_code, const char* p_layer_prefix, const char* p_message, void* p_user_data) {
 	String debug_message = String("Vulkan Debug Report: object - ") + String::num_int64(p_object) + "\n" + p_message;
 
@@ -242,13 +242,13 @@ Error RenderingContextDriverVulkan::initialize() {
 	err = _initialize_vulkan_version(); // get version
 	ERR_FAIL_COND_V(err != OK, err);
 
-	err = _initialize_instance_extensions(); // ±ØĞëµÄÍØÕ¹
+	err = _initialize_instance_extensions(); // å¿…é¡»çš„æ‹“å±•
 	ERR_FAIL_COND_V(err != OK, err);
 
-	err = _initialize_instance(); // create instance, debug£¬º¯Êı°ó¶¨
+	err = _initialize_instance(); // create instance, debugï¼Œå‡½æ•°ç»‘å®š
 	ERR_FAIL_COND_V(err != OK, err);
 
-	err = _initialize_devices(); // »ñµÃÎïÀíÉè±¸¼°ÎïÀíÉè±¸Ö§³ÖµÄqueue family
+	err = _initialize_devices(); // è·å¾—ç‰©ç†è®¾å¤‡åŠç‰©ç†è®¾å¤‡æ”¯æŒçš„queue family
 	ERR_FAIL_COND_V(err != OK, err);
 
 	return OK;
@@ -284,14 +284,14 @@ void RenderingContextDriverVulkan::_register_requested_instance_extension(const 
 	requested_instance_extensions[p_extension_name] = p_required;
 }
 
-// ×¢²áÒ»Ğ©ĞèÒªµÄÍØÕ¹£¬ »ñµÃÎïÀíÖ§³ÖµÄÍØÕ¹²¢¼ì²é×¢²áµÄÍØÕ¹
+// æ³¨å†Œä¸€äº›éœ€è¦çš„æ‹“å±•ï¼Œ è·å¾—ç‰©ç†æ”¯æŒçš„æ‹“å±•å¹¶æ£€æŸ¥æ³¨å†Œçš„æ‹“å±•
 Error RenderingContextDriverVulkan::_initialize_instance_extensions() {
 	enabled_instance_extension_names.clear();
 
 	// The surface extension and the platform-specific surface extension are core requirements.
 	_register_requested_instance_extension(VK_KHR_SURFACE_EXTENSION_NAME, true);
 
-	// platform-related Êµ¼Ê¾ÍÊÇsurfaceKHR
+	// platform-related å®é™…å°±æ˜¯surfaceKHR
 	if (_get_platform_surface_extension()) {
 		_register_requested_instance_extension(_get_platform_surface_extension(), true);
 	}
@@ -349,7 +349,7 @@ Error RenderingContextDriverVulkan::_initialize_instance_extensions() {
 			if (requested_extension.value) {
 				ERR_FAIL_V_MSG(ERR_BUG, String("Required extension ") + String::utf8(requested_extension.key) + String(" not found."));
 			}
-			else { // Ã»ÓĞÒ²Ã»ÆôÓÃ
+			else { // æ²¡æœ‰ä¹Ÿæ²¡å¯ç”¨
 				print_verbose(String("Optional extension ") + String::utf8(requested_extension.key) + String(" not found."));
 			}
 		}
@@ -404,7 +404,7 @@ Error RenderingContextDriverVulkan::_find_validation_layers(TightLocalVector<con
 			}
 
 			if (layers_found) { // all find (otherwise it will break)
-				r_layer_names.reserve(list.size()); // ¼ÓÈë r_layer_names
+				r_layer_names.reserve(list.size()); // åŠ å…¥ r_layer_names
 				for (const char* layer_name : list) {
 					r_layer_names.push_back(layer_name);
 				}
@@ -438,7 +438,7 @@ Error RenderingContextDriverVulkan::_initialize_instance() {
 		ERR_FAIL_COND_V(err != OK, err);
 	}
 
-	TightLocalVector<const char*> enabled_extension_names; // ¸´ÖÆÒ»ÏÂ
+	TightLocalVector<const char*> enabled_extension_names; // å¤åˆ¶ä¸€ä¸‹
 	enabled_extension_names.reserve(enabled_instance_extension_names.size());
 	for (const CharString& extension_name : enabled_instance_extension_names) {
 		enabled_extension_names.push_back(extension_name.ptr());
@@ -465,7 +465,7 @@ Error RenderingContextDriverVulkan::_initialize_instance() {
 		debug_messenger_create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 		debug_messenger_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 		debug_messenger_create_info.pfnUserCallback = _debug_messenger_callback;
-		debug_messenger_create_info.pUserData = this; // Õâ¸öuserdataÈûÒ»¸öÖ¸ÕëµÄĞ´·¨»¹ÊÇºÜ³£¼ûµÄ
+		debug_messenger_create_info.pUserData = this; // è¿™ä¸ªuserdataå¡ä¸€ä¸ªæŒ‡é’ˆçš„å†™æ³•è¿˜æ˜¯å¾ˆå¸¸è§çš„
 		instance_info.pNext = &debug_messenger_create_info;
 	}
 	else if (has_debug_report_extension) {

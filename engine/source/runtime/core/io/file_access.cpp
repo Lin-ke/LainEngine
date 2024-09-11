@@ -244,15 +244,15 @@ namespace lain {
 
 		return data;
 	}
-	// ´¦ÀíµÄÇé¿öÊÇ¼ÙÉèÎÄ¼şÊÇUTF8¸ñÊ½µÄ¡£
+	// å¤„ç†çš„æƒ…å†µæ˜¯å‡è®¾æ–‡ä»¶æ˜¯UTF8æ ¼å¼çš„ã€‚
 
 	String FileAccess::get_line() const {
-		// ÀàËÆstringbuffer
+		// ç±»ä¼¼stringbuffer
 		CharBuffer line;
 		char32_t c = get_8();
 
 		while (!eof_reached()) {
-			if (c == '\n' || c == '\0') { // Ã»ÓĞ/n
+			if (c == '\n' || c == '\0') { // æ²¡æœ‰/n
 				line.push_back(0);
 				return String::utf8(line.get_data());
 			}
@@ -346,7 +346,7 @@ namespace lain {
 		return strings;
 	}
 	/* these are all implemented for ease of porting, then can later be optimized */
-	// ÕâÀïºÍstoreÒ»Ñù¶¼ÊÇÖØ¸´´úÂë
+	// è¿™é‡Œå’Œstoreä¸€æ ·éƒ½æ˜¯é‡å¤ä»£ç 
 
 	uint16_t FileAccess::get_16() const {
 		uint16_t res;
@@ -488,7 +488,7 @@ namespace lain {
 			store_double(p_real);
 		}
 	}
-	// Í¨¹ıunion´æ´¢×Ö½Ú£¬ÒÔ·ÀÖ¹´æ´¢Ê±Ç¿×ª
+	// é€šè¿‡unionå­˜å‚¨å­—èŠ‚ï¼Œä»¥é˜²æ­¢å­˜å‚¨æ—¶å¼ºè½¬
 	void FileAccess::store_float(float p_dest) {
 		MarshallFloat m;
 		m.f = p_dest;

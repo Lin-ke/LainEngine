@@ -60,7 +60,7 @@ namespace lain{
 		loader.local_path = ProjectSettings::GetSingleton()->LocalizePath(path);
 		loader.progress = r_progress;
 		loader.res_path = loader.local_path;
-		loader.open(f); // ¶Á·âÉÏµÄÍ·£¬ÎÄ¼şÀàĞÍµÈ
+		loader.open(f); // è¯»å°ä¸Šçš„å¤´ï¼Œæ–‡ä»¶ç±»å‹ç­‰
 		err = loader.load();
 		if (r_error) {
 			*r_error = err;
@@ -119,7 +119,7 @@ namespace lain{
 		if (p.has("load_steps")) {
 			resources_total = p["load_steps"];
 		}
-		// ´¦ÀíÍâ²¿ÎÄ¼ş
+		// å¤„ç†å¤–éƒ¨æ–‡ä»¶
 		for (auto&& ext_file : packed_res.ext_res) {
 			String path = ext_file.m_def_path;
 			String type = ext_file.m_type;
@@ -141,7 +141,7 @@ namespace lain{
 			ext_resources[id].type = type;
 			ext_resources[id].load_token = ResourceLoader::_load_start(path, type, use_sub_threads ? ResourceLoader::LOAD_THREAD_DISTRIBUTE : ResourceLoader::LOAD_THREAD_FROM_CURRENT, cache_mode_for_external);
 			if (!ext_resources[id].load_token.is_valid()) {
-				// ²»´æÔÚµÄÍâ²¿ÎÄ¼ş
+				// ä¸å­˜åœ¨çš„å¤–éƒ¨æ–‡ä»¶
 				if (ResourceLoader::get_abort_on_missing_resources()) {
 					error = ERR_FILE_CORRUPT;
 					error_text = "[ext_resource] referenced non-existent resource at: " + path;
@@ -287,8 +287,8 @@ namespace lain{
 			//  
 			// properties
 			packed_scene->get_state()->add_instance_res(gobject_id, gobject.m_instance_res);
-			// °´ËûÕâ¸öĞ´·¨ºÍpythonÓĞÉ¶Çø±ğ£¬dictºÍvariant×°È«²¿
-			// ×é¼şÀïÃæÖ»ÓĞÒ»Ğ©Êı¾İ£¬ËùÒÔÒ²²»ÊÇ²»ĞĞ°É
+			// æŒ‰ä»–è¿™ä¸ªå†™æ³•å’Œpythonæœ‰å•¥åŒºåˆ«ï¼Œdictå’Œvariantè£…å…¨éƒ¨
+			// ç»„ä»¶é‡Œé¢åªæœ‰ä¸€äº›æ•°æ®ï¼Œæ‰€ä»¥ä¹Ÿä¸æ˜¯ä¸è¡Œå§
 			
 			
 		} // exit parsing gobject
@@ -327,7 +327,7 @@ namespace lain{
 
 	
 
-	// ·âÉÏÒ»¸öÍ·
+	// å°ä¸Šä¸€ä¸ªå¤´
 	Error ResourceLoaderText::set_uid(Ref<FileAccess> p_f, ResourceUID::ID p_uid) {
 		open(p_f, true);
 		ERR_FAIL_COND_V(error != OK, error);
@@ -637,7 +637,7 @@ namespace lain{
 			}
 
 			resource_set.insert(res);
-			// propertyÖĞ¿ÉÄÜÓĞĞèÒª±£´æµÄRes
+			// propertyä¸­å¯èƒ½æœ‰éœ€è¦ä¿å­˜çš„Res
 			/*List<PropertyInfo> property_list;
 
 			res->get_property_list(&property_list);
@@ -649,7 +649,7 @@ namespace lain{
 				PropertyInfo pi = I->get();
 
 				if (pi.usage & PROPERTY_USAGE_STORAGE) {
-					Variant v = res->get(I->get().name); // ¸Ğ¾õÕâÃ´Ğ´ºÜ²»ÓÅÑÅ°¡
+					Variant v = res->get(I->get().name); // æ„Ÿè§‰è¿™ä¹ˆå†™å¾ˆä¸ä¼˜é›…å•Š
 
 					if (pi.usage & PROPERTY_USAGE_RESOURCE_NOT_PERSISTENT) {
 						NonPersistentKey npk;

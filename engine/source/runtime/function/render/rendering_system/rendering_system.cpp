@@ -68,7 +68,7 @@ void lain::RenderingSystem::init() {
 
   GLOBAL_DEF_RST("rendering/textures/default_filters/use_nearest_mipmap_filter", false);
   GLOBAL_DEF_RST(PropertyInfo(Variant::INT, "rendering/textures/default_filters/anisotropic_filtering_level", PROPERTY_HINT_ENUM,
-                              String::utf8("Disabled (Fastest),2¡Á (Faster),4¡Á (Fast),8¡Á (Average),16¡Á (Slow)")),
+                              String::utf8("Disabled (Fastest),2x (Faster),4x (Fast),8x (Average),16x (Slow)")),
                  2);
 
   GLOBAL_DEF(PropertyInfo(Variant::INT, "rendering/camera/depth_of_field/depth_of_field_bokeh_shape", PROPERTY_HINT_ENUM, "Box (Fast),Hexagon (Average),Circle (Slowest)"), 1);

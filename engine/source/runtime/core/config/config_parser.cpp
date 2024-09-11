@@ -45,7 +45,7 @@ namespace lain {
         }
         return err;
     }
-	// recursive_depth已经废弃
+	// recursive_depth宸茬粡搴熷純
     Variant ConfigFile::ConstructFromString(const String& p_str, int recursize_depth, bool error_print)
     {
         std::string error;
@@ -153,10 +153,10 @@ namespace lain {
 
     bool ConfigFile::IsNumericExpression(const std::string& expression)
     {
-        // 正则表达式模式，用于匹配数字类型的表达式
+        // 姝ｅ垯琛ㄨ揪寮忔ā寮忥紝鐢ㄤ簬鍖归厤鏁板瓧绫诲瀷鐨勮〃杈惧紡
         std::regex pattern("^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$");
 
-        // 使用 std::regex_match() 函数进行匹配
+        // 浣跨敤 std::regex_match() 鍑芥暟杩涜鍖归厤
         return std::regex_match(expression, pattern);
     }
 

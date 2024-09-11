@@ -7,7 +7,7 @@
 #include <filesystem>
 namespace lain {
 	class DirAccess: public RefCounted {
-		//  CreateFunc ¶¨ÒåÎªÒ»¸öº¯ÊıÖ¸ÕëÀàĞÍ£¬¸Ãº¯Êı·µ»ØÒ»¸ö Ref<DirAccess> ¶ÔÏó
+		//  CreateFunc å®šä¹‰ä¸ºä¸€ä¸ªå‡½æ•°æŒ‡é’ˆç±»å‹ï¼Œè¯¥å‡½æ•°è¿”å›ä¸€ä¸ª Ref<DirAccess> å¯¹è±¡
 
 		typedef Ref<DirAccess>(*CreateFunc)();
 

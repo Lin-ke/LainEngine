@@ -9,7 +9,7 @@
 
 namespace lain {
 	/// --- physical device management ---///
-	// ¶àGPUµÄÇé¿öÏÂµÄÉè±¸¹ÜÀíºÍ»ù´¡ÍØÕ¹µÄÆôÓÃ
+	// å¤šGPUçš„æƒ…å†µä¸‹çš„è®¾å¤‡ç®¡ç†å’ŒåŸºç¡€æ‹“å±•çš„å¯ç”¨
 
 class RenderingContextDriverVulkan : public RenderingContextDriver {
 public:
@@ -72,7 +72,7 @@ public:
 	};
 	TightLocalVector<Device> driver_devices;
 	TightLocalVector<VkPhysicalDevice> physical_devices;
-	TightLocalVector<DeviceQueueFamilies> device_queue_families;
+	TightLocalVector<DeviceQueueFamilies> device_queue_families; // Devices -> Queue families Propertiesï¼Œä¸Šé¢åŒç†
 
 	/// --- extensions
 	HashMap<CharString, bool> requested_instance_extensions;
@@ -119,7 +119,7 @@ public:
 	virtual void surface_set_needs_resize(SurfaceID p_surface, bool p_needs_resize) override;
 	virtual bool surface_get_needs_resize(SurfaceID p_surface) const override;
 	virtual void surface_destroy(SurfaceID p_surface) override;
-	// Ó¦¸ÃÔÚplatformÀï´´½¨
+	// åº”è¯¥åœ¨platformé‡Œåˆ›å»º
 	virtual SurfaceID surface_create(const void* p_platform_data) override;
 	
 	// Vulkan-only methods.
