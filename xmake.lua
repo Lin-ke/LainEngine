@@ -129,7 +129,7 @@ target("CompileShader")
 target("Core")
     set_kind("static")
     set_languages("cxx17", "c99")
-    add_headerfiles("engine/source/runtime/**.h") --- 这里包含了module.h
+    add_headerfiles("engine/source/runtime/**.h") --- 
     -- sourcve 
     add_files("engine/source/runtime/core/**.cpp")
     add_packages(
@@ -171,7 +171,7 @@ static_component("Renderer", "Core")
 
     add_includedirs("engine/thirdparty/volk", {public = true})
     add_includedirs("engine/thirdparty/vma", {public = true})
-     -- spirv-reflect 用自己的
+     -- spirv-reflect ???????
     add_includedirs("engine/thirdparty/spirv-reflect")
     
     add_includedirs("$(env VULKAN_SDK)/Include", {public = true})
@@ -181,7 +181,7 @@ static_component("Renderer", "Core")
      "PRINT_NATIVE_COMMANDS"
     )
     add_defines("VULKAN_ENABLED", {public = true})
-    -- vulkan相关的需要继承宏vulkan_enabled
+    -- 
 
 static_component("Display", "Renderer")
     set_languages("cxx17")

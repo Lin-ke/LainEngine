@@ -1,5 +1,5 @@
 #pragma once
-// unicode ��Сдת��
+// unicode 大小写转换
 #ifndef UCAPS_H
 #define UCAPS_H
 

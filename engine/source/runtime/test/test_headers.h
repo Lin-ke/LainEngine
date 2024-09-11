@@ -8,4 +8,5 @@
 #include "test_tree.h"
 #include "test_process.h"
 #include "test_vulkan.h"
+#include "test_draw_triangle.h"
 #endif // !TEST_HEADERS_H

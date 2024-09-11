@@ -19,7 +19,8 @@ int main() {
 	if (err != OK) {
 		L_PERROR("initialize failed");
 	}
-	test::test_vulkan_driver();
+	// test::test_vulkan_driver();
+	test::test_draw_triangle();
 	// os.Run();
 
 }

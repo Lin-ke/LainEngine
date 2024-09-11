@@ -24,8 +24,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   typedef int64_t ComputeListID;
 
   typedef String (*ShaderSPIRVGetCacheKeyFunction)(const RenderingDevice* p_render_device);
-  typedef Vector<uint8_t> (*ShaderCompileToSPIRVFunction)(ShaderStage p_stage, const String& p_source_code,
-                                                          ShaderLanguage p_language, String* r_error,
+  typedef Vector<uint8_t> (*ShaderCompileToSPIRVFunction)(ShaderStage p_stage, const String& p_source_code, ShaderLanguage p_language, String* r_error,
                                                           const RenderingDevice* p_render_device);
   typedef Vector<uint8_t> (*ShaderCacheFunction)(ShaderStage p_stage, const String& p_source_code, ShaderLanguage p_language);
 
@@ -41,14 +40,15 @@ class RenderingDevice : public RenderingDeviceCommons {
   enum IDType {
     ID_TYPE_FRAMEBUFFER_FORMAT,
     ID_TYPE_VERTEX_FORMAT,
-    ID_TYPE_DRAW_LIST,// 唯一
-    ID_TYPE_COMPUTE_LIST = 4,// 唯一 
+    ID_TYPE_DRAW_LIST,         // 唯一
+    ID_TYPE_COMPUTE_LIST = 4,  // 唯一
     ID_TYPE_MAX,
     ID_BASE_SHIFT = 58,  // 5 bits for ID types.
     ID_MASK = (ID_BASE_SHIFT - 1),
   };
 
   typedef int64_t FramebufferFormatID;
+
  private:
   // RID到依赖它的ID(s)的映射，因此删除时需要删除依赖它的ID
   HashMap<RID, HashSet<RID>> dependency_map;          // IDs to IDs that depend on it.
@@ -62,16 +62,15 @@ class RenderingDevice : public RenderingDeviceCommons {
   HashMap<WindowSystem::WindowID, RDD::FramebufferID> screen_framebuffers;
 
  public:
-
   /****************/
   /**** SCREEN ****/
   /****************/
   Error screen_create(WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID);
   Error screen_prepare_for_drawing(WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID);
-	int screen_get_width(WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID) const;
-	int screen_get_height(WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID) const;
-	FramebufferFormatID screen_get_framebuffer_format(WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID) const;
-	Error screen_free(WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID);
+  int screen_get_width(WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID) const;
+  int screen_get_height(WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID) const;
+  FramebufferFormatID screen_get_framebuffer_format(WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID) const;
+  Error screen_free(WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID);
 
  private:
   uint32_t _get_swap_chain_desired_count() const;
@@ -89,15 +88,11 @@ class RenderingDevice : public RenderingDeviceCommons {
   int staging_buffer_current = 0;
   uint32_t staging_buffer_block_size = 0;
   uint64_t staging_buffer_max_size = 0;
-  
+
   bool staging_buffer_used = false;
-  enum StagingRequiredAction {
-    STAGING_REQUIRED_ACTION_NONE,
-    STAGING_REQUIRED_ACTION_FLUSH_AND_STALL_ALL,
-    STAGING_REQUIRED_ACTION_STALL_PREVIOUS
-  };
-  Error _staging_buffer_allocate(uint32_t p_amount, uint32_t p_required_align, uint32_t& r_alloc_offset, uint32_t& r_alloc_size,
-                                 StagingRequiredAction& r_required_action, bool p_can_segment = true);
+  enum StagingRequiredAction { STAGING_REQUIRED_ACTION_NONE, STAGING_REQUIRED_ACTION_FLUSH_AND_STALL_ALL, STAGING_REQUIRED_ACTION_STALL_PREVIOUS };
+  Error _staging_buffer_allocate(uint32_t p_amount, uint32_t p_required_align, uint32_t& r_alloc_offset, uint32_t& r_alloc_size, StagingRequiredAction& r_required_action,
+                                 bool p_can_segment = true);
   void _staging_buffer_execute_required_action(StagingRequiredAction p_required_action);
   Error _insert_staging_block();
 
@@ -109,13 +104,12 @@ class RenderingDevice : public RenderingDeviceCommons {
   };
   // vertex; index; uniform; storage
   Buffer* _get_buffer_from_owner(RID p_buffer);
-  Error _buffer_update(Buffer* p_buffer, RID p_buffer_id, size_t p_offset, const uint8_t* p_data, size_t p_data_size,
-                       bool p_use_draw_queue = false, uint32_t p_required_align = 32);
+  Error _buffer_update(Buffer* p_buffer, RID p_buffer_id, size_t p_offset, const uint8_t* p_data, size_t p_data_size, bool p_use_draw_queue = false,
+                       uint32_t p_required_align = 32);
 
   RID_Owner<Buffer> uniform_buffer_owner;
   RID_Owner<Buffer> storage_buffer_owner;
   RID_Owner<Buffer> texture_buffer_owner;
-
 
   /// **** COMMAND
  public:
@@ -131,8 +125,7 @@ class RenderingDevice : public RenderingDeviceCommons {
                                   uint32_t p_size = 0);  // This causes stall, only use to
                                                          // retrieve large buffers for saving.
   RID uniform_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t>& p_data = Vector<uint8_t>());
-  RID storage_buffer_create(uint32_t p_size, const Vector<uint8_t>& p_data = Vector<uint8_t>(),
-                            BitField<StorageBufferUsage> p_usage = 0);
+  RID storage_buffer_create(uint32_t p_size, const Vector<uint8_t>& p_data = Vector<uint8_t>(), BitField<StorageBufferUsage> p_usage = 0);
   RID texture_buffer_create(uint32_t p_size_elements, DataFormat p_format, const Vector<uint8_t>& p_data = Vector<uint8_t>());
 
   /*****************/
@@ -152,13 +145,13 @@ class RenderingDevice : public RenderingDeviceCommons {
   // for a framebuffer to render into it.
   struct Texture {
     struct SharedFallback {
-			uint32_t revision = 1; // 被修改的次数，要求与owner的保持一致，否则更新
-			RDD::TextureID texture;
-			RDG::ResourceTracker *texture_tracker = nullptr;
-			RDD::BufferID buffer;
-			RDG::ResourceTracker *buffer_tracker = nullptr; // reinterpretation buffer @?
-			bool raw_reinterpretation = false;
-		};
+      uint32_t revision = 1;  // 被修改的次数，要求与owner的保持一致，否则更新
+      RDD::TextureID texture;
+      RDG::ResourceTracker* texture_tracker = nullptr;
+      RDD::BufferID buffer;
+      RDG::ResourceTracker* buffer_tracker = nullptr;  // reinterpretation buffer @?
+      bool raw_reinterpretation = false;
+    };
     RDD::TextureID driver_id;
     TextureType type = TEXTURE_TYPE_MAX;
     DataFormat format = DATA_FORMAT_MAX;
@@ -185,8 +178,8 @@ class RenderingDevice : public RenderingDeviceCommons {
     RID owner;
 
     RDG::ResourceTracker* draw_tracker = nullptr;
-    HashMap<Rect2i, RDG::ResourceTracker*> slice_trackers; // 快速寻找slice
-		SharedFallback *shared_fallback = nullptr;
+    HashMap<Rect2i, RDG::ResourceTracker*> slice_trackers;  // 快速寻找slice
+    SharedFallback* shared_fallback = nullptr;
 
     RDD::TextureSubresourceRange barrier_range() const {  // texture subresource range;
       RDD::TextureSubresourceRange r;
@@ -219,8 +212,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   uint32_t texture_upload_region_size_px = 0;
 
   Vector<uint8_t> _texture_get_data(Texture* tex, uint32_t p_layer, bool p_2d = false);
-  Error _texture_update(RID p_texture, uint32_t p_layer, const Vector<uint8_t>& p_data, bool p_use_setup_queue,
-                        bool p_validate_can_update);
+  Error _texture_update(RID p_texture, uint32_t p_layer, const Vector<uint8_t>& p_data, bool p_use_setup_queue, bool p_validate_can_update);
   void _texture_check_shared_fallback(Texture* p_texture);
   void _texture_update_shared_fallback(RID p_texture_rid, Texture* p_texture, bool p_for_writing);
   void _texture_free_shared_fallback(Texture* p_texture);
@@ -256,16 +248,13 @@ class RenderingDevice : public RenderingDeviceCommons {
   };
   // 这里和driver内部的api相差不大
  public:
-  RID texture_create(const TextureFormat& p_format, const TextureView& p_view,
-                     const Vector<Vector<uint8_t>>& p_data = Vector<Vector<uint8_t>>());
+  RID texture_create(const TextureFormat& p_format, const TextureView& p_view, const Vector<Vector<uint8_t>>& p_data = Vector<Vector<uint8_t>>());
   TextureFormat texture_get_format(RID p_texture);
   RID texture_create_shared(const TextureView& p_view, RID p_with_texture);
-  RID texture_create_from_extension(TextureType p_type, DataFormat p_format, TextureSamples p_samples,
-                                    BitField<RenderingDevice::TextureUsageBits> p_usage, uint64_t p_image, uint64_t p_width,
-                                    uint64_t p_height, uint64_t p_depth, uint64_t p_layers);
-  RID texture_create_shared_from_slice(const TextureView& p_view, RID p_with_texture, uint32_t p_layer, uint32_t p_mipmap,
-                                       uint32_t p_mipmaps = 1, TextureSliceType p_slice_type = TEXTURE_SLICE_2D,
-                                       uint32_t p_layers = 0);
+  RID texture_create_from_extension(TextureType p_type, DataFormat p_format, TextureSamples p_samples, BitField<RenderingDevice::TextureUsageBits> p_usage, uint64_t p_image,
+                                    uint64_t p_width, uint64_t p_height, uint64_t p_depth, uint64_t p_layers);
+  RID texture_create_shared_from_slice(const TextureView& p_view, RID p_with_texture, uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps = 1,
+                                       TextureSliceType p_slice_type = TEXTURE_SLICE_2D, uint32_t p_layers = 0);
   Error texture_update(RID p_texture, uint32_t p_layer, const Vector<uint8_t>& p_data);
   Vector<uint8_t> texture_get_data(RID p_texture,
                                    uint32_t p_layer);  // CPU textures will return immediately, while GPU
@@ -276,10 +265,9 @@ class RenderingDevice : public RenderingDeviceCommons {
   bool texture_is_valid(RID p_texture);
   Size2i texture_size(RID p_texture);
 
-  Error texture_copy(RID p_from_texture, RID p_to_texture, const Vector3& p_from, const Vector3& p_to, const Vector3& p_size,
-                     uint32_t p_src_mipmap, uint32_t p_dst_mipmap, uint32_t p_src_layer, uint32_t p_dst_layer);
-  Error texture_clear(RID p_texture, const Color& p_color, uint32_t p_base_mipmap, uint32_t p_mipmaps, uint32_t p_base_layer,
-                      uint32_t p_layers);
+  Error texture_copy(RID p_from_texture, RID p_to_texture, const Vector3& p_from, const Vector3& p_to, const Vector3& p_size, uint32_t p_src_mipmap, uint32_t p_dst_mipmap,
+                     uint32_t p_src_layer, uint32_t p_dst_layer);
+  Error texture_clear(RID p_texture, const Color& p_color, uint32_t p_base_mipmap, uint32_t p_mipmaps, uint32_t p_base_layer, uint32_t p_layers);
   Error texture_resolve_multisample(RID p_from_texture, RID p_to_texture);
 
   /************************/
@@ -290,27 +278,29 @@ class RenderingDevice : public RenderingDeviceCommons {
   /// 对于同一个frame
   /// buffer，不同的initialaction构成了不同的version，这在实际中真的有用吗
   enum InitialAction { INITIAL_ACTION_LOAD, INITIAL_ACTION_CLEAR, INITIAL_ACTION_DISCARD, INITIAL_ACTION_MAX };
-  struct ColorInitialAction{
+  struct ColorInitialAction {
     uint32_t load_attach = 0;
     uint32_t clear_attach = 0xffffffff;
     uint32_t discard_attach = 0;
     InitialAction get_initial_action(int index) const {
-      if (load_attach &  1 << index) return INITIAL_ACTION_LOAD;
-      if (clear_attach & 1 << index) return INITIAL_ACTION_CLEAR;
-      if (discard_attach & 1 << index) return INITIAL_ACTION_DISCARD;
+      if (load_attach & 1 << index)
+        return INITIAL_ACTION_LOAD;
+      if (clear_attach & 1 << index)
+        return INITIAL_ACTION_CLEAR;
+      if (discard_attach & 1 << index)
+        return INITIAL_ACTION_DISCARD;
       return INITIAL_ACTION_MAX;
     }
     bool has_initial_action(InitialAction p_action) const {
-      switch (p_action)
-      {
-      case INITIAL_ACTION_LOAD:
-        return load_attach != 0;
-      case INITIAL_ACTION_CLEAR:
-        return clear_attach != 0;
-      case INITIAL_ACTION_DISCARD:
-        return discard_attach != 0;
-      default:
-        return false;
+      switch (p_action) {
+        case INITIAL_ACTION_LOAD:
+          return load_attach != 0;
+        case INITIAL_ACTION_CLEAR:
+          return clear_attach != 0;
+        case INITIAL_ACTION_DISCARD:
+          return discard_attach != 0;
+        default:
+          return false;
       }
     }
     bool operator<(const ColorInitialAction& p_key) const {
@@ -330,7 +320,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     }
   };
   enum FinalAction { FINAL_ACTION_STORE, FINAL_ACTION_DISCARD, FINAL_ACTION_MAX };
-  struct ColorFinalAction{
+  struct ColorFinalAction {
     uint32_t store_attach = 0xffffffff;
     uint32_t discard_attach = 0;
     bool operator<(const ColorFinalAction& p_key) const {
@@ -342,10 +332,8 @@ class RenderingDevice : public RenderingDeviceCommons {
       }
       return false;
     }
-    bool operator==(const ColorFinalAction& p_key) const {
-      return store_attach == p_key.store_attach && discard_attach == p_key.discard_attach;
-    }
-  }; // 最多32个attachment
+    bool operator==(const ColorFinalAction& p_key) const { return store_attach == p_key.store_attach && discard_attach == p_key.discard_attach; }
+  };  // 最多32个attachment
   /*********************/
   /**** RenderPass ****/
   /*********************/
@@ -357,9 +345,9 @@ class RenderingDevice : public RenderingDeviceCommons {
   // 这里就是在规定renderpass所用的framebuffer的格式
   struct AttachmentFormat {
     enum { UNUSED_ATTACHMENT = 0xFFFFFFFF };
-    DataFormat format;  // 数据格式
-    TextureSamples samples; // 有几个sample
-    uint32_t usage_flags;  // TextureUsageBits // 这里用uint32_t是为了方便
+    DataFormat format;       // 数据格式
+    TextureSamples samples;  // 有几个sample
+    uint32_t usage_flags;    // TextureUsageBits // 这里用uint32_t是为了方便
     AttachmentFormat() {
       format = DATA_FORMAT_R8G8B8A8_UNORM;
       samples = TEXTURE_SAMPLES_1;
@@ -370,11 +358,10 @@ class RenderingDevice : public RenderingDeviceCommons {
       samples = p_samples;
       usage_flags = p_usage_flags;
     }
-    AttachmentFormat(RID p_texture, uint32_t p_usage_flags) {
-      auto texture_format = RenderingDevice::get_singleton()->texture_get_format(p_texture);
+    AttachmentFormat(TextureFormat texture_format) {
       format = texture_format.format;
       samples = texture_format.samples;
-      usage_flags = p_usage_flags;
+      usage_flags = texture_format.usage_bits;
     }
   };
 
@@ -402,10 +389,9 @@ class RenderingDevice : public RenderingDeviceCommons {
   };
 
  private:
-  RDD::RenderPassID _render_pass_create(const Vector<AttachmentFormat>& p_attachments, const Vector<FramebufferPass>& p_passes,
-                                        ColorInitialAction p_initial_action, ColorFinalAction p_final_action,
-                                        InitialAction p_initial_depth_action, FinalAction p_final_depth_action,
-                                        uint32_t p_view_count = 1, Vector<TextureSamples>* r_samples = nullptr);
+  RDD::RenderPassID _render_pass_create(const Vector<AttachmentFormat>& p_attachments, const Vector<FramebufferPass>& p_passes, ColorInitialAction p_initial_action,
+                                        ColorFinalAction p_final_action, InitialAction p_initial_depth_action, FinalAction p_final_depth_action, uint32_t p_view_count = 1,
+                                        Vector<TextureSamples>* r_samples = nullptr);
   // This is a cache and it's never freed, it ensures
   // IDs for a given format are always unique.
   // 这里的技术和 descriptor set pool 中的技术是一样的
@@ -432,16 +418,16 @@ class RenderingDevice : public RenderingDeviceCommons {
       uint32_t view_count;
 
       bool operator<(const VersionKey& p_key) const {
-        if(!(initial_color_action == p_key.initial_color_action)) {
+        if (!(initial_color_action == p_key.initial_color_action)) {
           return initial_color_action < p_key.initial_color_action;
         }
-        if(!(final_color_action == p_key.final_color_action)) {
+        if (!(final_color_action == p_key.final_color_action)) {
           return final_color_action < p_key.final_color_action;
         }
-        if(!(initial_depth_action == p_key.initial_depth_action)) {
+        if (!(initial_depth_action == p_key.initial_depth_action)) {
           return initial_depth_action < p_key.initial_depth_action;
         }
-        if(!(final_depth_action == p_key.final_depth_action)) {
+        if (!(final_depth_action == p_key.final_depth_action)) {
           return final_depth_action < p_key.final_depth_action;
         }
         return view_count < p_key.view_count;
@@ -469,17 +455,14 @@ class RenderingDevice : public RenderingDeviceCommons {
   // freed
   // framebuffer format就是renderpass
   FramebufferFormatID framebuffer_format_create(const Vector<AttachmentFormat>& p_format, uint32_t p_view_count = 1);
-  FramebufferFormatID framebuffer_format_create_multipass(const Vector<AttachmentFormat>& p_attachments,
-                                                          const Vector<FramebufferPass>& p_passes, uint32_t p_view_count = 1);
+  FramebufferFormatID framebuffer_format_create_multipass(const Vector<AttachmentFormat>& p_attachments, const Vector<FramebufferPass>& p_passes, uint32_t p_view_count = 1);
   FramebufferFormatID framebuffer_format_create_empty(TextureSamples p_samples = TEXTURE_SAMPLES_1);
   TextureSamples framebuffer_format_get_texture_samples(FramebufferFormatID p_format, uint32_t p_pass = 0);
 
-  RID framebuffer_create(const Vector<RID>& p_texture_attachments, FramebufferFormatID p_format_check = INVALID_ID,
-                         uint32_t p_view_count = 1);
-  RID framebuffer_create_multipass(const Vector<RID>& p_texture_attachments, const Vector<FramebufferPass>& p_passes,
-                                   FramebufferFormatID p_format_check = INVALID_ID, uint32_t p_view_count = 1);
-  RID framebuffer_create_empty(const Size2i& p_size, TextureSamples p_samples = TEXTURE_SAMPLES_1,
-                               FramebufferFormatID p_format_check = INVALID_ID);
+  RID framebuffer_create(const Vector<RID>& p_texture_attachments, FramebufferFormatID p_format_check = INVALID_ID, uint32_t p_view_count = 1);
+  RID framebuffer_create_multipass(const Vector<RID>& p_texture_attachments, const Vector<FramebufferPass>& p_passes, FramebufferFormatID p_format_check = INVALID_ID,
+                                   uint32_t p_view_count = 1);
+  RID framebuffer_create_empty(const Size2i& p_size, TextureSamples p_samples = TEXTURE_SAMPLES_1, FramebufferFormatID p_format_check = INVALID_ID);
   bool framebuffer_is_valid(RID p_framebuffer) const;
   void framebuffer_set_invalidation_callback(RID p_framebuffer, InvalidationCallback p_callback, void* p_userdata);
 
@@ -515,7 +498,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   // exposed.
 
   RID_Owner<Buffer> vertex_buffer_owner;
-
+  // 对于format这种类型的都可以靠hashmap进行缓存
   struct VertexDescriptionKey {
     Vector<VertexAttribute> vertex_formats;
     bool operator==(const VertexDescriptionKey& p_key) const { return vertex_formats == p_key.vertex_formats; }
@@ -537,22 +520,22 @@ class RenderingDevice : public RenderingDeviceCommons {
   struct VertexDescriptionHash {
     static _FORCE_INLINE_ uint32_t hash(const VertexDescriptionKey& p_key) { return p_key.hash(); }
   };
-  HashMap<VertexDescriptionKey, VertexFormatID, VertexDescriptionHash> vertex_format_cache;
-  // vertex to driver id
-  struct VertexDescriptionCache {
-    Vector<VertexAttribute> vertex_formats;
+  HashMap<VertexDescriptionKey, VertexFormatID, VertexDescriptionHash> vertex_format_cache;  // 根据key查找是否已经有该format存在
+  // godot source 中称这个是cache，即相同格式可以直接用
+  struct VertexDescriptionInCache {
+    Vector<VertexAttribute> vertex_formats;  // 这种需要vector降低copy代价
     RDD::VertexFormatID driver_id;
   };
 
-  HashMap<VertexFormatID, VertexDescriptionCache> vertex_formats; // 根据id快速找到format的缓存结构
-  struct VertexArray { // 顶点数组的抽象;
+  HashMap<VertexFormatID, VertexDescriptionInCache> vertex_formats;
+  struct VertexArray {  // 顶点数组的抽象;
     RID buffer;
     VertexFormatID description;
     int vertex_count = 0;
     uint32_t max_instances_allowed = 0;
 
-    Vector<RDD::BufferID> buffers;  // Not owned, just referenced.
-      Vector<RDG::ResourceTracker *> draw_trackers; // Not owned, just
+    Vector<RDD::BufferID> buffers;                // Not owned, just referenced.
+    Vector<RDG::ResourceTracker*> draw_trackers;  // Not owned, just
     //   referenced.
     Vector<uint64_t> offsets;
     HashSet<RID> untracked_buffers;
@@ -568,9 +551,9 @@ class RenderingDevice : public RenderingDeviceCommons {
   RID_Owner<IndexBuffer> index_buffer_owner;
 
   struct IndexArray {
-    uint32_t max_index = 0;   // Remember the maximum index here too, for validation.
-    RDD::BufferID driver_id;  // Not owned, inherited from index buffer.
-    RDG::ResourceTracker *draw_tracker = nullptr; // Not owned, inherited
+    uint32_t max_index = 0;                        // Remember the maximum index here too, for validation.
+    RDD::BufferID driver_id;                       // Not owned, inherited from index buffer.
+    RDG::ResourceTracker* draw_tracker = nullptr;  // Not owned, inherited
     // from index buffer.
     uint32_t offset = 0;
     uint32_t indices = 0;
@@ -581,17 +564,16 @@ class RenderingDevice : public RenderingDeviceCommons {
   RID_Owner<IndexArray> index_array_owner;
 
  public:
-  RID vertex_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t>& p_data = Vector<uint8_t>(),
-                           bool p_use_as_storage = false);
+  /// @param p_use_as_storage : 有则BUFFER_USAGE_STORAGE_BIT，且创建resource_tracker_create
+  RID vertex_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t>& p_data = Vector<uint8_t>(), bool p_use_as_storage = false);
 
   // This ID is warranted to be unique for the same formats, does not need to be
   // freed
+  // Format这种情况都不用RID。
   VertexFormatID vertex_format_create(const Vector<VertexAttribute>& p_vertex_descriptions);
-  RID vertex_array_create(uint32_t p_vertex_count, VertexFormatID p_vertex_format, const Vector<RID>& p_src_buffers,
-                          const Vector<uint64_t>& p_offsets = Vector<uint64_t>());
+  RID vertex_array_create(uint32_t p_vertex_count, VertexFormatID p_vertex_format, const Vector<RID>& p_src_buffers, const Vector<uint64_t>& p_offsets = Vector<uint64_t>());
 
-  RID index_buffer_create(uint32_t p_size_indices, IndexBufferFormat p_format, const Vector<uint8_t>& p_data = Vector<uint8_t>(),
-                          bool p_use_restart_indices = false);
+  RID index_buffer_create(uint32_t p_size_indices, IndexBufferFormat p_format, const Vector<uint8_t>& p_data = Vector<uint8_t>(), bool p_use_restart_indices = false);
   RID index_array_create(RID p_index_buffer, uint32_t p_index_offset, uint32_t p_index_count);
   /****************/
   /**** SHADER ****/
@@ -610,7 +592,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   // "compatible". in order to avoid costly rebinds.
 
  private:
-  struct UniformSetFormat { // 整个uniform set
+  struct UniformSetFormat {  // 整个uniform set
     Vector<ShaderUniform> uniforms;
 
     _FORCE_INLINE_ bool operator<(const UniformSetFormat& p_other) const {
@@ -652,8 +634,8 @@ class RenderingDevice : public RenderingDeviceCommons {
     String name;  // Used for debug.
     RDD::ShaderID driver_id;
     uint32_t layout_hash = 0;
-    BitField<RDD::PipelineStageBits> stage_bits; // 与stage对应
-    Vector<uint32_t> set_formats; // 在uniform_set_format_cache的value()
+    BitField<RDD::PipelineStageBits> stage_bits;  // 与stage对应
+    Vector<uint32_t> set_formats;                 // 在uniform_set_format_cache的value()
   };
 
   String _shader_uniform_debug(RID p_shader, int p_set = -1);
@@ -661,9 +643,8 @@ class RenderingDevice : public RenderingDeviceCommons {
   RID_Owner<Shader> shader_owner;
 
  public:
-  Vector<uint8_t> shader_compile_spirv_from_source(ShaderStage p_stage, const String& p_source_code,
-                                                   ShaderLanguage p_language = SHADER_LANGUAGE_GLSL, String* r_error = nullptr,
-                                                   bool p_allow_cache = true);
+  Vector<uint8_t> shader_compile_spirv_from_source(ShaderStage p_stage, const String& p_source_code, ShaderLanguage p_language = SHADER_LANGUAGE_GLSL,
+                                                   String* r_error = nullptr, bool p_allow_cache = true);
   String shader_get_spirv_cache_key() const;
 
   static void shader_set_compile_to_spirv_function(ShaderCompileToSPIRVFunction p_function);
@@ -751,7 +732,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     RID shader_id;
     uint32_t shader_set = 0;  // ？
     RDD::UniformSetID driver_id;
-    struct AttachableTexture { // 验证使用，该Uniform绑定的texture，（不能作为framebuffer的）
+    struct AttachableTexture {  // 验证使用，该Uniform绑定的texture，（不能作为framebuffer的）
       uint32_t bind = 0;
       RID texture;
     };
@@ -762,9 +743,9 @@ class RenderingDevice : public RenderingDeviceCommons {
     };
 
     LocalVector<AttachableTexture> attachable_textures;  // Used for validation.
-    Vector<RDG::ResourceTracker *> draw_trackers;
+    Vector<RDG::ResourceTracker*> draw_trackers;
     Vector<RDG::ResourceUsage> draw_trackers_usage;
-    HashMap<RID, RDG::ResourceUsage> untracked_usage; // @?
+    HashMap<RID, RDG::ResourceUsage> untracked_usage;  // @?
     LocalVector<SharedTexture> shared_textures_to_update;
     InvalidationCallback invalidated_callback = nullptr;
     void* invalidated_callback_userdata = nullptr;
@@ -825,8 +806,8 @@ class RenderingDevice : public RenderingDeviceCommons {
   WorkerThreadPool::TaskID pipeline_cache_save_task = WorkerThreadPool::INVALID_TASK_ID;
 
   Vector<uint8_t> _load_pipeline_cache();
-  /// @brief 
-  /// @param p_closing 关闭任务 
+  /// @brief
+  /// @param p_closing 关闭任务
   void _update_pipeline_cache(bool p_closing = false);
   static void _save_pipeline_cache(void* p_data);
 
@@ -843,16 +824,17 @@ class RenderingDevice : public RenderingDeviceCommons {
   RID_Owner<ComputePipeline> compute_pipeline_owner;
 
  public:
-  RID render_pipeline_create(
-      RID p_shader, FramebufferFormatID p_framebuffer_format, VertexFormatID p_vertex_format, RenderPrimitive p_render_primitive,
-      const PipelineRasterizationState& p_rasterization_state, const PipelineMultisampleState& p_multisample_state,
-      const PipelineDepthStencilState& p_depth_stencil_state, const PipelineColorBlendState& p_blend_state,
-      BitField<PipelineDynamicStateFlags> p_dynamic_state_flags = 0, uint32_t p_for_render_pass = 0,
-      const Vector<PipelineSpecializationConstant>& p_specialization_constants = Vector<PipelineSpecializationConstant>());
+  RID render_pipeline_create(RID p_shader, FramebufferFormatID p_framebuffer_format, VertexFormatID p_vertex_format,
+                             RenderPrimitive p_render_primitive = RenderingDevice::RenderPrimitive::RENDER_PRIMITIVE_TRIANGLES,
+                             const PipelineRasterizationState& p_rasterization_state = RenderingDevice::PipelineRasterizationState(),
+                             const PipelineMultisampleState& p_multisample_state = RenderingDevice::PipelineMultisampleState(),
+                             const PipelineDepthStencilState& p_depth_stencil_state = RenderingDevice::PipelineDepthStencilState(),
+                             const PipelineColorBlendState& p_blend_state = RenderingDevice::PipelineColorBlendState(),
+                             BitField<PipelineDynamicStateFlags> p_dynamic_state_flags = 0, uint32_t p_for_render_pass = 0,
+                             const Vector<PipelineSpecializationConstant>& p_specialization_constants = Vector<PipelineSpecializationConstant>());
   bool render_pipeline_is_valid(RID p_pipeline);
 
-  RID compute_pipeline_create(RID p_shader, const Vector<PipelineSpecializationConstant>& p_specialization_constants =
-                                                Vector<PipelineSpecializationConstant>());
+  RID compute_pipeline_create(RID p_shader, const Vector<PipelineSpecializationConstant>& p_specialization_constants = Vector<PipelineSpecializationConstant>());
   bool compute_pipeline_is_valid(RID p_pipeline);
 
   /*************************/
@@ -917,7 +899,7 @@ class RenderingDevice : public RenderingDeviceCommons {
       bool pipeline_push_constant_supplied = false;
     } validation;
 #else
-    struct Validation { // validation只包括vertex array size和 index array size
+    struct Validation {  // validation只包括vertex array size和 index array size
       uint32_t vertex_array_size = 0;
       uint32_t index_array_count = 0;
     } validation;
@@ -935,18 +917,15 @@ class RenderingDevice : public RenderingDeviceCommons {
 
   Vector<RID> draw_list_bound_textures;
 
-  void _draw_list_insert_clear_region(DrawList* p_draw_list, Framebuffer* p_framebuffer, Point2i p_viewport_offset,
-                                      Point2i p_viewport_size, bool p_clear_color, const Vector<Color>& p_clear_colors,
-                                      bool p_clear_depth, float p_depth, uint32_t p_stencil);
-  Error _draw_list_setup_framebuffer(Framebuffer* p_framebuffer, ColorInitialAction p_initial_color_action,
-                                     ColorFinalAction p_final_color_action, InitialAction p_initial_depth_action,
-                                     FinalAction p_final_depth_action, RDD::FramebufferID* r_framebuffer,
+  void _draw_list_insert_clear_region(DrawList* p_draw_list, Framebuffer* p_framebuffer, Point2i p_viewport_offset, Point2i p_viewport_size, bool p_clear_color,
+                                      const Vector<Color>& p_clear_colors, bool p_clear_depth, float p_depth, uint32_t p_stencil);
+  Error _draw_list_setup_framebuffer(Framebuffer* p_framebuffer, ColorInitialAction p_initial_color_action, ColorFinalAction p_final_color_action,
+                                     InitialAction p_initial_depth_action, FinalAction p_final_depth_action, RDD::FramebufferID* r_framebuffer,
                                      RDD::RenderPassID* r_render_pass, uint32_t* r_subpass_count);
-  Error _draw_list_render_pass_begin(Framebuffer* p_framebuffer, ColorInitialAction p_initial_color_action,
-                                     ColorFinalAction p_final_color_action, InitialAction p_initial_depth_action,
-                                     FinalAction p_final_depth_action, const Vector<Color>& p_clear_colors, float p_clear_depth,
-                                     uint32_t p_clear_stencil, Point2i p_viewport_offset, Point2i p_viewport_size,
-                                     RDD::FramebufferID p_framebuffer_driver_id, RDD::RenderPassID p_render_pass);
+  Error _draw_list_render_pass_begin(Framebuffer* p_framebuffer, ColorInitialAction p_initial_color_action, ColorFinalAction p_final_color_action,
+                                     InitialAction p_initial_depth_action, FinalAction p_final_depth_action, const Vector<Color>& p_clear_colors, float p_clear_depth,
+                                     uint32_t p_clear_stencil, Point2i p_viewport_offset, Point2i p_viewport_size, RDD::FramebufferID p_framebuffer_driver_id,
+                                     RDD::RenderPassID p_render_pass);
   void _draw_list_set_viewport(Rect2i p_rect);
   void _draw_list_set_scissor(Rect2i p_rect);
   _FORCE_INLINE_ DrawList* _get_draw_list_ptr(DrawListID p_id);
@@ -955,13 +934,12 @@ class RenderingDevice : public RenderingDeviceCommons {
 
  public:
   /// @brief screen drawlist, 使用screen_framebuffers
-  /// @param p_screen 
-  /// @param p_clear_color 
-  /// @return 
+  /// @param p_screen
+  /// @param p_clear_color
+  /// @return
   DrawListID draw_list_begin_for_screen(WindowSystem::WindowID p_screen = 0, const Color& p_clear_color = Color());
-  DrawListID draw_list_begin(RID p_framebuffer, ColorInitialAction p_initial_color_action, ColorFinalAction p_final_color_action,
-                             InitialAction p_initial_depth_action, FinalAction p_final_depth_action,
-                             const Vector<Color>& p_clear_color_values = Vector<Color>(), float p_clear_depth = 1.0,
+  DrawListID draw_list_begin(RID p_framebuffer, ColorInitialAction p_initial_color_action, ColorFinalAction p_final_color_action, InitialAction p_initial_depth_action,
+                             FinalAction p_final_depth_action, const Vector<Color>& p_clear_color_values = Vector<Color>(), float p_clear_depth = 1.0,
                              uint32_t p_clear_stencil = 0, const Rect2& p_region = Rect2());
 
   void draw_list_set_blend_constants(DrawListID p_list, const Color& p_color);
@@ -1040,18 +1018,18 @@ class RenderingDevice : public RenderingDeviceCommons {
 
   void compute_list_end();
   /***********************/
-	/**** COMMAND GRAPH ****/
-	/***********************/
+  /**** COMMAND GRAPH ****/
+  /***********************/
   // 在这里新建 resource_tracker
-	bool _texture_make_mutable(Texture *p_texture, RID p_texture_id);
-	bool _buffer_make_mutable(Buffer *p_buffer, RID p_buffer_id);
-	bool _vertex_array_make_mutable(VertexArray *p_vertex_array, RID p_resource_id, RDG::ResourceTracker *p_resource_tracker);
-	bool _index_array_make_mutable(IndexArray *p_index_array, RDG::ResourceTracker *p_resource_tracker);
-	bool _uniform_set_make_mutable(UniformSet *p_uniform_set, RID p_resource_id, RDG::ResourceTracker *p_resource_tracker);
-	bool _dependency_make_mutable(RID p_id, RID p_resource_id, RDG::ResourceTracker *p_resource_tracker);
-	bool _dependencies_make_mutable(RID p_id, RDG::ResourceTracker *p_resource_tracker);
+  bool _texture_make_mutable(Texture* p_texture, RID p_texture_id);
+  bool _buffer_make_mutable(Buffer* p_buffer, RID p_buffer_id);
+  bool _vertex_array_make_mutable(VertexArray* p_vertex_array, RID p_resource_id, RDG::ResourceTracker* p_resource_tracker);
+  bool _index_array_make_mutable(IndexArray* p_index_array, RDG::ResourceTracker* p_resource_tracker);
+  bool _uniform_set_make_mutable(UniformSet* p_uniform_set, RID p_resource_id, RDG::ResourceTracker* p_resource_tracker);
+  bool _dependency_make_mutable(RID p_id, RID p_resource_id, RDG::ResourceTracker* p_resource_tracker);
+  bool _dependencies_make_mutable(RID p_id, RDG::ResourceTracker* p_resource_tracker);
 
-	RenderingDeviceGraph draw_graph;
+  RenderingDeviceGraph draw_graph;
   int32_t secondary_command_buffer_per_frame;
 
   /**************************/
@@ -1117,9 +1095,9 @@ class RenderingDevice : public RenderingDeviceCommons {
 
     // Swap chains prepared for drawing during the frame that must be
     // presented.
-    LocalVector<RDD::SwapChainID> swap_chains_to_present; // 交换链, 为什么一帧中会有多个交换链？
+    LocalVector<RDD::SwapChainID> swap_chains_to_present;  // 交换链, 为什么一帧中会有多个交换链？
     // Extra command buffer pool used for driver workarounds.
-		RDG::CommandBufferPool command_buffer_pool;
+    RDG::CommandBufferPool command_buffer_pool;
     struct Timestamp {
       String description;
       uint64_t value = 0;
@@ -1137,7 +1115,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     uint64_t index = 0;
   };
 
-  uint32_t max_timestamp_query_elements = 0; // 如果这种不初始化，编译器就会提示未初始化错误
+  uint32_t max_timestamp_query_elements = 0;  // 如果这种不初始化，编译器就会提示未初始化错误
 
   int frame = 0;
   TightLocalVector<Frame> frames;
@@ -1214,13 +1192,11 @@ class RenderingDevice : public RenderingDeviceCommons {
   RenderingDeviceDriver* get_driver() { return driver; }
   const RDD::Capabilities& get_device_capabilities() const { return driver->get_capabilities(); }
   // feature
-  bool is_feature_supported(Features p_feature) const{
-    return driver->is_feature_supported(p_feature);
-  }
+  bool is_feature_supported(Features p_feature) const { return driver->is_feature_supported(p_feature); }
 
   static ShaderCompileToSPIRVFunction compile_to_spirv_function;
-	static ShaderCacheFunction cache_function;
-	static ShaderSPIRVGetCacheKeyFunction get_spirv_cache_key_function;
+  static ShaderCacheFunction cache_function;
+  static ShaderSPIRVGetCacheKeyFunction get_spirv_cache_key_function;
 
   RenderingContextDriver* get_context_driver() const { return context; }
   Error initialize(RenderingContextDriver* p_driver, WindowSystem::WindowID p_main_window);
@@ -1228,7 +1204,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     if (singleton == nullptr)
       singleton = this;
   }
-  // 
+  //
   ~RenderingDevice() {}
   void finalize();  // 主要清理dependency graph
   void free(RID p_id);

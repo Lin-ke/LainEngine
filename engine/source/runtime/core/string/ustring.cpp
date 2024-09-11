@@ -1894,13 +1894,13 @@ Error String::parse_utf8(const char* p_utf8, int p_len, bool p_skip_cr) {
 	}
 
 	resize(str_size + 1);
-	char32_t* dst = ptrw(); // »ñµÃ¿ÉÒÔĞ´µÄ
+	char32_t* dst = ptrw(); // è·å¾—å¯ä»¥å†™çš„
 	dst[str_size] = 0;
 
 	int skip = 0;
 	uint32_t unichar = 0;
 	while (cstr_size) {
-		uint8_t c = *p_utf8 >= 0 ? *p_utf8 : uint8_t(256 + *p_utf8); // ±ÜÃâÇ¿×ª
+		uint8_t c = *p_utf8 >= 0 ? *p_utf8 : uint8_t(256 + *p_utf8); // é¿å…å¼ºè½¬
 
 		if (skip == 0) {
 			if (p_skip_cr && c == '\r') { // jumps at \r
@@ -1908,17 +1908,17 @@ Error String::parse_utf8(const char* p_utf8, int p_len, bool p_skip_cr) {
 				continue;
 			}
 			/* Determine the number of characters in sequence */
-			if ((c & 0x80) == 0) { // µ¥×Ö½Ú
+			if ((c & 0x80) == 0) { // å•å­—èŠ‚
 				*(dst++) = c;
 				unichar = 0;
 				skip = 0;
 			}
-			else if ((c & 0xe0) == 0xc0) { //0x110¿ªÍ·£¬2×Ö½Ú±àÂë
-				// »ñµÃºóÃæ5Î»(&00011111)£¬´æ´¢µ½unichar
-				// unicharÊÇ´ÓÓÒ±ß¿ªÊ¼µÄ
+			else if ((c & 0xe0) == 0xc0) { //0x110å¼€å¤´ï¼Œ2å­—èŠ‚ç¼–ç 
+				// è·å¾—åé¢5ä½(&00011111)ï¼Œå­˜å‚¨åˆ°unichar
+				// unicharæ˜¯ä»å³è¾¹å¼€å§‹çš„
 
 				unichar = (0xff >> 3) & c;
-				skip = 1; //ÏÂÒ»¸ö×Ö½ÚÒ²ÊÇÕâ¸ö
+				skip = 1; //ä¸‹ä¸€ä¸ªå­—èŠ‚ä¹Ÿæ˜¯è¿™ä¸ª
 			}
 			else if ((c & 0xf0) == 0xe0) {
 				unichar = (0xff >> 4) & c;
@@ -1943,11 +1943,11 @@ Error String::parse_utf8(const char* p_utf8, int p_len, bool p_skip_cr) {
 			}
 		}
 		else { 
-			if (c < 0x80 || c > 0xbf) {// ·Ç±ê×¼utfÁ¬Ğø×Ö½Ú
+			if (c < 0x80 || c > 0xbf) {// éæ ‡å‡†utfè¿ç»­å­—èŠ‚
 				*(dst++) = 0x20;
 				skip = 0;
 			}
-			else { // È¡ºó6¸ö×Ö½Ú
+			else { // å–å6ä¸ªå­—èŠ‚
 				unichar = (unichar << 6) | (c & 0x3f);
 				--skip;
 				if (skip == 0) {
@@ -1964,7 +1964,7 @@ Error String::parse_utf8(const char* p_utf8, int p_len, bool p_skip_cr) {
 						print_unicode_error(vformat("Invalid unicode codepoint (%x)", unichar));
 						decode_error = true;
 					}
-					*(dst++) = unichar; // Ò»¸öutf8Ğ´Èëµ½char32ÖĞ£¬µ«ÊÇÉÏÃæµÄskip=5,skip=4¶¼ÊÇÃ»ÓÃµ½µÄ
+					*(dst++) = unichar; // ä¸€ä¸ªutf8å†™å…¥åˆ°char32ä¸­ï¼Œä½†æ˜¯ä¸Šé¢çš„skip=5,skip=4éƒ½æ˜¯æ²¡ç”¨åˆ°çš„
 				}
 			}
 		}
@@ -1973,7 +1973,7 @@ Error String::parse_utf8(const char* p_utf8, int p_len, bool p_skip_cr) {
 		p_utf8++;
 	}
 	if (skip) {
-		*(dst++) = 0x20; //0x20£¨Ê®½øÖÆµÄ 32£©£¨±íÊ¾¿Õ¸ñ×Ö·û£©
+		*(dst++) = 0x20; //0x20ï¼ˆåè¿›åˆ¶çš„ 32ï¼‰ï¼ˆè¡¨ç¤ºç©ºæ ¼å­—ç¬¦ï¼‰
 	}
 
 	if (decode_failed) {

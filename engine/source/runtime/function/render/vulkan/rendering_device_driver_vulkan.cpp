@@ -1884,7 +1884,7 @@ void RenderingDeviceDriverVulkan::set_object_name(ObjectType p_type, ID p_driver
     case OBJECT_TYPE_SAMPLER: {
       _set_object_name(VK_OBJECT_TYPE_SAMPLER, p_driver_id.id, p_name);
     } break;
-    /*case OBJECT_TYPE_BUFFER: {
+    case OBJECT_TYPE_BUFFER: {
 		const BufferInfo* buf_info = (const BufferInfo*)p_driver_id.id;
 		_set_object_name(VK_OBJECT_TYPE_BUFFER, (uint64_t)buf_info->vk_buffer, p_name);
 		if (buf_info->vk_view) {
@@ -1904,7 +1904,7 @@ void RenderingDeviceDriverVulkan::set_object_name(ObjectType p_type, ID p_driver
 	} break;
 	case OBJECT_TYPE_PIPELINE: {
 		_set_object_name(VK_OBJECT_TYPE_PIPELINE, (uint64_t)p_driver_id.id, p_name);
-	} break;*/
+	} break;
     default: {
       DEV_ASSERT(false);
     }

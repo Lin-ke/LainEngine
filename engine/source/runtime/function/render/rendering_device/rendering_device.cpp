@@ -9,7 +9,6 @@ RenderingDevice::ShaderCompileToSPIRVFunction RenderingDevice::compile_to_spirv_
 RenderingDevice::ShaderCacheFunction RenderingDevice::cache_function = nullptr;
 RenderingDevice::ShaderSPIRVGetCacheKeyFunction RenderingDevice::get_spirv_cache_key_function = nullptr;
 
-
 // When true, the command graph will attempt to reorder the rendering commands submitted by the user based on the dependencies detected from
 // the commands automatically. This should improve rendering performance in most scenarios at the cost of some extra CPU overhead.
 //
@@ -387,7 +386,7 @@ RID RenderingDevice::texture_create(const TextureFormat& p_format, const Texture
   bool texture_mutable_by_default = texture.usage_flags & (TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | TEXTURE_USAGE_STORAGE_BIT |
                                                            TEXTURE_USAGE_STORAGE_ATOMIC_BIT | TEXTURE_USAGE_VRS_ATTACHMENT_BIT);
   if (p_data.is_empty() || texture_mutable_by_default) {
-    _texture_make_mutable(&texture, RID()); // w: for tracker
+    _texture_make_mutable(&texture, RID());  // w: for tracker
   }
 
   texture_memory += driver->texture_get_allocation_size(texture.driver_id);
@@ -1158,6 +1157,99 @@ RenderingDevice::TextureSamples RenderingDevice::framebuffer_format_get_texture_
   return E->value.pass_samples[p_pass];
 }
 
+RID RenderingDevice::framebuffer_create(const Vector<RID>& p_texture_attachments, FramebufferFormatID p_format_check, uint32_t p_view_count){
+_THREAD_SAFE_METHOD_
+	FramebufferPass pass;
+
+	for (int i = 0; i < p_texture_attachments.size(); i++) {
+		Texture *texture = texture_owner.get_or_null(p_texture_attachments[i]);
+
+		ERR_FAIL_COND_V_MSG(texture && texture->layers != p_view_count, RID(), "Layers of our texture doesn't match view count for this framebuffer");
+
+		if (texture && texture->usage_flags & TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+			pass.depth_attachment = i;
+		} else if (texture && texture->usage_flags & TEXTURE_USAGE_VRS_ATTACHMENT_BIT) {
+			pass.vrs_attachment = i;
+		} else {
+			if (texture && texture->is_resolve_buffer) {
+				pass.resolve_attachments.push_back(i);
+			} else {
+				pass.color_attachments.push_back(texture ? i : ATTACHMENT_UNUSED);
+			}
+		}
+	}
+
+	Vector<FramebufferPass> passes;
+	passes.push_back(pass);
+
+	return framebuffer_create_multipass(p_texture_attachments, passes, p_format_check, p_view_count);
+
+}
+RID RenderingDevice::framebuffer_create_multipass(const Vector<RID> &p_texture_attachments, const Vector<FramebufferPass> &p_passes, FramebufferFormatID p_format_check, uint32_t p_view_count) {
+	_THREAD_SAFE_METHOD_
+
+	Vector<AttachmentFormat> attachments;
+	attachments.resize(p_texture_attachments.size());
+	Size2i size;
+	bool size_set = false;
+	for (int i = 0; i < p_texture_attachments.size(); i++) {
+		AttachmentFormat af;
+		Texture *texture = texture_owner.get_or_null(p_texture_attachments[i]);
+		if (!texture) {
+			af.usage_flags = AttachmentFormat::UNUSED_ATTACHMENT;
+		} else {
+			ERR_FAIL_COND_V_MSG(texture->layers != p_view_count, RID(), "Layers of our texture doesn't match view count for this framebuffer");
+
+			if (!size_set) {
+				size.x = texture->width;
+				size.y = texture->height;
+				size_set = true;
+			} else if (texture->usage_flags & TEXTURE_USAGE_VRS_ATTACHMENT_BIT) {
+				// If this is not the first attachment we assume this is used as the VRS attachment.
+				// In this case this texture will be 1/16th the size of the color attachment.
+				// So we skip the size check.
+			} else {
+				ERR_FAIL_COND_V_MSG((uint32_t)size.x != texture->width || (uint32_t)size.y != texture->height, RID(),
+						"All textures in a framebuffer should be the same size.");
+			}
+
+			af.format = texture->format;
+			af.samples = texture->samples;
+			af.usage_flags = texture->usage_flags;
+		}
+		attachments.write[i] = af;
+	}
+
+	ERR_FAIL_COND_V_MSG(!size_set, RID(), "All attachments unused.");
+
+	FramebufferFormatID format_id = framebuffer_format_create_multipass(attachments, p_passes, p_view_count);
+	if (format_id == INVALID_ID) {
+		return RID();
+	}
+
+	ERR_FAIL_COND_V_MSG(p_format_check != INVALID_ID && format_id != p_format_check, RID(),
+			"The format used to check this framebuffer differs from the intended framebuffer format.");
+
+	Framebuffer framebuffer;
+	framebuffer.format_id = format_id;
+	framebuffer.texture_ids = p_texture_attachments;
+	framebuffer.size = size;
+	framebuffer.view_count = p_view_count;
+
+	RID id = framebuffer_owner.make_rid(framebuffer);
+#ifdef DEV_ENABLED
+	set_resource_name(id, "RID:" + itos(id.get_id()));
+#endif
+
+	for (int i = 0; i < p_texture_attachments.size(); i++) {
+		if (p_texture_attachments[i].is_valid()) {
+			_add_dependency(id, p_texture_attachments[i]);
+		}
+	}
+
+	return id;
+}
+
 RID RenderingDevice::framebuffer_create_empty(const Size2i& p_size, TextureSamples p_samples, FramebufferFormatID p_format_check) {
   _THREAD_SAFE_METHOD_
   Framebuffer framebuffer;
@@ -1554,85 +1646,85 @@ void RenderingDevice::shader_set_get_cache_key_function(ShaderSPIRVGetCacheKeyFu
   get_spirv_cache_key_function = p_function;
 }
 
-RID RenderingDevice::shader_create_from_spirv(const Vector<ShaderStageSPIRVData> &p_spirv, const String &p_shader_name) {
-	Vector<uint8_t> bytecode = shader_compile_binary_from_spirv(p_spirv, p_shader_name);
-	ERR_FAIL_COND_V(bytecode.is_empty(), RID());
-	return shader_create_from_bytecode(bytecode);
+RID RenderingDevice::shader_create_from_spirv(const Vector<ShaderStageSPIRVData>& p_spirv, const String& p_shader_name) {
+  Vector<uint8_t> bytecode = shader_compile_binary_from_spirv(p_spirv, p_shader_name);
+  ERR_FAIL_COND_V(bytecode.is_empty(), RID());
+  return shader_create_from_bytecode(bytecode);
 }
-RID RenderingDevice::shader_create_from_bytecode(const Vector<uint8_t> &p_shader_binary, RID p_placeholder) {
-	_THREAD_SAFE_METHOD_
+RID RenderingDevice::shader_create_from_bytecode(const Vector<uint8_t>& p_shader_binary, RID p_placeholder) {
+  _THREAD_SAFE_METHOD_
 
-	ShaderDescription shader_desc;
-	String name;
-	RDD::ShaderID shader_id = driver->shader_create_from_bytecode(p_shader_binary, shader_desc, name);
-	ERR_FAIL_COND_V(!shader_id, RID());
+  ShaderDescription shader_desc;
+  String name;
+  RDD::ShaderID shader_id = driver->shader_create_from_bytecode(p_shader_binary, shader_desc, name);
+  ERR_FAIL_COND_V(!shader_id, RID());
 
-	// All good, let's create modules.
+  // All good, let's create modules.
 
-	RID id;
-	if (p_placeholder.is_null()) {
-		id = shader_owner.make_rid();
-	} else {
-		id = p_placeholder;
-	}
+  RID id;
+  if (p_placeholder.is_null()) {
+    id = shader_owner.make_rid();
+  } else {
+    id = p_placeholder;
+  }
 
-	Shader *shader = shader_owner.get_or_null(id);
-	ERR_FAIL_NULL_V(shader, RID());
+  Shader* shader = shader_owner.get_or_null(id);
+  ERR_FAIL_NULL_V(shader, RID());
 
-	*((ShaderDescription *)shader) = shader_desc; // ShaderDescription bundle.
-	shader->name = name;
-	shader->driver_id = shader_id;
-	shader->layout_hash = driver->shader_get_layout_hash(shader_id);
+  *((ShaderDescription*)shader) = shader_desc;  // ShaderDescription bundle.
+  shader->name = name;
+  shader->driver_id = shader_id;
+  shader->layout_hash = driver->shader_get_layout_hash(shader_id);
 
-	for (int i = 0; i < shader->uniform_sets.size(); i++) {
-		uint32_t format = 0; // No format, default.
+  for (int i = 0; i < shader->uniform_sets.size(); i++) {
+    uint32_t format = 0;  // No format, default.
 
-		if (shader->uniform_sets[i].size()) {
-			// Sort and hash.
+    if (shader->uniform_sets[i].size()) {
+      // Sort and hash.
 
-			shader->uniform_sets.write[i].sort();
+      shader->uniform_sets.write[i].sort();
 
-			UniformSetFormat usformat;
-			usformat.uniforms = shader->uniform_sets[i];
-			RBMap<UniformSetFormat, uint32_t>::Element *E = uniform_set_format_cache.find(usformat);
-			if (E) {
-				format = E->get();
-			} else {
-				format = uniform_set_format_cache.size() + 1;
-				uniform_set_format_cache.insert(usformat, format);
-			}
-		}
+      UniformSetFormat usformat;
+      usformat.uniforms = shader->uniform_sets[i];
+      RBMap<UniformSetFormat, uint32_t>::Element* E = uniform_set_format_cache.find(usformat);
+      if (E) {
+        format = E->get();
+      } else {
+        format = uniform_set_format_cache.size() + 1;
+        uniform_set_format_cache.insert(usformat, format);
+      }
+    }
 
-		shader->set_formats.push_back(format);
-	}
+    shader->set_formats.push_back(format);
+  }
 
-	for (ShaderStage stage : shader_desc.stages) {
-		switch (stage) {
-			case SHADER_STAGE_VERTEX:
-				shader->stage_bits.set_flag(RDD::PIPELINE_STAGE_VERTEX_SHADER_BIT);
-				break;
-			case SHADER_STAGE_FRAGMENT:
-				shader->stage_bits.set_flag(RDD::PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-				break;
-			case SHADER_STAGE_TESSELATION_CONTROL:
-				shader->stage_bits.set_flag(RDD::PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT);
-				break;
-			case SHADER_STAGE_TESSELATION_EVALUATION:
-				shader->stage_bits.set_flag(RDD::PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT);
-				break;
-			case SHADER_STAGE_COMPUTE:
-				shader->stage_bits.set_flag(RDD::PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-				break;
-			default:
-				DEV_ASSERT(false && "Unknown shader stage.");
-				break;
-		}
-	}
+  for (ShaderStage stage : shader_desc.stages) {
+    switch (stage) {
+      case SHADER_STAGE_VERTEX:
+        shader->stage_bits.set_flag(RDD::PIPELINE_STAGE_VERTEX_SHADER_BIT);
+        break;
+      case SHADER_STAGE_FRAGMENT:
+        shader->stage_bits.set_flag(RDD::PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+        break;
+      case SHADER_STAGE_TESSELATION_CONTROL:
+        shader->stage_bits.set_flag(RDD::PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT);
+        break;
+      case SHADER_STAGE_TESSELATION_EVALUATION:
+        shader->stage_bits.set_flag(RDD::PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT);
+        break;
+      case SHADER_STAGE_COMPUTE:
+        shader->stage_bits.set_flag(RDD::PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+        break;
+      default:
+        DEV_ASSERT(false && "Unknown shader stage.");
+        break;
+    }
+  }
 
 #ifdef DEV_ENABLED
-	set_resource_name(id, "RID:" + itos(id.get_id()));
+  set_resource_name(id, "RID:" + itos(id.get_id()));
 #endif
-	return id;
+  return id;
 }
 
 /// Shader compile
@@ -1649,15 +1741,13 @@ Vector<uint8_t> RenderingDevice::shader_compile_spirv_from_source(ShaderStage p_
 
   return compile_to_spirv_function(p_stage, p_source_code, p_language, r_error, this);
 }
-Vector<uint8_t> RenderingDevice::shader_compile_binary_from_spirv(const Vector<ShaderStageSPIRVData> &p_spirv, const String &p_shader_name) {
-	return driver->shader_compile_binary_from_spirv(p_spirv, p_shader_name);
+Vector<uint8_t> RenderingDevice::shader_compile_binary_from_spirv(const Vector<ShaderStageSPIRVData>& p_spirv, const String& p_shader_name) {
+  return driver->shader_compile_binary_from_spirv(p_spirv, p_shader_name);
 }
 
-static const auto get_formatkey =  [](RD::FramebufferFormatID p_id ) -> const RD::FramebufferFormatKey& {
+static const auto get_formatkey = [](RD::FramebufferFormatID p_id) -> const RD::FramebufferFormatKey& {
   return RD::get_singleton()->framebuffer_formats[p_id].E->key();
 };
-
-
 
 RID RenderingDevice::render_pipeline_create(RID p_shader, FramebufferFormatID p_framebuffer_format, VertexFormatID p_vertex_format, RenderPrimitive p_render_primitive,
                                             const PipelineRasterizationState& p_rasterization_state, const PipelineMultisampleState& p_multisample_state,
@@ -1699,7 +1789,7 @@ RID RenderingDevice::render_pipeline_create(RID p_shader, FramebufferFormatID p_
   if (p_vertex_format != INVALID_ID) {  // p_vertex_format指向VertexDescriptionCache，即内容和driver中的ID
     // Uses vertices, else it does not.
     ERR_FAIL_COND_V(!vertex_formats.has(p_vertex_format), RID());
-    const VertexDescriptionCache& vd = vertex_formats[p_vertex_format];
+    const VertexDescriptionInCache& vd = vertex_formats[p_vertex_format];
     driver_vertex_format = vertex_formats[p_vertex_format].driver_id;
 
     // Validate with inputs.
@@ -2398,7 +2488,6 @@ void RenderingDevice::_texture_copy_shared(RID p_src_texture_rid, Texture* p_src
 /**** COMMAND GRAPH ****/
 /***********************/
 
-
 bool RenderingDevice::_texture_make_mutable(Texture* p_texture, RID p_texture_id) {
   if (p_texture->draw_tracker != nullptr) {
     // Texture already has a tracker.
@@ -2466,22 +2555,21 @@ bool RenderingDevice::_texture_make_mutable(Texture* p_texture, RID p_texture_id
     return true;
   }
 }
-bool RenderingDevice::_buffer_make_mutable(Buffer *p_buffer, RID p_buffer_id) {
-	if (p_buffer->draw_tracker != nullptr) {
-		// Buffer already has a tracker.
-		return false;
-	} else {
-		// Create a tracker for the buffer and make all its dependencies mutable.
-		p_buffer->draw_tracker = RDG::resource_tracker_create();
-		p_buffer->draw_tracker->buffer_driver_id = p_buffer->driver_id;
-		if (p_buffer_id.is_valid()) {
-			_dependencies_make_mutable(p_buffer_id, p_buffer->draw_tracker);
-		}
+bool RenderingDevice::_buffer_make_mutable(Buffer* p_buffer, RID p_buffer_id) {
+  if (p_buffer->draw_tracker != nullptr) {
+    // Buffer already has a tracker.
+    return false;
+  } else {
+    // Create a tracker for the buffer and make all its dependencies mutable.
+    p_buffer->draw_tracker = RDG::resource_tracker_create();
+    p_buffer->draw_tracker->buffer_driver_id = p_buffer->driver_id;
+    if (p_buffer_id.is_valid()) {
+      _dependencies_make_mutable(p_buffer_id, p_buffer->draw_tracker);
+    }
 
-		return true;
-	}
+    return true;
+  }
 }
-
 
 bool RenderingDevice::_dependencies_make_mutable(RID p_id, RDG::ResourceTracker* p_resource_tracker) {
   bool made_mutable = false;
@@ -2789,6 +2877,7 @@ void RenderingDevice::compute_list_end() {
 
 static const char* SHADER_UNIFORM_NAMES[RenderingDevice::UNIFORM_TYPE_MAX] = {
     "Sampler", "CombinedSampler", "Texture", "Image", "TextureBuffer", "SamplerTextureBuffer", "ImageBuffer", "UniformBuffer", "StorageBuffer", "InputAttachment"};
+
 String RenderingDevice::_shader_uniform_debug(RID p_shader, int p_set) {
   String ret;
   const Shader* shader = shader_owner.get_or_null(p_shader);
@@ -2843,7 +2932,7 @@ RenderingDevice::DrawListID RenderingDevice::draw_list_begin_for_screen(WindowSy
 
   RDD::RenderPassClearValue clear_value;
   clear_value.color = p_clear_color;
-  
+
   RDD::RenderPassID render_pass = driver->swap_chain_get_render_pass(sc_it->value);
   draw_graph.add_draw_list_begin(render_pass, fb_it->value, viewport, clear_value, true, false);
 
@@ -2867,10 +2956,9 @@ Error RenderingDevice::_draw_list_setup_framebuffer(Framebuffer* p_framebuffer, 
   if (!p_framebuffer->framebuffers.has(vk)) {
     // Need to create this version.
     Framebuffer::Version version;
-    
-    version.render_pass =
-        _render_pass_create(get_formatkey(p_framebuffer->format_id).attachment_formats, get_formatkey(p_framebuffer->format_id).passes,
-                            p_initial_color_action, p_final_color_action, p_initial_depth_action, p_final_depth_action, p_framebuffer->view_count);
+
+    version.render_pass = _render_pass_create(get_formatkey(p_framebuffer->format_id).attachment_formats, get_formatkey(p_framebuffer->format_id).passes,
+                                              p_initial_color_action, p_final_color_action, p_initial_depth_action, p_final_depth_action, p_framebuffer->view_count);
 
     LocalVector<RDD::TextureID> attachments;
     for (int i = 0; i < p_framebuffer->texture_ids.size(); i++) {
@@ -2957,7 +3045,7 @@ Error RenderingDevice::_draw_list_render_pass_begin(Framebuffer* p_framebuffer, 
   draw_list_bound_textures.clear();
 
   for (int i = 0; i < p_framebuffer->texture_ids.size(); i++) {
-    Texture* texture = texture_owner.get_or_null(p_framebuffer->texture_ids[i]); 
+    Texture* texture = texture_owner.get_or_null(p_framebuffer->texture_ids[i]);
     if (!texture) {
       continue;
     }
@@ -3160,7 +3248,7 @@ void RenderingDevice::draw_list_bind_render_pipeline(DrawListID p_list, RID p_re
     }
 
     for (uint32_t i = 0; i < pcount; i++) {
-      dl->state.sets[i].bound = dl->state.sets[i].bound && i < first_invalid_set; // 小于的bound不变, bound在draw_list_draw中会被重新绑定(add_draw_list_bind_uniform_set)
+      dl->state.sets[i].bound = dl->state.sets[i].bound && i < first_invalid_set;  // 小于的bound不变, bound在draw_list_draw中会被重新绑定(add_draw_list_bind_uniform_set)
       dl->state.sets[i].pipeline_expected_format = pformats[i];
     }
 
@@ -3352,7 +3440,7 @@ void RenderingDevice::draw_list_draw(DrawListID p_list, bool p_use_indices, uint
 
 #endif
 
-#ifdef DEBUG_ENABLED // 验证uniform set
+#ifdef DEBUG_ENABLED  // 验证uniform set
   for (uint32_t i = 0; i < dl->state.set_count; i++) {
     if (dl->state.sets[i].pipeline_expected_format == 0) {
       // Nothing expected by this pipeline.
@@ -3547,5 +3635,139 @@ void RenderingDevice::draw_list_end() {
 }
 
 uint64_t lain::RenderingDevice::limit_get(Limit p_limit) const {
-	return driver->limit_get(p_limit);
+  return driver->limit_get(p_limit);
+}
+
+/// *************
+/// ** VERTEX **
+/// *************
+RID RenderingDevice::vertex_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t>& p_data, bool p_use_as_storage) {
+  _THREAD_SAFE_METHOD_
+  // p_data 可能被初始化成一个 Vector<uint8_t>{}，因此如果p_data.size() == 0，不要求p_data.size() == p_size_bytes
+  ERR_FAIL_COND_V(p_data.size() && (uint32_t)p_data.size() != p_size_bytes, RID());
+
+  Buffer buffer;
+  buffer.size = p_size_bytes;
+  buffer.usage = RDD::BUFFER_USAGE_TRANSFER_FROM_BIT | RDD::BUFFER_USAGE_TRANSFER_TO_BIT | RDD::BUFFER_USAGE_VERTEX_BIT;
+  if (p_use_as_storage) {
+    buffer.usage.set_flag(RDD::BUFFER_USAGE_STORAGE_BIT);
+  }
+  buffer.driver_id = driver->buffer_create(buffer.size, buffer.usage, RDD::MEMORY_ALLOCATION_TYPE_GPU);
+  ERR_FAIL_COND_V(!buffer.driver_id, RID());
+
+  // Vertex buffers are assumed to be immutable unless they don't have initial data or they've been marked for storage explicitly.
+  if (p_data.is_empty() || p_use_as_storage) {
+    buffer.draw_tracker = RDG::resource_tracker_create();
+    buffer.draw_tracker->buffer_driver_id = buffer.driver_id;
+  }
+
+  if (p_data.size()) {
+    _buffer_update(&buffer, RID(), 0, p_data.ptr(), p_data.size());
+  }
+
+  buffer_memory += buffer.size;
+
+  RID id = vertex_buffer_owner.make_rid(buffer);
+#ifdef DEV_ENABLED
+  set_resource_name(id, "RID:" + itos(id.get_id()));
+#endif
+  return id;
+}
+
+RD::VertexFormatID RenderingDevice::vertex_format_create(const Vector<VertexAttribute>& p_vertex_descriptions) {
+  _THREAD_SAFE_METHOD_
+
+  VertexDescriptionKey key;
+  key.vertex_formats = p_vertex_descriptions;
+
+  VertexFormatID* idptr = vertex_format_cache.getptr(key);
+  if (idptr) {
+    return *idptr;
+  }
+
+  HashSet<int> used_locations;  // 防止同location错误
+  for (int i = 0; i < p_vertex_descriptions.size(); i++) {
+    ERR_CONTINUE(p_vertex_descriptions[i].format >= DATA_FORMAT_MAX);
+    ERR_FAIL_COND_V(used_locations.has(p_vertex_descriptions[i].location), INVALID_ID);
+
+    ERR_FAIL_COND_V_MSG(get_format_vertex_size(p_vertex_descriptions[i].format) == 0, INVALID_ID,
+                        "Data format for attachment (" + itos(i) + "), '" + FORMAT_NAMES[p_vertex_descriptions[i].format] + "', is not valid for a vertex array.");
+
+    used_locations.insert(p_vertex_descriptions[i].location);
+  }
+
+  RDD::VertexFormatID driver_id = driver->vertex_format_create(p_vertex_descriptions);
+  ERR_FAIL_COND_V(!driver_id, 0);
+
+  VertexFormatID id = (vertex_format_cache.size() | ((int64_t)ID_TYPE_VERTEX_FORMAT << ID_BASE_SHIFT));
+  vertex_format_cache[key] = id;
+  vertex_formats[id].vertex_formats = p_vertex_descriptions; // 保存到p_vertex_descriptions中
+  vertex_formats[id].driver_id = driver_id;
+  return id;
+}
+
+RID RenderingDevice::vertex_array_create(uint32_t p_vertex_count, VertexFormatID p_vertex_format, const Vector<RID>& p_src_buffers, const Vector<uint64_t>& p_offsets) {
+  _THREAD_SAFE_METHOD_
+
+  ERR_FAIL_COND_V(!vertex_formats.has(p_vertex_format), RID());
+  const VertexDescriptionInCache& vd = vertex_formats[p_vertex_format];
+
+  ERR_FAIL_COND_V(vd.vertex_formats.size() != p_src_buffers.size(), RID());
+
+  for (int i = 0; i < p_src_buffers.size(); i++) {
+    ERR_FAIL_COND_V(!vertex_buffer_owner.owns(p_src_buffers[i]), RID());
+  }
+
+  VertexArray vertex_array;
+
+  if (p_offsets.is_empty()) {
+    vertex_array.offsets.resize_zeroed(p_src_buffers.size());
+  } else {
+    ERR_FAIL_COND_V(p_offsets.size() != p_src_buffers.size(), RID());
+    vertex_array.offsets = p_offsets;
+  }
+
+  vertex_array.vertex_count = p_vertex_count;
+  vertex_array.description = p_vertex_format;
+  vertex_array.max_instances_allowed = 0xFFFFFFFF;  // By default as many as you want.
+  for (int i = 0; i < p_src_buffers.size(); i++) {
+    Buffer* buffer = vertex_buffer_owner.get_or_null(p_src_buffers[i]);
+
+    // Validate with buffer.
+    {
+      const VertexAttribute& atf = vd.vertex_formats[i];
+
+      uint32_t element_size = get_format_vertex_size(atf.format);
+      ERR_FAIL_COND_V(element_size == 0, RID());  // Should never happens since this was prevalidated.
+
+      if (atf.frequency == VERTEX_FREQUENCY_VERTEX) {
+        // Validate size for regular drawing.
+        uint64_t total_size = uint64_t(atf.stride) * (p_vertex_count - 1) + atf.offset + element_size;
+        ERR_FAIL_COND_V_MSG(total_size > buffer->size, RID(), "Attachment (" + itos(i) + ") will read past the end of the buffer.");
+
+      } else {
+        // Validate size for instances drawing.
+        uint64_t available = buffer->size - atf.offset;
+        ERR_FAIL_COND_V_MSG(available < element_size, RID(), "Attachment (" + itos(i) + ") uses instancing, but it's just too small.");
+
+        uint32_t instances_allowed = available / atf.stride;
+        vertex_array.max_instances_allowed = MIN(instances_allowed, vertex_array.max_instances_allowed);
+      }
+    }
+
+    vertex_array.buffers.push_back(buffer->driver_id);
+
+    if (buffer->draw_tracker != nullptr) {
+      vertex_array.draw_trackers.push_back(buffer->draw_tracker);
+    } else {
+      vertex_array.untracked_buffers.insert(p_src_buffers[i]);
+    }
+  }
+
+  RID id = vertex_array_owner.make_rid(vertex_array);
+  for (int i = 0; i < p_src_buffers.size(); i++) {
+    _add_dependency(id, p_src_buffers[i]);
+  }
+
+  return id;
 }
