@@ -90,7 +90,9 @@ namespace lain {
 
 		return true;
 	}
-
+	const void* Array::id() const {
+		return _p;
+	}
 	int Array::size() const {
 		return _p->array.size();
 	}

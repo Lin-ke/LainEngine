@@ -824,7 +824,7 @@ Error decode_variant(Variant &r_variant, const uint8_t *p_buffer, int p_len, int
             StringName class_name = json["typeName"].string_value();
             ERR_FAIL_COND_V(!ClassDB::can_instantiate(class_name), ERR_INVALID_DATA);
             ERR_FAIL_COND_V(!json_err.empty(), ERR_INVALID_DATA);
-            // @todo �ж�object���class�ļ̳й�ϵ
+            // @todo 判断object与该class的继承关系
             void* instance = ClassDB::instantiate_with_json(json);
             ERR_FAIL_COND_V(!instance, ERR_INVALID_DATA);
             r_variant = (Object*) instance;

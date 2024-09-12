@@ -2,10 +2,19 @@
 #ifndef TEST_DRAWTRIANGLE_H
 #define TEST_DRAWTRIANGLE_H
 #include "function/render/rendering_device/rendering_device.h"
+#include "core/io/json11.h"
+
 namespace lain::test {
 void test_draw_triangle() {
   using namespace lain;
-
+  Json v = Json::object{{"a", 1}, {"b", 2}};
+  L_PRINT(v.dump());
+  Ref<FileAccess> file1 = FileAccess::open("res://1.tscn", FileAccess::READ);
+  String text = file1->get_as_text();
+  String err_text = "";
+  Json json = Json::parse(text, err_text);
+  L_PRINT(err_text);
+  L_PRINT(json.dump());
   Ref<FileAccess> file = FileAccess::open("res://test1.glsl", FileAccess::READ);
   String shader_string = file->get_as_text();
 
@@ -24,6 +33,8 @@ void test_draw_triangle() {
   auto points = Vector<float>{1, 1, 0, -1, 1, 0, 0, -1, 0}.to_byte_array();
 
   RID vertex_buffer_id = device->vertex_buffer_create(points.size(), points);
+  RID vertex_array_id  = device->vertex_array_create(3, vertex_format_id, {vertex_buffer_id});
+
   RD::PipelineColorBlendState blend;
   blend.attachments = {RD::PipelineColorBlendState::Attachment()};
 
@@ -36,13 +47,22 @@ void test_draw_triangle() {
   auto framebuf_texture = device->texture_create(tex_format, tex_view);
   RD::AttachmentFormat format = RD::AttachmentFormat(tex_format);  // 兼容
   auto framebuf_format = device->framebuffer_format_create({format});
-  device->framebuffer_create({framebuf_texture}, framebuf_format);
+  auto framebuf = device->framebuffer_create({framebuf_texture}, framebuf_format);
   // 读到create multi pass.
+  auto Shader_rid = device->shader_create_from_spirv({data});
   auto pipeline = device->render_pipeline_create(
-    RID(), framebuf_format, vertex_format_id
+    Shader_rid, framebuf_format, vertex_format_id
   );
-  
-
+  auto clear_color_values= PackedColorArray({Color(1,1,1,1)});
+  auto draw_list = device->draw_list_begin(
+    framebuf, RD::ColorInitialAction(), RD::ColorFinalAction(), RD::InitialAction::INITIAL_ACTION_CLEAR, RD::FinalAction::FINAL_ACTION_STORE,
+    clear_color_values
+  );
+  device->draw_list_bind_render_pipeline(draw_list, pipeline);
+  device->draw_list_bind_vertex_array(draw_list,vertex_array_id);
+  device->draw_list_draw(draw_list, false, 3, 0);
+  device->draw_list_end();
+  auto td = device->texture_get_data(framebuf_texture, 0); // @todo 看这个代码
 }
 }  // namespace lain::test
 #endif

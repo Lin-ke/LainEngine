@@ -83,7 +83,7 @@ namespace lain {
 		}
 
 		if (is_any_processing()) {
-			_remove_from_process_thread_group(); // Õâ²¢²»»áµ¼ÖÂptgµÄÒÆ³ı
+			_remove_from_process_thread_group(); // è¿™å¹¶ä¸ä¼šå¯¼è‡´ptgçš„ç§»é™¤
 		}
 
 		tickdata.process = p_process;

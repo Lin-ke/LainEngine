@@ -68,8 +68,6 @@ target_end()
 
 target("MetaParser")
     set_kind("phony")
-    add_headerfiles("engine/source/_generated/**.h")
-    add_headerfiles("engine/source/_generated/**.ipp")
     add_deps(("Parser"))
     after_build(
        function(target)
@@ -211,7 +209,7 @@ target("main")
     add_includedirs("engine/source/runtime", {public = true})
     add_deps("Core")
     -- functions
-    add_deps("Renderer", "Display", "Scene", "lglslang")
+    add_deps("Renderer", "Display", "Scene", "lglslang") -- @todo 给lglslang 这一步以后做成自动的
     -- editor
     add_deps("Editor")
     -- modules?
@@ -226,5 +224,3 @@ target("lain-windows")
         "BCrypt",
         "Winmm"
     )
---- add modules
-includes("engine/source/module/**/xmake.lua")

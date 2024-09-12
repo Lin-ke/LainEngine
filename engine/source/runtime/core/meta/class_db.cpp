@@ -29,7 +29,7 @@ namespace lain {
 			p_extensions->push_back(E.key);
 		}
 	}
-	// classÊı¾İ¿â
+	// classæ•°æ®åº“
 	Object* ClassDB::instantiate(const StringName& cp_class, bool p_require_real_class) {
 		return static_cast<Object*>(Reflection::TypeMeta::memnewByName(SCSTR(cp_class)));
 	}
@@ -38,7 +38,7 @@ namespace lain {
 		Reflection::TypeMeta meta = Reflection::TypeMeta::newMetaFromName(SCSTR(cp_class));
 		return meta.isValid();
 	}
-	// Õâ¸öjson¸ñÊ½²»Ò»¶¨ÕıÈ·
+	// è¿™ä¸ªjsonæ ¼å¼ä¸ä¸€å®šæ­£ç¡®
 	void* ClassDB::instantiate_with_name_json(const StringName& cp_class, const Json& p_json ){
 		std::string err;
 		Reflection::ReflectionInstance instance = Reflection::TypeMeta::newFromNameAndJson(SCSTR(cp_class),p_json);

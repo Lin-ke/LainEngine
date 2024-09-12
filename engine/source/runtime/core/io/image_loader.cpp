@@ -75,7 +75,7 @@ namespace lain {
 
 		loader_count--;
 		for (; idx < loader_count - 1; idx++) {
-			loader[idx] = loader[idx + 1]; // 这些ref都去ref别的
+			loader[idx] = loader[idx + 1];
 		}
 		loader[loader_count-1].unref(); // unref
 

@@ -10,6 +10,7 @@
 #include <string>
 #include "core/variant/dictionary.h"
 #include "core/templates/hash_map.h"
+//@todo 换成合适的json（使用 core/io/json.h 或者重写 json11）
 namespace lain
 {   
     class Object;

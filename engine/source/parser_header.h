@@ -15,6 +15,7 @@
 #include  "D:/LainEngine/engine/source/runtime/core/io/image.h"
 #include  "D:/LainEngine/engine/source/runtime/core/io/image_loader.h"
 #include  "D:/LainEngine/engine/source/runtime/core/io/image_loader_stb.h"
+#include  "D:/LainEngine/engine/source/runtime/core/io/json.h"
 #include  "D:/LainEngine/engine/source/runtime/core/io/marshalls.h"
 #include  "D:/LainEngine/engine/source/runtime/core/io/resource.h"
 #include  "D:/LainEngine/engine/source/runtime/core/io/resource_importer.h"

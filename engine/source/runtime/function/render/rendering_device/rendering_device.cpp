@@ -407,6 +407,25 @@ RID RenderingDevice::texture_create(const TextureFormat& p_format, const Texture
 
   return id;
 }
+
+Vector<uint8_t> lain::RenderingDevice::texture_get_data(RID p_texture, uint32_t p_layer) {
+  _THREAD_SAFE_METHOD_
+
+	Texture *tex = texture_owner.get_or_null(p_texture);
+	ERR_FAIL_NULL_V(tex, Vector<uint8_t>());
+
+	ERR_FAIL_COND_V_MSG(tex->bound, Vector<uint8_t>(),
+			"Texture can't be retrieved while a draw list that uses it as part of a framebuffer is being created. Ensure the draw list is finalized (and that the color/depth texture using it is not set to `RenderingDevice.FINAL_ACTION_CONTINUE`) to retrieve this texture.");
+	ERR_FAIL_COND_V_MSG(!(tex->usage_flags & TEXTURE_USAGE_CAN_COPY_FROM_BIT), Vector<uint8_t>(),
+			"Texture requires the `RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT` to be set to be retrieved.");
+
+	ERR_FAIL_COND_V(p_layer >= tex->layers, Vector<uint8_t>());
+  if ((tex->usage_flags & TEXTURE_USAGE_CPU_READ_BIT)) {
+		// Does not need anything fancy, map and read.
+		return _texture_get_data(tex, p_layer);
+	} 
+}
+
 ///
 /// ******FRAME **********
 ///
@@ -1738,7 +1757,7 @@ Vector<uint8_t> RenderingDevice::shader_compile_spirv_from_source(ShaderStage p_
   }
 
   ERR_FAIL_NULL_V(compile_to_spirv_function, Vector<uint8_t>());
-
+  // 这个function是glslang模组的 （see module/glslang）
   return compile_to_spirv_function(p_stage, p_source_code, p_language, r_error, this);
 }
 Vector<uint8_t> RenderingDevice::shader_compile_binary_from_spirv(const Vector<ShaderStageSPIRVData>& p_spirv, const String& p_shader_name) {
@@ -3771,3 +3790,4 @@ RID RenderingDevice::vertex_array_create(uint32_t p_vertex_count, VertexFormatID
 
   return id;
 }
+

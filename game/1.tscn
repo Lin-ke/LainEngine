@@ -1,1 +1,87 @@
-{"ext_res": [], "gobjects": [{"instance_res": "{}", "instanced_components": [{"$context": {}, "$typeName": "TestComponent"}], "variants": {"name": {"$context": "TestScene", "$typeName": "StringName"}, "type": {"$context": "TestNode", "$typeName": "StringName"}}}, {"instance_res": "{}", "instanced_components": [], "variants": {"name": {"$context": "hello", "$typeName": "StringName"}, "parent": {"$context": ".", "$typeName": "GObjectPath"}, "type": {"$context": "TestNode", "$typeName": "StringName"}}}, {"instance_res": "{}", "instanced_components": [{"$context": {}, "$typeName": "TestComponent"}], "variants": {"name": {"$context": "hello_child", "$typeName": "StringName"}, "parent": {"$context": "./hello", "$typeName": "GObjectPath"}, "type": {"$context": "TestNode", "$typeName": "StringName"}}}, {"instance_res": "{}", "instanced_components": [], "variants": {"name": {"$context": "world", "$typeName": "StringName"}, "parent": {"$context": ".", "$typeName": "GObjectPath"}, "type": {"$context": "TestNode", "$typeName": "StringName"}}}], "head": {"load_steps": 1, "tag": "scene"}}
+{
+    "ext_res": [],
+    "gobjects": [
+        {
+            "instance_res": "{}",
+            "instanced_components": [
+                {
+                    "$context": {},
+                    "$typeName": "TestComponent"
+                }
+            ],
+            "variants": {
+                "name": {
+                    "$context": "TestScene",
+                    "$typeName": "StringName"
+                },
+                "type": {
+                    "$context": "TestNode",
+                    "$typeName": "StringName"
+                }
+            }
+        },
+        {
+            "instance_res": "{}",
+            "instanced_components": [],
+            "variants": {
+                "name": {
+                    "$context": "hello",
+                    "$typeName": "StringName"
+                },
+                "parent": {
+                    "$context": ".",
+                    "$typeName": "GObjectPath"
+                },
+                "type": {
+                    "$context": "TestNode",
+                    "$typeName": "StringName"
+                }
+            }
+        },
+        {
+            "instance_res": "{}",
+            "instanced_components": [
+                {
+                    "$context": {},
+                    "$typeName": "TestComponent"
+                }
+            ],
+            "variants": {
+                "name": {
+                    "$context": "hello_child",
+                    "$typeName": "StringName"
+                },
+                "parent": {
+                    "$context": "./hello",
+                    "$typeName": "GObjectPath"
+                },
+                "type": {
+                    "$context": "TestNode",
+                    "$typeName": "StringName"
+                }
+            }
+        },
+        {
+            "instance_res": "{}",
+            "instanced_components": [],
+            "variants": {
+                "name": {
+                    "$context": "world",
+                    "$typeName": "StringName"
+                },
+                "parent": {
+                    "$context": ".",
+                    "$typeName": "GObjectPath"
+                },
+                "type": {
+                    "$context": "TestNode",
+                    "$typeName": "StringName"
+                }
+            }
+        }
+    ],
+    "head": {
+        "load_steps": 1,
+        "tag": "scene"
+    }
+}

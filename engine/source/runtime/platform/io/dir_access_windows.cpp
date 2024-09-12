@@ -15,7 +15,7 @@ namespace lain {
 		WIN32_FIND_DATAW fu; // Unicode version.
 	};
 	String DirAccessWindows::fix_path(const String& p_path) const {
-		String r_path = DirAccess::fix_path(p_path); // ³¬¹ı×î´ó³¤¶È
+		String r_path = DirAccess::fix_path(p_path); // è¶…è¿‡æœ€å¤§é•¿åº¦
 		if (r_path.is_absolute_path() && !r_path.is_network_share_path() && r_path.length() > MAX_PATH) {
 			r_path = "\\\\?\\" + r_path.replace("/", "\\");
 		}
@@ -44,7 +44,7 @@ namespace lain {
 		_cishidden = false;
 
 		list_dir_end();
-		p->h = FindFirstFileExW((LPCWSTR)(String(current_dir + "\\*").utf16().get_data()), FindExInfoStandard, &p->fu, FindExSearchNameMatch, nullptr, 0); // ÔÚÄ¿Â¼ÖĞËÑË÷¾ßÓĞÓëÖ¸¶¨ÊôĞÔÆ¥ÅäµÄÃû³ÆºÍÊôĞÔµÄÎÄ¼ş»ò×ÓÄ¿Â¼¡£
+		p->h = FindFirstFileExW((LPCWSTR)(String(current_dir + "\\*").utf16().get_data()), FindExInfoStandard, &p->fu, FindExSearchNameMatch, nullptr, 0); // åœ¨ç›®å½•ä¸­æœç´¢å…·æœ‰ä¸æŒ‡å®šå±æ€§åŒ¹é…çš„åç§°å’Œå±æ€§çš„æ–‡ä»¶æˆ–å­ç›®å½•ã€‚
 
 		if (p->h == INVALID_HANDLE_VALUE) {
 			return ERR_CANT_OPEN;
@@ -62,7 +62,7 @@ namespace lain {
 		_cishidden = (p->fu.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN);
 
 		String name = String::utf16((const char16_t*)(p->fu.cFileName));
-		// Ğ´µ½P->fuÖĞ
+		// å†™åˆ°P->fuä¸­
 		if (FindNextFileW(p->h, &p->fu) == 0) {
 			FindClose(p->h);
 			p->h = INVALID_HANDLE_VALUE;
@@ -156,7 +156,7 @@ namespace lain {
 	}
 	void DirAccessWindows::list_dir_end() {
 		if (p->h != INVALID_HANDLE_VALUE) {
-			FindClose(p->h); // ¹Ø±ÕËÑË÷¾ä±ú
+			FindClose(p->h); // å…³é—­æœç´¢å¥æŸ„
 			p->h = INVALID_HANDLE_VALUE;
 		}
 	}
@@ -204,7 +204,7 @@ namespace lain {
 		p_new_path = fix_path(p_new_path);
 
 		// If we're only changing file name case we need to do a little juggling
-		// Éú³ÉÁÙÊ±ÎÄ¼ş£¬Ìæ»»¸ÃÎÄ¼ş£¬ÖØÃüÃû
+		// ç”Ÿæˆä¸´æ—¶æ–‡ä»¶ï¼Œæ›¿æ¢è¯¥æ–‡ä»¶ï¼Œé‡å‘½å
 	
 		const char16_t* old_path_16 = p_path.utf16().get_data();
 		const char16_t* new_path_16 = p_new_path.utf16().get_data();
@@ -216,7 +216,7 @@ namespace lain {
 			}
 			// The path is a file; juggle
 			WCHAR tmpfile[MAX_PATH];
-			// Éú³ÉÁÙÊ±ÎÄ¼şÃûÇÒ´´½¨ÎÄ¼ş£¬unique = 0Ôò²»Í£³¢ÊÔ
+			// ç”Ÿæˆä¸´æ—¶æ–‡ä»¶åä¸”åˆ›å»ºæ–‡ä»¶ï¼Œunique = 0åˆ™ä¸åœå°è¯•
 			if (!GetTempFileNameW((LPCWSTR)(fix_path(get_current_dir()).utf16().get_data()), nullptr, 0, tmpfile)) {
 				return FAILED;
 			}

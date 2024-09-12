@@ -68,14 +68,30 @@ Class::Class(const Cursor& cursor, const Namespace& current_namespace, int p_cla
             }
             break;
             // field
+            // META(Fields) 可能被视作一个Field，这可能是clang的内部bug
             case CXCursor_FieldDecl:
             {
-                m_fields.emplace_back(new Field(child, current_namespace, this));
+                bool strange_bug = false;
+                if (perhaps_need_hack){
+                    if (child.getDisplayName() == NativeProperty::Fields ) {
+                        m_meta_data.setFlag(NativeProperty::Fields);
+                        strange_bug = true;
+                    }
+                    if (child.getDisplayName() == NativeProperty::WhiteListFields)
+                    {
+                        m_meta_data.setFlag(NativeProperty::WhiteListFields);
+                        strange_bug = true;
+                    }
+                    perhaps_need_hack = !shouldCompile();
+                }
+                if (!strange_bug)
+                    m_fields.emplace_back(new Field(child, current_namespace, this));
                 if (perhaps_need_hack) {
                     MetaInfo meta(child);
                     modify_meta_info(m_meta_data, meta);
                     perhaps_need_hack = !shouldCompile();
                 }
+               
                 // annotation
 
             }
@@ -103,6 +119,11 @@ Class::Class(const Cursor& cursor, const Namespace& current_namespace, int p_cla
             case CXCursor_StructDecl:
 
             {
+                // if (child.getDisplayName() == "ImportPathAndType"){
+                //     for(auto& key : child.getChildren()){
+                //         L_PRINT(key.getDisplayName(), key.getKind());
+                //     }
+                // }
                 std::vector<std::string> namespace_with_class = current_namespace;
                 namespace_with_class.push_back(m_name);
                 // 加入schema
@@ -122,6 +143,9 @@ Class::Class(const Cursor& cursor, const Namespace& current_namespace, int p_cla
     if (m_name == "AABB") {
         L_PRINT("AABB find", shouldCompile());
     }
+    if(m_name.find("ImportPathAndType")!=std::string::npos)
+        L_PRINT("ImportPathAndType find", shouldCompile());
+
 
     
     // 加入一点Hack

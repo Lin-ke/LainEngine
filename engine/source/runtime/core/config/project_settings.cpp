@@ -117,7 +117,7 @@ String ProjectSettings::LocalizePath(const String& p_path) const {
 }
 
 /// private
-// √ª≥ı ºªØ  OSRESDIR = ""
+// Ê≤°ÂàùÂßãÂåñ  OSRESDIR = ""
 
 Error ProjectSettings::_initialize(const String p_path, bool p_ignore_override) {
   if (!OSRESDIR.is_empty()) {

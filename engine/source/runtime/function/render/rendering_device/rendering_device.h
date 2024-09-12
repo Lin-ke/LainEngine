@@ -277,6 +277,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   /// LoadOP，我觉得这个设计很奇怪
   /// 对于同一个frame
   /// buffer，不同的initialaction构成了不同的version，这在实际中真的有用吗
+  /// 应该把depth也视作一个attachment，避免了一个InitialAction一个Color InitialAction
   enum InitialAction { INITIAL_ACTION_LOAD, INITIAL_ACTION_CLEAR, INITIAL_ACTION_DISCARD, INITIAL_ACTION_MAX };
   struct ColorInitialAction {
     uint32_t load_attach = 0;

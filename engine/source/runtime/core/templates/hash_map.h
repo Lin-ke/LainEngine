@@ -565,6 +565,14 @@ public:
 		capacity_index = MIN_CAPACITY_INDEX;
 	}
 
+	HashMap(std::initializer_list<KeyValue<TKey, TValue>> p_initialize_list){
+		capacity_index = 0;
+		reserve(p_initialize_list.size());
+		for (const KeyValue<TKey, TValue> &E : p_initialize_list) {
+			insert(E.key, E.value);
+		}
+	}
+
 	uint32_t debug_get_hash(uint32_t p_index) {
 		if (num_elements == 0) {
 			return 0;

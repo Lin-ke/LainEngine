@@ -24,8 +24,9 @@ namespace lain {
 		virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "", Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE);
 		virtual void get_recognized_extensions(List<String>* p_extensions) const {}
 		virtual void get_recognized_resources(List<String>* p_extensions) const {}
-
+		virtual bool handles_type(const String& p_type) const {return false;}
 		virtual bool exists(const String& p_path) const { return false; }
+		virtual String get_resource_type(const String& p_path) const {return "";} //根据path，返回资源类型，否则返回空字符串
 
 		// 与 importer 有关
 		virtual bool is_import_valid(const String& p_path) const { return true; }
@@ -34,9 +35,7 @@ namespace lain {
 
 		//virtual void get_recognized_extensions_for_type(const String& p_type, List<String>* p_extensions) const;
 		//virtual bool recognize_path(const String& p_path, const String& p_for_type = String()) const; = 0 // 与脚本系统有关
-		//virtual bool handles_type(const String& p_type) const;
 		//virtual void get_classes_used(const String& p_path, HashSet<StringName>* r_classes);
-		//virtual String get_resource_type(const String& p_path) const;
 		//virtual String get_resource_script_class(const String& p_path) const;
 		//virtual ResourceUID::ID get_resource_uid(const String& p_path) const;
 		//virtual void get_dependencies(const String& p_path, List<String>* p_dependencies, bool p_add_types = false);

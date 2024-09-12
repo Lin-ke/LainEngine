@@ -900,6 +900,16 @@ bool Variant::operator==(const Variant &p_variant) const
 	return hash_compare(p_variant);
 }
 
+bool lain::Variant::operator<(const Variant& p_variant) const {
+	if (type != p_variant.type) { //if types differ, then order by type first
+			return type < p_variant.type;
+	}
+	bool v;
+	Variant r;
+	evaluate(OP_LESS, *this, p_variant, r, v);
+	return r;
+}
+
 #define hash_compare_scalar_base(p_lhs, p_rhs, semantic_comparison) \
 	(((p_lhs) == (p_rhs)) || (semantic_comparison && Math::is_nan(p_lhs) && Math::is_nan(p_rhs)))
 #define hash_compare_scalar(p_lhs, p_rhs) \

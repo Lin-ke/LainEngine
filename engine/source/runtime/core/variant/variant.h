@@ -210,6 +210,8 @@ namespace lain {
 		void operator=(const Variant& p_variant); // only this is enough for all the other 
 
 		bool operator==(const Variant& p_variant) const;
+		bool operator<(const Variant &p_variant) const;
+
 
 		typedef void (*ObjectConstruct)(const String& p_text, void* ud, Variant& r_value);
 		static void construct_from_string(const String& p_string, Variant& r_value, ObjectConstruct p_obj_construct = nullptr, void* p_construct_ud = nullptr);

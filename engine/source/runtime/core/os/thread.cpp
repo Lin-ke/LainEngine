@@ -27,7 +27,7 @@ namespace lain {
 	Thread::ID Thread::start(Thread::Callback p_callback, void* p_user, const Settings& p_settings) {
 		ERR_FAIL_COND_V_MSG(id != UNASSIGNED_ID, UNASSIGNED_ID, "A Thread object has been re-started without wait_to_finish() having been called on it.");
 		id = id_counter.increment();
-		// std::thread(&function, parameters, ...) ´´½¨ÁË¾Í¿ªÊ¼ÔËĞĞ
+		// std::thread(&function, parameters, ...) åˆ›å»ºäº†å°±å¼€å§‹è¿è¡Œ
 		thread = THREADING_NAMESPACE::thread(&Thread::callback, id, p_settings, p_callback, p_user);
 		return id;
 	}

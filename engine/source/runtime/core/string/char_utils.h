@@ -49,6 +49,11 @@ static _FORCE_INLINE_ bool is_ascii_char(char32_t c) {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
+static _FORCE_INLINE_ bool is_ascii_alphabet_char(char32_t c) {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+
 static _FORCE_INLINE_ bool is_ascii_alphanumeric_char(char32_t c) {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
 }

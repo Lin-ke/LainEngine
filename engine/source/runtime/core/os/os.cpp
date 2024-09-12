@@ -41,7 +41,7 @@ namespace lain {
 		 }
 		 return safe_dir_name;
 	 }
-	 // threadÓëcpuÊıÁ¿
+	 // threadä¸cpuæ•°é‡
 	 int OS::GetProcessorCount() const { return THREADING_NAMESPACE::thread::hardware_concurrency(); }
 	 void OS::EnsureUserDataDir() {
 		 String dd = GetUserDataDir();
