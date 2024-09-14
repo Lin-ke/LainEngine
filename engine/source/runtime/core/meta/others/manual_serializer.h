@@ -6,13 +6,13 @@
 namespace lain {
 
 	template<>
-	StringName& Serializer::read(const Json& json_context, StringName& instance);
+	void Serializer::read(const Json& json_context, StringName& instance);
 
 	template<>
 	Json Serializer::write(const StringName& instance);
 
 	template<>
-	GObjectPath& Serializer::read(const Json& json_context, GObjectPath& instance);
+	void Serializer::read(const Json& json_context, GObjectPath& instance);
 
 	template<>
 	Json Serializer::write(const GObjectPath& instance);

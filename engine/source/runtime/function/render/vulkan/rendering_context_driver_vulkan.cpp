@@ -5,7 +5,7 @@
 #include "core/config/project_settings.h"
 #include "rendering_device_driver_vulkan.h"
 #include "core/engine/engine.h"
-#define USE_ANY_VALIDATION_LAYER 0
+#define USE_ANY_VALIDATION_LAYER 1
 using namespace lain;
 const RenderingContextDriver::Device& RenderingContextDriverVulkan::device_get(uint32_t p_device_index) const {
 	DEV_ASSERT(p_device_index < driver_devices.size());

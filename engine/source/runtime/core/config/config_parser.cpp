@@ -26,6 +26,7 @@ namespace lain {
                 String key = line.substr(0, delimiterPos); 
                 key = key.trim();
                 String value = line.substr(delimiterPos + 1); 
+								L_PRINT(value);
                 Variant variant_value = ConstructFromString(value);
                 if (variant_value.get_type() == Variant::NIL) {
                     err = ERR_PARSE_ERROR;
@@ -48,17 +49,13 @@ namespace lain {
 	// recursive_depth已经废弃
     Variant ConfigFile::ConstructFromString(const String& p_str, int recursize_depth, bool error_print)
     {
-        std::string error;
-		auto&& json = Json::parse(p_str.utf8().get_data(), error);
-		if (!error.empty())
-		{
-			if (error_print)
-				L_PERROR("parse json file failed!", error);
-			return Variant();
-		}
-		Variant var;
-		return Serializer::read(json, var);
+        String error;
+		Json json = Json::parse(p_str, error);
+		ERR_FAIL_COND_V_MSG(!error.is_empty(), Variant(), error);
 
+		Variant var;
+		Serializer::read(json, var);
+		return var;
         // if (unlikely(recursize_depth > 128)) {
         //     if(error_print)
         //     L_CORE_ERROR("than max recursize depth");
@@ -149,15 +146,6 @@ namespace lain {
         //     L_PWARNING("parse json file failed!", CSTR(str));
         //     return Variant();
         // } 
-    }
-
-    bool ConfigFile::IsNumericExpression(const std::string& expression)
-    {
-        // 正则表达式模式，用于匹配数字类型的表达式
-        std::regex pattern("^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$");
-
-        // 使用 std::regex_match() 函数进行匹配
-        return std::regex_match(expression, pattern);
     }
 
     Error ConfigFile::Save(const String& p_path) {

@@ -30,10 +30,10 @@ namespace lain
         // write Test1_in (object) to Test1_json_in (json)
         auto test1_json_in = Serializer::write(test1_in);
 
-        std::string test1_context = test1_json_in.dump();
+        String test1_context = test1_json_in.dump();
         L_CORE_INFO(test1_context);
         // read Test1_context (json) to Test1_out (object)
-        std::string err;
+        String err;
 
         auto&& Test1_json = Json::parse(test1_context, err);
         Serializer::read(Test1_json, test1_out);
@@ -51,13 +51,8 @@ namespace lain
      
 
         auto        Test2_json_in = Serializer::write(test2_in);
-        std::string test2_context = Test2_json_in.dump();
-
-        std::fstream out_put("out.txt", std::ios::out);
-        out_put << test2_context;
-        out_put.flush();
-        out_put.close();
-
+        String test2_context = Test2_json_in.dump();
+        // L_CORE_INFO(test2_context);
         Test2  test2_out;
         auto&& test2_json = Json::parse(test2_context, err);
         Serializer::read(test2_json, test2_out);

@@ -16,20 +16,20 @@ namespace lain{
         {{#class_field_defines}}{{#class_field_is_vector}}
         Json::array {{class_field_name}}_json;
         {{^class_field_is_fixed_array}}for (auto& item : instance.{{class_field_name}}){
-            {{class_field_name}}_json.emplace_back(Serializer::write(item));
+            {{class_field_name}}_json.push_back(Serializer::write(item));
         }
-        ret_context.insert_or_assign("{{class_field_display_name}}",{{class_field_name}}_json);{{/class_field_is_fixed_array}}
+        ret_context.insert("{{class_field_display_name}}",{{class_field_name}}_json);{{/class_field_is_fixed_array}}
         {{#class_field_is_fixed_array}}for (int index=0; index < {{class_field_fixed_array_size}};++index){
-            {{class_field_name}}_json.emplace_back(Serializer::write(*(({{class_field_array_base_type}}*)(&instance.{{class_field_name}}) + index)));
+            {{class_field_name}}_json.push_back(Serializer::write(*(({{class_field_array_base_type}}*)(&instance.{{class_field_name}}) + index)));
         }
-        ret_context.insert_or_assign("{{class_field_display_name}}",{{class_field_name}}_json);{{/class_field_is_fixed_array}}
+        ret_context.insert("{{class_field_display_name}}",{{class_field_name}}_json);{{/class_field_is_fixed_array}}
         {{/class_field_is_vector}}
-        {{^class_field_is_vector}}ret_context.insert_or_assign("{{class_field_display_name}}", Serializer::write(instance.{{class_field_name}}));{{/class_field_is_vector}}
+        {{^class_field_is_vector}}ret_context.insert("{{class_field_display_name}}", Serializer::write(instance.{{class_field_name}}));{{/class_field_is_vector}}
         {{/class_field_defines}}
         return  Json(ret_context);
     }
     template<>
-    {{class_with_namespace}}& Serializer::read(const Json& json_context, {{class_with_namespace}}& instance){
+    void Serializer::read(const Json& json_context, {{class_with_namespace}}& instance){
         assert(json_context.is_object());
         {{#class_base_class_defines}}Serializer::read(json_context,*({{class_base_class_name}}*)&instance);{{/class_base_class_defines}}
         {{#class_field_defines}}
@@ -38,17 +38,16 @@ namespace lain{
             Json::array array_{{class_field_name}} = json_context["{{class_field_display_name}}"].array_items();
             {{^class_field_is_fixed_array}}
             instance.{{class_field_name}}.resize(static_cast<int>(array_{{class_field_name}}.size()));
-            for (size_t index=0; index < array_{{class_field_name}}.size();++index){
+            for (int index=0; index < array_{{class_field_name}}.size();++index){
                 Serializer::read(array_{{class_field_name}}[index], instance.{{class_field_name}}{{#class_field_is_cow_vector}}.write{{/class_field_is_cow_vector}}[{{#class_field_is_cow_vector}}static_cast<int>(index){{/class_field_is_cow_vector}}{{^class_field_is_cow_vector}}index{{/class_field_is_cow_vector}}]);
             }
             {{/class_field_is_fixed_array}}
             {{#class_field_is_fixed_array}}
-            for (size_t index=0; index < {{class_field_fixed_array_size}};++index){
+            for (int index=0; index < {{class_field_fixed_array_size}};++index){
                 Serializer::read(array_{{class_field_name}}[index], *(({{class_field_array_base_type}}*)(&instance.{{class_field_name}}) + index));
             }{{/class_field_is_fixed_array}}{{/class_field_is_vector}}
             {{^class_field_is_vector}}Serializer::read(json_context["{{class_field_display_name}}"], instance.{{class_field_name}});{{/class_field_is_vector}}
         }{{/class_field_defines}}
-        return instance;
     }{{/class_defines}}
     {{#enum_defines}}
     template<>
@@ -66,7 +65,7 @@ namespace lain{
         return Serializer::write(enum_name);
     }
     template<>
-    {{enum_with_namespace}}& Serializer::read(const Json& json_context, {{enum_with_namespace}}& instance){
+    void Serializer::read(const Json& json_context, {{enum_with_namespace}}& instance){
         String enum_name;
         Serializer::read(json_context, enum_name);
         {{#enum_values_define}}
@@ -74,7 +73,6 @@ namespace lain{
             instance = {{enum_with_namespace}}::{{enum_value_name}};
         }
         {{/enum_values_define}}
-        return instance;
     }
     {{/enum_defines}}
 }

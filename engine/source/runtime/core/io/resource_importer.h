@@ -39,12 +39,20 @@ class ResourceFormatImporter : public ResourceFormatLoader {
   virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "", Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
                              CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
   virtual void get_recognized_extensions(List<String>* p_extensions) const override;
+  virtual void get_recognized_resources(List<String>* p_extensions) const override;
+   Ref<ResourceImporter> get_importer_by_name(const String &p_name) const;
+	Ref<ResourceImporter> get_importer_by_extension(const String &p_extension) const;
+  void get_importers(List<Ref<ResourceImporter>>* r_importers);
+  virtual Variant get_resource_metadata(const String& p_path) const;
+  void get_importers_for_extension(const String& p_extension, List<Ref<ResourceImporter>>* r_importers);
+  HashMap<String, Vector<int>> ext_to_loader_idx;
+  HashMap<String, Vector<int>> type_to_loader_idx;
+
 //   virtual void get_recognized_extensions_for_type(const String& p_type, List<String>* p_extensions) const override;
 //   virtual bool recognize_path(const String& p_path, const String& p_for_type = String()) const override;
 //   virtual bool handles_type(const String& p_type) const override;
 //   virtual String get_resource_type(const String& p_path) const override;
 //   virtual ResourceUID::ID get_resource_uid(const String& p_path) const override;
-//   virtual Variant get_resource_metadata(const String& p_path) const;
 //   virtual bool is_import_valid(const String& p_path) const override;
 //   virtual void get_dependencies(const String& p_path, List<String>* p_dependencies, bool p_add_types = false) override;
 //   virtual bool is_imported(const String& p_path) const override { return recognize_path(p_path); }
@@ -59,19 +67,17 @@ class ResourceFormatImporter : public ResourceFormatLoader {
 //   String get_internal_resource_path(const String& p_path) const;
 //   void get_internal_resource_path_list(const String& p_path, List<String>* r_paths);
 
-//   void add_importer(const Ref<ResourceImporter>& p_importer, bool p_first_priority = false);
+  void add_importer(const Ref<ResourceImporter>& p_importer, bool p_first_priority = false);
+  void _add_importer_to_map(const Ref<ResourceImporter>& p_importer, bool is_ext);
+  void remove_importer(const Ref<ResourceImporter>& p_importer);
+  void _remove_importer_from_map(const Ref<ResourceImporter>& p_importer, bool is_ext);
 
-//   void remove_importer(const Ref<ResourceImporter>& p_importer) { importers.erase(p_importer); }
-//   Ref<ResourceImporter> get_importer_by_name(const String& p_name) const;
-//   Ref<ResourceImporter> get_importer_by_extension(const String& p_extension) const;
-//   void get_importers_for_extension(const String& p_extension, List<Ref<ResourceImporter>>* r_importers);
-//   void get_importers(List<Ref<ResourceImporter>>* r_importers);
 
 //   bool are_import_settings_valid(const String& p_path) const;
 //   String get_import_settings_hash() const;
 
 //   String get_import_base_path(const String& p_for_file) const;
-  ResourceFormatImporter();
+  ResourceFormatImporter() {singleton = this;}
 };
 
 class ResourceImporter : public RefCounted {
@@ -86,6 +92,10 @@ class ResourceImporter : public RefCounted {
   virtual void get_recognized_extensions(List<String>* p_extensions) const = 0;
   virtual String get_save_extension() const = 0;
   virtual String get_resource_type() const = 0;
+  // 为了保持接口
+  virtual void get_recognized_resources(List<String>* p_extensions) const {
+    p_extensions->push_back(get_resource_type());
+  }
   virtual float get_priority() const { return 1.0; }
   virtual int get_import_order() const { return IMPORT_ORDER_DEFAULT; }
   virtual int get_format_version() const { return 0; }

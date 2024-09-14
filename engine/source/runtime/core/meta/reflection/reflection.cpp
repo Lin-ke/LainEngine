@@ -15,10 +15,10 @@ namespace lain
         const char* k_unknown_type = "UnknownType";
         const char* k_unknown      = "Unknown";
         // 只能在这个文件里写
-        static std::map<std::string, ClassFunctionTuple*>       m_class_map;
-        static std::multimap<std::string, FieldFunctionTuple*>  m_field_map;
-        static std::multimap<std::string, MethodFunctionTuple*> m_method_map;
-        static std::map<std::string, ArrayFunctionTuple*>       m_array_map;
+        static std::map<String, ClassFunctionTuple*>       m_class_map;
+        static std::multimap<String, FieldFunctionTuple*>  m_field_map;
+        static std::multimap<String, MethodFunctionTuple*> m_method_map;
+        static std::map<String, ArrayFunctionTuple*>       m_array_map;
         static HashMap<StringName, HashMap<StringName, int>>    m_enums;
         static HashMap<StringName, HashMap<StringName, int>>    m_anoymous_enums;
 
@@ -84,7 +84,7 @@ namespace lain
             m_array_map.clear();
         }
 
-        TypeMeta::TypeMeta(std::string type_name) : m_type_name(type_name)
+        TypeMeta::TypeMeta(String type_name) : m_type_name(type_name)
         {
             m_is_valid = false;
             m_fields.clear();
@@ -115,13 +115,16 @@ namespace lain
         bool TypeMeta::is_valid_type(const char* p_typename) {
             return m_class_map.find(p_typename) != m_class_map.end();
         }
+         bool TypeMeta::is_valid_type(const String& p_typename) {
+            return m_class_map.find(p_typename) != m_class_map.end();
+        }
 
-        TypeMeta TypeMeta::newMetaFromName(std::string type_name)
+        TypeMeta TypeMeta::newMetaFromName(String type_name)
         {
             TypeMeta f_type(type_name);
             return f_type;
         }
-        size_t TypeMeta::getSizeOfByName(const char* m_type_name) {
+        size_t TypeMeta::getSizeOfByName(const String & m_type_name) {
             auto iter = m_class_map.find(m_type_name);
 
             if (iter != m_class_map.end())
@@ -131,7 +134,9 @@ namespace lain
 
             return 0;
         }
-
+        size_t TypeMeta::getSizeOfByName(const char* m_type_name) {
+            return getSizeOfByName(String(m_type_name));
+        }
         void* TypeMeta::memnewByName(const char* m_type_name, void* target) {
             auto iter = m_class_map.find(m_type_name);
 
@@ -155,7 +160,7 @@ namespace lain
         }
 
 
-        bool TypeMeta::newArrayAccessorFromName(std::string array_type_name, ArrayAccessor& accessor)
+        bool TypeMeta::newArrayAccessorFromName(const String& array_type_name, ArrayAccessor& accessor)
         {
             auto iter = m_array_map.find(array_type_name);
 
@@ -169,7 +174,7 @@ namespace lain
             return false;
         }
 
-        ReflectionInstance TypeMeta::newFromNameAndJson(std::string type_name, const Json& json_context)
+        ReflectionInstance TypeMeta::newFromNameAndJson(const String& type_name, const Json& json_context)
         {
             auto iter = m_class_map.find(type_name);
 
@@ -182,12 +187,12 @@ namespace lain
 
         ReflectionInstance TypeMeta::newFromJson(const Json& json_context){
             // 要求格式必须正确
-            std::string type_name = json_context["$typeName"].string_value();
+            String type_name = json_context["$typeName"].string_value();
             return newFromNameAndJson(type_name, json_context["$context"]);
         }
 
 
-        Json TypeMeta::writeByName(std::string type_name, void* instance)
+        Json TypeMeta::writeByName(const String & type_name, void* instance)
         {
             auto iter = m_class_map.find(type_name);
 
@@ -198,7 +203,7 @@ namespace lain
             return Json();
         }
 
-        bool TypeMeta::writeToInstanceFromNameAndJson(std::string type_name, const Json& json_context, void* instance)
+        bool TypeMeta::writeToInstanceFromNameAndJson(const String & type_name, const Json& json_context, void* instance)
         {
             auto iter = m_class_map.find(type_name);
 
@@ -219,7 +224,7 @@ namespace lain
 
 
 
-        std::string TypeMeta::getTypeName() const { return m_type_name; }
+        String TypeMeta::getTypeName() const { return m_type_name; }
         int TypeMeta::getFieldsList(FieldAccessor*& out_list)const
         {
             int count = m_fields.size();
@@ -256,20 +261,20 @@ namespace lain
 
         FieldAccessor TypeMeta::getFieldByName(const char* name)const
         {
-            std::string field_name = name; 
+            String field_name = name; 
             bool find_with_prefix = false;
             if(field_name.find(FIELD_PREFIX) != 0){
                 field_name = FIELD_PREFIX + field_name;
                 find_with_prefix = true;
             }
             const auto it = std::find_if(m_fields.begin(), m_fields.end(), [&](const auto& i) {
-                return std::strcmp(i.getFieldName(), name) == 0;
+                return (i.getFieldName()== name) == 0;
             });
             if (it != m_fields.end())
                 return *it;
             else if (find_with_prefix) {
                 const auto it = std::find_if(m_fields.begin(), m_fields.end(), [&](const auto& i) {
-                    return std::strcmp(i.getFieldName(), field_name.c_str()) == 0;
+                    return (i.getFieldName()== field_name) == 0;
                     });
                 if (it != m_fields.end()) {
                     return *it;
@@ -281,7 +286,7 @@ namespace lain
         MethodAccessor TypeMeta::getMethodByName(const char* name)const
         {
             const auto it = std::find_if(m_methods.begin(), m_methods.end(), [&](const auto& i) {
-                return std::strcmp(i.getMethodName(), name) == 0;
+                return (i.getMethodName()== name) == 0;
             });
             if (it != m_methods.end())
                 return *it;

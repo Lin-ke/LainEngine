@@ -75,25 +75,18 @@ namespace lain{
 	
 	Error ResourceLoaderText::load() {
 		
-		using json11::Json;
 		if (error != OK) {
 			return error;
 		}
 
 		PackedSceneRes packed_res;
 		
-		Vector<uint8> json_chars;
-		int residual_length = static_cast<int>(f->get_length()-f->get_position());
-		json_chars.resize(residual_length + 1);
-		f->get_buffer(json_chars.ptrw(), residual_length);
-		json_chars.ptrw()[residual_length] = static_cast<ui8>(0);
-		std::string error_line;
+		String json_str=  f->get_residual_text();
+		String error_line;
 
-		//String json_string = f->get_as_text();
-		//json11::Json json_text = Json::parse(CSTR(json_string), error_line);
-		Json json_text = Json::parse((const char*)(json_chars.ptr()), error_line);
+		Json json_text = Json::parse(json_str, error_line);
 
-		ERR_FAIL_COND_V_MSG(!error_line.empty(), FAILED, error_line.c_str());
+		ERR_FAIL_COND_V_MSG(!error_line.is_empty(), FAILED, error_line);
 		Serializer::read(json_text, packed_res);
 
 		
@@ -345,7 +338,7 @@ namespace lain{
 			dict["tag"] = "resource";
 		}
 		dict["load_steps"] = resources_total;
-		fw->store_string(Serializer::write(dict).dump().c_str()); 
+		fw->store_string(Serializer::write(dict).dump()); 
 
 		uint8_t c = f->get_8();
 		while (!f->eof_reached()) {
@@ -606,7 +599,7 @@ namespace lain{
 			packed_res.head = title;
 
 			auto&& json = Serializer::write(packed_res);
-			f->store_string(json.dump().c_str());
+			f->store_string(json.dump());
 		}
 	return err;
 	}

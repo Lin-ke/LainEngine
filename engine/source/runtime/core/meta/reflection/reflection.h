@@ -91,21 +91,24 @@ namespace lain
 
             // static void Register();
 
-            static TypeMeta newMetaFromName(std::string type_name);
+            static TypeMeta newMetaFromName(String type_name);
             static ReflectionInstance newFromJson(const Json& json_context);
-            static bool     writeToInstanceFromNameAndJson(std::string type_name, const Json& json_context, void* instance);
-            static bool               newArrayAccessorFromName(std::string array_type_name, ArrayAccessor& accessor);
-            static ReflectionInstance newFromNameAndJson(std::string type_name, const Json& json_context);
-            static Json               writeByName(std::string type_name, void* instance);
+            static bool     writeToInstanceFromNameAndJson(const String & type_name, const Json& json_context, void* instance);
+            static bool               newArrayAccessorFromName(const String & array_type_name, ArrayAccessor& accessor);
+            static ReflectionInstance newFromNameAndJson(const String & type_name, const Json& json_context);
+            static Json               writeByName(const String & type_name, void* instance);
             static bool is_valid_type(const char* p_typename);
+            static bool is_valid_type(const String& p_typename);
+
             static size_t getSizeOfByName(const char* name);
+            static size_t getSizeOfByName(const String & name);
             static void* memnewByName(const char* name, void* target = nullptr);
             static void* memnewarrByName(const char* name, int num);
             static StringName GetEnumString(const StringName& p_class, int value);
             static int GetEnumValue(const StringName& p_class, const StringName& p_name);
 
 
-            std::string getTypeName() const;
+            String getTypeName() const;
 
             int getFieldsList(FieldAccessor*& out_list) const;
             int getMethodsList(MethodAccessor*& out_list) const;
@@ -121,12 +124,12 @@ namespace lain
            
             
         private:
-            TypeMeta(std::string type_name);
+            TypeMeta(String type_name);
 
         private:
             Vector<FieldAccessor>   m_fields;
             Vector<MethodAccessor> m_methods;
-            std::string              m_type_name;
+            String              m_type_name;
 
             bool m_is_valid;
         };
@@ -238,11 +241,11 @@ namespace lain
             ReflectionInstance& operator=(ReflectionInstance&& dest);
             String writeByName(void * p_instance) {
                 auto json =  TypeMeta::writeByName(m_meta.getTypeName(), p_instance);
-                return json.dump().c_str();
+                return json.dump();
             }
             void* ptr() { return m_instance; }
             StringName get_name(){
-                return StringName(m_meta.getTypeName().c_str());
+                return StringName(m_meta.getTypeName());
             }
             
 
@@ -258,7 +261,7 @@ namespace lain
             friend class ReflectionPtr;
 
         public:
-            ReflectionPtr(std::string type_name, T* instance) : m_type_name(type_name), m_instance(instance) {}
+            ReflectionPtr(String type_name, T* instance) : m_type_name(type_name), m_instance(instance) {}
             ReflectionPtr() : m_type_name(), m_instance(nullptr) {}
 
 
@@ -310,9 +313,9 @@ namespace lain
                 return *this;
             }
 
-            String getTypeName() const { return String(m_type_name.c_str()); }
+            String getTypeName() const { return m_type_name; }
 
-            void setTypeName(std::string name) { m_type_name = name; }
+            void setTypeName(String name) { m_type_name = name; }
 
             bool operator==(const T* ptr) const { return (m_instance == ptr); }
 
@@ -367,7 +370,7 @@ namespace lain
             operator bool() const { return (m_instance != nullptr); }
 
         private:
-            std::string m_type_name {""};
+            String m_type_name {""};
             typedef T   m_type;
             T*          m_instance {nullptr};
         };

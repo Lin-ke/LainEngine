@@ -213,12 +213,12 @@ Json::Json(int64_t value) : m_ptr(make_shared<JsonInt>(value)) {}
 Json::Json(int value) : m_ptr(make_shared<JsonInt>(value)) {}
 Json::Json(bool value) : m_ptr(value ? statics().t : statics().f) {}
 Json::Json(const string& value) : m_ptr(make_shared<JsonString>(value)) {}
-Json::Json(string&& value) : m_ptr(make_shared<JsonString>(move(value))) {}
+// Json::Json(string&& value) : m_ptr(make_shared<JsonString>(move(value))) {}
 Json::Json(const char* value) : m_ptr(make_shared<JsonString>(value)) {}
 Json::Json(const Json::array& values) : m_ptr(make_shared<JsonArray>(values)) {}
-Json::Json(Json::array&& values) : m_ptr(make_shared<JsonArray>(move(values))) {}
+// Json::Json(Json::array&& values) : m_ptr(make_shared<JsonArray>(move(values))) {}
 Json::Json(const Json::object& values) : m_ptr(make_shared<JsonObject>(values)) {}
-Json::Json(Json::object&& values) : m_ptr(make_shared<JsonObject>(move(values))) {}
+// Json::Json(Json::object&& values) : m_ptr(make_shared<JsonObject>(move(values))) {}
 
 /* * * * * * * * * * * * * * * * * * * *
  * Accessors
@@ -552,6 +552,7 @@ struct JsonParser final {
       out += res;
       continue;
     }
+    return out;
   }
 
   /* parse_number()

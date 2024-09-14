@@ -470,4 +470,17 @@ void WindowSystem::window_set_vsync_mode(VSyncMode p_vsync_mode, WindowID p_wind
 	// }
 }
 
+Size2i WindowSystem::window_get_size(WindowSystem::WindowID p_window) const {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V(!m_windows.has(p_window), Size2i());
+	const WindowData &wd = m_windows[p_window];
+
+	RECT r;
+	if (GetWindowRect(wd.hWnd, &r)) { // Retrieves area inside of window border, including decoration.
+		return Size2(r.right - r.left, r.bottom - r.top);
+	}
+	return Size2();
+}
+
 } // namespace lain

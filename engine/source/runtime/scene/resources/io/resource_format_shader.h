@@ -20,5 +20,17 @@ public:
     virtual void get_recognized_extensions(List<String> *p_extensions) const override;
     virtual void get_recognized_resources(List<String> *p_resource_class) const override;
 };
+
+class ResourceFormatLoaderRawShader : public ResourceFormatLoader {
+    virtual void get_recognized_extensions(List<String> *p_extensions) const override{
+        p_extensions->push_back("glsl");
+    }
+    virtual void get_recognized_resources(List<String> *p_resource_class) const override{
+        p_resource_class->push_back("ShaderFile");
+    }
+
+
+
+};
 }
 #endif // RESOURCE_FORMAT_SHADER_H

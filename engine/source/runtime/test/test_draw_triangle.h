@@ -15,17 +15,25 @@ void test_draw_triangle() {
   Json json = Json::parse(text, err_text);
   L_PRINT(err_text);
   L_PRINT(json.dump());
-  Ref<FileAccess> file = FileAccess::open("res://test1.glsl", FileAccess::READ);
-  String shader_string = file->get_as_text();
+  Ref<FileAccess> file2= FileAccess::open("res://test1.glsl", FileAccess::READ);
+  String vs_shader_string = file2->get_as_text();
 
   RenderingDevice* device = RenderingDevice::get_singleton();
-  PackedByteArray shader =
-      device->shader_compile_spirv_from_source(RenderingDevice::ShaderStage::SHADER_STAGE_VERTEX, shader_string, RenderingDevice::ShaderLanguage::SHADER_LANGUAGE_GLSL);
-  RD::ShaderStageSPIRVData data;
-  data.shader_stage = RD::ShaderStage::SHADER_STAGE_VERTEX;
-  data.spirv = shader;
+  PackedByteArray vs_shader =
+      device->shader_compile_spirv_from_source(RenderingDevice::ShaderStage::SHADER_STAGE_VERTEX, vs_shader_string, RenderingDevice::ShaderLanguage::SHADER_LANGUAGE_GLSL);
+  Ref<FileAccess> file = FileAccess::open("res://test1_fs.glsl", FileAccess::READ);
+  String fs_shader_string = file->get_as_text();
+  PackedByteArray fs_shader =
+      device->shader_compile_spirv_from_source(RenderingDevice::ShaderStage::SHADER_STAGE_FRAGMENT, fs_shader_string, RenderingDevice::ShaderLanguage::SHADER_LANGUAGE_GLSL);
+  
+  RD::ShaderStageSPIRVData vs_data;
+  vs_data.shader_stage = RD::ShaderStage::SHADER_STAGE_VERTEX;
+  vs_data.spirv = vs_shader;
 
-  device->shader_compile_binary_from_spirv({data}, "vertex_test");
+  RD::ShaderStageSPIRVData fs_data;
+  fs_data.shader_stage = RD::ShaderStage::SHADER_STAGE_FRAGMENT;
+  fs_data.spirv = fs_shader;
+
   RD::VertexAttribute attr;  // 应该有一个create vertex format for shader的函数 直接反射过来
   attr.format = RD::DataFormat::DATA_FORMAT_R32G32B32_SFLOAT;
   attr.frequency = RD::VertexFrequency::VERTEX_FREQUENCY_VERTEX;
@@ -40,8 +48,10 @@ void test_draw_triangle() {
 
   auto tex_format = RD::TextureFormat();
   auto tex_view = RD::TextureView();
-  tex_format.height = 800;
-  tex_format.width = 600;
+  Size2i window_size = WindowSystem::GetSingleton()->window_get_size(WindowSystem::MAIN_WINDOW_ID);
+  L_PRINT(window_size);
+  tex_format.height = window_size.y;
+  tex_format.width = window_size.x;
   tex_format.format = RD::DataFormat::DATA_FORMAT_R32G32B32A32_SFLOAT;
   tex_format.usage_bits = RD::TextureUsageBits::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TextureUsageBits::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
   auto framebuf_texture = device->texture_create(tex_format, tex_view);
@@ -49,20 +59,27 @@ void test_draw_triangle() {
   auto framebuf_format = device->framebuffer_format_create({format});
   auto framebuf = device->framebuffer_create({framebuf_texture}, framebuf_format);
   // 读到create multi pass.
-  auto Shader_rid = device->shader_create_from_spirv({data});
+  auto Shader_rid = device->shader_create_from_spirv({vs_data, fs_data}, "vertex_test");
   auto pipeline = device->render_pipeline_create(
-    Shader_rid, framebuf_format, vertex_format_id
+    Shader_rid, framebuf_format, vertex_format_id, RD::RenderPrimitive::RENDER_PRIMITIVE_TRIANGLES,
+    RD::PipelineRasterizationState(), RD::PipelineMultisampleState(), 
+    RD::PipelineDepthStencilState(), RD::PipelineColorBlendState::create_blend()
+
   );
   auto clear_color_values= PackedColorArray({Color(1,1,1,1)});
-  auto draw_list = device->draw_list_begin(
-    framebuf, RD::ColorInitialAction(), RD::ColorFinalAction(), RD::InitialAction::INITIAL_ACTION_CLEAR, RD::FinalAction::FINAL_ACTION_STORE,
-    clear_color_values
-  );
-  device->draw_list_bind_render_pipeline(draw_list, pipeline);
-  device->draw_list_bind_vertex_array(draw_list,vertex_array_id);
-  device->draw_list_draw(draw_list, false, 3, 0);
+  // auto draw_list = device->draw_list_begin(
+  //   framebuf, RD::ColorInitialAction(), RD::ColorFinalAction(), RD::InitialAction::INITIAL_ACTION_CLEAR, RD::FinalAction::FINAL_ACTION_STORE,
+  //   clear_color_values
+  // );
+  Error err = device->screen_prepare_for_drawing(WindowSystem::MAIN_WINDOW_ID);
+
+  auto draw_list_screen = device->draw_list_begin_for_screen();
+  
+  device->draw_list_bind_render_pipeline(draw_list_screen, pipeline);
+  device->draw_list_bind_vertex_array(draw_list_screen,vertex_array_id);
+  device->draw_list_draw(draw_list_screen, false, 3, 0);
   device->draw_list_end();
-  auto td = device->texture_get_data(framebuf_texture, 0); // @todo 看这个代码
+
 }
 }  // namespace lain::test
 #endif

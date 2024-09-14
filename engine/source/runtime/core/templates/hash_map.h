@@ -163,7 +163,7 @@ private:
 		Memory::free_static(old_elements);
 		Memory::free_static(old_hashes);
 	}
-
+	// 返回插入的元素
 	_FORCE_INLINE_ HashMapElement<TKey, TValue> *_insert(const TKey &p_key, const TValue &p_value, bool p_front_insert = false) {
 		uint32_t capacity = hash_table_size_primes[capacity_index];
 		if (unlikely(elements == nullptr)) {
@@ -182,7 +182,7 @@ private:
 		bool exists = _lookup_pos(p_key, pos);
 
 		if (exists) {
-			elements[pos]->data.value = p_value;
+			elements[pos]->data.value = p_value; // 如果存在就assign
 			return elements[pos];
 		} else {
 			if (num_elements + 1 > MAX_OCCUPANCY * capacity) {
@@ -521,6 +521,12 @@ public:
 
 	Iterator insert(const TKey &p_key, const TValue &p_value, bool p_front_insert = false) {
 		return Iterator(_insert(p_key, p_value, p_front_insert));
+	}
+
+	void insert(const ConstIterator & p_begin, const ConstIterator & p_end){
+		for (ConstIterator E = p_begin; E != p_end; E = E.operator++()) {
+			insert(E->key, E->value);
+		}
 	}
 
 	/* Constructors */

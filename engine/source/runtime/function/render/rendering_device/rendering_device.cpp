@@ -432,9 +432,9 @@ Vector<uint8_t> lain::RenderingDevice::texture_get_data(RID p_texture, uint32_t 
 /// frame operations
 void RenderingDevice::_flush_and_stall_for_all_frames() {
   _stall_for_previous_frames();
-  // _end_frame();
-  // _execute_frame(false);
-  // _begin_frame();
+  _end_frame();
+  _execute_frame(false);
+  _begin_frame();
 }
 
 void RenderingDevice::_stall_for_previous_frames() {
@@ -444,6 +444,44 @@ void RenderingDevice::_stall_for_previous_frames() {
       frames[i].draw_fence_signaled = false;
     }
   }
+}
+
+void RenderingDevice::_begin_frame() {
+	// Before beginning this frame, wait on the fence if it was signaled to make sure its work is finished.
+	if (frames[frame].draw_fence_signaled) {
+		driver->fence_wait(frames[frame].draw_fence);
+		frames[frame].draw_fence_signaled = false;
+	}
+
+	// update_perf_report();
+
+	// Begin recording on the frame's command buffers.
+	driver->begin_segment(frame, frames_drawn++);
+	driver->command_buffer_begin(frames[frame].setup_command_buffer);
+	driver->command_buffer_begin(frames[frame].draw_command_buffer);
+
+	// Reset the graph.
+	draw_graph.begin();
+
+	// Erase pending resources.
+	_free_pending_resources(frame);
+
+	// Advance staging buffer if used.
+	if (staging_buffer_used) {
+		staging_buffer_current = (staging_buffer_current + 1) % staging_buffer_blocks.size();
+		staging_buffer_used = false;
+	}
+
+	if (frames[frame].timestamp_count) {
+		driver->timestamp_query_pool_get_results(frames[frame].timestamp_pool, frames[frame].timestamp_count, frames[frame].timestamp_result_values.ptr());
+		driver->command_timestamp_query_pool_reset(frames[frame].setup_command_buffer, frames[frame].timestamp_pool, frames[frame].timestamp_count);
+		SWAP(frames[frame].timestamp_names, frames[frame].timestamp_result_names);
+		SWAP(frames[frame].timestamp_cpu_values, frames[frame].timestamp_cpu_result_values);
+	}
+
+	frames[frame].timestamp_result_count = frames[frame].timestamp_count;
+	frames[frame].timestamp_count = 0;
+	frames[frame].index = Engine::GetSingleton()->get_frames_drawn();
 }
 
 void RenderingDevice::_end_frame() {
@@ -467,6 +505,9 @@ void RenderingDevice::_end_frame() {
   driver->command_buffer_end(command_buffer);
   driver->end_segment();
 }
+
+
+
 
 /// --- swap chain ---
 /// ****** screen *******
@@ -834,7 +875,7 @@ Error RenderingDevice::initialize(RenderingContextDriver* p_context, WindowSyste
   Error err = OK;
 
   RCD::SurfaceID main_surface = 0;
-  const bool main_instance = (singleton == this) && (p_main_window != WindowSystem::INVALID_WINDOW_ID);
+  is_main_instance = (singleton == this) && (p_main_window != WindowSystem::INVALID_WINDOW_ID);
   if (p_main_window != WindowSystem::INVALID_WINDOW_ID) {
     // Retrieve the surface from the main window if it was specified.
     main_surface = p_context->surface_get_from_window(p_main_window);
@@ -851,7 +892,7 @@ Error RenderingDevice::initialize(RenderingContextDriver* p_context, WindowSyste
   const uint32_t device_count = context->device_get_count();
   const bool detect_device = (device_index < 0) || (device_index >= int32_t(device_count));
   uint32_t device_type_score = 0;
-  for (uint32_t i = 0; i < device_count; i++) {
+  for (uint32_t i = 0; i < device_count; i++) { // 打印信息，选择设备
     RenderingContextDriver::Device device_option = context->device_get(i);
     String name = device_option.name;
     String vendor = _get_device_vendor_name(device_option);
@@ -878,9 +919,9 @@ Error RenderingDevice::initialize(RenderingContextDriver* p_context, WindowSyste
   frames.resize(frame_count);
   max_timestamp_query_elements = GLOBAL_GET("debug/settings/profiler/max_timestamp_query_elements");
 
-  device = context->device_get(device_index);
+  device = context->device_get(device_index); // 选择设备
 
-  err = driver->initialize(device_index, frame_count);
+  err = driver->initialize(device_index, frame_count); // driver初始化
   ERR_FAIL_COND_V_MSG(err != OK, FAILED, "Failed to initialize driver for device.");
 
   // Pick the main queue family. It is worth noting we explicitly do not request the transfer bit, as apparently the specification defines
@@ -942,7 +983,7 @@ Error RenderingDevice::initialize(RenderingContextDriver* p_context, WindowSyste
     frames[i].timestamp_result_count = 0;
 
     // Assign the main queue family and command pool to the command buffer pool.
-    // frames[i].command_buffer_pool.pool = frames[i].command_pool;
+    frames[i].command_buffer_pool.pool = frames[i].command_pool;
   }
 
   // Start from frame count, so everything else is immediately old.
@@ -997,7 +1038,7 @@ Error RenderingDevice::initialize(RenderingContextDriver* p_context, WindowSyste
   compute_list = nullptr;
 
   bool project_pipeline_cache_enable = GLOBAL_GET("rendering/rendering_device/pipeline_cache/enable");
-  if (main_instance && project_pipeline_cache_enable) {
+  if (is_main_instance && project_pipeline_cache_enable) {
     // Only the instance that is not a local device and is also the singleton is allowed to manage a pipeline cache.
     pipeline_cache_file_path =
         vformat("user://vulkan/pipelines.%s.%s", OS::GetSingleton()->GetCurrentRenderingMethod(), device.name.validate_filename().replace(" ", "_").to_lower());
@@ -1603,6 +1644,12 @@ RDD::RenderPassID RenderingDevice::_render_pass_create(const Vector<AttachmentFo
   return render_pass;
 }
 
+RenderingDevice* lain::RenderingDevice::create_local_device() {
+	RenderingDevice *rd = memnew(RenderingDevice);
+	rd->initialize(context);
+	return rd;
+}
+
 void RenderingDevice::set_resource_name(RID p_id, const String& p_name) {
   if (texture_owner.owns(p_id)) {
     Texture* texture = texture_owner.get_or_null(p_id);
@@ -1987,6 +2034,91 @@ void RenderingDevice::free(RID p_id) {
   _free_dependencies(p_id);  // Recursively erase dependencies first, to avoid potential API problems.
   _free_internal(p_id);
 }
+
+void lain::RenderingDevice::_free_pending_resources(int p_frame) {
+	// Free in dependency usage order, so nothing weird happens.
+	// Pipelines.
+	while (frames[p_frame].render_pipelines_to_dispose_of.front()) {
+		RenderPipeline *pipeline = &frames[p_frame].render_pipelines_to_dispose_of.front()->get();
+
+		driver->pipeline_free(pipeline->driver_id);
+
+		frames[p_frame].render_pipelines_to_dispose_of.pop_front();
+	}
+
+	while (frames[p_frame].compute_pipelines_to_dispose_of.front()) {
+		ComputePipeline *pipeline = &frames[p_frame].compute_pipelines_to_dispose_of.front()->get();
+
+		driver->pipeline_free(pipeline->driver_id);
+
+		frames[p_frame].compute_pipelines_to_dispose_of.pop_front();
+	}
+
+	// Uniform sets.
+	while (frames[p_frame].uniform_sets_to_dispose_of.front()) {
+		UniformSet *uniform_set = &frames[p_frame].uniform_sets_to_dispose_of.front()->get();
+
+		driver->uniform_set_free(uniform_set->driver_id);
+
+		frames[p_frame].uniform_sets_to_dispose_of.pop_front();
+	}
+
+	// Shaders.
+	while (frames[p_frame].shaders_to_dispose_of.front()) {
+		Shader *shader = &frames[p_frame].shaders_to_dispose_of.front()->get();
+
+		driver->shader_free(shader->driver_id);
+
+		frames[p_frame].shaders_to_dispose_of.pop_front();
+	}
+
+	// Samplers.
+	while (frames[p_frame].samplers_to_dispose_of.front()) {
+		RDD::SamplerID sampler = frames[p_frame].samplers_to_dispose_of.front()->get();
+
+		driver->sampler_free(sampler);
+
+		frames[p_frame].samplers_to_dispose_of.pop_front();
+	}
+
+	// Framebuffers.
+	while (frames[p_frame].framebuffers_to_dispose_of.front()) {
+		Framebuffer *framebuffer = &frames[p_frame].framebuffers_to_dispose_of.front()->get();
+
+		for (const KeyValue<Framebuffer::VersionKey, Framebuffer::Version> &E : framebuffer->framebuffers) {
+			// First framebuffer, then render pass because it depends on it.
+			driver->framebuffer_free(E.value.framebuffer);
+			driver->render_pass_free(E.value.render_pass);
+		}
+
+		frames[p_frame].framebuffers_to_dispose_of.pop_front();
+	}
+
+	// Textures.
+	while (frames[p_frame].textures_to_dispose_of.front()) {
+		Texture *texture = &frames[p_frame].textures_to_dispose_of.front()->get();
+		if (texture->bound) {
+			WARN_PRINT("Deleted a texture while it was bound.");
+		}
+
+		_texture_free_shared_fallback(texture);
+
+		texture_memory -= driver->texture_get_allocation_size(texture->driver_id);
+		driver->texture_free(texture->driver_id);
+
+		frames[p_frame].textures_to_dispose_of.pop_front();
+	}
+
+	// Buffers.
+	while (frames[p_frame].buffers_to_dispose_of.front()) {
+		Buffer &buffer = frames[p_frame].buffers_to_dispose_of.front()->get();
+		driver->buffer_free(buffer.driver_id);
+		buffer_memory -= buffer.size;
+
+		frames[p_frame].buffers_to_dispose_of.pop_front();
+	}
+}
+
 
 void RenderingDevice::_free_internal(RID p_id) {
 #ifdef DEV_ENABLED
@@ -3165,11 +3297,11 @@ RenderingDevice::DrawListID RenderingDevice::draw_list_begin(RID p_framebuffer, 
 
   RDD::FramebufferID fb_driver_id;
   RDD::RenderPassID render_pass;
-
+  // 根据versionkey 创建framebuffer和renderpass
   Error err = _draw_list_setup_framebuffer(framebuffer, p_initial_color_action, p_final_color_action, p_initial_depth_action, p_final_depth_action, &fb_driver_id,
                                            &render_pass, &draw_list_subpass_count);
   ERR_FAIL_COND_V(err != OK, INVALID_ID);
-
+  // texture update，以及 draw graph 加入draw_list_begin
   err = _draw_list_render_pass_begin(framebuffer, p_initial_color_action, p_final_color_action, p_initial_depth_action, p_final_depth_action, p_clear_color_values,
                                      p_clear_depth, p_clear_stencil, viewport_offset, viewport_size, fb_driver_id, render_pass);
 
@@ -3657,6 +3789,33 @@ uint64_t lain::RenderingDevice::limit_get(Limit p_limit) const {
   return driver->limit_get(p_limit);
 }
 
+void lain::RenderingDevice::swap_buffers() {
+	_THREAD_SAFE_METHOD_
+
+	_end_frame();
+	_execute_frame(true);
+
+	// Advance to the next frame and begin recording again.
+	frame = (frame + 1) % frames.size();
+	_begin_frame();
+}
+
+void lain::RenderingDevice::submit() {
+  	_THREAD_SAFE_METHOD_
+	ERR_FAIL_COND_MSG(is_main_instance, "Only local devices can submit and sync.");
+	ERR_FAIL_COND_MSG(local_device_processing, "device already submitted, call sync to wait until done.");
+	_end_frame();
+	_execute_frame(false);
+	local_device_processing = true;
+}
+
+void RenderingDevice::sync() {
+	_THREAD_SAFE_METHOD_
+	ERR_FAIL_COND_MSG(is_main_instance, "Only local devices can submit and sync.");
+	ERR_FAIL_COND_MSG(!local_device_processing, "sync can only be called after a submit");
+	_begin_frame();
+	local_device_processing = false;
+}
 /// *************
 /// ** VERTEX **
 /// *************

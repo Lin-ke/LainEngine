@@ -82,13 +82,13 @@ namespace lain {
         }
         template<typename T>
         Variant load(T& v, Json json) {
-            std::string error;
+            String error;
             Serializer::read(json, v);
             return Variant(v);
         }
-        Reflection::ReflectionInstance* JsonToObj(Json json, const std::string& p_stdstring, std::string& error) {
+        Reflection::ReflectionInstance* JsonToObj(Json json, const String& p_stdstring, String& error) {
             Reflection::ReflectionInstance meta_instance = Reflection::TypeMeta::newFromNameAndJson(json["$typeName"].string_value(), Json::parse(p_stdstring, error));
-            if (!error.empty()) {
+            if (!error.is_empty()) {
                 return nullptr;
             }
             Reflection::ReflectionInstance* instance_ptr = nullptr;
@@ -99,7 +99,6 @@ namespace lain {
         Variant ConstructFromString(const String& p_str, int recursize_depth = 0, bool error_print = true);
 
         
-        bool IsNumericExpression(const std::string& expression);
     };
 }
 #endif // !CONFIG_PARSER_H

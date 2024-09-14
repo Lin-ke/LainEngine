@@ -17,6 +17,8 @@ class RenderingDevice : public RenderingDeviceCommons {
   RenderingDeviceDriver* driver = nullptr;
   RenderingContextDriver* context = nullptr;
   RenderingContextDriver::Device device;
+  bool is_main_instance = false;
+  bool local_device_processing = false;
 
  public:
   enum ShaderLanguage { SHADER_LANGUAGE_GLSL, SHADER_LANGUAGE_HLSL };
@@ -1058,7 +1060,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   // happen immediately due to the asynchronous
   // nature of the GPU. They will get deleted
   // when the frame is cycled.
-  struct Frame {
+  struct Frame { 
     // List in usage order, from last to free to first to free.
     List<Buffer> buffers_to_dispose_of;
     List<Texture> textures_to_dispose_of;
@@ -1067,7 +1069,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     List<Shader> shaders_to_dispose_of;
     List<UniformSet> uniform_sets_to_dispose_of;
     List<RenderPipeline> render_pipelines_to_dispose_of;
-    List<ComputePipeline> compute_pipelines_to_dispose_of;
+    List<ComputePipeline> compute_pipelines_to_dispose_of; // 每一帧用完后都会释放
 
     RDD::CommandPoolID command_pool;
 
@@ -1200,9 +1202,9 @@ class RenderingDevice : public RenderingDeviceCommons {
   static ShaderSPIRVGetCacheKeyFunction get_spirv_cache_key_function;
 
   RenderingContextDriver* get_context_driver() const { return context; }
-  Error initialize(RenderingContextDriver* p_driver, WindowSystem::WindowID p_main_window);
+  Error initialize(RenderingContextDriver* p_driver, WindowSystem::WindowID p_main_window = WindowSystem::INVALID_WINDOW_ID);
   RenderingDevice() {
-    if (singleton == nullptr)
+    if (singleton == nullptr) // 允许多个device
       singleton = this;
   }
   //

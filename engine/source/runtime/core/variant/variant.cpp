@@ -323,7 +323,7 @@ Variant::Variant(const Reflection::ReflectionInstance &p_instance)
 	using Reflection::TypeMeta;
 	type = REFLECTIONINSTANCE;
 	const TypeMeta &t = p_instance.m_meta;
-	size_t copy_size = TypeMeta::getSizeOfByName(t.getTypeName().c_str());
+	size_t copy_size = TypeMeta::getSizeOfByName(t.getTypeName());
 	_data._ptr = memalloc(copy_size);
 	memcpy(_data._ptr, p_instance.m_instance, copy_size); // 浅拷贝
 }

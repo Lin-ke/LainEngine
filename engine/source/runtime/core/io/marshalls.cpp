@@ -819,11 +819,11 @@ Error decode_variant(Variant &r_variant, const uint8_t *p_buffer, int p_len, int
         if (str.is_empty()) {
             r_variant = (Object *)nullptr;
         } else {
-            std::string json_err;
-            json11::Json json = json11::Json::parse(str.utf8().get_data(), json_err);
+            String json_err;
+            Json json = Json::parse(str, json_err);
             StringName class_name = json["typeName"].string_value();
             ERR_FAIL_COND_V(!ClassDB::can_instantiate(class_name), ERR_INVALID_DATA);
-            ERR_FAIL_COND_V(!json_err.empty(), ERR_INVALID_DATA);
+            ERR_FAIL_COND_V(!json_err.is_empty(), ERR_INVALID_DATA);
             // @todo 判断object与该class的继承关系
             void* instance = ClassDB::instantiate_with_json(json);
             ERR_FAIL_COND_V(!instance, ERR_INVALID_DATA);

@@ -83,7 +83,7 @@ namespace lain {
 			Vector2 p(1, 2);
 			Vector2 m(3, 4);
 			using Reflection::TypeMeta;
-			m = Serializer::read(Serializer::write(p), m);
+			Serializer::read(Serializer::write(p), m);
 			L_JSON(p);
 			L_JSON(m);
 			L_PRINT(Reflection::to_string<Vector2>());

@@ -775,7 +775,7 @@ bool String::operator<(const char32_t* p_str) const {
 bool String::operator<(const String& p_str) const {
 	return operator<(p_str.get_data());
 }
-
+// 根据char32_t 逐个比较
 signed char String::nocasecmp_to(const String& p_str) const {
 	if (is_empty() && p_str.is_empty()) {
 		return 0;
@@ -2295,9 +2295,7 @@ String::String(const StrRange& p_range) {
 	copy_from(p_range.c_str, p_range.len);
 }
 
-String::String(const std::string& p_str) {
-	copy_from(p_str.c_str());
-}
+
 std::ostream& operator<<(std::ostream& p_out, const String& p_str) {
 	p_out << p_str.utf8().get_data();
 	return p_out;

@@ -1,7 +1,7 @@
 #include "variant_helper.h"
 #include "core/object/object.h"
 namespace lain {
-	Vector<const char*> VariantHelper::variant_basic_reflect_types{
+	Vector<String> VariantHelper::variant_basic_reflect_types{
 	"String",
 	"int",
 	"float",
@@ -9,12 +9,14 @@ namespace lain {
 	"Array"
 	};
 	bool VariantHelper::is_serializable_type(const char* type_name) {
+		return is_serializable_type(String(type_name));
+	}
+	bool VariantHelper::is_serializable_type(const String& type_name) {
 		bool is_basic = variant_basic_reflect_types.has(type_name);
 		if (is_basic) return true;
 		bool serializable = Reflection::TypeMeta::is_valid_type(type_name);
 		return serializable;
 	}
-
 	bool VariantHelper::is_serializable(const Variant& p_var){
 		const char* type_name = Variant::get_c_type_name(p_var.get_type());
 		if (p_var.get_type() == Variant::OBJECT) {
@@ -26,12 +28,10 @@ namespace lain {
 		return serializable;
 		// 有反射或者是基本类型
 	}
+	Variant::Type VariantHelper::get_type_from_name(const String& p_name) {
+		if(p_name == "Nil"){ return Variant::NIL; }
 
-	Variant::Type VariantHelper::get_type_from_name(const char* p_name_c_str) {
-		String p_name = p_name_c_str;
-				if(p_name == "Nil"){ return Variant::NIL; }
-
-				if(p_name == "bool"){ return Variant::BOOL; }
+		if(p_name == "bool"){ return Variant::BOOL; }
 		if(p_name == "int"){ return Variant::INT; }
 
 		if(p_name == "float"){ return Variant::FLOAT; }
@@ -113,6 +113,10 @@ namespace lain {
 		if (p_name == "ReflectionInstance") { return Variant::REFLECTIONINSTANCE; }
 
 		return Variant::VARIANT_MAX;
+	}
+	Variant::Type VariantHelper::get_type_from_name(const char* p_name_c_str) {
+		String p_name = p_name_c_str;
+		return get_type_from_name(p_name);
 	}
 
 	static const bool needs_deinit[Variant::VARIANT_MAX] = {

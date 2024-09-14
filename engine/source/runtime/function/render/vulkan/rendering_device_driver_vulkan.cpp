@@ -383,81 +383,54 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(const TextureFormat& 
   if (p_format.texture_type == TEXTURE_TYPE_CUBE || p_format.texture_type == TEXTURE_TYPE_CUBE_ARRAY) {
     create_info.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
   }
-  if (p_format.texture_type == TEXTURE_TYPE_2D || p_format.texture_type == TEXTURE_TYPE_2D_ARRAY) {
-    create_info.flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
-  }
-  create_info.imageType = RD_TEX_TYPE_TO_VK_IMG_TYPE[p_format.texture_type];
-  create_info.format = RD_TO_VK_FORMAT[p_format.format];
-  create_info.extent.width = p_format.width;
-  create_info.extent.height = p_format.height;
-  create_info.extent.depth = p_format.depth;
-  uint32_t queue_flags = p_format.misc & (TEXTURE_MISC_CONCURRENT_QUEUE_GRAPHICS_BIT | TEXTURE_MISC_CONCURRENT_QUEUE_ASYNC_COMPUTE_BIT |
-                                          TEXTURE_MISC_CONCURRENT_QUEUE_ASYNC_TRANSFER_BIT | TEXTURE_MISC_CONCURRENT_QUEUE_VIDEO_DUPLEX);
-  /*bool concurrent_queue = queue_flags != 0 ||
-		staging_buffer != nullptr ||
-		create_info.initial_layout != VK_IMAGE_LAYOUT_UNDEFINED;*/
-  //@TODO
-  create_info.mipLevels = p_format.mipmaps;
-  create_info.arrayLayers = p_format.array_layers;
+  // if (p_format.texture_type == TEXTURE_TYPE_2D || p_format.texture_type == TEXTURE_TYPE_2D_ARRAY) {
+  //   create_info.flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+  // }
+	create_info.imageType = RD_TEX_TYPE_TO_VK_IMG_TYPE[p_format.texture_type];
 
-  create_info.samples = _ensure_supported_sample_count(p_format.samples);
-  create_info.tiling = (p_format.usage_bits & TEXTURE_USAGE_CPU_READ_BIT) ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
+	create_info.format = RD_TO_VK_FORMAT[p_format.format];
 
-  if ((p_format.usage_bits & TEXTURE_USAGE_SAMPLING_BIT)) {
-    create_info.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-  }
-  if ((p_format.usage_bits & TEXTURE_USAGE_STORAGE_BIT)) {
-    create_info.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
-  }
-  if ((p_format.usage_bits & TEXTURE_USAGE_COLOR_ATTACHMENT_BIT)) {
-    create_info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-  }
-  if ((p_format.usage_bits & TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-    create_info.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-  }
-  if ((p_format.usage_bits & TEXTURE_USAGE_INPUT_ATTACHMENT_BIT)) {
-    create_info.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-  }
-  if ((p_format.usage_bits & TEXTURE_USAGE_VRS_ATTACHMENT_BIT)) {
-    create_info.usage |= VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
-  }
-  if ((p_format.usage_bits & TEXTURE_USAGE_CAN_UPDATE_BIT)) {
-    create_info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-  }
-  if ((p_format.usage_bits & TEXTURE_USAGE_CAN_COPY_FROM_BIT)) {
-    create_info.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-  }
-  if ((p_format.usage_bits & TEXTURE_USAGE_CAN_COPY_TO_BIT)) {
-    create_info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-  }
+	create_info.extent.width = p_format.width;
+	create_info.extent.height = p_format.height;
+	create_info.extent.depth = p_format.depth;
 
-  bool concurrent_queue = queue_flags != 0;
-  create_info.sharingMode = concurrent_queue ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
-  if (concurrent_queue) {
-    TightLocalVector<uint32_t> sharing_indices;
+	create_info.mipLevels = p_format.mipmaps;
+	create_info.arrayLayers = p_format.array_layers;
 
-    static auto add_unique_family = [](TightLocalVector<uint32_t>& sharing_indices, uint32_t& count, Vector<CommandQueueFamilyID>& family) {
-      for (auto family_id : family) {
-        uint32_t id = static_cast<uint32_t>(family_id.id - 1);
-        if (sharing_indices.find(id) == -1)
-          sharing_indices.push_back(id);
-      }
-    };
-    for (auto& m : RD_TEXTURE_QUEUE_TYPE_TO_VK_QUEUE_TYPE)
-      if ((queue_flags & m.flags) != 0) {
-        // add_unique_family(sharing_indices, create_info.queueFamilyIndexCount, queuefamily_to_ids[m.index] ); // @TODO 多队列共用
-        //
-      }
-    if (create_info.queueFamilyIndexCount > 1)
-      create_info.pQueueFamilyIndices = sharing_indices.ptr();
-    else {
-      create_info.pQueueFamilyIndices = nullptr;
-      create_info.queueFamilyIndexCount = 0;
-      create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    }
-  }
-  create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	create_info.samples = _ensure_supported_sample_count(p_format.samples);
+	create_info.tiling = (p_format.usage_bits & TEXTURE_USAGE_CPU_READ_BIT) ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
 
+	// Usage.
+	if ((p_format.usage_bits & TEXTURE_USAGE_SAMPLING_BIT)) {
+		create_info.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+	}
+	if ((p_format.usage_bits & TEXTURE_USAGE_STORAGE_BIT)) {
+		create_info.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+	}
+	if ((p_format.usage_bits & TEXTURE_USAGE_COLOR_ATTACHMENT_BIT)) {
+		create_info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	}
+	if ((p_format.usage_bits & TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+		create_info.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	}
+	if ((p_format.usage_bits & TEXTURE_USAGE_INPUT_ATTACHMENT_BIT)) {
+		create_info.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+	}
+	if ((p_format.usage_bits & TEXTURE_USAGE_VRS_ATTACHMENT_BIT)) {
+		create_info.usage |= VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+	}
+	if ((p_format.usage_bits & TEXTURE_USAGE_CAN_UPDATE_BIT)) {
+		create_info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	}
+	if ((p_format.usage_bits & TEXTURE_USAGE_CAN_COPY_FROM_BIT)) {
+		create_info.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+	}
+	if ((p_format.usage_bits & TEXTURE_USAGE_CAN_COPY_TO_BIT)) {
+		create_info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	}
+
+	create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
   // Allocate memory.
 
   uint32_t width = 0, height = 0;

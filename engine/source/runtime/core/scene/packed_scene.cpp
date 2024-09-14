@@ -813,7 +813,7 @@ namespace lain {
 			}
 
 			parent_node = idx;
-			nd.node_ins_res = Reflection::TypeMeta::writeByName(CSTR(p_node->get_class()), static_cast<void*>(p_node)).dump().c_str();
+			nd.node_ins_res = Reflection::TypeMeta::writeByName(CSTR(p_node->get_class()), static_cast<void*>(p_node)).dump();
 			if (nd.node_ins_res == "null") {
 				WARN_PRINT("JSON Serializer NODE ERROR");
 			}

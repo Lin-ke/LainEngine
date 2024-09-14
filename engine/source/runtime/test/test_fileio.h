@@ -9,7 +9,7 @@ namespace lain{
 			auto p = Vector2(1, 4);
 			Ref<FileAccess> fileacc = FileAccess::open("res://1.txt", FileAccess::ModeFlags::WRITE_READ);
 			L_PRINT(fileacc->get_path(), fileacc->get_path_absolute());
-			fileacc->store_string(lain::Serializer::write(p).dump().c_str());
+			fileacc->store_string(lain::Serializer::write(p).dump());
 			L_PRINT(ProjectSettings::GetSingleton()->GetProjectDataPath());
 			L_PRINT(ProjectSettings::GetSingleton()->GetResourcePath());
 

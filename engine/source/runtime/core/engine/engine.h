@@ -39,6 +39,7 @@ class Engine {
   static constexpr int SERVER_SYNC_FRAME_COUNT_WARNING = 5;
   bool m_frame_server_synced = false;  // 这是干什么？
   int m_server_syncs = 0;
+  int m_frames_drawn = 0;
 
  public:
   ENGINE_GET(get_gpu_index, m_gpu_idx);
@@ -49,9 +50,9 @@ class Engine {
   ENGINE_GET(get_frame_fps, m_frame_fps);
   ENGINE_GET(get_fps, m_fps);
   ENGINE_GET(is_editor_hint, m_editor_hint);
+  ENGINE_GET(get_frames_drawn, m_frames_drawn);
   ENGINE_SET(set_editor_hint, bool, m_editor_hint);
   ENGINE_SET(set_frame_ticks, ui64, m_frame_ticks);
-
   Engine::Engine() { singleton = this; }
   L_INLINE static Engine* Engine::GetSingleton() { return singleton; }
 

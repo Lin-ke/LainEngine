@@ -44,13 +44,13 @@ public:
     Json(int value);
     Json(bool value);               // BOOL
     Json(const String &value);      // STRING
-    Json(String &&value);            // STRING
+    // Json(String &&value);            // STRING
     Json(const char * value);       // STRING
     Json(const char32_t* value);
     Json(const array &values);      // ARRAY
-    Json(array &&values);           // ARRAY
+    // Json(array &&values);           // ARRAY
     Json(const object &values);     // OBJECT
-    Json(object &&values);          // OBJECT
+    // Json(object &&values);          // OBJECT
 
     // Implicit constructor: anything with a to_json() function.
     template <class T, class = decltype(&T::to_json)>
