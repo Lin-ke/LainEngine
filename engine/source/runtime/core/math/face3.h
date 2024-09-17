@@ -36,16 +36,14 @@
 #include "core/math/transform3d.h"
 #include "core/math/vector3.h"
 namespace lain {
-	REFLECTION_TYPE(Face3);
-	STRUCT(_NO_DISCARD_ Face3, Fields){
-		REFLECTION_BODY(Face3);
+	struct [[nodiscard]] Face3 {
 	enum Side {
 		SIDE_OVER,
 		SIDE_UNDER,
 		SIDE_SPANNING,
 		SIDE_COPLANAR
 	};
-
+	META(Fields)
 	Vector3 vertex[3];
 
 	/**

@@ -1,7 +1,7 @@
 
 #ifndef RENDERER_COMPOSITOR_RD_H
 #define RENDERER_COMPOSITOR_RD_H
-#include "function/render/rendering_system/renderer_compositor.h"
+#include "function/render/rendering_system/renderer_compositor_api.h"
 #include "storage/material_storage.h"
 #include "storage/mesh_storage.h"
 

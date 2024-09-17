@@ -423,7 +423,102 @@ Vector<uint8_t> lain::RenderingDevice::texture_get_data(RID p_texture, uint32_t 
   if ((tex->usage_flags & TEXTURE_USAGE_CPU_READ_BIT)) {
 		// Does not need anything fancy, map and read.
 		return _texture_get_data(tex, p_layer);
-	} 
+	} else {
+		LocalVector<RDD::TextureCopyableLayout> mip_layouts;
+		uint32_t work_mip_alignment = driver->api_trait_get(RDD::API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT);
+		uint32_t work_buffer_size = 0;
+		mip_layouts.resize(tex->mipmaps);
+		for (uint32_t i = 0; i < tex->mipmaps; i++) {
+			RDD::TextureSubresource subres;
+			subres.aspect = RDD::TEXTURE_ASPECT_COLOR;
+			subres.layer = p_layer;
+			subres.mipmap = i;
+			driver->texture_get_copyable_layout(tex->driver_id, subres, &mip_layouts[i]);
+
+			// Assuming layers are tightly packed. If this is not true on some driver, we must modify the copy algorithm.
+			DEV_ASSERT(mip_layouts[i].layer_pitch == mip_layouts[i].size / tex->layers);
+
+			work_buffer_size = STEPIFY(work_buffer_size, work_mip_alignment) + mip_layouts[i].size;
+		}
+
+		RDD::BufferID tmp_buffer = driver->buffer_create(work_buffer_size, RDD::BUFFER_USAGE_TRANSFER_TO_BIT, RDD::MEMORY_ALLOCATION_TYPE_CPU);
+		ERR_FAIL_COND_V(!tmp_buffer, Vector<uint8_t>());
+
+		thread_local LocalVector<RDD::BufferTextureCopyRegion> command_buffer_texture_copy_regions_vector;
+		command_buffer_texture_copy_regions_vector.clear();
+
+		uint32_t w = tex->width;
+		uint32_t h = tex->height;
+		uint32_t d = tex->depth;
+		for (uint32_t i = 0; i < tex->mipmaps; i++) {
+			RDD::BufferTextureCopyRegion copy_region;
+			copy_region.buffer_offset = mip_layouts[i].offset;
+			copy_region.texture_subresources.aspect = tex->read_aspect_flags;
+			copy_region.texture_subresources.mipmap = i;
+			copy_region.texture_subresources.base_layer = p_layer;
+			copy_region.texture_subresources.layer_count = 1;
+			copy_region.texture_region_size.x = w;
+			copy_region.texture_region_size.y = h;
+			copy_region.texture_region_size.z = d;
+			command_buffer_texture_copy_regions_vector.push_back(copy_region);
+
+			w = (w >> 1);
+			h = (h >> 1);
+			d = MAX(1u, d >> 1);
+		}
+
+		if (_texture_make_mutable(tex, p_texture)) {
+			// The texture must be mutable to be used as a copy source due to layout transitions.
+			draw_graph.add_synchronization();
+		}
+
+		draw_graph.add_texture_get_data(tex->driver_id, tex->draw_tracker, tmp_buffer, command_buffer_texture_copy_regions_vector);
+
+		// Flush everything so memory can be safely mapped.
+		_flush_and_stall_for_all_frames();
+
+		const uint8_t *read_ptr = driver->buffer_map(tmp_buffer);
+		ERR_FAIL_NULL_V(read_ptr, Vector<uint8_t>());
+
+		uint32_t block_w = 0;
+		uint32_t block_h = 0;
+		get_compressed_image_format_block_dimensions(tex->format, block_w, block_h);
+
+		Vector<uint8_t> buffer_data;
+		uint32_t tight_buffer_size = get_image_format_required_size(tex->format, tex->width, tex->height, tex->depth, tex->mipmaps);
+		buffer_data.resize(tight_buffer_size);
+
+		uint8_t *write_ptr = buffer_data.ptrw();
+
+		w = tex->width;
+		h = tex->height;
+		d = tex->depth;
+		for (uint32_t i = 0; i < tex->mipmaps; i++) {
+			uint32_t width = 0, height = 0, depth = 0;
+			uint32_t tight_mip_size = get_image_format_required_size(tex->format, w, h, d, 1, &width, &height, &depth);
+			uint32_t tight_row_pitch = tight_mip_size / ((height / block_h) * depth);
+
+			// Copy row-by-row to erase padding due to alignments.
+			const uint8_t *rp = read_ptr;
+			uint8_t *wp = write_ptr;
+			for (uint32_t row = h * d / block_h; row != 0; row--) {
+				memcpy(wp, rp, tight_row_pitch);
+				rp += mip_layouts[i].row_pitch;
+				wp += tight_row_pitch;
+			}
+
+			w = MAX(block_w, w >> 1);
+			h = MAX(block_h, h >> 1);
+			d = MAX(1u, d >> 1);
+			read_ptr += mip_layouts[i].size;
+			write_ptr += tight_mip_size;
+		}
+
+		driver->buffer_unmap(tmp_buffer);
+		driver->buffer_free(tmp_buffer);
+
+		return buffer_data;
+	}
 }
 
 ///
@@ -506,8 +601,74 @@ void RenderingDevice::_end_frame() {
   driver->end_segment();
 }
 
+void lain::RenderingDevice::_execute_frame(bool p_present) {
+	// Check whether this frame should present the swap chains and in which queue.
+	const bool frame_can_present = p_present && !frames[frame].swap_chains_to_present.is_empty();
+	const bool separate_present_queue = main_queue != present_queue;
+	thread_local LocalVector<RDD::SwapChainID> swap_chains;
+	swap_chains.clear();
 
+	// Execute the setup command buffer.
+	driver->command_queue_execute_and_present(main_queue, {}, frames[frame].setup_command_buffer, frames[frame].setup_semaphore, {}, {});
 
+	// Execute command buffers and use semaphores to wait on the execution of the previous one. Normally there's only one command buffer,
+	// but driver workarounds can force situations where there'll be more.
+	uint32_t command_buffer_count = 1;
+	RDG::CommandBufferPool &buffer_pool = frames[frame].command_buffer_pool;
+	if (buffer_pool.buffers_used > 0) {
+		command_buffer_count += buffer_pool.buffers_used;
+		buffer_pool.buffers_used = 0;
+	}
+
+	RDD::SemaphoreID wait_semaphore = frames[frame].setup_semaphore;
+	for (uint32_t i = 0; i < command_buffer_count; i++) {
+		RDD::CommandBufferID command_buffer;
+		RDD::SemaphoreID signal_semaphore;
+		RDD::FenceID signal_fence;
+		if (i > 0) {
+			command_buffer = buffer_pool.buffers[i - 1];
+			signal_semaphore = buffer_pool.semaphores[i - 1];
+		} else {
+			command_buffer = frames[frame].draw_command_buffer;
+			signal_semaphore = frames[frame].draw_semaphore;
+		}
+
+		bool signal_semaphore_valid;
+		if (i == (command_buffer_count - 1)) {
+			// This is the last command buffer, it should signal the fence.
+			signal_fence = frames[frame].draw_fence;
+			signal_semaphore_valid = false;
+
+			if (frame_can_present && separate_present_queue) {
+				// The semaphore is required if the frame can be presented and a separate present queue is used.
+				signal_semaphore_valid = true;
+			} else if (frame_can_present) {
+				// Just present the swap chains as part of the last command execution.
+				swap_chains = frames[frame].swap_chains_to_present;
+			}
+		} else {
+			// Semaphores always need to be signaled if it's not the last command buffer.
+			signal_semaphore_valid = true;
+		}
+
+		driver->command_queue_execute_and_present(main_queue, wait_semaphore, command_buffer, signal_semaphore_valid ? signal_semaphore : VectorView<RDD::SemaphoreID>(), signal_fence, swap_chains);
+
+		// Make the next command buffer wait on the semaphore signaled by this one.
+		wait_semaphore = signal_semaphore;
+	}
+
+	// Indicate the fence has been signaled so the next time the frame's contents need to be used, the CPU needs to wait on the work to be completed.
+	frames[frame].draw_fence_signaled = true;
+
+	if (frame_can_present) {
+		if (separate_present_queue) {
+			// Issue the presentation separately if the presentation queue is different from the main queue.
+			driver->command_queue_execute_and_present(present_queue, wait_semaphore, {}, {}, {}, frames[frame].swap_chains_to_present);
+		}
+
+		frames[frame].swap_chains_to_present.clear();
+	}
+}
 
 /// --- swap chain ---
 /// ****** screen *******

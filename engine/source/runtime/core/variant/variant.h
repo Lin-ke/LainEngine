@@ -2,7 +2,6 @@
 #ifndef __VARIANT_H__
 #define __VARIANT_H__
 #include "core/variant/variant_header.h"
-
 namespace lain {
 	typedef Vector<uint8_t> PackedByteArray;
 	typedef Vector<int32_t> PackedInt32Array;
@@ -19,6 +18,7 @@ namespace lain {
 	class RID;
 	class Serializer;
 	// variant的实现和lua是一样的，但是多一些基本类，如果只有数学类和table就是lua了
+	// 就像lua一样，主要类是依靠字典来实现的
 	// 注意有一些引用计数的情况可能会导致问题
 	class Variant {
 		friend class VariantInternal;
@@ -164,6 +164,7 @@ namespace lain {
 			lain::AABB* _aabb;
 			Basis *_basis;
 			Transform3D *_transform3d;
+			Projection *_projection;
 			PackedArrayRefBase* packed_array;
 			uint8_t _mem[sizeof(ObjData) > (sizeof(real_t) * 4) ? sizeof(ObjData) : (sizeof(real_t) * 4)]{ 0 };
 		} _data alignas(8);

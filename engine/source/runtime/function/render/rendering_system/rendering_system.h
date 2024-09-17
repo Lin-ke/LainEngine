@@ -2,12 +2,13 @@
 #ifndef __RENDERING_SYSTEM_H__
 #define __RENDERING_SYSTEM_H__
 #include "base.h"
+#include "core/io/image.h"
 #include "core/object/object.h"
 #include "core/templates/hash_set.h"
 #include "function/display/window_system.h"
 #include "function/render/rendering_device/rendering_device.h"
 namespace lain {
-
+// 通过renderingsystem default 继承，其实现通过各个自子server （例如shader 就是 material_storage server 实现。）
 class RenderingSystem : public Object {
   LCLASS(RenderingSystem, Object);
 
@@ -23,6 +24,28 @@ class RenderingSystem : public Object {
   bool render_loop_enabled = true;
 
  public:
+  /********TEXTURE ******* */
+  /********TEXTURE******* */
+  /********TEXTURE******* */
+	enum TextureLayeredType {
+		TEXTURE_LAYERED_2D_ARRAY,
+		TEXTURE_LAYERED_CUBEMAP,
+		TEXTURE_LAYERED_CUBEMAP_ARRAY,
+	};
+  enum CubeMapLayer {
+		CUBEMAP_LAYER_LEFT,
+		CUBEMAP_LAYER_RIGHT,
+		CUBEMAP_LAYER_BOTTOM,
+		CUBEMAP_LAYER_TOP,
+		CUBEMAP_LAYER_FRONT,
+		CUBEMAP_LAYER_BACK
+	};
+	virtual RID texture_2d_create(const Ref<Image> &p_image) = 0;
+	virtual RID texture_2d_layered_create(const Vector<Ref<Image>> &p_layers, TextureLayeredType p_layered_type) = 0;
+ 	virtual Ref<Image> texture_2d_get(RID p_texture) const = 0;
+	virtual Ref<Image> texture_2d_layer_get(RID p_texture, int p_layer) const = 0;
+	virtual Vector<Ref<Image>> texture_3d_get(RID p_texture) const = 0;
+
   /********SHADER ******* */
   /********SHADER ******* */
   /********SHADER ******* */
@@ -38,64 +61,37 @@ class RenderingSystem : public Object {
 
   virtual void shader_set_default_texture_parameter(RID p_shader, const StringName& p_name, RID p_texture, int p_index) = 0;
   virtual RID shader_get_default_texture_parameter(RID p_shader, const StringName& p_name, int p_index) const = 0;
-
-  enum GlobalShaderParameterType {
-    GLOBAL_VAR_TYPE_BOOL,
-    GLOBAL_VAR_TYPE_BVEC2,
-    GLOBAL_VAR_TYPE_BVEC3,
-    GLOBAL_VAR_TYPE_BVEC4,
-    GLOBAL_VAR_TYPE_INT,
-    GLOBAL_VAR_TYPE_IVEC2,
-    GLOBAL_VAR_TYPE_IVEC3,
-    GLOBAL_VAR_TYPE_IVEC4,
-    GLOBAL_VAR_TYPE_RECT2I,
-    GLOBAL_VAR_TYPE_UINT,
-    GLOBAL_VAR_TYPE_UVEC2,
-    GLOBAL_VAR_TYPE_UVEC3,
-    GLOBAL_VAR_TYPE_UVEC4,
-    GLOBAL_VAR_TYPE_FLOAT,
-    GLOBAL_VAR_TYPE_VEC2,
-    GLOBAL_VAR_TYPE_VEC3,
-    GLOBAL_VAR_TYPE_VEC4,
-    GLOBAL_VAR_TYPE_COLOR,
-    GLOBAL_VAR_TYPE_RECT2,
-    GLOBAL_VAR_TYPE_MAT2,
-    GLOBAL_VAR_TYPE_MAT3,
-    GLOBAL_VAR_TYPE_MAT4,
-    GLOBAL_VAR_TYPE_TRANSFORM_2D,
-    GLOBAL_VAR_TYPE_TRANSFORM,
-    GLOBAL_VAR_TYPE_SAMPLER2D,
-    GLOBAL_VAR_TYPE_SAMPLER2DARRAY,
-    GLOBAL_VAR_TYPE_SAMPLER3D,
-    GLOBAL_VAR_TYPE_SAMPLERCUBE,
-    GLOBAL_VAR_TYPE_MAX
-  };
+	
   struct ShaderNativeSourceCode {
-    struct Version {
-      struct Stage {
-        String name;
-        String code;
-      };
-      Vector<Stage> stages;
-    };
-    Vector<Version> versions;
-  };
-	virtual ShaderNativeSourceCode shader_get_native_source_code(RID p_shader) const = 0;
-  /********SHADER ******* */
-  /********SHADER ******* */
-  /********SHADER ******* */
- public:
- /* STATUS INFORMATION */
-
-	enum RenderingInfo {
-		RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME,
-		RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME,
-		RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME,
-		RENDERING_INFO_TEXTURE_MEM_USED,
-		RENDERING_INFO_BUFFER_MEM_USED,
-		RENDERING_INFO_VIDEO_MEM_USED,
-		RENDERING_INFO_MAX
+		struct Version {
+			struct Stage {
+				String name;
+				String code;
+			};
+			Vector<Stage> stages;
+		};
+		Vector<Version> versions;
 	};
+	virtual ShaderNativeSourceCode shader_get_native_source_code(RID p_shader) const = 0;
+	/* COMMON MATERIAL API */
+	/* COMMON MATERIAL API */
+	/* COMMON MATERIAL API */
+	enum {
+		MATERIAL_RENDER_PRIORITY_MIN = -128,
+		MATERIAL_RENDER_PRIORITY_MAX = 127,
+	};
+
+	virtual RID material_create() = 0;
+
+	virtual void material_set_shader(RID p_shader_material, RID p_shader) = 0;
+
+	virtual void material_set_param(RID p_material, const StringName &p_param, const Variant &p_value) = 0;
+	virtual Variant material_get_param(RID p_material, const StringName &p_param) const = 0;
+
+	virtual void material_set_render_priority(RID p_material, int priority) = 0;
+
+	virtual void material_set_next_pass(RID p_material, RID p_next_material) = 0;
+ 
 
   /******************
      * MESH API
@@ -246,8 +242,62 @@ class RenderingSystem : public Object {
 
     INSTANCE_GEOMETRY_MASK = (1 << INSTANCE_MESH) | (1 << INSTANCE_MULTIMESH) | (1 << INSTANCE_PARTICLES)
   };
+    /// *************** ///
+  /// ***CAMERA API*** ///
   /// *************** ///
-  /// ***DECAL API*** ///
+  	virtual RID camera_create() = 0;
+	virtual void camera_set_perspective(RID p_camera, float p_fovy_degrees, float p_z_near, float p_z_far) = 0;
+	virtual void camera_set_orthogonal(RID p_camera, float p_size, float p_z_near, float p_z_far) = 0;
+	virtual void camera_set_frustum(RID p_camera, float p_size, Vector2 p_offset, float p_z_near, float p_z_far) = 0;
+	virtual void camera_set_transform(RID p_camera, const Transform3D &p_transform) = 0;
+	virtual void camera_set_cull_mask(RID p_camera, uint32_t p_layers) = 0;
+	virtual void camera_set_environment(RID p_camera, RID p_env) = 0;
+	virtual void camera_set_camera_attributes(RID p_camera, RID p_camera_attributes) = 0;
+	virtual void camera_set_compositor(RID p_camera, RID p_compositor) = 0;
+	virtual void camera_set_use_vertical_aspect(RID p_camera, bool p_enable) = 0;
+  
+  /// *************** ///
+  /// ***VIEWPORT API*** ///
+  /// *************** ///
+	virtual RID viewport_create() = 0;
+
+	enum ViewportScaling3DMode {
+		VIEWPORT_SCALING_3D_MODE_BILINEAR,
+		VIEWPORT_SCALING_3D_MODE_FSR,
+		VIEWPORT_SCALING_3D_MODE_FSR2,
+		VIEWPORT_SCALING_3D_MODE_MAX,
+		VIEWPORT_SCALING_3D_MODE_OFF = 255, // for internal use only
+	};
+	virtual void viewport_set_size(RID p_viewport, int p_width, int p_height) = 0;
+	virtual void viewport_set_parent_viewport(RID p_viewport, RID p_parent_viewport) = 0;
+	virtual void viewport_attach_to_screen(RID p_viewport, const Rect2 &p_rect = Rect2(), WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID) = 0;
+	virtual void viewport_set_render_direct_to_screen(RID p_viewport, bool p_enable) = 0;
+  enum ViewportUpdateMode {
+		VIEWPORT_UPDATE_DISABLED,
+		VIEWPORT_UPDATE_ONCE, // Then goes to disabled, must be manually updated.
+		VIEWPORT_UPDATE_WHEN_VISIBLE, // Default
+		VIEWPORT_UPDATE_WHEN_PARENT_VISIBLE,
+		VIEWPORT_UPDATE_ALWAYS
+	};
+	virtual void viewport_set_update_mode(RID p_viewport, ViewportUpdateMode p_mode) = 0;
+	virtual ViewportUpdateMode viewport_get_update_mode(RID p_viewport) const = 0;
+
+
+	enum ViewportClearMode {
+		VIEWPORT_CLEAR_ALWAYS,
+		VIEWPORT_CLEAR_NEVER,
+		VIEWPORT_CLEAR_ONLY_NEXT_FRAME
+	};
+	virtual void viewport_set_clear_mode(RID p_viewport, ViewportClearMode p_clear_mode) = 0;
+	virtual RID viewport_get_render_target(RID p_viewport) const = 0;
+	virtual RID viewport_get_texture(RID p_viewport) const = 0;
+
+	virtual void viewport_attach_camera(RID p_viewport, RID p_camera) = 0;
+	virtual void viewport_set_scenario(RID p_viewport, RID p_scenario) = 0;
+	virtual void viewport_attach_canvas(RID p_viewport, RID p_canvas) = 0;
+
+  /// *************** ///
+  /// ***DECAL API*** /// 贴花
   /// *************** ///
 	enum DecalFilter {
 		DECAL_FILTER_NEAREST,
@@ -268,9 +318,64 @@ class RenderingSystem : public Object {
 	};
 
 
+	/* GLOBAL SHADER UNIFORMS */
 
-    virtual void init(); // 
-    virtual void free(RID p_shader) = 0;
+	enum GlobalShaderParameterType {
+		GLOBAL_VAR_TYPE_BOOL,
+		GLOBAL_VAR_TYPE_BVEC2,
+		GLOBAL_VAR_TYPE_BVEC3,
+		GLOBAL_VAR_TYPE_BVEC4,
+		GLOBAL_VAR_TYPE_INT,
+		GLOBAL_VAR_TYPE_IVEC2,
+		GLOBAL_VAR_TYPE_IVEC3,
+		GLOBAL_VAR_TYPE_IVEC4,
+		GLOBAL_VAR_TYPE_RECT2I,
+		GLOBAL_VAR_TYPE_UINT,
+		GLOBAL_VAR_TYPE_UVEC2,
+		GLOBAL_VAR_TYPE_UVEC3,
+		GLOBAL_VAR_TYPE_UVEC4,
+		GLOBAL_VAR_TYPE_FLOAT,
+		GLOBAL_VAR_TYPE_VEC2,
+		GLOBAL_VAR_TYPE_VEC3,
+		GLOBAL_VAR_TYPE_VEC4,
+		GLOBAL_VAR_TYPE_COLOR,
+		GLOBAL_VAR_TYPE_RECT2,
+		GLOBAL_VAR_TYPE_MAT2,
+		GLOBAL_VAR_TYPE_MAT3,
+		GLOBAL_VAR_TYPE_MAT4,
+		GLOBAL_VAR_TYPE_TRANSFORM_2D,
+		GLOBAL_VAR_TYPE_TRANSFORM,
+		GLOBAL_VAR_TYPE_SAMPLER2D,
+		GLOBAL_VAR_TYPE_SAMPLER2DARRAY,
+		GLOBAL_VAR_TYPE_SAMPLER3D,
+		GLOBAL_VAR_TYPE_SAMPLERCUBE,
+		GLOBAL_VAR_TYPE_MAX
+	};
+
+
+public:
+ 	virtual void draw(bool p_swap_buffers = true, double frame_step = 0.0) = 0;
+	virtual void sync() = 0;
+	virtual bool has_changed() const = 0;
+	virtual void init();
+	virtual void finish() = 0;
+	virtual void tick() = 0;
+	virtual void pre_draw(bool p_will_draw) = 0;
+ /* STATUS INFORMATION */
+
+	enum RenderingInfo {
+		RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME,
+		RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME,
+		RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME,
+		RENDERING_INFO_TEXTURE_MEM_USED,
+		RENDERING_INFO_BUFFER_MEM_USED,
+		RENDERING_INFO_VIDEO_MEM_USED,
+		RENDERING_INFO_MAX
+	};
+	virtual uint64_t get_rendering_info(RenderingInfo p_info) = 0;
+
+
+  virtual void free(RID p_rid) = 0;
 
 };
 

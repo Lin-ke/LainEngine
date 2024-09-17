@@ -236,6 +236,8 @@
     }                                                                      \
   }
 
+  // pump task id （泵任务） 是一个不停flush的循环。它会首先yield 然后flush_all()， 所以push之后都需要yield_over
+
 #define CMD_RET_TYPE(N) CommandRet##N<T, M, COMMA_SEP_LIST(TYPE_ARG, N) COMMA(N) R>
 
 #define DECL_PUSH_AND_RET(N)                                                                   \
@@ -346,7 +348,7 @@ class CommandQueueMT {
 
     lock();
 
-    uint32_t allowance_id = WorkerThreadPool::thread_enter_unlock_allowance_zone(&mutex);
+    uint32_t allowance_id = WorkerThreadPool::thread_enter_unlock_allowance_zone(&mutex); // ? 有什么用
     while (flush_read_ptr < command_mem.size()) {
       uint64_t size = *(uint64_t*)&command_mem[flush_read_ptr];
       flush_read_ptr += 8; // uint64

@@ -150,7 +150,7 @@ Error Main::Initialize(int argc, char* argv[]) {
     int rtm = -1;
     rtm = GLOBAL_DEF("rendering/driver/render_thread_mode", OS::RENDER_SEPARATE_THREAD);
     OS::GetSingleton()->set_render_thread_mode(OS::RenderThreadMode(rtm));
-    render_system = memnew(RenderingSystemDefault(OS::GetSingleton()->get_render_thread_mode() == OS::RENDER_SEPARATE_THREAD));
+    // render_system = memnew(RenderingSystemDefault(OS::GetSingleton()->get_render_thread_mode() == OS::RENDER_SEPARATE_THREAD));
   }
 
   if (main_scene != "") {}

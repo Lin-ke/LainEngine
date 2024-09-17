@@ -614,7 +614,7 @@ uint32_t Variant::recursive_hash(int recursion_count) const
 		return hash_fmix32(h);
 	}
 	break;
-		/*case PROJECTION: {
+		case PROJECTION: {
 			uint32_t h = HASH_MURMUR3_SEED;
 			const Projection& t = *_data._projection;
 			h = hash_murmur3_one_real(t.columns[0].x, h);
@@ -634,7 +634,7 @@ uint32_t Variant::recursive_hash(int recursion_count) const
 			h = hash_murmur3_one_real(t.columns[3].z, h);
 			h = hash_murmur3_one_real(t.columns[3].w, h);
 			return hash_fmix32(h);
-		} break;*/
+		} break;
 		// misc types
 	case COLOR:
 	{

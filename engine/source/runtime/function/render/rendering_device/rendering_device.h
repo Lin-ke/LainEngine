@@ -217,7 +217,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   Error _texture_update(RID p_texture, uint32_t p_layer, const Vector<uint8_t>& p_data, bool p_use_setup_queue, bool p_validate_can_update);
   void _texture_check_shared_fallback(Texture* p_texture);
   void _texture_update_shared_fallback(RID p_texture_rid, Texture* p_texture, bool p_for_writing);
-  void _texture_free_shared_fallback(Texture* p_texture);
+  void _texture_free_shared_fallback(Texture* p_texture) {}
   void _texture_copy_shared(RID p_src_texture_rid, Texture* p_src_texture, RID p_dst_texture_rid, Texture* p_dst_texture);
   void _texture_create_reinterpret_buffer(Texture* p_texture);
 

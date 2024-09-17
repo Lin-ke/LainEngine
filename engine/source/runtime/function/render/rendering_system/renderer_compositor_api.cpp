@@ -1,4 +1,4 @@
-#include "renderer_compositor.h"
+#include "renderer_compositor_api.h"
 using namespace lain;
 RendererCompositor *RendererCompositor::singleton = nullptr;
 RendererCompositor *RendererCompositor::create() {

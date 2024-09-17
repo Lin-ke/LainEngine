@@ -10,10 +10,8 @@ namespace lain
 {
     class String;
     struct Vector3i;
-    REFLECTION_TYPE(Vector3);
     struct _NO_DISCARD_ Vector3
     {
-        REFLECTION_BODY(Vector3);
         enum Axis {
             AXIS_X,
             AXIS_Y,
@@ -40,6 +38,15 @@ namespace lain
 
         real_t& operator[](size_t i)
         {
+            assert(i < 3);
+            return *(&x + i);
+        }
+
+        real_t& coord(size_t i) {
+            assert(i < 3);
+            return *(&x + i);
+        }
+        real_t coord(size_t i) const{
             assert(i < 3);
             return *(&x + i);
         }

@@ -40,6 +40,9 @@ void WorkerThreadPool::_unlock_unlockable_mutexes() {
 WorkerThreadPool::TaskID WorkerThreadPool::add_native_task(void (*p_func)(void*), void* p_userdata, bool p_high_priority, const String& p_description) {
   return _add_task(Callable(), p_func, p_userdata, nullptr, p_high_priority, p_description);
 }
+WorkerThreadPool::TaskID WorkerThreadPool::add_task(const Callable &p_action, bool p_high_priority, const String &p_description) {
+	return _add_task(p_action, nullptr, nullptr, nullptr, p_high_priority, p_description);
+}
 
 bool WorkerThreadPool::is_task_completed(TaskID p_task_id) const {
 	task_mutex.lock();
@@ -61,7 +64,7 @@ WorkerThreadPool::TaskID WorkerThreadPool::_add_task(const Callable &p_callable,
 	Task *task = task_allocator.alloc();
 	TaskID id = last_task++;
 	task->self = id;
-	//task->callable = p_callable;
+	task->callable = p_callable;
 	task->native_func = p_func;
 	task->native_func_userdata = p_userdata;
 	task->description = p_description;
@@ -633,6 +636,12 @@ void WorkerThreadPool::wait_for_group_task_completion(GroupID p_group) {
 	task_mutex.unlock();
 }
 
+void WorkerThreadPool::yield() {
+	int th_index = get_thread_index();
+	ERR_FAIL_COND_MSG(th_index == -1, "This function can only be called from a worker thread.");
+	_wait_collaboratively(&threads[th_index], ThreadData::YIELDING); // 这样 is_work_over 被设置为 该线程的 yield_is_over
+	// 除非 yield_is_over 被设置为true，否则不会退出
+}
 
 void WorkerThreadPool::notify_yield_over(TaskID p_task_id) {
 	task_mutex.lock();
@@ -652,7 +661,7 @@ void WorkerThreadPool::notify_yield_over(TaskID p_task_id) {
 	}
 
 	ThreadData &td = threads[task->pool_thread_index];
-	td.yield_is_over = true;
+	td.yield_is_over = true; // 在这里设置
 	td.signaled = true;
 	td.cond_var.notify_one();
 

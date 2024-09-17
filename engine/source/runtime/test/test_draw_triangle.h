@@ -48,10 +48,8 @@ void test_draw_triangle() {
 
   auto tex_format = RD::TextureFormat();
   auto tex_view = RD::TextureView();
-  Size2i window_size = WindowSystem::GetSingleton()->window_get_size(WindowSystem::MAIN_WINDOW_ID);
-  L_PRINT(window_size);
-  tex_format.height = window_size.y;
-  tex_format.width = window_size.x;
+  tex_format.height = 800;
+  tex_format.width = 600;
   tex_format.format = RD::DataFormat::DATA_FORMAT_R32G32B32A32_SFLOAT;
   tex_format.usage_bits = RD::TextureUsageBits::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TextureUsageBits::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
   auto framebuf_texture = device->texture_create(tex_format, tex_view);
@@ -67,19 +65,16 @@ void test_draw_triangle() {
 
   );
   auto clear_color_values= PackedColorArray({Color(1,1,1,1)});
-  // auto draw_list = device->draw_list_begin(
-  //   framebuf, RD::ColorInitialAction(), RD::ColorFinalAction(), RD::InitialAction::INITIAL_ACTION_CLEAR, RD::FinalAction::FINAL_ACTION_STORE,
-  //   clear_color_values
-  // );
-  Error err = device->screen_prepare_for_drawing(WindowSystem::MAIN_WINDOW_ID);
+  auto draw_list = device->draw_list_begin(
+    framebuf, RD::ColorInitialAction(), RD::ColorFinalAction(), RD::InitialAction::INITIAL_ACTION_CLEAR, RD::FinalAction::FINAL_ACTION_STORE,
+    clear_color_values
+  );
 
-  auto draw_list_screen = device->draw_list_begin_for_screen();
-  
-  device->draw_list_bind_render_pipeline(draw_list_screen, pipeline);
-  device->draw_list_bind_vertex_array(draw_list_screen,vertex_array_id);
-  device->draw_list_draw(draw_list_screen, false, 3, 0);
+  device->draw_list_bind_render_pipeline(draw_list, pipeline);
+  device->draw_list_bind_vertex_array(draw_list,vertex_array_id);
+  device->draw_list_draw(draw_list, false, 3, 0);
   device->draw_list_end();
-
+  auto td = device->texture_get_data(framebuf_texture, 0);
 }
 }  // namespace lain::test
 #endif

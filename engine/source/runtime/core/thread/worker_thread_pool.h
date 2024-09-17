@@ -177,6 +177,7 @@ void _unlock_unlockable_mutexes();
   uint32_t get_group_processed_element_count(GroupID p_group) const;
   bool is_group_task_completed(GroupID p_group) const;
   void wait_for_group_task_completion(GroupID p_group);
+  void yield();
   // 通知该任务的线程的yield结束
   void notify_yield_over(TaskID p_task_id);
 

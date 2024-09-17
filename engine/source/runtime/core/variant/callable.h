@@ -121,7 +121,9 @@ namespace lain {
 		virtual int get_bound_arguments_count() const;
 		virtual void get_bound_arguments(Vector<Variant>& r_arguments, int& r_argcount) const;
 
-		CallableCustom();
+		CallableCustom() {
+			ref_count.init();
+		}
 		virtual ~CallableCustom() {}
 	};
 }

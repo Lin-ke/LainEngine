@@ -20,11 +20,7 @@
  */
 
 #include "json11.h"
-#include <cassert>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <limits>
+
 
 #define max_depth 200
 namespace lain {
