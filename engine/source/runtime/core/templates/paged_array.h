@@ -109,12 +109,12 @@ template <typename T>
 class PagedArray {
 	PagedArrayPool<T> *page_pool = nullptr;
 
-	T **page_data = nullptr; 
-	uint32_t *page_ids = nullptr;
+	T **page_data = nullptr; // max_pages_used个指向页的指针
+	uint32_t *page_ids = nullptr; // 记录pagepool中页的id，因为可能多个Array公用pool
 	uint32_t max_pages_used = 0; // capacity，在_grow_page_array中增长
 	uint32_t page_size_shift = 0;
 	uint32_t page_size_mask = 0;
-	uint64_t count = 0;
+	uint64_t count = 0; // 数量，当为最后为000时说明前一个页已经用完
 
 	_FORCE_INLINE_ uint32_t _get_pages_in_use() const {
 		if (count == 0) {

@@ -14,6 +14,7 @@ struct Plane;
 struct Rect2;
 struct Transform3D;
 struct Vector2;
+// 4x4 matrix
 struct [[nodiscard]] Projection {
 	enum Planes {
 		PLANE_NEAR,

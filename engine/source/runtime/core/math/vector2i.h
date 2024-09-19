@@ -34,7 +34,9 @@ namespace lain
 
         const int* ptr() const { return &x; }
         
-        
+        L_INLINE int& width() {return x;}
+        L_INLINE int& height() {return y;}
+
 
         int operator[](size_t i) const
         {

@@ -20,6 +20,12 @@ namespace lain
     public:
         Vector2() = default;
 
+        const real_t& width()  const { return x; }   
+        const real_t& height() const { return y; }
+
+        real_t& width() { return x; }   
+        real_t& height() { return y; }
+
         Vector2(float x_, float y_) : x(x_), y(y_) {}
 
         explicit Vector2(float scaler) : x(scaler), y(scaler) {}

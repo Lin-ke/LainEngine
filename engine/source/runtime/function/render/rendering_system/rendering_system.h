@@ -242,6 +242,19 @@ class RenderingSystem : public Object {
 
     INSTANCE_GEOMETRY_MASK = (1 << INSTANCE_MESH) | (1 << INSTANCE_MULTIMESH) | (1 << INSTANCE_PARTICLES)
   };
+
+		enum InstanceFlags {
+		INSTANCE_FLAG_USE_BAKED_LIGHT,
+		INSTANCE_FLAG_USE_DYNAMIC_GI,
+		INSTANCE_FLAG_DRAW_NEXT_FRAME_IF_VISIBLE,
+		INSTANCE_FLAG_IGNORE_OCCLUSION_CULLING,
+		INSTANCE_FLAG_MAX
+	};
+		enum VisibilityRangeFadeMode {
+		VISIBILITY_RANGE_FADE_DISABLED,
+		VISIBILITY_RANGE_FADE_SELF,
+		VISIBILITY_RANGE_FADE_DEPENDENCIES,
+	};
     /// *************** ///
   /// ***CAMERA API*** ///
   /// *************** ///
@@ -295,6 +308,15 @@ class RenderingSystem : public Object {
 	virtual void viewport_attach_camera(RID p_viewport, RID p_camera) = 0;
 	virtual void viewport_set_scenario(RID p_viewport, RID p_scenario) = 0;
 	virtual void viewport_attach_canvas(RID p_viewport, RID p_canvas) = 0;
+	enum ViewportMSAA {
+		VIEWPORT_MSAA_DISABLED,
+		VIEWPORT_MSAA_2X,
+		VIEWPORT_MSAA_4X,
+		VIEWPORT_MSAA_8X,
+		VIEWPORT_MSAA_MAX,
+	};
+	virtual void viewport_set_msaa_3d(RID p_viewport, ViewportMSAA p_msaa) = 0;
+	virtual void viewport_set_msaa_2d(RID p_viewport, ViewportMSAA p_msaa) = 0;
 
   /// *************** ///
   /// ***DECAL API*** /// 贴花
@@ -351,6 +373,111 @@ class RenderingSystem : public Object {
 		GLOBAL_VAR_TYPE_SAMPLERCUBE,
 		GLOBAL_VAR_TYPE_MAX
 	};
+
+	
+	/* Light API */
+	// 光源类型： 平行光，点光源，聚光灯
+	// 反射探针
+	// 阴影图集
+	enum LightType {
+		LIGHT_DIRECTIONAL,
+		LIGHT_OMNI,
+		LIGHT_SPOT
+	};
+
+	enum LightParam {
+		LIGHT_PARAM_ENERGY,
+		LIGHT_PARAM_INDIRECT_ENERGY,
+		LIGHT_PARAM_VOLUMETRIC_FOG_ENERGY,
+		LIGHT_PARAM_SPECULAR,
+		LIGHT_PARAM_RANGE,
+		LIGHT_PARAM_SIZE,
+		LIGHT_PARAM_ATTENUATION,
+		LIGHT_PARAM_SPOT_ANGLE,
+		LIGHT_PARAM_SPOT_ATTENUATION,
+		LIGHT_PARAM_SHADOW_MAX_DISTANCE,
+		LIGHT_PARAM_SHADOW_SPLIT_1_OFFSET,
+		LIGHT_PARAM_SHADOW_SPLIT_2_OFFSET,
+		LIGHT_PARAM_SHADOW_SPLIT_3_OFFSET,
+		LIGHT_PARAM_SHADOW_FADE_START,
+		LIGHT_PARAM_SHADOW_NORMAL_BIAS,
+		LIGHT_PARAM_SHADOW_BIAS,
+		LIGHT_PARAM_SHADOW_PANCAKE_SIZE,
+		LIGHT_PARAM_SHADOW_OPACITY,
+		LIGHT_PARAM_SHADOW_BLUR,
+		LIGHT_PARAM_TRANSMITTANCE_BIAS,
+		LIGHT_PARAM_INTENSITY,
+		LIGHT_PARAM_MAX
+	};
+
+	virtual RID directional_light_create() = 0;
+	virtual RID omni_light_create() = 0;
+	virtual RID spot_light_create() = 0;
+
+	virtual void light_set_color(RID p_light, const Color &p_color) = 0;
+	virtual void light_set_param(RID p_light, LightParam p_param, float p_value) = 0;
+	virtual void light_set_shadow(RID p_light, bool p_enabled) = 0;
+	virtual void light_set_projector(RID p_light, RID p_texture) = 0;
+	virtual void light_set_negative(RID p_light, bool p_enable) = 0;
+	virtual void light_set_cull_mask(RID p_light, uint32_t p_mask) = 0;
+	virtual void light_set_distance_fade(RID p_light, bool p_enabled, float p_begin, float p_shadow, float p_length) = 0;
+	virtual void light_set_reverse_cull_face_mode(RID p_light, bool p_enabled) = 0;
+
+	enum LightBakeMode {
+			LIGHT_BAKE_DISABLED,
+			LIGHT_BAKE_STATIC,
+			LIGHT_BAKE_DYNAMIC,
+		};
+
+	
+	// Omni light 点光源
+	enum LightOmniShadowMode {
+		LIGHT_OMNI_SHADOW_DUAL_PARABOLOID,
+		LIGHT_OMNI_SHADOW_CUBE,
+	};
+
+	virtual void light_omni_set_shadow_mode(RID p_light, LightOmniShadowMode p_mode) = 0;
+
+	// Directional light
+	enum LightDirectionalShadowMode {
+		LIGHT_DIRECTIONAL_SHADOW_ORTHOGONAL,
+		LIGHT_DIRECTIONAL_SHADOW_PARALLEL_2_SPLITS,
+		LIGHT_DIRECTIONAL_SHADOW_PARALLEL_4_SPLITS,
+	};
+
+	enum LightDirectionalSkyMode {
+		LIGHT_DIRECTIONAL_SKY_MODE_LIGHT_AND_SKY,
+		LIGHT_DIRECTIONAL_SKY_MODE_LIGHT_ONLY,
+		LIGHT_DIRECTIONAL_SKY_MODE_SKY_ONLY,
+	};
+	// 这边只有set
+	virtual void light_directional_set_shadow_mode(RID p_light, LightDirectionalShadowMode p_mode) = 0;
+	virtual void light_directional_set_blend_splits(RID p_light, bool p_enable) = 0;
+	virtual void light_directional_set_sky_mode(RID p_light, LightDirectionalSkyMode p_mode) = 0;
+	
+	// Shadow atlas
+	// 这边只有create，没有free
+	virtual RID shadow_atlas_create() = 0;
+	virtual void shadow_atlas_set_size(RID p_atlas, int p_size, bool p_use_16_bits = true) = 0;
+	virtual void shadow_atlas_set_quadrant_subdivision(RID p_atlas, int p_quadrant, int p_subdivision) = 0;
+	virtual void directional_shadow_atlas_set_size(int p_size, bool p_16_bits = true) = 0;
+
+
+	enum ShadowQuality {
+		SHADOW_QUALITY_HARD,
+		SHADOW_QUALITY_SOFT_VERY_LOW,
+		SHADOW_QUALITY_SOFT_LOW,
+		SHADOW_QUALITY_SOFT_MEDIUM,
+		SHADOW_QUALITY_SOFT_HIGH,
+		SHADOW_QUALITY_SOFT_ULTRA,
+		SHADOW_QUALITY_MAX
+	};
+
+	virtual void positional_soft_shadow_filter_set_quality(ShadowQuality p_quality) = 0;
+	virtual void directional_soft_shadow_filter_set_quality(ShadowQuality p_quality) = 0;
+
+	virtual void light_projectors_set_filter(LightProjectorFilter p_filter) = 0;
+	/* PROBE API */
 
 
 public:

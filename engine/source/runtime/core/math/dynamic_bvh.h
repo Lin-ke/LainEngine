@@ -24,6 +24,8 @@ subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
+// BVH是一个个包围体链接起来的 二叉树，其中每一层都为儿子的merge
+// 包围体 只有 min 和 max 两个点表示
 ///DynamicBVH implementation by Nathanael Presson
 // The DynamicBVH class implements a fast dynamic bounding volume tree based on axis aligned bounding boxes (aabb tree).
 namespace lain {
@@ -104,7 +106,7 @@ private:
 					(min.z <= b.max.z) &&
 					(max.z >= b.min.z));
 		}
-
+		// 朝向和角点对比 （这里可以看视锥体）
 		_FORCE_INLINE_ bool intersects_convex(const Plane *p_planes, int p_plane_count, const Vector3 *p_points, int p_point_count) const {
 			Vector3 half_extents = (max - min) * 0.5;
 			Vector3 ofs = min + half_extents;

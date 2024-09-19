@@ -195,8 +195,10 @@ class Math {
   static _ALWAYS_INLINE_ int abs(int g) { return g > 0 ? g : -g; }
 
   static bool isNan(float f) { return std::isnan(f); }
-  static float sqr(float value) { return value * value; }
+  template <typename T>
+  static float sqr(T value) { return value * value; }
   static float sqrt(float fValue) { return std::sqrt(fValue); }
+
 
   static _ALWAYS_INLINE_ double sqrt(double p_x) { return static_cast<double>(::sqrtf(static_cast<float>(p_x))); }
 
@@ -761,7 +763,7 @@ class Math {
     u.i &= 2147483647u;
     return u.f;
   }
-
+  // 哇这个好神奇
   static _ALWAYS_INLINE_ double absd(double g) {
     union {
       double d;

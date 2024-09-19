@@ -49,7 +49,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     ID_MASK = (ID_BASE_SHIFT - 1),
   };
 
-  typedef int64_t FramebufferFormatID;
+  typedef int64_t FramebufferFormatID; // see framebufferformat
 
  private:
   // RID到依赖它的ID(s)的映射，因此删除时需要删除依赖它的ID
@@ -146,6 +146,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   // or slices of a texture (a mipmap, a layer, a 3D slice)
   // for a framebuffer to render into it.
   struct Texture {
+    // texture_can_make_shared_with_format 失败，因为驱动不支持，适用纹理别名的方式应对这种情况
     struct SharedFallback {
       uint32_t revision = 1;  // 被修改的次数，要求与owner的保持一致，否则更新
       RDD::TextureID texture;
@@ -222,9 +223,8 @@ class RenderingDevice : public RenderingDeviceCommons {
   void _texture_create_reinterpret_buffer(Texture* p_texture);
 
  public:
-  // 这个结构体在TextureView里也定义过
-  // 在DeviceCommon里定义的是能在device和device_driver中同时使用的
-  // 那么，为什么这个只能在这里使用？
+  // 这个结构体在 RDD::TextureView 里也定义过
+  // 由于这个一般用来 创建 create texture， 这个override 可以视作对原先format 的一个覆写，因此用这个字段名。
   struct TextureView {
     DataFormat format_override = DATA_FORMAT_MAX;  // // Means, use same as format.
     TextureSwizzle swizzle_r = TEXTURE_SWIZZLE_R;
@@ -252,6 +252,7 @@ class RenderingDevice : public RenderingDeviceCommons {
  public:
   RID texture_create(const TextureFormat& p_format, const TextureView& p_view, const Vector<Vector<uint8_t>>& p_data = Vector<Vector<uint8_t>>());
   TextureFormat texture_get_format(RID p_texture);
+  //Creates a shared texture using the specified view and the texture information from with_texture.
   RID texture_create_shared(const TextureView& p_view, RID p_with_texture);
   RID texture_create_from_extension(TextureType p_type, DataFormat p_format, TextureSamples p_samples, BitField<RenderingDevice::TextureUsageBits> p_usage, uint64_t p_image,
                                     uint64_t p_width, uint64_t p_height, uint64_t p_depth, uint64_t p_layers);
@@ -458,6 +459,8 @@ class RenderingDevice : public RenderingDeviceCommons {
   // freed
   // framebuffer format就是renderpass
   FramebufferFormatID framebuffer_format_create(const Vector<AttachmentFormat>& p_format, uint32_t p_view_count = 1);
+  // format中含有 RenderPass、FramebufferID
+  // 这里会根据默认配置（ {}, {}, INITIAL_ACTION_CLEAR, FINAL_ACTION_STORE）构建RenderPass
   FramebufferFormatID framebuffer_format_create_multipass(const Vector<AttachmentFormat>& p_attachments, const Vector<FramebufferPass>& p_passes, uint32_t p_view_count = 1);
   FramebufferFormatID framebuffer_format_create_empty(TextureSamples p_samples = TEXTURE_SAMPLES_1);
   TextureSamples framebuffer_format_get_texture_samples(FramebufferFormatID p_format, uint32_t p_pass = 0);

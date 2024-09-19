@@ -47,6 +47,8 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   virtual TextureID texture_create_shared_from_slice(TextureID p_original_texture, const TextureView& p_view,
                                                      TextureSliceType p_slice_type, uint32_t p_layer, uint32_t p_layers,
                                                      uint32_t p_mipmap, uint32_t p_mipmaps) override final;
+	virtual bool texture_can_make_shared_with_format(TextureID p_texture, DataFormat p_format, bool &r_raw_reinterpretation) override final;
+  
   virtual void texture_free(TextureID p_texture) override final;
   virtual uint8_t* texture_map(TextureID p_texture, const TextureSubresource& p_subresource) override final;
   virtual void texture_unmap(TextureID p_texture) override final;

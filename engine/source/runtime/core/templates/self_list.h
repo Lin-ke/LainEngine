@@ -7,8 +7,10 @@
 #include "core/typedefs.h"
 namespace lain {
 /// <summary>
-/// 双向链表，同时具有对_first和_last的索引
+/// 双向链表，链表本体带着对_first和_last的索引
+/// 每个节点有对根，前后的索引
 /// add插到前面，last插到后面
+/// SelfList<T> 是一个节点，SelfList<T>::List是链表本体 
 /// </summary>
 /// <typeparam name="T"></typeparam>
 

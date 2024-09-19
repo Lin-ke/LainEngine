@@ -20,15 +20,15 @@ namespace lain
         Vector4(const Vector3& v3, real_t w_) : x {v3.x}, y {v3.y}, z {v3.z}, w {w_} {}
 
 
-        real_t operator[](size_t i) const
+        const real_t& operator[](size_t i) const // 这里不能返回一个real_t （返回值是一个临时变量）
         {
-            assert(i < 4);
+            DEV_ASSERT(i < 4);
             return *(&x + i);
         }
 
         real_t& operator[](size_t i)
         {
-            assert(i < 4);
+            DEV_ASSERT(i < 4);
             return *(&x + i);
         }
 

@@ -58,12 +58,15 @@ DynamicBVH::Node* DynamicBVH::_create_node_with_volume(Node* p_parent, const Vol
   return node;
 }
 
+// 插入时，新建一个合并节点替代原来的叶子，并将原来节点和新节点置于
+// 合并节点的两个子节点中，然后递归更新父节点的包围体
 void DynamicBVH::_insert_leaf(Node* p_root, Node* p_leaf) {
   if (!bvh_root) {
     bvh_root = p_leaf;
     p_leaf->parent = nullptr;
   } else {
     if (!p_root->is_leaf()) {
+      // 寻找更接近的子节点，直到叶子节点
       do {
         p_root = p_root->children[p_leaf->volume.select_by_proximity(p_root->children[0]->volume, p_root->children[1]->volume)];
       } while (!p_root->is_leaf());

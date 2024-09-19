@@ -722,6 +722,11 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create_shared_from_slice(Tex
   return TextureID(tex_info);
 }
 
+bool lain::RenderingDeviceDriverVulkan::texture_can_make_shared_with_format(TextureID p_texture, DataFormat p_format, bool& r_raw_reinterpretation) {
+  r_raw_reinterpretation = false;
+  return true;
+}
+
 void RenderingDeviceDriverVulkan::texture_free(TextureID p_texture) {
   TextureInfo* texture_info = (TextureInfo*)p_texture.id;
   vkDestroyImageView(vk_device, texture_info->vk_view, nullptr);
