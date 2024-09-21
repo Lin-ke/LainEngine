@@ -8,7 +8,7 @@ namespace lain {
 
 class Variant;
 REFLECTION_TYPE(Plane);
-STRUCT(_NO_DISCARD_ Plane, Fields) {
+struct _NO_DISCARD_ Plane {
 	REFLECTION_BODY(Plane);
 	Vector3 normal;
 	real_t d = 0;
@@ -16,7 +16,7 @@ STRUCT(_NO_DISCARD_ Plane, Fields) {
 	void set_normal(const Vector3& p_normal);
 	_FORCE_INLINE_ Vector3 get_normal() const { return normal; };
 
-	void normalize();
+	void normalize(); // 就是normalize normal和d
 	Plane normalized() const;
 
 	/* Plane-Point operations */
@@ -66,8 +66,18 @@ STRUCT(_NO_DISCARD_ Plane, Fields) {
 	_FORCE_INLINE_ Plane(const Vector3& p_point1, const Vector3& p_point2, const Vector3& p_point3, ClockDirection p_dir = CLOCKWISE);
 };
 
+inline void Plane::normalize() {
+	real_t l = normal.length();
+	if (l == 0) {
+		*this = Plane(0, 0, 0, 0);
+		return;
+	}
+	normal /= l;
+	d /= l;
+}
+
 bool Plane::is_point_over(const Vector3& p_point) const {
-	return (normal.dot(p_point) > d);
+  return (normal.dot(p_point) > d);
 }
 
 real_t Plane::distance_to(const Vector3& p_point) const {
@@ -78,6 +88,29 @@ bool Plane::has_point(const Vector3& p_point, real_t p_tolerance) const {
 	real_t dist = normal.dot(p_point) - d;
 	dist = ABS(dist);
 	return (dist <= p_tolerance);
+}
+
+
+inline bool Plane::intersect_3(const Plane& p_plane1, const Plane& p_plane2, Vector3* r_result) const {
+const Plane &p_plane0 = *this;
+	Vector3 normal0 = p_plane0.normal;
+	Vector3 normal1 = p_plane1.normal;
+	Vector3 normal2 = p_plane2.normal;
+
+	real_t denom = normal0.cross(normal1).dot(normal2);
+
+	if (Math::is_zero_approx(denom)) {
+		return false;
+	}
+
+	if (r_result) {
+		*r_result = ((vec3_cross(normal1, normal2) * p_plane0.d) +
+							(vec3_cross(normal2, normal0) * p_plane1.d) +
+							(vec3_cross(normal0, normal1) * p_plane2.d)) /
+				denom;
+	}
+
+	return true;
 }
 
 Plane::Plane(const Vector3& p_normal, real_t p_d) :

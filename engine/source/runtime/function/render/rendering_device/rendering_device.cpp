@@ -352,7 +352,7 @@ RID RenderingDevice::texture_create(const TextureFormat& p_format, const Texture
 
   Texture texture;
   format.usage_bits |= forced_usage_bits;
-  texture.driver_id = driver->texture_create(format, tv);
+  texture.driver_id = driver->texture_create(format, tv); // 从这里能看出来，format 和 tv 是数据通信的方式，各种不同的texture只是在不同层级中保存信息
   ERR_FAIL_COND_V(!texture.driver_id, RID());
   texture.type = format.texture_type;
   texture.format = format.format;
@@ -3120,6 +3120,223 @@ Vector<uint8_t> RenderingDevice::_texture_get_data(Texture* tex, uint32_t p_laye
 
   return image_data;
 }
+
+static _ALWAYS_INLINE_ void _copy_region(uint8_t const *__restrict p_src, uint8_t *__restrict p_dst, uint32_t p_src_x, uint32_t p_src_y, uint32_t p_src_w, uint32_t p_src_h, uint32_t p_src_full_w, uint32_t p_dst_pitch, uint32_t p_unit_size) {
+	uint32_t src_offset = (p_src_y * p_src_full_w + p_src_x) * p_unit_size;
+	uint32_t dst_offset = 0;
+	for (uint32_t y = p_src_h; y > 0; y--) {
+		uint8_t const *__restrict src = p_src + src_offset;
+		uint8_t *__restrict dst = p_dst + dst_offset;
+		for (uint32_t x = p_src_w * p_unit_size; x > 0; x--) {
+			*dst = *src;
+			src++;
+			dst++;
+		}
+		src_offset += p_src_full_w * p_unit_size;
+		dst_offset += p_dst_pitch;
+	}
+}
+
+
+Error lain::RenderingDevice::_texture_update(RID p_texture, uint32_t p_layer, const Vector<uint8_t>& p_data, bool p_use_setup_queue, bool p_validate_can_update) {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V_MSG((draw_list || compute_list) && !p_use_setup_queue, ERR_INVALID_PARAMETER,
+			"Updating textures is forbidden during creation of a draw or compute list");
+
+	Texture *texture = texture_owner.get_or_null(p_texture);
+	ERR_FAIL_NULL_V(texture, ERR_INVALID_PARAMETER);
+
+	if (texture->owner != RID()) {
+		p_texture = texture->owner;
+		texture = texture_owner.get_or_null(texture->owner);
+		ERR_FAIL_NULL_V(texture, ERR_BUG); // This is a bug.
+	}
+
+	ERR_FAIL_COND_V_MSG(texture->bound, ERR_CANT_ACQUIRE_RESOURCE,
+			"Texture can't be updated while a draw list that uses it as part of a framebuffer is being created. Ensure the draw list is finalized (and that the color/depth texture using it is not set to `RenderingDevice.FINAL_ACTION_CONTINUE`) to update this texture.");
+
+	ERR_FAIL_COND_V_MSG(p_validate_can_update && !(texture->usage_flags & TEXTURE_USAGE_CAN_UPDATE_BIT), ERR_INVALID_PARAMETER,
+			"Texture requires the `RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT` to be set to be updatable.");
+
+	ERR_FAIL_COND_V(p_layer >= texture->layers, ERR_INVALID_PARAMETER);
+
+	uint32_t width, height;
+	uint32_t tight_mip_size = get_image_format_required_size(texture->format, texture->width, texture->height, texture->depth, texture->mipmaps, &width, &height);
+	uint32_t required_size = tight_mip_size;
+	uint32_t required_align = get_compressed_image_format_block_byte_size(texture->format);
+	if (required_align == 1) { // 如果不是压缩，那么对齐是文素大小
+		required_align = get_image_format_pixel_size(texture->format);
+	}
+	required_align = STEPIFY(required_align, driver->api_trait_get(RDD::API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT));
+
+	ERR_FAIL_COND_V_MSG(required_size != (uint32_t)p_data.size(), ERR_INVALID_PARAMETER,
+			"Required size for texture update (" + itos(required_size) + ") does not match data supplied size (" + itos(p_data.size()) + ").");
+
+	uint32_t region_size = texture_upload_region_size_px;
+
+	const uint8_t *r = p_data.ptr();
+
+	thread_local LocalVector<RDG::RecordedBufferToTextureCopy> command_buffer_to_texture_copies_vector; // 用于向draw graph 提交 texture update数据
+	command_buffer_to_texture_copies_vector.clear();
+
+	if (p_use_setup_queue && driver->api_trait_get(RDD::API_TRAIT_HONORS_PIPELINE_BARRIERS)) {
+		// When using the setup queue directly, we transition the texture to the optimal layout.
+		RDD::TextureBarrier tb;
+		tb.texture = texture->driver_id;
+		tb.dst_access = RDD::BARRIER_ACCESS_COPY_WRITE_BIT;
+		tb.prev_layout = RDD::TEXTURE_LAYOUT_UNDEFINED;
+		tb.next_layout = RDD::TEXTURE_LAYOUT_COPY_DST_OPTIMAL;
+		tb.subresources.aspect = texture->barrier_aspect_flags;
+		tb.subresources.mipmap_count = texture->mipmaps;
+		tb.subresources.base_layer = p_layer; // 只复制一层p_layer 为什么不一次性全复制过去呢
+		tb.subresources.layer_count = 1;
+    // copy命令需要等待到 bottom 才能执行
+    // 这个是立即提交的
+		driver->command_pipeline_barrier(frames[frame].setup_command_buffer, RDD::PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, RDD::PIPELINE_STAGE_COPY_BIT, {}, {}, tb);
+	} else if (!p_use_setup_queue) {
+		// Indicate the texture will get modified for the shared texture fallback.
+		_texture_update_shared_fallback(p_texture, texture, true);
+	}
+
+	uint32_t mipmap_offset = 0;
+
+	uint32_t logic_width = texture->width;
+	uint32_t logic_height = texture->height;
+  // 每个mipmap的纹理
+	for (uint32_t mm_i = 0; mm_i < texture->mipmaps; mm_i++) {
+		uint32_t depth = 0;
+		uint32_t image_total = get_image_format_required_size(texture->format, texture->width, texture->height, texture->depth, mm_i + 1, &width, &height, &depth);
+
+		const uint8_t *read_ptr_mipmap = r + mipmap_offset;
+		tight_mip_size = image_total - mipmap_offset;
+
+		for (uint32_t z = 0; z < depth; z++) { // For 3D textures, depth may be > 0.
+
+			const uint8_t *read_ptr = read_ptr_mipmap + (tight_mip_size / depth) * z;
+
+			for (uint32_t y = 0; y < height; y += region_size) {
+				for (uint32_t x = 0; x < width; x += region_size) {
+					uint32_t region_w = MIN(region_size, width - x); // 这样计算是正确的，能得到剩的一点
+					uint32_t region_h = MIN(region_size, height - y);
+
+					uint32_t region_logic_w = MIN(region_size, logic_width - x);
+					uint32_t region_logic_h = MIN(region_size, logic_height - y);
+
+					uint32_t pixel_size = get_image_format_pixel_size(texture->format);
+					uint32_t block_w = 0, block_h = 0;
+					get_compressed_image_format_block_dimensions(texture->format, block_w, block_h);
+
+					uint32_t region_pitch = (region_w * pixel_size * block_w) >> get_compressed_image_format_pixel_rshift(texture->format);
+					uint32_t pitch_step = driver->api_trait_get(RDD::API_TRAIT_TEXTURE_DATA_ROW_PITCH_STEP);
+					region_pitch = STEPIFY(region_pitch, pitch_step);
+					uint32_t to_allocate = region_pitch * region_h;
+					uint32_t alloc_offset = 0, alloc_size = 0;
+					StagingRequiredAction required_action;
+					Error err = _staging_buffer_allocate(to_allocate, required_align, alloc_offset, alloc_size, required_action, false);
+					ERR_FAIL_COND_V(err, ERR_CANT_CREATE);
+
+					if (!p_use_setup_queue && !command_buffer_to_texture_copies_vector.is_empty() && required_action == STAGING_REQUIRED_ACTION_FLUSH_AND_STALL_ALL) {
+						if (_texture_make_mutable(texture, p_texture)) {
+							// The texture must be mutable to be used as a copy destination.
+							draw_graph.add_synchronization();
+						}
+            // 没有用成staging buffer，放到graph里
+						// If we're using the draw queue and the staging buffer requires flushing everything, we submit the command early and clear the current vector.
+						draw_graph.add_texture_update(texture->driver_id, texture->draw_tracker, command_buffer_to_texture_copies_vector);
+						command_buffer_to_texture_copies_vector.clear();
+					}
+
+					_staging_buffer_execute_required_action(required_action);
+
+					uint8_t *write_ptr;
+
+					{ // Map.
+						uint8_t *data_ptr = driver->buffer_map(staging_buffer_blocks[staging_buffer_current].driver_id);
+						ERR_FAIL_NULL_V(data_ptr, ERR_CANT_CREATE);
+						write_ptr = data_ptr;
+						write_ptr += alloc_offset;
+					}
+
+					ERR_FAIL_COND_V(region_w % block_w, ERR_BUG);
+					ERR_FAIL_COND_V(region_h % block_h, ERR_BUG);
+
+					if (block_w != 1 || block_h != 1) {
+						// Compressed image (blocks).
+						// Must copy a block region.
+
+						uint32_t block_size = get_compressed_image_format_block_byte_size(texture->format);
+						// Re-create current variables in blocky format.
+						uint32_t xb = x / block_w;
+						uint32_t yb = y / block_h;
+						uint32_t wb = width / block_w;
+						//uint32_t hb = height / block_h;
+						uint32_t region_wb = region_w / block_w;
+						uint32_t region_hb = region_h / block_h;
+						_copy_region(read_ptr, write_ptr, xb, yb, region_wb, region_hb, wb, region_pitch, block_size); // 开始复制到缓冲区
+					} else {
+						// Regular image (pixels).
+						// Must copy a pixel region.
+						_copy_region(read_ptr, write_ptr, x, y, region_w, region_h, width, region_pitch, pixel_size);
+					}
+
+					{ // Unmap.
+						driver->buffer_unmap(staging_buffer_blocks[staging_buffer_current].driver_id);
+					}
+
+					RDD::BufferTextureCopyRegion copy_region;
+					copy_region.buffer_offset = alloc_offset;
+					copy_region.texture_subresources.aspect = texture->read_aspect_flags;
+					copy_region.texture_subresources.mipmap = mm_i;
+					copy_region.texture_subresources.base_layer = p_layer;
+					copy_region.texture_subresources.layer_count = 1;
+					copy_region.texture_offset = Vector3i(x, y, z);
+					copy_region.texture_region_size = Vector3i(region_logic_w, region_logic_h, 1);
+
+					if (p_use_setup_queue) { // 如果立即做，
+						driver->command_copy_buffer_to_texture(frames[frame].setup_command_buffer, staging_buffer_blocks[staging_buffer_current].driver_id, texture->driver_id, RDD::TEXTURE_LAYOUT_COPY_DST_OPTIMAL, copy_region);
+					} else {
+						RDG::RecordedBufferToTextureCopy buffer_to_texture_copy;
+						buffer_to_texture_copy.from_buffer = staging_buffer_blocks[staging_buffer_current].driver_id;
+						buffer_to_texture_copy.region = copy_region;
+						command_buffer_to_texture_copies_vector.push_back(buffer_to_texture_copy);
+					}
+
+					staging_buffer_blocks.write[staging_buffer_current].fill_amount = alloc_offset + alloc_size;
+				}
+			}
+		}
+
+		mipmap_offset = image_total;
+		logic_width = MAX(1u, logic_width >> 1);
+		logic_height = MAX(1u, logic_height >> 1);
+	}
+
+	if (p_use_setup_queue && (texture->draw_tracker == nullptr) && driver->api_trait_get(RDD::API_TRAIT_HONORS_PIPELINE_BARRIERS)) {
+		// If the texture does not have a tracker, it means it must be transitioned to the sampling state.
+		RDD::TextureBarrier tb;
+		tb.texture = texture->driver_id;
+		tb.src_access = RDD::BARRIER_ACCESS_COPY_WRITE_BIT;
+		tb.prev_layout = RDD::TEXTURE_LAYOUT_COPY_DST_OPTIMAL;
+		tb.next_layout = RDD::TEXTURE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		tb.subresources.aspect = texture->barrier_aspect_flags;
+		tb.subresources.mipmap_count = texture->mipmaps;
+		tb.subresources.base_layer = p_layer;
+		tb.subresources.layer_count = 1;
+		driver->command_pipeline_barrier(frames[frame].setup_command_buffer, RDD::PIPELINE_STAGE_COPY_BIT, RDD::PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, {}, {}, tb);
+	} else if (!p_use_setup_queue && !command_buffer_to_texture_copies_vector.is_empty()) {
+		if (_texture_make_mutable(texture, p_texture)) {
+			// The texture must be mutable to be used as a copy destination.
+			draw_graph.add_synchronization();
+		}
+
+		draw_graph.add_texture_update(texture->driver_id, texture->draw_tracker, command_buffer_to_texture_copies_vector);
+	}
+
+	return OK;
+}
+
+void lain::RenderingDevice::_texture_check_shared_fallback(Texture* p_texture) {}
 
 void RenderingDevice::compute_list_dispatch_threads(ComputeListID p_list, uint32_t p_x_threads, uint32_t p_y_threads, uint32_t p_z_threads) {
   ERR_FAIL_COND(p_list != ID_TYPE_COMPUTE_LIST);

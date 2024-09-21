@@ -499,4 +499,9 @@ bool operator<=(const Vector3 &p_v) const {
   static const Vector3 NEGATIVE_UNIT_Z;
   static const Vector3 UNIT_SCALE;
 };
+
+
+_FORCE_INLINE_ Vector3 vec3_cross(const Vector3 &p_a, const Vector3 &p_b) {
+	return p_a.cross(p_b);
+}
 }  // namespace lain

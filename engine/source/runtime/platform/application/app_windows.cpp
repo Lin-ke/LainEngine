@@ -14,7 +14,7 @@ int main() {
 
 	// main function
 	OSWindows os = OSWindows();
-	char* argv[] = { "D:/LainEngine/game" }; //场景1
+	char* argv[] = { "C:/LainEngine/game" }; //场景1
 	Error err = Main::Initialize(1, argv);
 	if (err != OK) {
 		L_PERROR("initialize failed");

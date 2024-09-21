@@ -380,6 +380,7 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(const TextureFormat& 
       }
     }
   }
+  // 对 cube 和 cube array 的特殊处理
   if (p_format.texture_type == TEXTURE_TYPE_CUBE || p_format.texture_type == TEXTURE_TYPE_CUBE_ARRAY) {
     create_info.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
   }

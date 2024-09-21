@@ -51,6 +51,7 @@ class RenderingDeviceGraph {
     Type type = TYPE_NONE;
   };
   /// @brief 命令的类型
+  // draw list内部不重拍
   struct RecordedCommand {
     enum Type {
       TYPE_NONE,

@@ -49,7 +49,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     ID_MASK = (ID_BASE_SHIFT - 1),
   };
 
-  typedef int64_t FramebufferFormatID; // see framebufferformat
+  typedef int64_t FramebufferFormatID;  // see framebufferformat
 
  private:
   // RID到依赖它的ID(s)的映射，因此删除时需要删除依赖它的ID
@@ -165,7 +165,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     uint32_t height = 0;
     uint32_t depth = 0;
     uint32_t layers = 0;
-    uint32_t mipmaps = 0;
+    uint32_t mipmaps = 0; // mipmap 的数量
     uint32_t usage_flags = 0;
     uint32_t base_mipmap = 0;
     uint32_t base_layer = 0;
@@ -176,7 +176,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     bool has_initial_data = false;
 
     BitField<RDD::TextureAspectBits> read_aspect_flags;
-    BitField<RDD::TextureAspectBits> barrier_aspect_flags;
+    BitField<RDD::TextureAspectBits> barrier_aspect_flags; // 在barrier的 aspect 中使用
     bool bound = false;  // Bound to framebuffer.
     RID owner;
 
@@ -210,11 +210,12 @@ class RenderingDevice : public RenderingDeviceCommons {
     }
   };
 
- private:
+ public:
   RID_Owner<Texture> texture_owner;
-  uint32_t texture_upload_region_size_px = 0;
+  uint32_t texture_upload_region_size_px = 0; // 最大的纹理
 
   Vector<uint8_t> _texture_get_data(Texture* tex, uint32_t p_layer, bool p_2d = false);
+  // p_validate_can_update 用于检查是否有标志位
   Error _texture_update(RID p_texture, uint32_t p_layer, const Vector<uint8_t>& p_data, bool p_use_setup_queue, bool p_validate_can_update);
   void _texture_check_shared_fallback(Texture* p_texture);
   void _texture_update_shared_fallback(RID p_texture_rid, Texture* p_texture, bool p_for_writing);
@@ -1063,7 +1064,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   // happen immediately due to the asynchronous
   // nature of the GPU. They will get deleted
   // when the frame is cycled.
-  struct Frame { 
+  struct Frame {
     // List in usage order, from last to free to first to free.
     List<Buffer> buffers_to_dispose_of;
     List<Texture> textures_to_dispose_of;
@@ -1072,7 +1073,7 @@ class RenderingDevice : public RenderingDeviceCommons {
     List<Shader> shaders_to_dispose_of;
     List<UniformSet> uniform_sets_to_dispose_of;
     List<RenderPipeline> render_pipelines_to_dispose_of;
-    List<ComputePipeline> compute_pipelines_to_dispose_of; // 每一帧用完后都会释放
+    List<ComputePipeline> compute_pipelines_to_dispose_of;  // 每一帧用完后都会释放
 
     RDD::CommandPoolID command_pool;
 
@@ -1207,7 +1208,7 @@ class RenderingDevice : public RenderingDeviceCommons {
   RenderingContextDriver* get_context_driver() const { return context; }
   Error initialize(RenderingContextDriver* p_driver, WindowSystem::WindowID p_main_window = WindowSystem::INVALID_WINDOW_ID);
   RenderingDevice() {
-    if (singleton == nullptr) // 允许多个device
+    if (singleton == nullptr)  // 允许多个device
       singleton = this;
   }
   //

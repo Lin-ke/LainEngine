@@ -1,4 +1,5 @@
 #include "rendering_device_graph.h"
+// 生成后面的会导致vulkan被包含，隔离失败了
 #ifdef PRINT_RESOURCE_TRACKER_TOTAL
 #include "core/string/print_string.h"
 #endif
@@ -1870,9 +1871,13 @@ void RenderingDeviceGraph::end(bool p_reorder_commands, bool p_full_barriers,
     // 为什么都使用thread_local?
     thread_local LocalVector<uint32_t> command_degrees;
     command_degrees.resize(command_count);
+    // 必须初始化为0，否则有错
+		memset(command_degrees.ptr(), 0, sizeof(uint32_t) * command_degrees.size());
+    // 这两个为什么不是先后的？明明是读了一个texture
 
     for (int32_t i = 0; i < command_count; i++) {
       const RecordedCommand* recorded_command = _get_command(i);
+      L_PRINT("Type:", recorded_command->type);
       int32_t adjcent_list_idx = recorded_command->adjacent_command_list_index;
       while (adjcent_list_idx >= 0) {
         const RecordedCommandListNode& command_list_node = command_list_nodes[adjcent_list_idx];
@@ -1897,8 +1902,8 @@ void RenderingDeviceGraph::end(bool p_reorder_commands, bool p_full_barriers,
 
     while (!command_stack.is_empty()) {  // 层序遍历
       const RecordedCommand* recorded_command = _get_command(command_stack.back());
-      command_stack.resize(command_stack.size() - 1);
       sorted_command_indices.push_back(command_stack.back());
+      command_stack.resize(command_stack.size() - 1);
       adjacent_list_idx = recorded_command->adjacent_command_list_index;
       while (adjacent_list_idx >= 0) {
         const RecordedCommandListNode& command_list_node = command_list_nodes[adjacent_list_idx];

@@ -1133,7 +1133,7 @@ void TextureStorage::texture_3d_initialize(RID p_texture, Image::Format p_format
 		rd_format.depth = texture.depth;
 		rd_format.array_layers = 1;
 		rd_format.mipmaps = texture.mipmaps;
-		rd_format.texture_type = texture.rd_type;
+		rd_format.texture_type = texture.rd_type; // 3d
 		rd_format.samples = RD::TEXTURE_SAMPLES_1;
 		rd_format.usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT | RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
 		if (texture.rd_format_srgb != RD::DATA_FORMAT_MAX) {

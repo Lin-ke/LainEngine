@@ -48,8 +48,8 @@ void test_draw_triangle() {
 
   auto tex_format = RD::TextureFormat();
   auto tex_view = RD::TextureView();
-  tex_format.height = 800;
-  tex_format.width = 600;
+  tex_format.height = 250;
+  tex_format.width = 250;
   tex_format.format = RD::DataFormat::DATA_FORMAT_R32G32B32A32_SFLOAT;
   tex_format.usage_bits = RD::TextureUsageBits::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TextureUsageBits::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
   auto framebuf_texture = device->texture_create(tex_format, tex_view);
@@ -74,6 +74,9 @@ void test_draw_triangle() {
   device->draw_list_bind_vertex_array(draw_list,vertex_array_id);
   device->draw_list_draw(draw_list, false, 3, 0);
   device->draw_list_end();
+  Vector<uint8_t> data;
+  data.resize(1000000); // 250 * 250 * 4 * 4
+  device->_texture_update(framebuf_texture, 0,data , true, false);
   auto td = device->texture_get_data(framebuf_texture, 0);
 }
 }  // namespace lain::test

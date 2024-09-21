@@ -688,7 +688,7 @@ uint32_t RenderingDeviceCommons::get_image_format_required_size(DataFormat p_for
 	get_compressed_image_format_block_dimensions(p_format, blockw, blockh);
 
 	for (uint32_t i = 0; i < p_mipmaps; i++) {
-		uint32_t bw = STEPIFY(w, blockw);
+		uint32_t bw = STEPIFY(w, blockw); // 压缩的需要对其
 		uint32_t bh = STEPIFY(h, blockh);
 
 		uint32_t s = bw * bh;
@@ -705,7 +705,7 @@ uint32_t RenderingDeviceCommons::get_image_format_required_size(DataFormat p_for
 		if (r_depth) {
 			*r_depth = d;
 		}
-		w = MAX(blockw, w >> 1);
+		w = MAX(blockw, w >> 1); // 每个mipmap的大小都是原先的1/4
 		h = MAX(blockh, h >> 1);
 		d = MAX(1u, d >> 1);
 	}
