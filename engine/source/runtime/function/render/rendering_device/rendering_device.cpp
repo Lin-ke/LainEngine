@@ -563,7 +563,7 @@ Vector<uint8_t> lain::RenderingDevice::texture_get_data(RID p_texture, uint32_t 
     draw_graph.add_texture_get_data(tex->driver_id, tex->draw_tracker, tmp_buffer, command_buffer_texture_copy_regions_vector);
 
     // Flush everything so memory can be safely mapped.
-    _flush_and_stall_for_all_frames();
+    _flush_and_stall_for_all_frames(); // 如果是多线程？
 
     const uint8_t* read_ptr = driver->buffer_map(tmp_buffer);
     ERR_FAIL_NULL_V(read_ptr, Vector<uint8_t>());
@@ -607,6 +607,21 @@ Vector<uint8_t> lain::RenderingDevice::texture_get_data(RID p_texture, uint32_t 
 
     return buffer_data;
   }
+}
+
+bool lain::RenderingDevice::texture_is_format_supported_for_usage(DataFormat p_format, BitField<TextureUsageBits> p_usage) const {
+	ERR_FAIL_INDEX_V(p_format, DATA_FORMAT_MAX, false);
+
+	_THREAD_SAFE_METHOD_
+
+	bool cpu_readable = (p_usage & RDD::TEXTURE_USAGE_CPU_READ_BIT);
+	BitField<TextureUsageBits> supported = driver->texture_get_usages_supported_by_format(p_format, cpu_readable);
+	bool any_unsupported = (((int64_t)supported) | ((int64_t)p_usage)) != ((int64_t)supported);
+	return !any_unsupported;
+}
+
+bool lain::RenderingDevice::texture_is_valid(RID p_texture) {
+return texture_owner.owns(p_texture);
 }
 
 ///
@@ -1109,6 +1124,25 @@ Error RenderingDevice::_buffer_update(Buffer* p_buffer, RID p_buffer_id, size_t 
   }
 
   return OK;
+}
+// data 应该是 uint8*
+Error RenderingDevice::buffer_update(RID p_buffer, uint32_t p_offset, uint32_t p_size, const void *p_data) {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V_MSG(draw_list, ERR_INVALID_PARAMETER,
+			"Updating buffers is forbidden during creation of a draw list");
+	ERR_FAIL_COND_V_MSG(compute_list, ERR_INVALID_PARAMETER,
+			"Updating buffers is forbidden during creation of a compute list");
+
+	Buffer *buffer = _get_buffer_from_owner(p_buffer);
+	if (!buffer) {
+		ERR_FAIL_V_MSG(ERR_INVALID_PARAMETER, "Buffer argument is not a valid buffer of any type.");
+	}
+
+	ERR_FAIL_COND_V_MSG(p_offset + p_size > buffer->size, ERR_INVALID_PARAMETER,
+			"Attempted to write buffer (" + itos((p_offset + p_size) - buffer->size) + " bytes) past the end.");
+
+	return _buffer_update(buffer, p_buffer, p_offset, (uint8_t *)p_data, p_size, true);
 }
 
 uint32_t RenderingDevice::_get_swap_chain_desired_count() const {
@@ -1877,6 +1911,7 @@ RDD::RenderPassID RenderingDevice::_render_pass_create(const Vector<AttachmentFo
       r_samples->push_back(texture_samples);
     }
     // 默认renderpass之间有前后的依赖关系，这与rendergraph中的不同吗@？
+    // 可能需要更细粒度的控制
     if (i > 0) {
       RDD::SubpassDependency dependency;
       dependency.src_subpass = i - 1;
@@ -2750,6 +2785,397 @@ void RenderingDevice::_uniform_set_update_shared(UniformSet* p_uniform_set) {
   }
 }
 
+RID lain::RenderingDevice::uniform_set_create(const Vector<Uniform>& p_uniforms, RID p_shader, uint32_t p_shader_set)
+{
+_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V(p_uniforms.is_empty(), RID());
+
+	Shader *shader = shader_owner.get_or_null(p_shader);
+	ERR_FAIL_NULL_V(shader, RID());
+
+	ERR_FAIL_COND_V_MSG(p_shader_set >= (uint32_t)shader->uniform_sets.size() || shader->uniform_sets[p_shader_set].is_empty(), RID(),
+			"Desired set (" + itos(p_shader_set) + ") not used by shader.");
+	// See that all sets in shader are satisfied.
+
+	const Vector<ShaderUniform> &set = shader->uniform_sets[p_shader_set];
+
+	uint32_t uniform_count = p_uniforms.size();
+	const Uniform *uniforms = p_uniforms.ptr(); // 传入的
+
+	uint32_t set_uniform_count = set.size();
+	const ShaderUniform *set_uniforms = set.ptr();
+
+	LocalVector<RDD::BoundUniform> driver_uniforms;
+	driver_uniforms.resize(set_uniform_count);
+
+	// Used for verification to make sure a uniform set does not use a framebuffer bound texture.
+	LocalVector<UniformSet::AttachableTexture> attachable_textures;
+	Vector<RDG::ResourceTracker *> draw_trackers; // 在绑定过程中遇到的各种tracker
+	Vector<RDG::ResourceUsage> draw_trackers_usage;
+	HashMap<RID, RDG::ResourceUsage> untracked_usage;
+	Vector<UniformSet::SharedTexture> shared_textures_to_update; // fall back 所用的
+
+	for (uint32_t i = 0; i < set_uniform_count; i++) {
+		const ShaderUniform &set_uniform = set_uniforms[i];
+		int uniform_idx = -1;
+    // 找到相同绑定的uniform在 shader uniform set中的位置
+		for (int j = 0; j < (int)uniform_count; j++) {
+			if (uniforms[j].binding == set_uniform.binding) {
+				uniform_idx = j;
+			}
+		}
+		ERR_FAIL_COND_V_MSG(uniform_idx == -1, RID(),
+				"All the shader bindings for the given set must be covered by the uniforms provided. Binding (" + itos(set_uniform.binding) + "), set (" + itos(p_shader_set) + ") was not provided.");
+
+		const Uniform &uniform = uniforms[uniform_idx];
+  // 验证 type
+		ERR_FAIL_COND_V_MSG(uniform.uniform_type != set_uniform.type, RID(),
+				"Mismatch uniform type for binding (" + itos(set_uniform.binding) + "), set (" + itos(p_shader_set) + "). Expected '" + SHADER_UNIFORM_NAMES[set_uniform.type] + "', supplied: '" + SHADER_UNIFORM_NAMES[uniform.uniform_type] + "'.");
+
+		RDD::BoundUniform &driver_uniform = driver_uniforms[i];
+		driver_uniform.type = uniform.uniform_type;
+		driver_uniform.binding = uniform.binding;
+
+		switch (uniform.uniform_type) {
+			case UNIFORM_TYPE_SAMPLER: {
+        // Sampler[Num]
+				if (uniform.get_id_count() != (uint32_t)set_uniform.length) {
+					if (set_uniform.length > 1) {
+						ERR_FAIL_V_MSG(RID(), "Sampler (binding: " + itos(uniform.binding) + ") is an array of (" + itos(set_uniform.length) + ") sampler elements, so it should be provided equal number of sampler IDs to satisfy it (IDs provided: " + itos(uniform.get_id_count()) + ").");
+					} else {
+						ERR_FAIL_V_MSG(RID(), "Sampler (binding: " + itos(uniform.binding) + ") should provide one ID referencing a sampler (IDs provided: " + itos(uniform.get_id_count()) + ").");
+					}
+				}
+
+				for (uint32_t j = 0; j < uniform.get_id_count(); j++) {
+					RDD::SamplerID *sampler_driver_id = sampler_owner.get_or_null(uniform.get_id(j));
+					ERR_FAIL_NULL_V_MSG(sampler_driver_id, RID(), "Sampler (binding: " + itos(uniform.binding) + ", index " + itos(j) + ") is not a valid sampler.");
+
+					driver_uniform.ids.push_back(*sampler_driver_id); // 竟然能这样擦除掉吗
+				}
+			} break;
+			case UNIFORM_TYPE_SAMPLER_WITH_TEXTURE: { // 每两个
+				if (uniform.get_id_count() != (uint32_t)set_uniform.length * 2) {
+					if (set_uniform.length > 1) {
+						ERR_FAIL_V_MSG(RID(), "SamplerTexture (binding: " + itos(uniform.binding) + ") is an array of (" + itos(set_uniform.length) + ") sampler&texture elements, so it should provided twice the amount of IDs (sampler,texture pairs) to satisfy it (IDs provided: " + itos(uniform.get_id_count()) + ").");
+					} else {
+						ERR_FAIL_V_MSG(RID(), "SamplerTexture (binding: " + itos(uniform.binding) + ") should provide two IDs referencing a sampler and then a texture (IDs provided: " + itos(uniform.get_id_count()) + ").");
+					}
+				}
+
+				for (uint32_t j = 0; j < uniform.get_id_count(); j += 2) {
+					RDD::SamplerID *sampler_driver_id = sampler_owner.get_or_null(uniform.get_id(j + 0));
+					ERR_FAIL_NULL_V_MSG(sampler_driver_id, RID(), "SamplerBuffer (binding: " + itos(uniform.binding) + ", index " + itos(j + 1) + ") is not a valid sampler.");
+
+					RID texture_id = uniform.get_id(j + 1);
+					Texture *texture = texture_owner.get_or_null(texture_id);
+					ERR_FAIL_NULL_V_MSG(texture, RID(), "Texture (binding: " + itos(uniform.binding) + ", index " + itos(j) + ") is not a valid texture.");
+           // 需要验证texture的usage
+					ERR_FAIL_COND_V_MSG(!(texture->usage_flags & TEXTURE_USAGE_SAMPLING_BIT), RID(),
+							"Texture (binding: " + itos(uniform.binding) + ", index " + itos(j) + ") needs the TEXTURE_USAGE_SAMPLING_BIT usage flag set in order to be used as uniform.");
+
+					if ((texture->usage_flags & (TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | TEXTURE_USAGE_INPUT_ATTACHMENT_BIT))) {
+						UniformSet::AttachableTexture attachable_texture;
+						attachable_texture.bind = set_uniform.binding;
+						attachable_texture.texture = texture->owner.is_valid() ? texture->owner : uniform.get_id(j + 1);
+						attachable_textures.push_back(attachable_texture);
+					}
+
+					RDD::TextureID driver_id = texture->driver_id;
+					RDG::ResourceTracker *tracker = texture->draw_tracker;
+					if (texture->shared_fallback != nullptr && texture->shared_fallback->texture.id != 0) {
+						driver_id = texture->shared_fallback->texture;
+						tracker = texture->shared_fallback->texture_tracker;
+						shared_textures_to_update.push_back({ false, texture_id });
+					}
+
+					if (tracker != nullptr) {
+						draw_trackers.push_back(tracker);
+						draw_trackers_usage.push_back(RDG::RESOURCE_USAGE_TEXTURE_SAMPLE);
+					} else {
+						untracked_usage[texture_id] = RDG::RESOURCE_USAGE_TEXTURE_SAMPLE;
+					}
+
+					DEV_ASSERT(!texture->owner.is_valid() || texture_owner.get_or_null(texture->owner));
+
+					driver_uniform.ids.push_back(*sampler_driver_id);
+					driver_uniform.ids.push_back(driver_id);
+				}
+			} break;
+			case UNIFORM_TYPE_TEXTURE: {
+				if (uniform.get_id_count() != (uint32_t)set_uniform.length) {
+					if (set_uniform.length > 1) {
+						ERR_FAIL_V_MSG(RID(), "Texture (binding: " + itos(uniform.binding) + ") is an array of (" + itos(set_uniform.length) + ") textures, so it should be provided equal number of texture IDs to satisfy it (IDs provided: " + itos(uniform.get_id_count()) + ").");
+					} else {
+						ERR_FAIL_V_MSG(RID(), "Texture (binding: " + itos(uniform.binding) + ") should provide one ID referencing a texture (IDs provided: " + itos(uniform.get_id_count()) + ").");
+					}
+				}
+
+				for (uint32_t j = 0; j < uniform.get_id_count(); j++) {
+					RID texture_id = uniform.get_id(j);
+					Texture *texture = texture_owner.get_or_null(texture_id);
+					ERR_FAIL_NULL_V_MSG(texture, RID(), "Texture (binding: " + itos(uniform.binding) + ", index " + itos(j) + ") is not a valid texture.");
+
+					ERR_FAIL_COND_V_MSG(!(texture->usage_flags & TEXTURE_USAGE_SAMPLING_BIT), RID(),
+							"Texture (binding: " + itos(uniform.binding) + ", index " + itos(j) + ") needs the TEXTURE_USAGE_SAMPLING_BIT usage flag set in order to be used as uniform.");
+
+					if ((texture->usage_flags & (TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | TEXTURE_USAGE_INPUT_ATTACHMENT_BIT))) {
+						UniformSet::AttachableTexture attachable_texture;
+						attachable_texture.bind = set_uniform.binding;
+						attachable_texture.texture = texture->owner.is_valid() ? texture->owner : uniform.get_id(j);
+						attachable_textures.push_back(attachable_texture);
+					}
+
+					RDD::TextureID driver_id = texture->driver_id;
+					RDG::ResourceTracker *tracker = texture->draw_tracker;
+					if (texture->shared_fallback != nullptr && texture->shared_fallback->texture.id != 0) {
+						driver_id = texture->shared_fallback->texture;
+						tracker = texture->shared_fallback->texture_tracker;
+						shared_textures_to_update.push_back({ false, texture_id });
+					}
+
+					if (tracker != nullptr) {
+						draw_trackers.push_back(tracker);
+						draw_trackers_usage.push_back(RDG::RESOURCE_USAGE_TEXTURE_SAMPLE);
+					} else {
+						untracked_usage[texture_id] = RDG::RESOURCE_USAGE_TEXTURE_SAMPLE;
+					}
+
+					DEV_ASSERT(!texture->owner.is_valid() || texture_owner.get_or_null(texture->owner));
+
+					driver_uniform.ids.push_back(driver_id);
+				}
+			} break;
+			case UNIFORM_TYPE_IMAGE: { // 这种可能写
+				if (uniform.get_id_count() != (uint32_t)set_uniform.length) {
+					if (set_uniform.length > 1) {
+						ERR_FAIL_V_MSG(RID(), "Image (binding: " + itos(uniform.binding) + ") is an array of (" + itos(set_uniform.length) + ") textures, so it should be provided equal number of texture IDs to satisfy it (IDs provided: " + itos(uniform.get_id_count()) + ").");
+					} else {
+						ERR_FAIL_V_MSG(RID(), "Image (binding: " + itos(uniform.binding) + ") should provide one ID referencing a texture (IDs provided: " + itos(uniform.get_id_count()) + ").");
+					}
+				}
+
+				for (uint32_t j = 0; j < uniform.get_id_count(); j++) {
+					RID texture_id = uniform.get_id(j);
+					Texture *texture = texture_owner.get_or_null(texture_id);
+
+					ERR_FAIL_NULL_V_MSG(texture, RID(),
+							"Image (binding: " + itos(uniform.binding) + ", index " + itos(j) + ") is not a valid texture.");
+
+					ERR_FAIL_COND_V_MSG(!(texture->usage_flags & TEXTURE_USAGE_STORAGE_BIT), RID(),
+							"Image (binding: " + itos(uniform.binding) + ", index " + itos(j) + ") needs the TEXTURE_USAGE_STORAGE_BIT usage flag set in order to be used as uniform.");
+
+					if (texture->owner.is_null() && texture->shared_fallback != nullptr) {
+						shared_textures_to_update.push_back({ true, texture_id });
+					}
+          // 纹理必须是可变的，因为需要布局转换。
+					if (_texture_make_mutable(texture, texture_id)) { // 这种是读写，所以假定mutable
+						// The texture must be mutable as a layout transition will be required.
+						draw_graph.add_synchronization();
+					}
+
+					if (texture->draw_tracker != nullptr) {
+						draw_trackers.push_back(texture->draw_tracker);
+
+						if (set_uniform.writable) {
+							draw_trackers_usage.push_back(RDG::RESOURCE_USAGE_STORAGE_IMAGE_READ_WRITE);
+						} else {
+							draw_trackers_usage.push_back(RDG::RESOURCE_USAGE_STORAGE_IMAGE_READ);
+						}
+					}
+
+					DEV_ASSERT(!texture->owner.is_valid() || texture_owner.get_or_null(texture->owner));
+
+					driver_uniform.ids.push_back(texture->driver_id);
+				}
+			} break;
+			case UNIFORM_TYPE_TEXTURE_BUFFER: {
+				if (uniform.get_id_count() != (uint32_t)set_uniform.length) {
+					if (set_uniform.length > 1) {
+						ERR_FAIL_V_MSG(RID(), "Buffer (binding: " + itos(uniform.binding) + ") is an array of (" + itos(set_uniform.length) + ") texture buffer elements, so it should be provided equal number of texture buffer IDs to satisfy it (IDs provided: " + itos(uniform.get_id_count()) + ").");
+					} else {
+						ERR_FAIL_V_MSG(RID(), "Buffer (binding: " + itos(uniform.binding) + ") should provide one ID referencing a texture buffer (IDs provided: " + itos(uniform.get_id_count()) + ").");
+					}
+				}
+
+				for (uint32_t j = 0; j < uniform.get_id_count(); j++) {
+					RID buffer_id = uniform.get_id(j);
+					Buffer *buffer = texture_buffer_owner.get_or_null(buffer_id);
+					ERR_FAIL_NULL_V_MSG(buffer, RID(), "Texture Buffer (binding: " + itos(uniform.binding) + ", index " + itos(j) + ") is not a valid texture buffer.");
+
+					if (set_uniform.writable && _buffer_make_mutable(buffer, buffer_id)) {
+						// The buffer must be mutable if it's used for writing.
+						draw_graph.add_synchronization();
+					}
+
+					if (buffer->draw_tracker != nullptr) {
+						draw_trackers.push_back(buffer->draw_tracker);
+
+						if (set_uniform.writable) {
+							draw_trackers_usage.push_back(RDG::RESOURCE_USAGE_TEXTURE_BUFFER_READ_WRITE);
+						} else {
+							draw_trackers_usage.push_back(RDG::RESOURCE_USAGE_TEXTURE_BUFFER_READ);
+						}
+					} else {
+						untracked_usage[buffer_id] = RDG::RESOURCE_USAGE_TEXTURE_BUFFER_READ;
+					}
+
+					driver_uniform.ids.push_back(buffer->driver_id);
+				}
+			} break;
+			case UNIFORM_TYPE_SAMPLER_WITH_TEXTURE_BUFFER: {
+				if (uniform.get_id_count() != (uint32_t)set_uniform.length * 2) {
+					if (set_uniform.length > 1) {
+						ERR_FAIL_V_MSG(RID(), "SamplerBuffer (binding: " + itos(uniform.binding) + ") is an array of (" + itos(set_uniform.length) + ") sampler buffer elements, so it should provided twice the amount of IDs (sampler,buffer pairs) to satisfy it (IDs provided: " + itos(uniform.get_id_count()) + ").");
+					} else {
+						ERR_FAIL_V_MSG(RID(), "SamplerBuffer (binding: " + itos(uniform.binding) + ") should provide two IDs referencing a sampler and then a texture buffer (IDs provided: " + itos(uniform.get_id_count()) + ").");
+					}
+				}
+
+				for (uint32_t j = 0; j < uniform.get_id_count(); j += 2) {
+					RDD::SamplerID *sampler_driver_id = sampler_owner.get_or_null(uniform.get_id(j + 0));
+					ERR_FAIL_NULL_V_MSG(sampler_driver_id, RID(), "SamplerBuffer (binding: " + itos(uniform.binding) + ", index " + itos(j + 1) + ") is not a valid sampler.");
+
+					RID buffer_id = uniform.get_id(j + 1);
+					Buffer *buffer = texture_buffer_owner.get_or_null(buffer_id);
+					ERR_FAIL_NULL_V_MSG(buffer, RID(), "SamplerBuffer (binding: " + itos(uniform.binding) + ", index " + itos(j + 1) + ") is not a valid texture buffer.");
+
+					if (buffer->draw_tracker != nullptr) {
+						draw_trackers.push_back(buffer->draw_tracker);
+						draw_trackers_usage.push_back(RDG::RESOURCE_USAGE_TEXTURE_BUFFER_READ);
+					} else {
+						untracked_usage[buffer_id] = RDG::RESOURCE_USAGE_TEXTURE_BUFFER_READ;
+					}
+
+					driver_uniform.ids.push_back(*sampler_driver_id);
+					driver_uniform.ids.push_back(buffer->driver_id);
+				}
+			} break;
+			case UNIFORM_TYPE_IMAGE_BUFFER: {
+				// @Todo.
+			} break;
+			case UNIFORM_TYPE_UNIFORM_BUFFER: {
+				ERR_FAIL_COND_V_MSG(uniform.get_id_count() != 1, RID(),
+						"Uniform buffer supplied (binding: " + itos(uniform.binding) + ") must provide one ID (" + itos(uniform.get_id_count()) + " provided).");
+
+				RID buffer_id = uniform.get_id(0);
+				Buffer *buffer = uniform_buffer_owner.get_or_null(buffer_id);
+				ERR_FAIL_NULL_V_MSG(buffer, RID(), "Uniform buffer supplied (binding: " + itos(uniform.binding) + ") is invalid.");
+
+				ERR_FAIL_COND_V_MSG(buffer->size < (uint32_t)set_uniform.length, RID(),
+						"Uniform buffer supplied (binding: " + itos(uniform.binding) + ") size (" + itos(buffer->size) + " is smaller than size of shader uniform: (" + itos(set_uniform.length) + ").");
+
+				if (buffer->draw_tracker != nullptr) {
+					draw_trackers.push_back(buffer->draw_tracker);
+					draw_trackers_usage.push_back(RDG::RESOURCE_USAGE_UNIFORM_BUFFER_READ);
+				} else {
+					untracked_usage[buffer_id] = RDG::RESOURCE_USAGE_UNIFORM_BUFFER_READ;
+				}
+
+				driver_uniform.ids.push_back(buffer->driver_id);
+			} break;
+			case UNIFORM_TYPE_STORAGE_BUFFER: {
+				ERR_FAIL_COND_V_MSG(uniform.get_id_count() != 1, RID(),
+						"Storage buffer supplied (binding: " + itos(uniform.binding) + ") must provide one ID (" + itos(uniform.get_id_count()) + " provided).");
+
+				Buffer *buffer = nullptr;
+
+				RID buffer_id = uniform.get_id(0);
+				if (storage_buffer_owner.owns(buffer_id)) {
+					buffer = storage_buffer_owner.get_or_null(buffer_id);
+				} else if (vertex_buffer_owner.owns(buffer_id)) {
+					buffer = vertex_buffer_owner.get_or_null(buffer_id);
+
+					ERR_FAIL_COND_V_MSG(!(buffer->usage.has_flag(RDD::BUFFER_USAGE_STORAGE_BIT)), RID(), "Vertex buffer supplied (binding: " + itos(uniform.binding) + ") was not created with storage flag.");
+				}
+				ERR_FAIL_NULL_V_MSG(buffer, RID(), "Storage buffer supplied (binding: " + itos(uniform.binding) + ") is invalid.");
+
+				// If 0, then it's sized on link time.
+				ERR_FAIL_COND_V_MSG(set_uniform.length > 0 && buffer->size != (uint32_t)set_uniform.length, RID(),
+						"Storage buffer supplied (binding: " + itos(uniform.binding) + ") size (" + itos(buffer->size) + " does not match size of shader uniform: (" + itos(set_uniform.length) + ").");
+
+				if (set_uniform.writable && _buffer_make_mutable(buffer, buffer_id)) {
+					// The buffer must be mutable if it's used for writing.
+					draw_graph.add_synchronization();
+				}
+
+				if (buffer->draw_tracker != nullptr) {
+					draw_trackers.push_back(buffer->draw_tracker);
+
+					if (set_uniform.writable) {
+						draw_trackers_usage.push_back(RDG::RESOURCE_USAGE_STORAGE_BUFFER_READ_WRITE);
+					} else {
+						draw_trackers_usage.push_back(RDG::RESOURCE_USAGE_STORAGE_BUFFER_READ);
+					}
+				} else {
+					untracked_usage[buffer_id] = RDG::RESOURCE_USAGE_STORAGE_BUFFER_READ;
+				}
+
+				driver_uniform.ids.push_back(buffer->driver_id);
+			} break;
+			case UNIFORM_TYPE_INPUT_ATTACHMENT: {
+				ERR_FAIL_COND_V_MSG(shader->is_compute, RID(), "InputAttachment (binding: " + itos(uniform.binding) + ") supplied for compute shader (this is not allowed).");
+
+				if (uniform.get_id_count() != (uint32_t)set_uniform.length) {
+					if (set_uniform.length > 1) {
+						ERR_FAIL_V_MSG(RID(), "InputAttachment (binding: " + itos(uniform.binding) + ") is an array of (" + itos(set_uniform.length) + ") textures, so it should be provided equal number of texture IDs to satisfy it (IDs provided: " + itos(uniform.get_id_count()) + ").");
+					} else {
+						ERR_FAIL_V_MSG(RID(), "InputAttachment (binding: " + itos(uniform.binding) + ") should provide one ID referencing a texture (IDs provided: " + itos(uniform.get_id_count()) + ").");
+					}
+				}
+
+				for (uint32_t j = 0; j < uniform.get_id_count(); j++) {
+					RID texture_id = uniform.get_id(j);
+					Texture *texture = texture_owner.get_or_null(texture_id);
+
+					ERR_FAIL_NULL_V_MSG(texture, RID(),
+							"InputAttachment (binding: " + itos(uniform.binding) + ", index " + itos(j) + ") is not a valid texture.");
+
+					ERR_FAIL_COND_V_MSG(!(texture->usage_flags & TEXTURE_USAGE_SAMPLING_BIT), RID(),
+							"InputAttachment (binding: " + itos(uniform.binding) + ", index " + itos(j) + ") needs the TEXTURE_USAGE_SAMPLING_BIT usage flag set in order to be used as uniform.");
+
+					DEV_ASSERT(!texture->owner.is_valid() || texture_owner.get_or_null(texture->owner));
+
+					driver_uniform.ids.push_back(texture->driver_id);
+				}
+			} break;
+			default: {
+			}
+		}
+	}
+
+	RDD::UniformSetID driver_uniform_set = driver->uniform_set_create(driver_uniforms, shader->driver_id, p_shader_set);
+	ERR_FAIL_COND_V(!driver_uniform_set, RID());
+
+	UniformSet uniform_set;
+	uniform_set.driver_id = driver_uniform_set;
+	uniform_set.format = shader->set_formats[p_shader_set];
+	uniform_set.attachable_textures = attachable_textures;
+	uniform_set.draw_trackers = draw_trackers;
+	uniform_set.draw_trackers_usage = draw_trackers_usage;
+	uniform_set.untracked_usage = untracked_usage;
+	uniform_set.shared_textures_to_update = shared_textures_to_update;
+	uniform_set.shader_set = p_shader_set;
+	uniform_set.shader_id = p_shader;
+
+	RID id = uniform_set_owner.make_rid(uniform_set);
+#ifdef DEV_ENABLED
+	set_resource_name(id, "RID:" + itos(id.get_id()));
+#endif
+	// Add dependencies.
+	_add_dependency(id, p_shader);
+	for (uint32_t i = 0; i < uniform_count; i++) {
+		const Uniform &uniform = uniforms[i];
+		int id_count = uniform.get_id_count();
+		for (int j = 0; j < id_count; j++) {
+			_add_dependency(id, uniform.get_id(j));
+		}
+	}
+
+	return id;
+}
+
 void RenderingDevice::_texture_update_shared_fallback(RID p_texture_rid, Texture* p_texture, bool p_for_writing) {
   if (p_texture->shared_fallback == nullptr) {
     // This texture does not use any of the shared texture fallbacks.
@@ -3217,7 +3643,7 @@ Error lain::RenderingDevice::_texture_update(RID p_texture, uint32_t p_layer, co
 
 			for (uint32_t y = 0; y < height; y += region_size) {
 				for (uint32_t x = 0; x < width; x += region_size) {
-					uint32_t region_w = MIN(region_size, width - x); // 这样计算是正确的，能得到剩的一点
+					uint32_t region_w = MIN(region_size, width - x); // 
 					uint32_t region_h = MIN(region_size, height - y);
 
 					uint32_t region_logic_w = MIN(region_size, logic_width - x);
@@ -3623,7 +4049,7 @@ Error RenderingDevice::_draw_list_render_pass_begin(Framebuffer* p_framebuffer, 
   int clear_values_count = 0;
   {
     int color_index = 0;
-    for (int i = 0; i < p_framebuffer->texture_ids.size(); i++) {
+    for (int i = 0; i < p_framebuffer->texture_ids.size(); i++) { // 开始对每个texture进行设置
       RDD::RenderPassClearValue clear_value;
 
       RID texture_rid = p_framebuffer->texture_ids[i];
@@ -3638,12 +4064,12 @@ Error RenderingDevice::_draw_list_render_pass_begin(Framebuffer* p_framebuffer, 
 
       if (texture->usage_flags & TEXTURE_USAGE_COLOR_ATTACHMENT_BIT) {
         if (color_index < p_clear_colors.size()) {
-          // ERR_FAIL_INDEX_V(color_index, p_clear_colors.size(), ERR_BUG);  // A bug. // 这句不会发生
+          ERR_FAIL_INDEX_V(color_index, p_clear_colors.size(), ERR_BUG);  // A bug.
           clear_value.color = p_clear_colors[color_index];
           color_index++;
         }
 
-        resource_trackers.push_back(texture->draw_tracker);  // 如果是nullptr 咋整？这里的draw_tracker在哪里新建
+        resource_trackers.push_back(texture->draw_tracker);
         resource_usages.push_back(RDG::RESOURCE_USAGE_ATTACHMENT_COLOR_READ_WRITE);
         uses_color = true;
       } else if (texture->usage_flags & TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
@@ -4417,4 +4843,49 @@ RID RenderingDevice::vertex_array_create(uint32_t p_vertex_count, VertexFormatID
   }
 
   return id;
+}
+
+Vector<uint8_t> lain::RenderingDevice::buffer_get_data(RID p_buffer, uint32_t p_offset, uint32_t p_size) {
+	_THREAD_SAFE_METHOD_
+
+	Buffer *buffer = _get_buffer_from_owner(p_buffer);
+	if (!buffer) {
+		ERR_FAIL_V_MSG(Vector<uint8_t>(), "Buffer is either invalid or this type of buffer can't be retrieved. Only Index and Vertex buffers allow retrieving.");
+	}
+
+	// Size of buffer to retrieve.
+	if (!p_size) {
+		p_size = buffer->size;
+	} else {
+		ERR_FAIL_COND_V_MSG(p_size + p_offset > buffer->size, Vector<uint8_t>(),
+				"Size is larger than the buffer.");
+	}
+
+	RDD::BufferID tmp_buffer = driver->buffer_create(buffer->size, RDD::BUFFER_USAGE_TRANSFER_TO_BIT, RDD::MEMORY_ALLOCATION_TYPE_CPU);
+	ERR_FAIL_COND_V(!tmp_buffer, Vector<uint8_t>());
+
+	RDD::BufferCopyRegion region;
+	region.src_offset = p_offset;
+	region.size = p_size;
+
+	draw_graph.add_buffer_get_data(buffer->driver_id, buffer->draw_tracker, tmp_buffer, region);
+
+	// Flush everything so memory can be safely mapped.
+	_flush_and_stall_for_all_frames();
+
+	uint8_t *buffer_mem = driver->buffer_map(tmp_buffer);
+	ERR_FAIL_NULL_V(buffer_mem, Vector<uint8_t>());
+
+	Vector<uint8_t> buffer_data;
+	{
+		buffer_data.resize(p_size);
+		uint8_t *w = buffer_data.ptrw();
+		memcpy(w, buffer_mem, p_size);
+	}
+
+	driver->buffer_unmap(tmp_buffer);
+
+	driver->buffer_free(tmp_buffer);
+
+	return buffer_data;
 }

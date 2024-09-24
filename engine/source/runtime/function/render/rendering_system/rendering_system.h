@@ -13,6 +13,18 @@ class RenderingSystem : public Object {
   LCLASS(RenderingSystem, Object);
 
  public:
+ // Constants
+	 	enum {
+		NO_INDEX_ARRAY = -1,
+		ARRAY_WEIGHTS_SIZE = 4,
+		CANVAS_ITEM_Z_MIN = -4096,
+		CANVAS_ITEM_Z_MAX = 4096,
+		MAX_GLOW_LEVELS = 7,
+		MAX_CURSORS = 8,
+		MAX_2D_DIRECTIONAL_LIGHTS = 8,
+		MAX_MESH_SURFACES = 256
+	};
+
   RenderingSystem() { p_singleton = this; };
   virtual ~RenderingSystem() { p_singleton = nullptr; }
   L_INLINE static RenderingSystem* get_singleton() { return p_singleton; }
@@ -190,11 +202,12 @@ class RenderingSystem : public Object {
     PRIMITIVE_TRIANGLE_STRIP,
     PRIMITIVE_MAX,
   };
+	// 大家都使用的数据类，在不同后端中被翻译，添加
+	// 填写这个surface data 就可以 用来添加到mesh里了。
 
   struct SurfaceData {
     PrimitiveType primitive = PRIMITIVE_MAX;
-
-    uint64_t format = ARRAY_FLAG_FORMAT_CURRENT_VERSION;
+    uint64_t format = ARRAY_FLAG_FORMAT_CURRENT_VERSION; // @todo 这里可以用bitfield
     Vector<uint8_t> vertex_data;     // Vertex, Normal, Tangent (change with skinning, blendshape).
     Vector<uint8_t> attribute_data;  // Color, UV, UV2, Custom0-3.
     Vector<uint8_t> skin_data;       // Bone index, Bone weight.
@@ -220,6 +233,12 @@ class RenderingSystem : public Object {
 
     RID material;
   };
+
+	enum MultimeshTransformFormat {
+		MULTIMESH_TRANSFORM_2D,
+		MULTIMESH_TRANSFORM_3D,
+	};
+
   /**************** */
   /* INSTANCING API */
   /**************** */
@@ -376,6 +395,8 @@ class RenderingSystem : public Object {
 
 	
 	/* Light API */
+	/* Light API */
+	/* Light API */
 	// 光源类型： 平行光，点光源，聚光灯
 	// 反射探针
 	// 阴影图集
@@ -478,6 +499,9 @@ class RenderingSystem : public Object {
 
 	virtual void light_projectors_set_filter(LightProjectorFilter p_filter) = 0;
 	/* PROBE API */
+
+
+
 
 
 public:

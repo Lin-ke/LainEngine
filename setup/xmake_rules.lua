@@ -36,7 +36,6 @@ rule("l.module")
     end
     )
 rule_end()
---- godot用scons里的 import env就是这个东西,似乎
 rule("l.component")
     on_config(function (component, opt)
         import("core.project.project")

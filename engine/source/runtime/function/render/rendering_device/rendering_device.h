@@ -443,7 +443,8 @@ class RenderingDevice : public RenderingDeviceCommons {
     Vector<RID> texture_ids;
     InvalidationCallback invalidated_callback = nullptr;
     void* invalidated_callback_userdata = nullptr;
-
+  // 注意这里create 只是 创建了 Frambuffer而没有新建RDD::framebuffer
+  // 只有在draw_list里才会新建（需要这个frambuffer）
     struct Version {
       RDD::FramebufferID framebuffer;
       RDD::RenderPassID render_pass;  // This one is owned.
@@ -681,6 +682,8 @@ class RenderingDevice : public RenderingDeviceCommons {
     Vector<RID> ids;  // If multiple ones are provided, this is used instead.
 
    public:
+   // 获得id数量，如果id是valid的，返回1，否则返回ids.size()
+   // 与 uniform set校验数量用。
     _FORCE_INLINE_ uint32_t get_id_count() const { return (id.is_valid() ? 1 : ids.size()); }
     _FORCE_INLINE_ RID get_id(uint32_t p_idx) const {
       if (id.is_valid()) {
@@ -737,15 +740,15 @@ class RenderingDevice : public RenderingDeviceCommons {
   struct UniformSet {
     uint32_t format = 0;
     RID shader_id;
-    uint32_t shader_set = 0;  // ？
+    uint32_t shader_set = 0;  // 第几个set
     RDD::UniformSetID driver_id;
-    struct AttachableTexture {  // 验证使用，该Uniform绑定的texture，（不能作为framebuffer的）
+    struct AttachableTexture {  // 验证使用，被Uniform绑定的texture，不能作为framebuffer的texture
       uint32_t bind = 0;
       RID texture;
     };
 
     struct SharedTexture {
-      uint32_t writing = 0;
+      uint32_t writing = 0; // texture被用于写（false, true)
       RID texture;
     };
 

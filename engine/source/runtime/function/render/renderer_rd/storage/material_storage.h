@@ -41,6 +41,7 @@ class MaterialStorage : public RendererMaterialStorage {
     HashMap<StringName, HashMap<int, RID>> default_texture_parameter;
     HashSet<Material*> owners;
   };
+  
   mutable RID_Owner<Shader, true> shader_owner;
 
  public:

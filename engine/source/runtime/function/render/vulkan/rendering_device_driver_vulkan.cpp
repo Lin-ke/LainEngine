@@ -548,7 +548,7 @@ VkSampleCountFlagBits RenderingDeviceDriverVulkan::_ensure_supported_sample_coun
   }
   return VK_SAMPLE_COUNT_1_BIT;
 }
-
+// 根据 properites.linearTilingFeatures 和 properties.optimalTilingFeatures 来判断是否支持某种 usage
 BitField<RDD::TextureUsageBits> RenderingDeviceDriverVulkan::texture_get_usages_supported_by_format(DataFormat p_format, bool p_cpu_readable) {
   VkFormatProperties properties = {};
   vkGetPhysicalDeviceFormatProperties(physical_device, RD_TO_VK_FORMAT[p_format], &properties);

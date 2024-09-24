@@ -3,7 +3,7 @@
 #define TEST_DRAWTRIANGLE_H
 #include "function/render/rendering_device/rendering_device.h"
 #include "core/io/json11.h"
-
+#include "stb_image_write.h"
 namespace lain::test {
 void test_draw_triangle() {
   using namespace lain;
@@ -65,6 +65,7 @@ void test_draw_triangle() {
 
   );
   auto clear_color_values= PackedColorArray({Color(1,1,1,1)});
+  
   auto draw_list = device->draw_list_begin(
     framebuf, RD::ColorInitialAction(), RD::ColorFinalAction(), RD::InitialAction::INITIAL_ACTION_CLEAR, RD::FinalAction::FINAL_ACTION_STORE,
     clear_color_values
@@ -74,10 +75,10 @@ void test_draw_triangle() {
   device->draw_list_bind_vertex_array(draw_list,vertex_array_id);
   device->draw_list_draw(draw_list, false, 3, 0);
   device->draw_list_end();
-  Vector<uint8_t> data;
-  data.resize(1000000); // 250 * 250 * 4 * 4
-  device->_texture_update(framebuf_texture, 0,data , true, false);
   auto td = device->texture_get_data(framebuf_texture, 0);
+
+  stbi_write_png("test.png", 250, 250, 4, td.ptr(), 250 * 4);
+
 }
 }  // namespace lain::test
 #endif

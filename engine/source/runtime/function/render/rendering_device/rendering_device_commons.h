@@ -322,7 +322,7 @@ namespace lain {
 			uint32_t usage_bits = 0; // 基本是TextureUsageBits
 			BitField<TextureMisc> misc;
 			Vector<DataFormat> shareable_formats; // 一开始就需要说明有没有可以shared的format 一般用来做SRGB
-			bool is_resolve_buffer = false;
+			bool is_resolve_buffer = false; // use msaa
 
 			bool operator==(const TextureFormat& b) const {
 				return format == b.format &&

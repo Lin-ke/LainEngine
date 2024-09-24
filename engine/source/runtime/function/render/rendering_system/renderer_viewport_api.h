@@ -30,6 +30,7 @@ class RendererViewport {
   Vector<Viewport*> sorted_active_viewports;
   RID viewport_allocate();
   void viewport_initialize(RID p_rid);
+  int32_t get_num_viewports_with_motion_vectors() const;
 };
 
 }  // namespace lain

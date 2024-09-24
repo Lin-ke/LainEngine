@@ -144,7 +144,7 @@ class RenderingDeviceGraph {
     // reference of commands
     int32_t read_full_cmd_idx = -1;
     int32_t read_slice_cmd_idx = -1;
-    int32_t write_cmd_idx = -1;
+    int32_t write_cmd_idx = -1; // 对资源写入的命令 如果有父亲切片则采用write list的方式
     int32_t draw_idx = -1;
     ResourceUsage draw_usage = RESOURCE_USAGE_NONE;
     int32_t compute_idx = -1;

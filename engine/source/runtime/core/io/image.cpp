@@ -468,7 +468,7 @@ int Image::get_mipmap_count() const {
 		return 0;
 	}
 }
-
+// @todo readit 
 //using template generates perfectly optimized code due to constant expression reduction and unused variable removal present in all compilers
 template <uint32_t read_bytes, bool read_alpha, uint32_t write_bytes, bool write_alpha, bool read_gray, bool write_gray>
 static void _convert(int p_width, int p_height, const uint8_t* p_src, uint8_t* p_dst) {
@@ -2544,9 +2544,7 @@ Error Image::load(const String& p_path) {
 		WARN_PRINT("Loaded resource as image file, this will not work on export: '" + p_path + "'. Instead, import the image file as an Image resource and load it normally as a resource.");
 	}
 #endif
-	
-	// image?????ü?????image.data?????ü???????????????????delete
-	// ??????????н?
+
 	return ImageLoader::load_image(p_path, this);
 }
 

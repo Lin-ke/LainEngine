@@ -280,7 +280,9 @@ void lain::RendererSceneCull::instance_set_base(RID p_instance, RID p_base) {
   _instance_queue_update(instance, true, true);
 }
 
-void lain::RendererSceneCull::instance_set_scenario(RID p_instance, RID p_scenario) {}
+void lain::RendererSceneCull::instance_set_scenario(RID p_instance, RID p_scenario) {
+  
+}
 
 void RendererSceneCull::_instance_queue_update(Instance* p_instance, bool p_update_aabb, bool p_update_dependencies) {
   if (p_update_aabb) {

@@ -142,6 +142,7 @@ target("Core")
     -- stb_img
     -- json 11
     add_includedirs("engine/thirdparty/stb_image")
+    -- implementation in "image_loader_stb.cpp"
     add_headerfiles("engine/thirdparty/json11/json11.hpp")
     add_files("engine/thirdparty/json11/json11.cpp")
     add_includedirs("engine/thirdparty/json11")
@@ -169,7 +170,7 @@ static_component("Renderer", "Core")
 
     add_includedirs("engine/thirdparty/volk", {public = true})
     add_includedirs("engine/thirdparty/vma", {public = true})
-     -- spirv-reflect ???????
+     -- spirv-reflect 
     add_includedirs("engine/thirdparty/spirv-reflect")
     
     add_includedirs("$(env VULKAN_SDK)/Include", {public = true})

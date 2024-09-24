@@ -22,11 +22,9 @@ class RendererTextureStorage {
   virtual void texture_2d_initialize(RID p_texture, const Ref<Image>& p_image) = 0;
   virtual void texture_2d_layered_initialize(RID p_texture, const Vector<Ref<Image>>& p_layers, RS::TextureLayeredType p_layered_type) = 0;
   virtual void texture_3d_initialize(RID p_texture, Image::Format, int p_width, int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>>& p_data) = 0;
-  virtual void texture_proxy_initialize(RID p_texture, RID p_base) = 0;  //all slices, then all the mipmaps, must be coherent
 
   virtual void texture_2d_update(RID p_texture, const Ref<Image>& p_image, int p_layer = 0) = 0;
   virtual void texture_3d_update(RID p_texture, const Vector<Ref<Image>>& p_data) = 0;
-  virtual void texture_proxy_update(RID p_proxy, RID p_base) = 0;
 
   //these two APIs can be used together or in combination with the others.
   virtual void texture_2d_placeholder_initialize(RID p_texture) = 0;
@@ -53,7 +51,7 @@ class RendererTextureStorage {
 
   virtual void texture_set_force_redraw_if_visible(RID p_texture, bool p_enable) = 0;
 
-  virtual Size2 texture_size_with_proxy(RID p_proxy) = 0;
+  // virtual Size2 texture_size_with_proxy(RID p_proxy) = 0;
 
   virtual void texture_rd_initialize(RID p_texture, const RID& p_rd_texture, const RS::TextureLayeredType p_layer_type = RS::TEXTURE_LAYERED_2D_ARRAY) = 0;
   virtual RID texture_get_rd_texture(RID p_texture, bool p_srgb = false) const = 0;
@@ -82,10 +80,10 @@ class RendererTextureStorage {
 
   /* DECAL INSTANCE */
 
-  virtual RID decal_instance_create(RID p_decal) = 0;
-  virtual void decal_instance_free(RID p_decal_instance) = 0;
-  virtual void decal_instance_set_transform(RID p_decal_instance, const Transform3D& p_transform) = 0;
-  virtual void decal_instance_set_sorting_offset(RID p_decal_instance, float p_sorting_offset) = 0;
+  // virtual RID decal_instance_create(RID p_decal) = 0;
+  // virtual void decal_instance_free(RID p_decal_instance) = 0;
+  // virtual void decal_instance_set_transform(RID p_decal_instance, const Transform3D& p_transform) = 0;
+  // virtual void decal_instance_set_sorting_offset(RID p_decal_instance, float p_sorting_offset) = 0;
 
   /* RENDER TARGET */
 

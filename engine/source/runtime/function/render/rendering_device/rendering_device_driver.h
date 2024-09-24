@@ -317,7 +317,7 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
     PIPELINE_STAGE_ALL_GRAPHICS_BIT = (1 << 15),
     PIPELINE_STAGE_ALL_COMMANDS_BIT = (1 << 16),
     PIPELINE_STAGE_CLEAR_STORAGE_BIT = (1 << 17),
-    PIPELINE_STAGE_NONE = 0,  // vulkan 1.3 @?
+    PIPELINE_STAGE_NONE = 0, 
   };
   // same with vulkan https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkAccessFlagBits.html
   enum BarrierAccessBits {
@@ -481,7 +481,7 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
   struct BoundUniform {
     UniformType type = UNIFORM_TYPE_MAX;
     uint32_t binding = 0xffffffff;  // Binding index as specified in shader.
-    LocalVector<ID> ids;
+    LocalVector<ID> ids; // RDD::ID Sampler; Buffer or Texture
   };
 
   // bindless: 1个set，多个binding

@@ -121,7 +121,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
     // If a label is active, tag the command with the label.
     r_command->label_index = command_label_index;
   }
-  // timestamp和synchronization是特殊的command，需要单独处理(需要将之前的命令与该命令相连)
+  // timestamp是特殊的command，需要单独处理(需要将之前的命令与该命令相连)
   if (r_command->type == RecordedCommand::TYPE_CAPTURE_TIMESTAMP) {
     // All previous commands starting from the previous timestamp should be adjacent to this command.
     int32_t start_command_index = uint32_t(MAX(command_timestamp_index, 0));
@@ -341,6 +341,7 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
           resource_tracker->usage_access =
               RDD::BARRIER_ACCESS_MEMORY_WRITE_BIT;  // 假定之前是写，现在又写
         }
+        // 例如一个是写一个是读，这里会保证barrier的顺序
         _add_texture_barrier_to_command(
             resource_tracker->texture_driver_id, resource_tracker->usage_access, new_usage_access,
             resource_tracker->usage, new_resource_usage, resource_tracker->texture_subresources,
@@ -356,7 +357,8 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
         // FIXME: Memory barriers are currently pushed regardless of whether buffer barriers are being used or not. Refer to the comment on the
         // definition of USE_BUFFER_BARRIERS for the reason behind this. This can be fixed to be one case or the other once it's been confirmed
         // the buffer and memory barrier behavior discrepancy has been solved.
-
+        // FIXME：无论是否使用缓冲区屏障，当前都会推动内存屏障。
+        // 请参阅关于USE_BFER_BARRIERS定义的评论，了解背后的原因。一旦确认缓冲区和内存屏障行为差异已得到解决，这可以固定为一种或另一种情况。
         r_command->memory_barrier.src_access = resource_tracker->usage_access;
         r_command->memory_barrier.dst_access = new_usage_access;
       }
@@ -712,7 +714,7 @@ void RenderingDeviceGraph::add_buffer_get_data(RDD::BufferID p_src, ResourceTrac
   }
 }
 
-// @? buffer_update是复制pData到buffer。这里是复制若干个buffer到该buffer
+// buffer_update是复制pData到 (temp) buffer。这里是复制若干个buffer到该buffer
 void RenderingDeviceGraph::add_buffer_update(RDD::BufferID p_dst, ResourceTracker* p_dst_tracker,
                                              VectorView<RecordedBufferCopy> p_buffer_copies) {
   DEV_ASSERT(p_dst_tracker != nullptr);
