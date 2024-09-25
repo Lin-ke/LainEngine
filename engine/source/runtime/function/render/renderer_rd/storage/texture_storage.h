@@ -19,7 +19,7 @@ class TextureStorage : public RendererTextureStorage {
 
   enum TextureType { TYPE_2D, TYPE_LAYERED, TYPE_3D };
   // render system 内部的texture
-  class RenderTarget;
+  struct RenderTarget;
   struct Texture {
     TextureType type;
     RS::TextureLayeredType layered_type = RS::TEXTURE_LAYERED_2D_ARRAY;
@@ -91,6 +91,7 @@ class TextureStorage : public RendererTextureStorage {
       swizzle_a = RD::TEXTURE_SWIZZLE_A;
     }
   };
+  // 从RDformat 获得 
   struct TextureFromRDFormat {
     Image::Format image_format;
     RD::DataFormat rd_format;
@@ -142,6 +143,9 @@ class TextureStorage : public RendererTextureStorage {
   virtual String texture_get_path(RID p_texture) const override;
 
   virtual Image::Format texture_get_format(RID p_texture) const override;
+  virtual void texture_rd_initialize(RID p_texture, const RID& p_rd_texture, const RS::TextureLayeredType p_layer_type = RS::TEXTURE_LAYERED_2D_ARRAY) override;
+  virtual RID texture_get_rd_texture(RID p_texture, bool p_srgb = false) const override;
+  virtual uint64_t texture_get_native_handle(RID p_texture, bool p_srgb = false) const override;
 
   /* RENDER TARGET */
   /* RENDER TARGET */
@@ -261,8 +265,9 @@ class TextureStorage : public RendererTextureStorage {
   void render_target_set_override(RID p_render_target, RID p_color_texture, RID p_depth_texture, RID p_velocity_texture);
   RID render_target_get_override_color(RID p_render_target) const;
   RID render_target_get_override_depth(RID p_render_target) const;
+  virtual RID render_target_get_override_velocity(RID p_render_target) const override;
+
   //  rt->overridden.depth
-  RID  render_target_get_override_depth_slice(RID p_render_target, const uint32_t p_layer) const;
 
   virtual void render_target_set_transparent(RID p_render_target, bool p_is_transparent) override;
   virtual bool render_target_get_transparent(RID p_render_target) const override;

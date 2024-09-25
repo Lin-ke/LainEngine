@@ -41,4 +41,8 @@ void RendererCompositorRD::initialize() {
 }
 lain::RendererCompositorRD::RendererCompositorRD() {
   material_storage = new (RendererRD::MaterialStorage);
+  texture_storage = new (RendererRD::TextureStorage);
+  mesh_storage = new (RendererRD::MeshStorage);
+  light_storage = new (RendererRD::LightStorage);
+
 }

@@ -170,6 +170,7 @@
 #include  "C:/LainEngine/engine/source/runtime/function/render/rendering_system/mesh_storage_api.h"
 #include  "C:/LainEngine/engine/source/runtime/function/render/rendering_system/particles_storage_api.h"
 #include  "C:/LainEngine/engine/source/runtime/function/render/rendering_system/renderer_compositor_api.h"
+#include  "C:/LainEngine/engine/source/runtime/function/render/rendering_system/renderer_compositor_storage.h"
 #include  "C:/LainEngine/engine/source/runtime/function/render/rendering_system/renderer_fog_api.h"
 #include  "C:/LainEngine/engine/source/runtime/function/render/rendering_system/renderer_gi_api.h"
 #include  "C:/LainEngine/engine/source/runtime/function/render/rendering_system/renderer_viewport_api.h"

@@ -277,7 +277,7 @@ class MeshStorage : public RendererMeshStorage {
 		uint32_t color_offset_cache = 0;
 		uint32_t custom_data_offset_cache = 0;
 
-		Vector<float> data_cache; //used if individual setting is used
+		Vector<float> data_cache; //used if individual setting is used // 	used when local 
 		bool *data_cache_dirty_regions = nullptr; // is dirty (bool[])
 		uint32_t data_cache_dirty_region_count = 0; // 需要处理几个
 		bool *previous_data_cache_dirty_regions = nullptr;
@@ -304,7 +304,7 @@ class MeshStorage : public RendererMeshStorage {
 
 	virtual void multimesh_allocate_data(RID p_multimesh, int p_instances, RS::MultimeshTransformFormat p_transform_format, bool p_use_colors = false, bool p_use_custom_data = false) override;
 
-	virtual int multimesh_get_instance_count(RID p_multimesh) const = 0;
+	virtual int multimesh_get_instance_count(RID p_multimesh) const override;
 
 	virtual void multimesh_set_mesh(RID p_multimesh, RID p_mesh) override;
 	virtual void multimesh_instance_set_transform(RID p_multimesh, int p_index, const Transform3D &p_transform) override;
@@ -313,22 +313,22 @@ class MeshStorage : public RendererMeshStorage {
 	virtual void multimesh_instance_set_custom_data(RID p_multimesh, int p_index, const Color &p_color) override;
 
 	virtual void multimesh_set_custom_aabb(RID p_multimesh, const AABB &p_aabb) override;
-	virtual AABB multimesh_get_custom_aabb(RID p_multimesh) const = 0;
+	virtual AABB multimesh_get_custom_aabb(RID p_multimesh) const override;
 
-	virtual RID multimesh_get_mesh(RID p_multimesh) const = 0;
+	virtual RID multimesh_get_mesh(RID p_multimesh) const override;
 
-	virtual Transform3D multimesh_instance_get_transform(RID p_multimesh, int p_index) const = 0;
-	virtual Transform2D multimesh_instance_get_transform_2d(RID p_multimesh, int p_index) const = 0;
-	virtual Color multimesh_instance_get_color(RID p_multimesh, int p_index) const = 0;
-	virtual Color multimesh_instance_get_custom_data(RID p_multimesh, int p_index) const = 0;
+	virtual Transform3D multimesh_instance_get_transform(RID p_multimesh, int p_index) const override;
+	virtual Transform2D multimesh_instance_get_transform_2d(RID p_multimesh, int p_index) const override;
+	virtual Color multimesh_instance_get_color(RID p_multimesh, int p_index) const override;
+	virtual Color multimesh_instance_get_custom_data(RID p_multimesh, int p_index) const override;
 
 	virtual void multimesh_set_buffer(RID p_multimesh, const Vector<float> &p_buffer) override;
-	virtual Vector<float> multimesh_get_buffer(RID p_multimesh) const = 0;
+	virtual Vector<float> multimesh_get_buffer(RID p_multimesh) const override;
 
 	virtual void multimesh_set_visible_instances(RID p_multimesh, int p_visible) override;
-	virtual int multimesh_get_visible_instances(RID p_multimesh) const = 0;
+	virtual int multimesh_get_visible_instances(RID p_multimesh) const override;
 
-	virtual AABB multimesh_get_aabb(RID p_multimesh) const = 0;
+	virtual AABB multimesh_get_aabb(RID p_multimesh) const override;
 	/* SKELETON API */
 
 	virtual RID skeleton_allocate() override;
@@ -350,7 +350,10 @@ class MeshStorage : public RendererMeshStorage {
 	void _update_dirty_multimeshes();
 	_FORCE_INLINE_ void _multimesh_re_create_aabb(MultiMesh *multimesh, const float *p_data, int p_instances);
 	_FORCE_INLINE_ void _multimesh_make_local(MultiMesh *multimesh) const;
+	_FORCE_INLINE_ void _multimesh_mark_dirty(MultiMesh *multimesh, int p_index, bool p_aabb);
 	_FORCE_INLINE_ void _multimesh_mark_all_dirty(MultiMesh *multimesh, bool p_data, bool p_aabb);
+	_FORCE_INLINE_ void _multimesh_enable_motion_vectors(MultiMesh *multimesh);
+
 	MultiMesh *multimesh_dirty_list = nullptr;
 
   

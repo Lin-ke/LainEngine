@@ -4999,3 +4999,45 @@ uint64_t RenderingDeviceDriverVulkan::limit_get(Limit p_limit) {
       ERR_FAIL_V(0);
   }
 }
+uint64_t RenderingDeviceDriverVulkan::get_resource_native_handle(DriverResource p_type, ID p_driver_id) {
+	switch (p_type) {
+		case DRIVER_RESOURCE_LOGICAL_DEVICE: {
+			return (uint64_t)vk_device;
+		}
+		case DRIVER_RESOURCE_PHYSICAL_DEVICE: {
+			return (uint64_t)physical_device;
+		}
+		case DRIVER_RESOURCE_TOPMOST_OBJECT: {
+			return (uint64_t)context_driver->instance_get();
+		}
+		case DRIVER_RESOURCE_COMMAND_QUEUE: {
+			const CommandQueue *queue_info = (const CommandQueue *)p_driver_id.id;
+			return (uint64_t)queue_families[queue_info->queue_family][queue_info->queue_index].queue;
+		}
+		case DRIVER_RESOURCE_QUEUE_FAMILY: {
+			return uint32_t(p_driver_id.id) - 1;
+		}
+		case DRIVER_RESOURCE_TEXTURE: {
+			const TextureInfo *tex_info = (const TextureInfo *)p_driver_id.id;
+			return (uint64_t)tex_info->vk_view_create_info.image;
+		}
+		case DRIVER_RESOURCE_TEXTURE_VIEW: {
+			const TextureInfo *tex_info = (const TextureInfo *)p_driver_id.id;
+			return (uint64_t)tex_info->vk_view;
+		}
+		case DRIVER_RESOURCE_TEXTURE_DATA_FORMAT: {
+			const TextureInfo *tex_info = (const TextureInfo *)p_driver_id.id;
+			return (uint64_t)tex_info->vk_view_create_info.format;
+		}
+		case DRIVER_RESOURCE_SAMPLER:
+		case DRIVER_RESOURCE_UNIFORM_SET:
+		case DRIVER_RESOURCE_BUFFER:
+		case DRIVER_RESOURCE_COMPUTE_PIPELINE:
+		case DRIVER_RESOURCE_RENDER_PIPELINE: {
+			return p_driver_id.id;
+		}
+		default: {
+			return 0;
+		}
+	}
+}

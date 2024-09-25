@@ -786,6 +786,7 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
  public:
   virtual ~RenderingDeviceDriver();
   virtual Error initialize(uint32_t p_device_index, uint32_t p_frame_count) = 0;
+  virtual uint64_t get_resource_native_handle(DriverResource p_type, ID p_driver_id) = 0;
 };
 
 using RDD = RenderingDeviceDriver;

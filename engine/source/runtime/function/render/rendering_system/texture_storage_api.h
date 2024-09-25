@@ -49,7 +49,7 @@ class RendererTextureStorage {
 
   // virtual void texture_debug_usage(List<RS::TextureInfo>* r_info) = 0;
 
-  virtual void texture_set_force_redraw_if_visible(RID p_texture, bool p_enable) = 0;
+  // virtual void texture_set_force_redraw_if_visible(RID p_texture, bool p_enable) = 0;
 
   // virtual Size2 texture_size_with_proxy(RID p_proxy) = 0;
 

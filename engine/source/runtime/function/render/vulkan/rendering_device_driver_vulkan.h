@@ -629,6 +629,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
  public:
  virtual uint64_t api_trait_get(ApiTrait p_trait) override final;
 		virtual uint64_t get_total_memory_used() override final;
+    virtual uint64_t get_resource_native_handle(DriverResource p_type, ID p_driver_id) override final;
 
   /// --- limits --- 
   virtual uint64_t limit_get(Limit p_limit); // 翻译limit到physical_device_properties.limits

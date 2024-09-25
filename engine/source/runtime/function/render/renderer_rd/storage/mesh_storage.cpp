@@ -337,9 +337,6 @@ void MeshStorage::mesh_add_surface(RID p_mesh, const RS::SurfaceData &p_surface)
 	mesh->material_cache.clear();
 }
 
-RID MeshStorage::mesh_instance_create(RID p_base) {
-    return mesh_instance_owner.allocate_rid();
-}
 // @todo 下一步考虑将所有buffer合并起来再塞进去
 
 void MeshStorage::_mesh_instance_clear(MeshInstance *mi) {
@@ -1191,6 +1188,53 @@ Transform2D MeshStorage::multimesh_instance_get_transform_2d(RID p_multimesh, in
 	return t;
 }
 
+Color MeshStorage::multimesh_instance_get_color(RID p_multimesh, int p_index) const {
+	MultiMesh *multimesh = multimesh_owner.get_or_null(p_multimesh);
+	ERR_FAIL_NULL_V(multimesh, Color());
+	ERR_FAIL_INDEX_V(p_index, multimesh->instances, Color());
+	ERR_FAIL_COND_V(!multimesh->uses_colors, Color());
+
+	_multimesh_make_local(multimesh);
+
+	Color c;
+	{
+		const float *r = multimesh->data_cache.ptr();
+
+		const float *dataptr = r + (multimesh->motion_vectors_current_offset + p_index) * multimesh->stride_cache + multimesh->color_offset_cache;
+
+		c.r = dataptr[0];
+		c.g = dataptr[1];
+		c.b = dataptr[2];
+		c.a = dataptr[3];
+	}
+
+	return c;
+}
+
+Color MeshStorage::multimesh_instance_get_custom_data(RID p_multimesh, int p_index) const {
+	MultiMesh *multimesh = multimesh_owner.get_or_null(p_multimesh);
+	ERR_FAIL_NULL_V(multimesh, Color());
+	ERR_FAIL_INDEX_V(p_index, multimesh->instances, Color());
+	ERR_FAIL_COND_V(!multimesh->uses_custom_data, Color());
+
+	_multimesh_make_local(multimesh);
+
+	Color c;
+	{
+		const float *r = multimesh->data_cache.ptr();
+
+		const float *dataptr = r + (multimesh->motion_vectors_current_offset + p_index) * multimesh->stride_cache + multimesh->custom_data_offset_cache;
+
+		c.r = dataptr[0];
+		c.g = dataptr[1];
+		c.b = dataptr[2];
+		c.a = dataptr[3];
+	}
+
+	return c;
+}
+
+
 void MeshStorage::_multimesh_mark_all_dirty(MultiMesh *multimesh, bool p_data, bool p_aabb) {
 	if (p_data) {
 		uint32_t data_cache_dirty_region_count = Math::division_round_up(multimesh->instances, MULTIMESH_DIRTY_REGION_SIZE);
@@ -1212,4 +1256,205 @@ void MeshStorage::_multimesh_mark_all_dirty(MultiMesh *multimesh, bool p_data, b
 		multimesh_dirty_list = multimesh;
 		multimesh->dirty = true;
 	}
+}
+
+void MeshStorage::_multimesh_make_local(MultiMesh *multimesh) const {
+	if (multimesh->data_cache.size() > 0) {
+		return; //already local
+	}
+
+	// this means that the user wants to load/save individual elements,
+	// for this, the data must reside on CPU, so just copy it there.
+	uint32_t buffer_size = multimesh->instances * multimesh->stride_cache;
+	if (multimesh->motion_vectors_enabled) {
+		buffer_size *= 2;
+	}
+	multimesh->data_cache.resize(buffer_size);
+	{
+		float *w = multimesh->data_cache.ptrw();
+
+		if (multimesh->buffer_set) {
+			Vector<uint8_t> buffer = RD::get_singleton()->buffer_get_data(multimesh->buffer);
+			{
+				const uint8_t *r = buffer.ptr();
+				memcpy(w, r, buffer.size());
+			}
+		} else {
+			memset(w, 0, buffer_size * sizeof(float));
+		}
+	}
+	uint32_t data_cache_dirty_region_count = Math::division_round_up(multimesh->instances, MULTIMESH_DIRTY_REGION_SIZE);
+	multimesh->data_cache_dirty_regions = memnew_arr(bool, data_cache_dirty_region_count);
+	memset(multimesh->data_cache_dirty_regions, 0, data_cache_dirty_region_count * sizeof(bool));
+	multimesh->data_cache_dirty_region_count = 0;
+
+	multimesh->previous_data_cache_dirty_regions = memnew_arr(bool, data_cache_dirty_region_count);
+	memset(multimesh->previous_data_cache_dirty_regions, 0, data_cache_dirty_region_count * sizeof(bool));
+	multimesh->previous_data_cache_dirty_region_count = 0;
+}
+
+void MeshStorage::multimesh_set_buffer(RID p_multimesh, const Vector<float> &p_buffer) {
+	MultiMesh *multimesh = multimesh_owner.get_or_null(p_multimesh);
+	ERR_FAIL_NULL(multimesh);
+	ERR_FAIL_COND(p_buffer.size() != (multimesh->instances * (int)multimesh->stride_cache));
+
+	bool uses_motion_vectors = (RSG::viewport->get_num_viewports_with_motion_vectors() > 0) || (RendererCompositorStorage::get_singleton()->get_num_compositor_effects_with_motion_vectors() > 0);
+	if (uses_motion_vectors) {
+		_multimesh_enable_motion_vectors(multimesh);
+	}
+
+	if (multimesh->motion_vectors_enabled) {
+		uint32_t frame = RSG::rasterizer->get_frame_number();
+
+		if (multimesh->motion_vectors_last_change != frame) {
+			multimesh->motion_vectors_previous_offset = multimesh->motion_vectors_current_offset;
+			multimesh->motion_vectors_current_offset = multimesh->instances - multimesh->motion_vectors_current_offset;
+			multimesh->motion_vectors_last_change = frame;
+		}
+	}
+
+	{
+		const float *r = p_buffer.ptr();
+		RD::get_singleton()->buffer_update(multimesh->buffer, multimesh->motion_vectors_current_offset * multimesh->stride_cache * sizeof(float), p_buffer.size() * sizeof(float), r);
+		multimesh->buffer_set = true;
+	}
+
+	if (multimesh->data_cache.size()) {
+		float *cache_data = multimesh->data_cache.ptrw();
+		memcpy(cache_data + (multimesh->motion_vectors_current_offset * multimesh->stride_cache), p_buffer.ptr(), p_buffer.size() * sizeof(float));
+		_multimesh_mark_all_dirty(multimesh, true, true); //update AABB
+	} else if (multimesh->mesh.is_valid()) {
+		//if we have a mesh set, we need to re-generate the AABB from the new data
+		const float *data = p_buffer.ptr();
+
+		if (multimesh->custom_aabb == AABB()) {
+			_multimesh_re_create_aabb(multimesh, data, multimesh->instances);
+			multimesh->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_AABB);
+		}
+	}
+}
+
+Vector<float> MeshStorage::multimesh_get_buffer(RID p_multimesh) const {
+	MultiMesh *multimesh = multimesh_owner.get_or_null(p_multimesh);
+	ERR_FAIL_NULL_V(multimesh, Vector<float>());
+	if (multimesh->buffer.is_null()) {
+		return Vector<float>();
+	} else {
+		Vector<float> ret;
+		ret.resize(multimesh->instances * multimesh->stride_cache);
+		float *w = ret.ptrw();
+
+		if (multimesh->data_cache.size()) {
+			const uint8_t *r = (uint8_t *)multimesh->data_cache.ptr() + multimesh->motion_vectors_current_offset * multimesh->stride_cache * sizeof(float);
+			memcpy(w, r, ret.size() * sizeof(float));
+		} else {
+			Vector<uint8_t> buffer = RD::get_singleton()->buffer_get_data(multimesh->buffer);
+			const uint8_t *r = buffer.ptr() + multimesh->motion_vectors_current_offset * multimesh->stride_cache * sizeof(float);
+			memcpy(w, r, ret.size() * sizeof(float));
+		}
+		return ret;
+	}
+}
+
+void MeshStorage::multimesh_set_visible_instances(RID p_multimesh, int p_visible) {
+	MultiMesh *multimesh = multimesh_owner.get_or_null(p_multimesh);
+	ERR_FAIL_NULL(multimesh);
+	ERR_FAIL_COND(p_visible < -1 || p_visible > multimesh->instances);
+	if (multimesh->visible_instances == p_visible) {
+		return;
+	}
+
+	if (multimesh->data_cache.size()) {
+		// There is a data cache, but we may need to update some sections.
+		_multimesh_mark_all_dirty(multimesh, false, true);
+		int start = multimesh->visible_instances >= 0 ? multimesh->visible_instances : multimesh->instances;
+		for (int i = start; i < p_visible; i++) {
+			_multimesh_mark_dirty(multimesh, i, true);
+		}
+	}
+
+	multimesh->visible_instances = p_visible;
+
+	multimesh->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MULTIMESH_VISIBLE_INSTANCES);
+}
+
+int MeshStorage::multimesh_get_visible_instances(RID p_multimesh) const {
+	MultiMesh *multimesh = multimesh_owner.get_or_null(p_multimesh);
+	ERR_FAIL_NULL_V(multimesh, 0);
+	return multimesh->visible_instances;
+}
+
+AABB MeshStorage::multimesh_get_aabb(RID p_multimesh) const {
+	MultiMesh *multimesh = multimesh_owner.get_or_null(p_multimesh);
+	ERR_FAIL_NULL_V(multimesh, AABB());
+	if (multimesh->custom_aabb != AABB()) {
+		return multimesh->custom_aabb;
+	}
+
+	if (multimesh->aabb_dirty) {
+		const_cast<MeshStorage *>(this)->_update_dirty_multimeshes();
+	}
+	return multimesh->aabb;
+}
+
+void MeshStorage::_multimesh_mark_dirty(MultiMesh *multimesh, int p_index, bool p_aabb) {
+	uint32_t region_index = p_index / MULTIMESH_DIRTY_REGION_SIZE;
+#ifdef DEBUG_ENABLED
+	uint32_t data_cache_dirty_region_count = Math::division_round_up(multimesh->instances, MULTIMESH_DIRTY_REGION_SIZE);
+	ERR_FAIL_UNSIGNED_INDEX(region_index, data_cache_dirty_region_count); //bug
+#endif
+	if (!multimesh->data_cache_dirty_regions[region_index]) {
+		multimesh->data_cache_dirty_regions[region_index] = true;
+		multimesh->data_cache_dirty_region_count++;
+	}
+
+	if (p_aabb) {
+		multimesh->aabb_dirty = true;
+	}
+
+	if (!multimesh->dirty) {
+		multimesh->dirty_list = multimesh_dirty_list;
+		multimesh_dirty_list = multimesh;
+		multimesh->dirty = true;
+	}
+}
+
+void MeshStorage::_multimesh_enable_motion_vectors(MultiMesh *multimesh) {
+	if (multimesh->motion_vectors_enabled) {
+		return;
+	}
+
+	multimesh->motion_vectors_enabled = true;
+
+	multimesh->motion_vectors_current_offset = 0;
+	multimesh->motion_vectors_previous_offset = 0;
+	multimesh->motion_vectors_last_change = -1;
+
+	if (!multimesh->data_cache.is_empty()) {
+		multimesh->data_cache.append_array(multimesh->data_cache);
+	}
+
+	uint32_t buffer_size = multimesh->instances * multimesh->stride_cache * sizeof(float);
+	uint32_t new_buffer_size = buffer_size * 2;
+	RID new_buffer = RD::get_singleton()->storage_buffer_create(new_buffer_size);
+
+	if (multimesh->buffer_set && multimesh->data_cache.is_empty()) {
+		// If the buffer was set but there's no data cached in the CPU, we copy the buffer directly on the GPU.
+		RD::get_singleton()->buffer_copy(multimesh->buffer, new_buffer, 0, 0, buffer_size);
+		RD::get_singleton()->buffer_copy(multimesh->buffer, new_buffer, 0, buffer_size, buffer_size);
+	} else if (!multimesh->data_cache.is_empty()) {
+		// Simply upload the data cached in the CPU, which should already be doubled in size.
+		ERR_FAIL_COND(multimesh->data_cache.size() * sizeof(float) != size_t(new_buffer_size));
+		RD::get_singleton()->buffer_update(new_buffer, 0, new_buffer_size, multimesh->data_cache.ptr());
+	}
+
+	if (multimesh->buffer.is_valid()) {
+		RD::get_singleton()->free(multimesh->buffer);
+	}
+
+	multimesh->buffer = new_buffer;
+	multimesh->uniform_set_3d = RID(); // Cleared by dependency.
+
+	// Invalidate any references to the buffer that was released and the uniform set that was pointing to it.
+	multimesh->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MULTIMESH);
 }

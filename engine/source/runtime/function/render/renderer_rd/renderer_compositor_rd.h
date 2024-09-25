@@ -4,12 +4,17 @@
 #include "function/render/rendering_system/renderer_compositor_api.h"
 #include "storage/material_storage.h"
 #include "storage/mesh_storage.h"
+#include "storage/light_storage.h"
+#include "storage/texture_storage.h"
 
 namespace lain {
 class RendererCompositorRD : public RendererCompositor {
  protected:
   RendererRD::MaterialStorage* material_storage = nullptr;
   RendererRD::MeshStorage* mesh_storage = nullptr;
+  RendererRD::TextureStorage* texture_storage = nullptr;
+  // light
+  RendererRD::LightStorage* light_storage = nullptr;
   static RendererCompositorRD* singleton;
   enum BlitMode { BLIT_MODE_NORMAL, BLIT_MODE_USE_LAYER, BLIT_MODE_LENS, BLIT_MODE_NORMAL_ALPHA, BLIT_MODE_MAX };
 	double time = 0.0;

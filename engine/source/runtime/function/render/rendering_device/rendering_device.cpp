@@ -3,7 +3,9 @@
 #include "core/engine/engine.h"
 #include "core/io/dir_access.h"
 using namespace lain;
-using namespace lain;
+static const char* SHADER_UNIFORM_NAMES[RenderingDevice::UNIFORM_TYPE_MAX] = {
+    "Sampler", "CombinedSampler", "Texture", "Image", "TextureBuffer", "SamplerTextureBuffer", "ImageBuffer", "UniformBuffer", "StorageBuffer", "InputAttachment"};
+
 RenderingDevice* RenderingDevice::singleton = nullptr;
 RenderingDevice::ShaderCompileToSPIRVFunction RenderingDevice::compile_to_spirv_function = nullptr;
 RenderingDevice::ShaderCacheFunction RenderingDevice::cache_function = nullptr;
@@ -618,6 +620,14 @@ bool lain::RenderingDevice::texture_is_format_supported_for_usage(DataFormat p_f
 	BitField<TextureUsageBits> supported = driver->texture_get_usages_supported_by_format(p_format, cpu_readable);
 	bool any_unsupported = (((int64_t)supported) | ((int64_t)p_usage)) != ((int64_t)supported);
 	return !any_unsupported;
+}
+
+bool lain::RenderingDevice::texture_is_shared(RID p_texture) {
+_THREAD_SAFE_METHOD_
+
+	Texture *tex = texture_owner.get_or_null(p_texture);
+	ERR_FAIL_NULL_V(tex, false);
+	return tex->owner.is_valid();
 }
 
 bool lain::RenderingDevice::texture_is_valid(RID p_texture) {
@@ -3921,8 +3931,6 @@ void RenderingDevice::compute_list_end() {
   _THREAD_SAFE_UNLOCK_
 }
 
-static const char* SHADER_UNIFORM_NAMES[RenderingDevice::UNIFORM_TYPE_MAX] = {
-    "Sampler", "CombinedSampler", "Texture", "Image", "TextureBuffer", "SamplerTextureBuffer", "ImageBuffer", "UniformBuffer", "StorageBuffer", "InputAttachment"};
 
 String RenderingDevice::_shader_uniform_debug(RID p_shader, int p_set) {
   String ret;
@@ -4888,4 +4896,77 @@ Vector<uint8_t> lain::RenderingDevice::buffer_get_data(RID p_buffer, uint32_t p_
 	driver->buffer_free(tmp_buffer);
 
 	return buffer_data;
+}
+
+
+uint64_t RenderingDevice::get_driver_resource(DriverResource p_resource, RID p_rid, uint64_t p_index) {
+	_THREAD_SAFE_METHOD_
+
+	uint64_t driver_id = 0;
+	switch (p_resource) {
+		case DRIVER_RESOURCE_LOGICAL_DEVICE:
+		case DRIVER_RESOURCE_PHYSICAL_DEVICE:
+		case DRIVER_RESOURCE_TOPMOST_OBJECT:
+			break;
+		case DRIVER_RESOURCE_COMMAND_QUEUE:
+			driver_id = main_queue.id;
+			break;
+		case DRIVER_RESOURCE_QUEUE_FAMILY:
+			driver_id = main_queue_family.id;
+			break;
+		case DRIVER_RESOURCE_TEXTURE:
+		case DRIVER_RESOURCE_TEXTURE_VIEW:
+		case DRIVER_RESOURCE_TEXTURE_DATA_FORMAT: {
+			Texture *tex = texture_owner.get_or_null(p_rid);
+			ERR_FAIL_NULL_V(tex, 0);
+
+			driver_id = tex->driver_id.id;
+		} break;
+		case DRIVER_RESOURCE_SAMPLER: {
+			RDD::SamplerID *sampler_driver_id = sampler_owner.get_or_null(p_rid);
+			ERR_FAIL_NULL_V(sampler_driver_id, 0);
+
+			driver_id = (*sampler_driver_id).id;
+		} break;
+		case DRIVER_RESOURCE_UNIFORM_SET: {
+			UniformSet *uniform_set = uniform_set_owner.get_or_null(p_rid);
+			ERR_FAIL_NULL_V(uniform_set, 0);
+
+			driver_id = uniform_set->driver_id.id;
+		} break;
+		case DRIVER_RESOURCE_BUFFER: {
+			Buffer *buffer = nullptr;
+			if (vertex_buffer_owner.owns(p_rid)) {
+				buffer = vertex_buffer_owner.get_or_null(p_rid);
+			} else if (index_buffer_owner.owns(p_rid)) {
+				buffer = index_buffer_owner.get_or_null(p_rid);
+			} else if (uniform_buffer_owner.owns(p_rid)) {
+				buffer = uniform_buffer_owner.get_or_null(p_rid);
+			} else if (texture_buffer_owner.owns(p_rid)) {
+				buffer = texture_buffer_owner.get_or_null(p_rid);
+			} else if (storage_buffer_owner.owns(p_rid)) {
+				buffer = storage_buffer_owner.get_or_null(p_rid);
+			}
+			ERR_FAIL_NULL_V(buffer, 0);
+
+			driver_id = buffer->driver_id.id;
+		} break;
+		case DRIVER_RESOURCE_COMPUTE_PIPELINE: {
+			ComputePipeline *compute_pipeline = compute_pipeline_owner.get_or_null(p_rid);
+			ERR_FAIL_NULL_V(compute_pipeline, 0);
+
+			driver_id = compute_pipeline->driver_id.id;
+		} break;
+		case DRIVER_RESOURCE_RENDER_PIPELINE: {
+			RenderPipeline *render_pipeline = render_pipeline_owner.get_or_null(p_rid);
+			ERR_FAIL_NULL_V(render_pipeline, 0);
+
+			driver_id = render_pipeline->driver_id.id;
+		} break;
+		default: {
+			ERR_FAIL_V(0);
+		} break;
+	}
+
+	return driver->get_resource_native_handle(p_resource, driver_id);
 }
