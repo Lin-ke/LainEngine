@@ -20,6 +20,8 @@ class RendererSceneRender {
 		int region = 0;
 		PagedArray<RenderGeometryInstance *> instances;
 	};
+
+	virtual void update() = 0;
 };
 }
 #endif

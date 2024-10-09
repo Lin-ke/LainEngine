@@ -461,8 +461,8 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
   /****************/
   /**** SHADER ****/
   /****************/
-
-  // virtual String shader_get_binary_cache_key() = 0;
+  // 获得shader binary 当前的版本
+  virtual String shader_get_binary_cache_key() = 0;
   // 使用Vector<u8int>表示Blob
   virtual Vector<uint8_t> shader_compile_binary_from_spirv(VectorView<ShaderStageSPIRVData> p_spirv, const String& p_shader_name) = 0;
   virtual ShaderID shader_create_from_bytecode(const Vector<uint8_t>& p_shader_binary, ShaderDescription& r_shader_desc, String& r_name) = 0;
@@ -777,8 +777,8 @@ class RenderingDeviceDriver : public RenderingDeviceCommons {
   virtual uint64_t api_trait_get(ApiTrait p_trait);
   virtual bool is_feature_supported(Features p_feature) = 0;
   virtual const MultiviewCapabilities& get_multiview_capabilities() = 0;
-  // virtual String get_api_name() const = 0;
-  // virtual String get_api_version() const = 0;
+  virtual String get_api_name() const = 0;
+  virtual String get_api_version() const = 0;
   // virtual String get_pipeline_cache_uuid() const = 0;
   virtual const Capabilities& get_capabilities() const = 0;
 

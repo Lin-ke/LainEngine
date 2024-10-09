@@ -53,3 +53,7 @@ RS::InstanceType Utilities::get_base_type(RID p_rid) const {
 
   return RS::INSTANCE_NONE;
 }
+
+void lain::RendererRD::Utilities::update_dirty_resources() {
+  // @todo
+}

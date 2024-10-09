@@ -9,6 +9,7 @@ namespace lain {
 class RenderGeometryInstance {
 	virtual ~RenderGeometryInstance() {}
 	virtual void _mark_dirty() = 0;
+	public:
   virtual void set_skeleton(RID p_skeleton) = 0;
 	virtual void set_material_override(RID p_override) = 0;
 	virtual void set_material_overlay(RID p_overlay) = 0;

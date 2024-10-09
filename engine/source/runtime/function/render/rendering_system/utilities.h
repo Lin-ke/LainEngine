@@ -46,7 +46,7 @@ class DependencyTracker {
   DeletedCallback deleted_callback = nullptr;
 
   void update_begin() {  // call before updating dependencies
-    instance_version++;
+    instance_version++; // 记录update 的次数
   }
   //这里能看出来这两个的关系
   // 一个tracker管理很多 Denpendency 对象，一个 Dependency 对象持有管理它的tracker的引用，

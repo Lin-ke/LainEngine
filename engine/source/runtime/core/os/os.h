@@ -12,8 +12,16 @@
 namespace lain {
 
 class OS {
-public:
+private:
+	// for the user interface we keep a record of the current display driver
+	// so we can retrieve the rendering drivers available
+	int _display_driver_id = -1;
+	String _current_rendering_driver_name;
+	String _current_rendering_method;
 	static OS *p_singleton;
+
+public:
+
 	String m_execpath;
 	virtual void Run() = 0;
 	virtual void Finialize() = 0;
@@ -73,9 +81,11 @@ public:
 	String GetSafeDirName(const String &p_dir_name, bool p_allow_paths) const;
 	int GetProcessorCount() const;
 	int GetDefaultThreadPoolSize() const { return GetProcessorCount(); }
-	String GetCurrentRenderingMethod() const { return "OpenGL"; }
+	String GetCurrentRenderingMethod() const { return _current_rendering_method; }
 	void EnsureUserDataDir();
-
+	String GetCurrentRenderingDriverName() const { return _current_rendering_driver_name; }
+	void set_current_rendering_driver_name(const String &p_driver_name) { _current_rendering_driver_name = p_driver_name; }
+	void set_current_rendering_method(const String &p_name) { _current_rendering_method = p_name; }
 	enum RenderThreadMode {
 		RENDER_THREAD_UNSAFE,
 		RENDER_THREAD_SAFE,

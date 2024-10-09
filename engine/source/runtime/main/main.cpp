@@ -20,6 +20,11 @@ static WindowSystem* window_system = nullptr;
 static RenderingSystem* render_system = nullptr;
 static ProjectSettings* globals = nullptr;
 static ProjectManager* pmanager = nullptr;
+// Drviers
+String display_driver = "";
+String rendering_driver = "Vulkan";
+String rendering_method = "";
+
 
 // Main loop vairables
 uint64_t Main::last_ticks = 0;
@@ -145,7 +150,7 @@ Error Main::Initialize(int argc, char* argv[]) {
   }
   MainLoop* main_loop = memnew(SceneTree);
   Error err;
-  window_system = memnew(WindowSystem("vulkan", window_mode, window_vsync_mode, window_flags, window_position, window_size, init_screen, err));
+  window_system = memnew(WindowSystem(rendering_driver, window_mode, window_vsync_mode, window_flags, window_position, window_size, init_screen, err));
   { // rendering thread mode
     int rtm = -1;
     rtm = GLOBAL_DEF("rendering/driver/render_thread_mode", OS::RENDER_SEPARATE_THREAD);

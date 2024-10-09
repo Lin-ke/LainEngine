@@ -10,20 +10,21 @@ public:
 	virtual ~RendererMaterialStorage(){};
 
 	/* GLOBAL SHADER UNIFORM API */
-	virtual void global_shader_parameter_add(const StringName &p_name, RS::GlobalShaderParameterType p_type, const Variant &p_value) = 0;
-	virtual void global_shader_parameter_remove(const StringName &p_name) = 0;
-	virtual Vector<StringName> global_shader_parameter_get_list() const = 0;
+	// virtual void global_shader_parameter_add(const StringName &p_name, RS::GlobalShaderParameterType p_type, const Variant &p_value) = 0;
+	// virtual void global_shader_parameter_remove(const StringName &p_name) = 0;
+	// virtual Vector<StringName> global_shader_parameter_get_list() const = 0;
 
-	virtual void global_shader_parameter_set(const StringName &p_name, const Variant &p_value) = 0;
-	virtual void global_shader_parameter_set_override(const StringName &p_name, const Variant &p_value) = 0;
-	virtual Variant global_shader_parameter_get(const StringName &p_name) const = 0;
-	virtual RS::GlobalShaderParameterType global_shader_parameter_get_type(const StringName &p_name) const = 0;
+	// virtual void global_shader_parameter_set(const StringName &p_name, const Variant &p_value) = 0;
+	// virtual void global_shader_parameter_set_override(const StringName &p_name, const Variant &p_value) = 0;
+	// virtual Variant global_shader_parameter_get(const StringName &p_name) const = 0;
+	// virtual RS::GlobalShaderParameterType global_shader_parameter_get_type(const StringName &p_name) const = 0;
 
-	virtual void global_shader_parameters_load_settings(bool p_load_textures = true) = 0;
-	virtual void global_shader_parameters_clear() = 0;
+	// virtual void global_shader_parameters_load_settings(bool p_load_textures = true) = 0;
+	// virtual void global_shader_parameters_clear() = 0;
 
-	virtual int32_t global_shader_parameters_instance_allocate(RID p_instance) = 0;
+	virtual int32_t global_shader_parameters_instance_allocate(RID p_instance) = 0; // 返回offset
 	virtual void global_shader_parameters_instance_free(RID p_instance) = 0;
+	// flags count 指有几个
 	virtual void global_shader_parameters_instance_update(RID p_instance, int p_index, const Variant &p_value, int p_flags_count = 0) = 0;
 
 	/* SHADER API */

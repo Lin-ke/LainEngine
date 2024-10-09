@@ -297,6 +297,7 @@ class Object {
   _FORCE_INLINE_ static void (*_get_bind_methods())() { return &Object::_bind_methods; }
   _FORCE_INLINE_ static void (*_get_bind_compatibility_methods())() { return &Object::_bind_compatibility_methods; }
 
+  Variant callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error);
  private:
   ObjectID m_instance_id;
   bool m_type_is_reference = false;

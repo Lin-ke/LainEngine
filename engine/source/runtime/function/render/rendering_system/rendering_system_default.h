@@ -11,6 +11,19 @@ class RenderingSystemDefault: public RenderingSystem{
 	bool create_thread = false;
 	mutable CommandQueueMT command_queue; // 和类状态无关的数据成员，const可用
 	bool exit = false;
+
+	List<Callable> frame_drawn_callbacks;
+
+	double frame_setup_time = 0; // 记录
+	Vector<FrameProfileArea> frame_profile;
+	uint64_t frame_profile_frame = 0;
+
+	//for printing
+	bool print_gpu_profile = false;
+	HashMap<String, float> print_gpu_profile_task_time;
+	uint64_t print_frame_profile_ticks_from = 0;
+	uint32_t print_frame_profile_frame_count = 0;
+
 	#ifdef DEBUG_ENABLED
 	#define MAIN_THREAD_SYNC_WARN WARN_PRINT("Call to " + String(__FUNCTION__) + " causing RenderingServer synchronizations on every frame. This significantly affects performance.");
 	#endif
@@ -77,6 +90,40 @@ class RenderingSystemDefault: public RenderingSystem{
 	FUNC1RC(ShaderNativeSourceCode, shader_get_native_source_code, RID)
 	
 
+#define ServerName RendererMaterialStorage
+#define server_name RSG::material_storage
+
+	FUNCRIDSPLIT(shader)
+
+	FUNC2(shader_set_code, RID, const String &)
+	FUNC2(shader_set_path_hint, RID, const String &)
+	FUNC1RC(String, shader_get_code, RID)
+
+	FUNC2SC(get_shader_parameter_list, RID, List<PropertyInfo> *)
+
+	FUNC4(shader_set_default_texture_parameter, RID, const StringName &, RID, int)
+	FUNC3RC(RID, shader_get_default_texture_parameter, RID, const StringName &, int)
+	FUNC2RC(Variant, shader_get_parameter_default, RID, const StringName &)
+
+	FUNC1RC(ShaderNativeSourceCode, shader_get_native_source_code, RID)
+
+	/* COMMON MATERIAL API */
+
+	FUNCRIDSPLIT(material)
+
+	FUNC2(material_set_shader, RID, RID)
+
+	FUNC3(material_set_param, RID, const StringName &, const Variant &)
+	FUNC2RC(Variant, material_get_param, RID, const StringName &)
+
+	FUNC2(material_set_render_priority, RID, int)
+	FUNC2(material_set_next_pass, RID, RID)
+
+	/* MESH API */
+
+//from now on, calls forwarded to this singleton
+#undef ServerName
+#undef server_name
 
 
 
@@ -102,7 +149,8 @@ private:
 	void _thread_loop(void*);	// 一个 thread 化的loop，用于多线程
 	void _assign_mt_ids(WorkerThreadPool::TaskID p_tid);
 	void _init();
-
+	void _draw(bool p_swap_buffers, double frame_step);
+	void _run_post_draw_steps();
 
 
 };

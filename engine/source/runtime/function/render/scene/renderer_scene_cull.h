@@ -242,6 +242,8 @@ class RendererSceneCull : public RenderingMethod {
     }
   };
 
+	int indexer_update_iterations = 0;
+
   mutable RID_Owner<Scenario, true> scenario_owner;
 
   virtual RID scenario_allocate();
@@ -264,17 +266,39 @@ class RendererSceneCull : public RenderingMethod {
 	struct Instance{
 		RS::InstanceType base_type = RS::INSTANCE_NONE;
 		RID base; // 指向实例（如灯光）的RID
-		InstanceBaseData* base_data; // 指向实例的数据
+		
+		RID skeleton;
+		RID material_override;
+		RID material_overlay;
+
+		RID mesh_instance; //only used for meshes and when skeleton/blendshapes exist
+		
+		InstanceBaseData* base_data; // 指向该实例的数据（如light，mesh等）
 		Transform3D transform;
 		Vector<RID> materials;
 		uint32_t layer_mask = 1;
 		AABB aabb;
+		AABB transformed_aabb;
+		AABB prev_transformed_aabb;
+		
+		RS::ShadowCastingSetting cast_shadows; // 此instance是否产生阴影
+
+		struct InstanceShaderParameter{
+			int32_t index = -1;
+			Variant value;
+			Variant default_value;
+			PropertyInfo info;
+		};
+
 		RID self; // 标识自己的RID
 		Scenario* scenario; // 属于的场景
 		bool update_aabb = false;
 		bool update_dependencies = false;
 		SelfList<Instance> update_item; // 被初始化成this，用于将自己插入到 update_list中
 		
+		HashMap<StringName, InstanceShaderParameter>	instance_shader_uniforms;
+		bool instance_allocated_shader_uniforms=false;
+		int32_t instance_allocated_shader_uniforms_offset = -1;
 
 		// visibility
 		// dependency
@@ -286,9 +310,30 @@ class RendererSceneCull : public RenderingMethod {
 	};
 	struct InstanceGeometryData : public InstanceBaseData{
 		RenderGeometryInstance *geometry_instance = nullptr; 
+		bool can_cast_shadows = false;
+		HashSet<Instance *> lights; // 照射该instance的灯光？
+		bool material_is_animated = false;
+
 	}; 
 	struct InstanceReflectionProbeData : public InstanceBaseData{};
-	struct InstanceLightData : public InstanceBaseData{};
+	struct InstanceLightData : public InstanceBaseData{
+		
+		RID instance;
+		private:
+		// Instead of a single dirty flag, we maintain a count
+		// so that we can detect lights that are being made dirty
+		// each frame, and switch on tighter caster culling.
+		int32_t shadow_dirty_count;
+
+		uint32_t light_update_frame_id;
+		bool light_intersects_multiple_cameras;
+		uint32_t light_intersects_multiple_cameras_timeout_frame_id;
+
+		public:
+		void make_shadow_dirty(){
+			shadow_dirty_count = light_intersects_multiple_cameras ? 1 : 2;	
+		}
+	};
 	struct InstanceDecalData : public InstanceBaseData{};
 	struct InstanceVoxelGIData : public InstanceBaseData{};
 	struct InstanceLightmapData : public InstanceBaseData{};
@@ -333,7 +378,7 @@ class RendererSceneCull : public RenderingMethod {
 	RID_Owner<Instance, true> instance_owner;
 	virtual RID instance_allocate();
 	virtual void instance_initialize(RID p_rid);
-virtual void instance_set_base(RID p_instance, RID p_base);
+	virtual void instance_set_base(RID p_instance, RID p_base);
 	virtual void instance_set_scenario(RID p_instance, RID p_scenario);
 	virtual void instance_set_layer_mask(RID p_instance, uint32_t p_mask);
 	virtual void instance_set_pivot_data(RID p_instance, float p_sorting_offset, bool p_use_aabb_center);
@@ -344,10 +389,18 @@ virtual void instance_set_base(RID p_instance, RID p_base);
 	virtual void instance_set_visible(RID p_instance, bool p_visible);
 	virtual void instance_geometry_set_transparency(RID p_instance, float p_transparency);
 
+
+	// update
+	virtual void update();
+	void update_dirty_instances();
+	void render_particle_colliders() {}
 	private:
 	SelfList<Instance>::List _instance_update_list;
 	void _instance_update_mesh_instance(Instance *p_instance);
 	void _instance_queue_update(Instance *p_instance, bool p_update_aabb = false, bool p_update_dependencies= false);
+	void _update_dirty_instance(Instance *p_instance);
+	void _update_instance_aabb(Instance*);
+	void _update_instance_shader_uniforms_from_material(HashMap<StringName, Instance::InstanceShaderParameter> &isparams, const HashMap<StringName, Instance::InstanceShaderParameter> &existing_isparams, RID p_material);
 
 };
 }  // namespace lain

@@ -4970,3 +4970,11 @@ uint64_t RenderingDevice::get_driver_resource(DriverResource p_resource, RID p_r
 
 	return driver->get_resource_native_handle(p_resource, driver_id);
 }
+
+String lain::RenderingDevice::get_device_api_name() const {
+  return driver->get_api_name();
+}
+
+bool lain::RenderingDevice::is_composite_alpha_supported() const {
+  return false;
+}

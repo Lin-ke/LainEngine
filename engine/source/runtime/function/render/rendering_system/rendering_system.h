@@ -104,6 +104,55 @@ class RenderingSystem : public Object {
 
 	virtual void material_set_next_pass(RID p_material, RID p_next_material) = 0;
  
+ 	/* GLOBAL SHADER UNIFORMS */
+
+	// enum GlobalShaderParameterType {
+	// 	GLOBAL_VAR_TYPE_BOOL,
+	// 	GLOBAL_VAR_TYPE_BVEC2,
+	// 	GLOBAL_VAR_TYPE_BVEC3,
+	// 	GLOBAL_VAR_TYPE_BVEC4,
+	// 	GLOBAL_VAR_TYPE_INT,
+	// 	GLOBAL_VAR_TYPE_IVEC2,
+	// 	GLOBAL_VAR_TYPE_IVEC3,
+	// 	GLOBAL_VAR_TYPE_IVEC4,
+	// 	GLOBAL_VAR_TYPE_RECT2I,
+	// 	GLOBAL_VAR_TYPE_UINT,
+	// 	GLOBAL_VAR_TYPE_UVEC2,
+	// 	GLOBAL_VAR_TYPE_UVEC3,
+	// 	GLOBAL_VAR_TYPE_UVEC4,
+	// 	GLOBAL_VAR_TYPE_FLOAT,
+	// 	GLOBAL_VAR_TYPE_VEC2,
+	// 	GLOBAL_VAR_TYPE_VEC3,
+	// 	GLOBAL_VAR_TYPE_VEC4,
+	// 	GLOBAL_VAR_TYPE_COLOR,
+	// 	GLOBAL_VAR_TYPE_RECT2,
+	// 	GLOBAL_VAR_TYPE_MAT2,
+	// 	GLOBAL_VAR_TYPE_MAT3,
+	// 	GLOBAL_VAR_TYPE_MAT4,
+	// 	GLOBAL_VAR_TYPE_TRANSFORM_2D,
+	// 	GLOBAL_VAR_TYPE_TRANSFORM,
+	// 	GLOBAL_VAR_TYPE_SAMPLER2D,
+	// 	GLOBAL_VAR_TYPE_SAMPLER2DARRAY,
+	// 	GLOBAL_VAR_TYPE_SAMPLER3D,
+	// 	GLOBAL_VAR_TYPE_SAMPLERCUBE,
+	// 	GLOBAL_VAR_TYPE_MAX
+	// };
+
+	// virtual void global_shader_parameter_add(const StringName &p_name, GlobalShaderParameterType p_type, const Variant &p_value) = 0;
+	// virtual void global_shader_parameter_remove(const StringName &p_name) = 0;
+	// virtual Vector<StringName> global_shader_parameter_get_list() const = 0;
+
+	// virtual void global_shader_parameter_set(const StringName &p_name, const Variant &p_value) = 0;
+	// virtual void global_shader_parameter_set_override(const StringName &p_name, const Variant &p_value) = 0;
+
+	// virtual Variant global_shader_parameter_get(const StringName &p_name) const = 0;
+	// virtual GlobalShaderParameterType global_shader_parameter_get_type(const StringName &p_name) const = 0;
+
+	// virtual void global_shader_parameters_load_settings(bool p_load_textures) = 0;
+	// virtual void global_shader_parameters_clear() = 0;
+
+	// static int global_shader_uniform_type_get_shader_datatype(GlobalShaderParameterType p_type);
+
 
   /******************
      * MESH API
@@ -525,6 +574,18 @@ public:
 	};
 	virtual uint64_t get_rendering_info(RenderingInfo p_info) = 0;
 
+	struct FrameProfileArea {
+		String name;
+		double gpu_msec;
+		double cpu_msec;
+	};
+
+		enum ShadowCastingSetting { // 是否投射阴影
+		SHADOW_CASTING_SETTING_OFF,
+		SHADOW_CASTING_SETTING_ON,
+		SHADOW_CASTING_SETTING_DOUBLE_SIDED,
+		SHADOW_CASTING_SETTING_SHADOWS_ONLY,
+	};
 
   virtual void free(RID p_rid) = 0;
 

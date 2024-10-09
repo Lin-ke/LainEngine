@@ -653,13 +653,15 @@ class RenderingDevice : public RenderingDeviceCommons {
  public:
   Vector<uint8_t> shader_compile_spirv_from_source(ShaderStage p_stage, const String& p_source_code, ShaderLanguage p_language = SHADER_LANGUAGE_GLSL,
                                                    String* r_error = nullptr, bool p_allow_cache = true);
-  String shader_get_spirv_cache_key() const;
+  String shader_get_spirv_cache_key() const{ // spirv 缓存的 key， 由 glslang module提供
+    return get_spirv_cache_key_function ? get_spirv_cache_key_function(this) : String();
+  }
 
   static void shader_set_compile_to_spirv_function(ShaderCompileToSPIRVFunction p_function);
   static void shader_set_spirv_cache_function(ShaderCacheFunction p_function);
   static void shader_set_get_cache_key_function(ShaderSPIRVGetCacheKeyFunction p_function);
 
-  String shader_get_binary_cache_key() const;
+  String shader_get_binary_cache_key() const{return driver->shader_get_binary_cache_key();}
   Vector<uint8_t> shader_compile_binary_from_spirv(const Vector<ShaderStageSPIRVData>& p_spirv, const String& p_shader_name = "");
 
   RID shader_create_from_spirv(const Vector<ShaderStageSPIRVData>& p_spirv, const String& p_shader_name = "");

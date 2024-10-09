@@ -4425,7 +4425,7 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::shader_compile_binary_from_spirv(Ve
   total_size += stages_binary_size;
 
   Vector<uint8_t> ret;
-  ret.resize(total_size);
+  ret.resize(total_size); 
   {
     uint32_t offset = 0;
     uint8_t* binptr = ret.ptrw();

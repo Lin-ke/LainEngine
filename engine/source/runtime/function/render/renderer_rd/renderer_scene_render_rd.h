@@ -9,5 +9,7 @@ namespace lain::RendererRD {
     ~RendererSceneRenderRD();
     void cull_scene();
     uint64_t get_scene_pass();
+
+    virtual void update() override;
   };
 }

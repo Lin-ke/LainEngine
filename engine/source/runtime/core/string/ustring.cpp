@@ -3865,7 +3865,7 @@ String String::dedent() const {
 
 	return new_string;
 }
-
+// 左边和右边
 String String::strip_edges(bool left, bool right) const {
 	int len = length();
 	int beg = 0, end = len;

@@ -121,4 +121,32 @@ bool Callable::operator==(const Callable& p_callable) const {
   }
 }
 
+void Callable::callp(const Variant** p_arguments, int p_argcount, Variant& r_return_value, CallError& r_call_error) const{
+  if (is_null()) {
+      r_call_error.error = CallError::CALL_ERROR_INSTANCE_IS_NULL;
+      r_call_error.argument = 0;
+      r_call_error.expected = 0;
+      r_return_value = Variant();
+    } else if (is_custom()) {
+      if (!is_valid()) {
+        r_call_error.error = CallError::CALL_ERROR_INSTANCE_IS_NULL;
+        r_call_error.argument = 0;
+        r_call_error.expected = 0;
+        r_return_value = Variant();
+        return;
+      }
+      custom->call(p_arguments, p_argcount, r_return_value, r_call_error);
+    } else {
+      Object *obj = ObjectDB::get_instance(ObjectID(object));
+  #ifdef DEBUG_ENABLED
+      if (!obj) {
+        r_call_error.error = CallError::CALL_ERROR_INSTANCE_IS_NULL;
+        r_call_error.argument = 0;
+        r_call_error.expected = 0;
+        r_return_value = Variant();
+        return;
+      }
+  #endif
+      r_return_value = obj->callp(method, p_arguments, p_argcount, r_call_error);
+    }
 }  // namespace lain

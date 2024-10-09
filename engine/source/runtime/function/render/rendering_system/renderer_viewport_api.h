@@ -31,6 +31,7 @@ class RendererViewport {
   RID viewport_allocate();
   void viewport_initialize(RID p_rid);
   int32_t get_num_viewports_with_motion_vectors() const;
+  void handle_timestamp(String p_timestamp, uint64_t p_cpu_time, uint64_t p_gpu_time);
 };
 
 }  // namespace lain

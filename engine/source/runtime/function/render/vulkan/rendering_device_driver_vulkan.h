@@ -111,36 +111,42 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   /****************/
  private:
   // @TODO 光追
-  struct ShaderBinary {
-    enum { VERSION = 1 };
-    struct DataBinding {
-      uint32_t type = 0;
-      uint32_t binding = 0;
-      uint32_t stages = 0;
-      uint32_t length = 0;  // Size of arrays (in total elements), or UBOs (in bytes * total elements).
-      uint32_t writable = 0;
-    };
+	struct ShaderBinary {
+		// Version 1: initial.
+		// Version 2: Added shader name.
+		// Version 3: Added writable.
+		// Version 4: 64-bit vertex input mask.
+		static const uint32_t VERSION = 4;
 
-    struct SpecializationConstant {
-      uint32_t type = 0;
-      uint32_t constant_id = 0;
-      uint32_t int_value = 0;
-      uint32_t stage_flags = 0;
-    };
+		struct DataBinding {
+			uint32_t type = 0;
+			uint32_t binding = 0;
+			uint32_t stages = 0;
+			uint32_t length = 0; // Size of arrays (in total elements), or UBOs (in bytes * total elements).
+			uint32_t writable = 0;
+		};
 
-    struct Data {
-      uint64_t vertex_input_mask = 0;
-      uint32_t fragment_output_mask = 0;
-      uint32_t specialization_constants_count = 0;
-      uint32_t is_compute = 0;
-      uint32_t compute_local_size[3] = {};
-      uint32_t set_count = 0;  // uniform set count
-      uint32_t push_constant_size = 0;
-      uint32_t vk_push_constant_stages_mask = 0;  // push constants的shader stage
-      uint32_t stage_count = 0;
-      uint32_t shader_name_len = 0;
-    };
-  };
+		struct SpecializationConstant {
+			uint32_t type = 0;
+			uint32_t constant_id = 0;
+			uint32_t int_value = 0;
+			uint32_t stage_flags = 0;
+		};
+
+		struct Data {
+			uint64_t vertex_input_mask = 0;
+			uint32_t fragment_output_mask = 0;
+			uint32_t specialization_constants_count = 0;
+			uint32_t is_compute = 0;
+			uint32_t compute_local_size[3] = {};
+			uint32_t set_count = 0;
+			uint32_t push_constant_size = 0;
+			uint32_t vk_push_constant_stages_mask = 0;
+			uint32_t stage_count = 0;
+			uint32_t shader_name_len = 0;
+		};
+	};
+
 
   struct ShaderInfo {
     VkShaderStageFlags vk_push_constant_stages = 0;
@@ -161,7 +167,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
   virtual ShaderID shader_create_from_bytecode(const Vector<uint8_t>& p_shader_binary, ShaderDescription& r_shader_desc,
                                                String& r_name) override final;
   virtual void shader_free(ShaderID p_shader) override final;
-
+  virtual String shader_get_binary_cache_key() override final { return "Vulkan-SV" + uitos(ShaderBinary::VERSION);}
   /*********************/
   /**** UNIFORM SET ****/
   /*********************/
@@ -630,7 +636,12 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
  virtual uint64_t api_trait_get(ApiTrait p_trait) override final;
 		virtual uint64_t get_total_memory_used() override final;
     virtual uint64_t get_resource_native_handle(DriverResource p_type, ID p_driver_id) override final;
-
+  virtual String get_api_name() const override final { return "Vulkan"; }
+  virtual String get_api_version() const override final { 
+    uint32_t api_version = physical_device_properties.apiVersion;
+	  return vformat("%d.%d.%d", VK_API_VERSION_MAJOR(api_version), VK_API_VERSION_MINOR(api_version), VK_API_VERSION_PATCH(api_version));
+   }
+  
   /// --- limits --- 
   virtual uint64_t limit_get(Limit p_limit); // 翻译limit到physical_device_properties.limits
   const RDD::Capabilities& get_capabilities() const { return device_capabilities; }

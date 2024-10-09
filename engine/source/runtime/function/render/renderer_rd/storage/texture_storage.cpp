@@ -9,6 +9,14 @@ TextureStorage::~TextureStorage() {
   singleton = nullptr;
 }
 
+bool lain::RendererRD::TextureStorage::owns_texture(RID p_rid) {
+  return true;
+}
+
+bool lain::RendererRD::TextureStorage::owns_texture(RID p_rid) {
+  return false;
+}
+
 Ref<Image> TextureStorage::_validate_texture_format(const Ref<Image>& p_image, TextureToRDFormat& r_format) {
   Ref<Image> image = p_image->duplicate();
 

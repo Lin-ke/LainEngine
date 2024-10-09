@@ -2,6 +2,7 @@
 #define MATERIAL_STORAGE_RDIMPL_H
 //
 #include "function/render/rendering_system/material_storage_api.h"
+#include "texture_storage.h"
 namespace lain::RendererRD {
 
 class MaterialStorage : public RendererMaterialStorage {
@@ -13,6 +14,7 @@ class MaterialStorage : public RendererMaterialStorage {
   MaterialStorage();
   ~MaterialStorage() override;
   // ShaderData
+  // 这里很复杂，@？ 如何与shader的反射相结合
   struct ShaderData {
     String path;
     // HashMap<StringName, ShaderLanguage::ShaderNode::Uniform> uniforms;
@@ -44,19 +46,51 @@ class MaterialStorage : public RendererMaterialStorage {
   
   mutable RID_Owner<Shader, true> shader_owner;
 
+  
+	struct MaterialData {
+		Vector<RendererRD::TextureStorage::RenderTarget *> render_target_cache;
+		void update_uniform_buffer(const HashMap<StringName, ShaderLanguage::ShaderNode::Uniform> &p_uniforms, const uint32_t *p_uniform_offsets, const HashMap<StringName, Variant> &p_parameters, uint8_t *p_buffer, uint32_t p_buffer_size, bool p_use_linear_color);
+		void update_textures(const HashMap<StringName, Variant> &p_parameters, const HashMap<StringName, HashMap<int, RID>> &p_default_textures, const Vector<ShaderCompiler::GeneratedCode::Texture> &p_texture_uniforms, RID *p_textures, bool p_use_linear_color, bool p_3d_material);
+		void set_as_used();
+
+		virtual void set_render_priority(int p_priority) = 0;
+		virtual void set_next_pass(RID p_pass) = 0;
+		virtual bool update_parameters(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty) = 0;
+		virtual ~MaterialData();
+
+		//to be used internally by update_parameters, in the most common configuration of material parameters
+		bool update_parameters_uniform_set(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty, const HashMap<StringName, ShaderLanguage::ShaderNode::Uniform> &p_uniforms, const uint32_t *p_uniform_offsets, const Vector<ShaderCompiler::GeneratedCode::Texture> &p_texture_uniforms, const HashMap<StringName, HashMap<int, RID>> &p_default_texture_params, uint32_t p_ubo_size, RID &r_uniform_set, RID p_shader, uint32_t p_shader_uniform_set, bool p_use_linear_color, bool p_3d_material);
+		void free_parameters_uniform_set(RID p_uniform_set);
+
+	private:
+		friend class MaterialStorage;
+
+		RID self;
+		List<RID>::Element *global_buffer_E = nullptr;
+		List<RID>::Element *global_texture_E = nullptr;
+		uint64_t global_textures_pass = 0;
+		HashMap<StringName, uint64_t> used_global_textures;
+
+		//internally by update_parameters_uniform_set
+		Vector<uint8_t> ubo_data[2]; // 0: linear buffer; 1: sRGB buffer.
+		RID uniform_buffer[2]; // 0: linear buffer; 1: sRGB buffer.
+		Vector<RID> texture_cache;
+	};
+
  public:
   /* GLOBAL SHADER UNIFORM API */
-  virtual void global_shader_parameter_add(const StringName& p_name, RS::GlobalShaderParameterType p_type, const Variant& p_value) override;
-  virtual void global_shader_parameter_remove(const StringName& p_name) override;
-  virtual Vector<StringName> global_shader_parameter_get_list() const override;
+  // 为所有的着色器设置全局参数 @todo
+  // virtual void global_shader_parameter_add(const StringName& p_name, RS::GlobalShaderParameterType p_type, const Variant& p_value) override;
+  // virtual void global_shader_parameter_remove(const StringName& p_name) override;
+  // virtual Vector<StringName> global_shader_parameter_get_list() const override;
 
-  virtual void global_shader_parameter_set(const StringName& p_name, const Variant& p_value) override;
-  virtual void global_shader_parameter_set_override(const StringName& p_name, const Variant& p_value) override;
-  virtual Variant global_shader_parameter_get(const StringName& p_name) const override;
-  virtual RS::GlobalShaderParameterType global_shader_parameter_get_type(const StringName& p_name) const override;
+  // virtual void global_shader_parameter_set(const StringName& p_name, const Variant& p_value) override;
+  // virtual void global_shader_parameter_set_override(const StringName& p_name, const Variant& p_value) override;
+  // virtual Variant global_shader_parameter_get(const StringName& p_name) const override;
+  // virtual RS::GlobalShaderParameterType global_shader_parameter_get_type(const StringName& p_name) const override;
 
-  virtual void global_shader_parameters_load_settings(bool p_load_textures = true) override;
-  virtual void global_shader_parameters_clear() override;
+  // virtual void global_shader_parameters_load_settings(bool p_load_textures = true) override;
+  // virtual void global_shader_parameters_clear() override;
 
   virtual int32_t global_shader_parameters_instance_allocate(RID p_instance) override;
   virtual void global_shader_parameters_instance_free(RID p_instance) override;

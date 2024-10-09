@@ -1,0 +1,534 @@
+#include "shader_rd.h"
+#include "core/io/dir_access.h"
+using namespace lain;
+
+
+
+void ShaderRD::_add_stage(const char *p_code, StageType p_stage_type) {
+	Vector<String> lines = String(p_code).split("\n");
+
+	String text;
+
+	for (int i = 0; i < lines.size(); i++) {
+		const String &l = lines[i];
+		bool push_chunk = false;
+
+		StageTemplate::Chunk chunk;
+
+		if (l.begins_with("#VERSION_DEFINES")) {
+			chunk.type = StageTemplate::Chunk::TYPE_VERSION_DEFINES;
+			push_chunk = true;
+		} else if (l.begins_with("#GLOBALS")) {
+			switch (p_stage_type) {
+				case STAGE_TYPE_VERTEX:
+					chunk.type = StageTemplate::Chunk::TYPE_VERTEX_GLOBALS;
+					break;
+				case STAGE_TYPE_FRAGMENT:
+					chunk.type = StageTemplate::Chunk::TYPE_FRAGMENT_GLOBALS;
+					break;
+				case STAGE_TYPE_COMPUTE:
+					chunk.type = StageTemplate::Chunk::TYPE_COMPUTE_GLOBALS;
+					break;
+				default: {
+				}
+			}
+
+			push_chunk = true;
+		} else if (l.begins_with("#MATERIAL_UNIFORMS")) {
+			chunk.type = StageTemplate::Chunk::TYPE_MATERIAL_UNIFORMS;
+			push_chunk = true;
+		} else if (l.begins_with("#CODE")) {
+			chunk.type = StageTemplate::Chunk::TYPE_CODE;
+			push_chunk = true;
+			chunk.code = l.replace_first("#CODE", String()).replace(":", "").strip_edges().to_upper();
+		} else { // 在chunk中
+			text += l + "\n";
+		}
+		if (push_chunk) {
+			if (!text.is_empty()) {
+				StageTemplate::Chunk text_chunk;
+				text_chunk.type = StageTemplate::Chunk::TYPE_TEXT;
+				text_chunk.text = text.utf8();
+				stage_templates[p_stage_type].chunks.push_back(text_chunk);
+				text = String();
+			}
+			stage_templates[p_stage_type].chunks.push_back(chunk);
+		}
+	}
+	// 最后
+	if (!text.is_empty()) {
+		StageTemplate::Chunk text_chunk;
+		text_chunk.type = StageTemplate::Chunk::TYPE_TEXT;
+		text_chunk.text = text.utf8();
+		stage_templates[p_stage_type].chunks.push_back(text_chunk);
+		text = String();
+	}
+}
+
+void ShaderRD::setup(const char *p_vertex_code, const char *p_fragment_code, const char *p_compute_code, const char *p_name) {
+	name = p_name;
+
+	if (p_compute_code) {
+		_add_stage(p_compute_code, STAGE_TYPE_COMPUTE);
+		is_compute = true;
+	} else {
+		is_compute = false;
+		if (p_vertex_code) {
+			_add_stage(p_vertex_code, STAGE_TYPE_VERTEX);
+		}
+		if (p_fragment_code) {
+			_add_stage(p_fragment_code, STAGE_TYPE_FRAGMENT);
+		}
+	}
+
+	StringBuilder tohash;
+	tohash.append("[GodotVersionNumber]");
+	tohash.append("1");
+	tohash.append("[GodotVersionHash]");
+	tohash.append("1");
+	tohash.append("[SpirvCacheKey]"); // spirv 
+	tohash.append(RenderingDevice::get_singleton()->shader_get_spirv_cache_key());
+	tohash.append("[BinaryCacheKey]");
+	tohash.append(RenderingDevice::get_singleton()->shader_get_binary_cache_key());
+	tohash.append("[Vertex]");
+	tohash.append(p_vertex_code ? p_vertex_code : "");
+	tohash.append("[Fragment]");
+	tohash.append(p_fragment_code ? p_fragment_code : "");
+	tohash.append("[Compute]");
+	tohash.append(p_compute_code ? p_compute_code : "");
+	// Hash
+	base_sha256 = tohash.as_string().sha256_text();
+}
+
+// 将变量编译到ubershader里
+
+void ShaderRD::_compile_variant(uint32_t p_variant, const CompileData *p_data) {
+	uint32_t variant = group_to_variant_map[p_data->group][p_variant];
+
+	if (!variants_enabled[variant]) {
+		return; // Variant is disabled, return.
+	}
+
+	Vector<RD::ShaderStageSPIRVData> stages;
+
+	String error;
+	String current_source;
+	RD::ShaderStage current_stage = RD::SHADER_STAGE_VERTEX;
+	bool build_ok = true;
+
+	if (!is_compute) {
+		//vertex stage
+
+		StringBuilder builder;
+		_build_variant_code(builder, variant, p_data->version, stage_templates[STAGE_TYPE_VERTEX]);
+
+		current_source = builder.as_string();
+		RD::ShaderStageSPIRVData stage;
+		// 在这里编译
+		stage.spirv = RD::get_singleton()->shader_compile_spirv_from_source(RD::SHADER_STAGE_VERTEX, current_source, RD::SHADER_LANGUAGE_GLSL, &error);
+		if (stage.spirv.size() == 0) {
+			build_ok = false;
+		} else {
+			stage.shader_stage = RD::SHADER_STAGE_VERTEX;
+			stages.push_back(stage);
+		}
+	}
+
+	if (!is_compute && build_ok) {
+		//fragment stage
+		current_stage = RD::SHADER_STAGE_FRAGMENT;
+
+		StringBuilder builder;
+		_build_variant_code(builder, variant, p_data->version, stage_templates[STAGE_TYPE_FRAGMENT]);
+
+		current_source = builder.as_string();
+		RD::ShaderStageSPIRVData stage;
+		stage.spirv = RD::get_singleton()->shader_compile_spirv_from_source(RD::SHADER_STAGE_FRAGMENT, current_source, RD::SHADER_LANGUAGE_GLSL, &error);
+		if (stage.spirv.size() == 0) {
+			build_ok = false;
+		} else {
+			stage.shader_stage = RD::SHADER_STAGE_FRAGMENT;
+			stages.push_back(stage);
+		}
+	}
+
+	if (is_compute) {
+		//compute stage
+		current_stage = RD::SHADER_STAGE_COMPUTE;
+
+		StringBuilder builder;
+		_build_variant_code(builder, variant, p_data->version, stage_templates[STAGE_TYPE_COMPUTE]);
+
+		current_source = builder.as_string();
+
+		RD::ShaderStageSPIRVData stage;
+		stage.spirv = RD::get_singleton()->shader_compile_spirv_from_source(RD::SHADER_STAGE_COMPUTE, current_source, RD::SHADER_LANGUAGE_GLSL, &error);
+		if (stage.spirv.size() == 0) {
+			build_ok = false;
+		} else {
+			stage.shader_stage = RD::SHADER_STAGE_COMPUTE;
+			stages.push_back(stage);
+		}
+	}
+
+	if (!build_ok) {
+		MutexLock lock(variant_set_mutex); //properly print the errors
+		ERR_PRINT("Error compiling " + String(current_stage == RD::SHADER_STAGE_COMPUTE ? "Compute " : (current_stage == RD::SHADER_STAGE_VERTEX ? "Vertex" : "Fragment")) + " shader, variant #" + itos(variant) + " (" + variant_defines[variant].text.get_data() + ").");
+		ERR_PRINT(error);
+
+#ifdef DEBUG_ENABLED
+		ERR_PRINT("code:\n" + current_source.get_with_code_lines());
+#endif
+		return;
+	}
+	// spirv -> bytecode
+	Vector<uint8_t> shader_data = RD::get_singleton()->shader_compile_binary_from_spirv(stages, name + ":" + itos(variant));
+
+	ERR_FAIL_COND(shader_data.is_empty());
+
+	{
+		MutexLock lock(variant_set_mutex);
+
+		p_data->version->variants[variant] = RD::get_singleton()->shader_create_from_bytecode(shader_data, p_data->version->variants[variant]);
+		p_data->version->variant_data[variant] = shader_data;
+	}
+}
+
+void ShaderRD::_build_variant_code(StringBuilder &builder, uint32_t p_variant, const Version *p_version, const StageTemplate &p_template) {
+	for (const StageTemplate::Chunk &chunk : p_template.chunks) {
+		switch (chunk.type) {
+			case StageTemplate::Chunk::TYPE_VERSION_DEFINES: {
+				builder.append("\n"); //make sure defines begin at newline
+				builder.append(general_defines.get_data());
+				builder.append(variant_defines[p_variant].text.get_data());
+				for (int j = 0; j < p_version->custom_defines.size(); j++) {
+					builder.append(p_version->custom_defines[j].get_data());
+				}
+				builder.append("\n"); //make sure defines begin at newline
+				if (p_version->uniforms.size()) {
+					builder.append("#define MATERIAL_UNIFORMS_USED\n");
+				}
+				for (const KeyValue<StringName, CharString> &E : p_version->code_sections) {
+					builder.append(String("#define ") + String(E.key) + "_CODE_USED\n");
+				}
+#if defined(MACOS_ENABLED) || defined(IOS_ENABLED)
+				builder.append("#define MOLTENVK_USED\n");
+#endif
+				builder.append(String("#define RENDER_DRIVER_") + OS::GetSingleton()->GetCurrentRenderingDriverName().to_upper() + "\n");
+			} break;
+			case StageTemplate::Chunk::TYPE_MATERIAL_UNIFORMS: {
+				builder.append(p_version->uniforms.get_data()); //uniforms (same for vertex and fragment)
+			} break;
+			case StageTemplate::Chunk::TYPE_VERTEX_GLOBALS: {
+				builder.append(p_version->vertex_globals.get_data()); // vertex globals
+			} break;
+			case StageTemplate::Chunk::TYPE_FRAGMENT_GLOBALS: {
+				builder.append(p_version->fragment_globals.get_data()); // fragment globals
+			} break;
+			case StageTemplate::Chunk::TYPE_COMPUTE_GLOBALS: {
+				builder.append(p_version->compute_globals.get_data()); // compute globals
+			} break;
+			case StageTemplate::Chunk::TYPE_CODE: {
+				if (p_version->code_sections.has(chunk.code)) {
+					builder.append(p_version->code_sections[chunk.code].get_data());
+				}
+			} break;
+			case StageTemplate::Chunk::TYPE_TEXT: {
+				builder.append(chunk.text.get_data());
+			} break;
+		}
+	}
+}
+RID ShaderRD::version_create() {
+	//initialize() was never called
+	ERR_FAIL_COND_V(group_to_variant_map.is_empty(), RID());
+
+	Version version;
+	version.dirty = true;
+	version.valid = false;
+	version.initialize_needed = true;
+	version.variants = nullptr;
+	return version_owner.make_rid(version);
+}
+
+void ShaderRD::_initialize_version(Version *p_version) {
+	_clear_version(p_version);
+
+	p_version->valid = false;
+	p_version->dirty = false;
+
+	p_version->variants = memnew_arr(RID, variant_defines.size());
+}
+
+void ShaderRD::_clear_version(Version *p_version) {
+	// Clear versions if they exist.
+	if (p_version->variants) {
+		for (int i = 0; i < variant_defines.size(); i++) {
+			if (p_version->variants[i].is_valid()) {
+				RD::get_singleton()->free(p_version->variants[i]);
+			}
+		}
+
+		memdelete_arr(p_version->variants);
+		if (p_version->variant_data) {
+			memdelete_arr(p_version->variant_data);
+		}
+		p_version->variants = nullptr;
+	}
+}
+
+
+void ShaderRD::_compile_version(Version *p_version, int p_group) {
+	if (!group_enabled[p_group]) {
+		return;
+	}
+
+	typedef Vector<uint8_t> ShaderStageData;
+	p_version->variant_data = memnew_arr(ShaderStageData, variant_defines.size());
+
+	p_version->dirty = false;
+
+	if (shader_cache_dir_valid) {
+		if (_load_from_cache(p_version, p_group)) {
+			return;
+		}
+	}
+
+	CompileData compile_data;
+	compile_data.version = p_version;
+	compile_data.group = p_group;
+
+#if 1
+	WorkerThreadPool::GroupID group_task = WorkerThreadPool::get_singleton()->add_template_group_task(this, &ShaderRD::_compile_variant, &compile_data, group_to_variant_map[p_group].size(), -1, true, SNAME("ShaderCompilation"));
+	WorkerThreadPool::get_singleton()->wait_for_group_task_completion(group_task);
+
+#else
+	for (uint32_t i = 0; i < group_to_variant_map[p_group].size(); i++) {
+		_compile_variant(i, &compile_data);
+	}
+#endif
+
+	bool all_valid = true;
+
+	for (uint32_t i = 0; i < group_to_variant_map[p_group].size(); i++) {
+		int variant_id = group_to_variant_map[p_group][i];
+		if (!variants_enabled[variant_id]) {
+			continue; // Disabled.
+		}
+		if (p_version->variants[variant_id].is_null()) {
+			all_valid = false;
+			break;
+		}
+	}
+
+	if (!all_valid) {
+		// Clear versions if they exist.
+		for (int i = 0; i < variant_defines.size(); i++) {
+			if (!variants_enabled[i] || !group_enabled[variant_defines[i].group]) {
+				continue; // Disabled.
+			}
+			if (!p_version->variants[i].is_null()) {
+				RD::get_singleton()->free(p_version->variants[i]);
+			}
+		}
+		memdelete_arr(p_version->variants);
+		if (p_version->variant_data) {
+			memdelete_arr(p_version->variant_data);
+		}
+		p_version->variants = nullptr;
+		p_version->variant_data = nullptr;
+		return;
+	} else if (shader_cache_dir_valid) {
+		// Save shader cache.
+		_save_to_cache(p_version, p_group);
+	}
+
+	memdelete_arr(p_version->variant_data); //clear stages
+	p_version->variant_data = nullptr;
+
+	p_version->valid = true;
+}
+
+
+void ShaderRD::_initialize_cache() {
+	for (const KeyValue<int, LocalVector<int>> &E : group_to_variant_map) {
+		StringBuilder hash_build;
+
+		hash_build.append("[base_hash]");
+		hash_build.append(base_sha256);
+		hash_build.append("[general_defines]");
+		hash_build.append(general_defines.get_data());
+		hash_build.append("[group_id]");
+		hash_build.append(itos(E.key));
+		for (uint32_t i = 0; i < E.value.size(); i++) {
+			hash_build.append("[variant_defines:" + itos(E.value[i]) + "]");
+			hash_build.append(variant_defines[E.value[i]].text.get_data());
+		}
+
+		group_sha256[E.key] = hash_build.as_string().sha256_text();
+
+		Ref<DirAccess> d = DirAccess::open(shader_cache_dir);
+		ERR_FAIL_COND(d.is_null());
+		if (d->change_dir(name) != OK) {
+			Error err = d->make_dir(name);
+			ERR_FAIL_COND(err != OK);
+			d->change_dir(name);
+		}
+
+		// Erase other versions?
+		if (shader_cache_cleanup_on_start) {
+		}
+		//
+		if (d->change_dir(group_sha256[E.key]) != OK) {
+			Error err = d->make_dir(group_sha256[E.key]);
+			ERR_FAIL_COND(err != OK);
+		}
+		shader_cache_dir_valid = true;
+
+		print_verbose("Shader '" + name + "' (group " + itos(E.key) + ") SHA256: " + group_sha256[E.key]);
+	}
+}
+
+void ShaderRD::initialize(const Vector<String> &p_variant_defines, const String &p_general_defines) {
+	ERR_FAIL_COND(variant_defines.size());
+	ERR_FAIL_COND(p_variant_defines.is_empty());
+
+	general_defines = p_general_defines.utf8();
+
+	// When initialized this way, there is just one group and its always enabled.
+	group_to_variant_map.insert(0, LocalVector<int>{});
+	group_enabled.push_back(true);
+
+	for (int i = 0; i < p_variant_defines.size(); i++) {
+		variant_defines.push_back(VariantDefine(0, p_variant_defines[i], true));
+		variants_enabled.push_back(true);
+		group_to_variant_map[0].push_back(i);
+	}
+
+	if (!shader_cache_dir.is_empty()) {
+		group_sha256.resize(1);
+		_initialize_cache();
+	}
+}
+
+// version to string to sha1 
+String ShaderRD::_version_get_sha1(Version *p_version) const {
+	StringBuilder hash_build;
+
+	hash_build.append("[uniforms]");
+	hash_build.append(p_version->uniforms.get_data());
+	hash_build.append("[vertex_globals]");
+	hash_build.append(p_version->vertex_globals.get_data());
+	hash_build.append("[fragment_globals]");
+	hash_build.append(p_version->fragment_globals.get_data());
+	hash_build.append("[compute_globals]");
+	hash_build.append(p_version->compute_globals.get_data());
+
+	Vector<StringName> code_sections;
+	for (const KeyValue<StringName, CharString> &E : p_version->code_sections) {
+		code_sections.push_back(E.key);
+	}
+	code_sections.sort_custom<StringName::AlphCompare>();
+
+	for (int i = 0; i < code_sections.size(); i++) {
+		hash_build.append(String("[code:") + String(code_sections[i]) + "]");
+		hash_build.append(p_version->code_sections[code_sections[i]].get_data());
+	}
+	for (int i = 0; i < p_version->custom_defines.size(); i++) {
+		hash_build.append("[custom_defines:" + itos(i) + "]");
+		hash_build.append(p_version->custom_defines[i].get_data());
+	}
+
+	return hash_build.as_string().sha1_text();
+}
+
+String ShaderRD::_get_cache_file_path(Version *p_version, int p_group) {
+	const String &sha1 = _version_get_sha1(p_version);
+	const String &api_safe_name = String(RD::get_singleton()->get_device_api_name()).validate_filename().to_lower();
+	const String &path = shader_cache_dir.path_join(name).path_join(group_sha256[p_group]).path_join(sha1) + "." + api_safe_name + ".cache"; // vulkan.cache
+	return path;
+}
+// cache与shader binary不同
+static const char *shader_file_header = "LNSC";
+static const uint32_t cache_file_version = 3;
+
+bool ShaderRD::_load_from_cache(Version *p_version, int p_group) {
+	const String &path = _get_cache_file_path(p_version, p_group);
+	Ref<FileAccess> f = FileAccess::open(path, FileAccess::READ);
+	if (f.is_null()) {
+		return false;
+	}
+
+	char header[5] = { 0, 0, 0, 0, 0 };
+	f->get_buffer((uint8_t *)header, 4);
+	ERR_FAIL_COND_V(header != String(shader_file_header), false);
+
+	uint32_t file_version = f->get_32();
+	if (file_version != cache_file_version) {
+		return false; // wrong version
+	}
+
+	uint32_t variant_count = f->get_32();
+
+	ERR_FAIL_COND_V(variant_count != (uint32_t)group_to_variant_map[p_group].size(), false); //should not happen but check
+
+	for (uint32_t i = 0; i < variant_count; i++) {
+		int variant_id = group_to_variant_map[p_group][i];
+		uint32_t variant_size = f->get_32();
+		ERR_FAIL_COND_V(variant_size == 0 && variants_enabled[variant_id], false);
+		if (!variants_enabled[variant_id]) {
+			continue;
+		}
+		Vector<uint8_t> variant_bytes;
+		variant_bytes.resize(variant_size);
+
+		uint32_t br = f->get_buffer(variant_bytes.ptrw(), variant_size);
+
+		ERR_FAIL_COND_V(br != variant_size, false);
+
+		p_version->variant_data[variant_id] = variant_bytes;
+	}
+
+	for (uint32_t i = 0; i < variant_count; i++) {
+		int variant_id = group_to_variant_map[p_group][i];
+		if (!variants_enabled[variant_id]) {
+			MutexLock lock(variant_set_mutex);
+			p_version->variants[variant_id] = RID();
+			continue;
+		}
+		{
+			MutexLock lock(variant_set_mutex);
+			RID shader = RD::get_singleton()->shader_create_from_bytecode(p_version->variant_data[variant_id], p_version->variants[variant_id]);
+			if (shader.is_null()) {
+				for (uint32_t j = 0; j < i; j++) {
+					int variant_free_id = group_to_variant_map[p_group][j];
+					RD::get_singleton()->free(p_version->variants[variant_free_id]);
+				}
+				ERR_FAIL_COND_V(shader.is_null(), false);
+			}
+
+			p_version->variants[variant_id] = shader;
+		}
+	}
+
+	memdelete_arr(p_version->variant_data); //clear stages
+	p_version->variant_data = nullptr;
+	p_version->valid = true;
+	return true;
+}
+// 存储一个group的所有variant 到 .cache 中 
+void ShaderRD::_save_to_cache(Version *p_version, int p_group) {
+	ERR_FAIL_COND(!shader_cache_dir_valid);
+	const String &path = _get_cache_file_path(p_version, p_group);
+	Ref<FileAccess> f = FileAccess::open(path, FileAccess::WRITE);
+	ERR_FAIL_COND(f.is_null());
+	f->store_buffer((const uint8_t *)shader_file_header, 4);
+	f->store_32(cache_file_version); // File version.
+	uint32_t variant_count = group_to_variant_map[p_group].size();
+	f->store_32(variant_count); // Variant count.
+	for (uint32_t i = 0; i < variant_count; i++) {
+		int variant_id = group_to_variant_map[p_group][i];
+		f->store_32(p_version->variant_data[variant_id].size()); // Stage count.
+		f->store_buffer(p_version->variant_data[variant_id].ptr(), p_version->variant_data[variant_id].size());
+	}
+}

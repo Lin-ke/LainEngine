@@ -65,4 +65,16 @@ PropertyInfo::operator Dictionary() const {
 }
 
 
+
+Variant Object::callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
+  // 处理free
+
+  // 如果是脚本调用
+
+  // 通过反射获得类的方法并调用
+  return Variant();
+}
+
 }  // namespace lain
+
+
