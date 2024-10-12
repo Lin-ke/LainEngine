@@ -3,7 +3,7 @@
 
 #include "core/math/math_defs.h"
 //#include "core/input/input_enums.h"
-//#include "core/io/ip_address.h"
+#include "core/io/ip_address.h"
 #include "core/math/aabb.h"
 #include "core/math/basis.h"
 #include "core/math/color.h"

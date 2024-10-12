@@ -110,7 +110,9 @@ namespace lain
 
             return *this;
         }
-
+        L_INLINE Vector2i sign() const {
+            return Vector2i((x > 0) - (x < 0), (y > 0) - (y < 0));
+        }
         Vector2i& operator-=(const Vector2i & rhs)
         {
             x -= rhs.x;

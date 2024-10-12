@@ -133,7 +133,9 @@ namespace lain
             z = static_cast<i32> (z - scalar);
             return *this;
         }
-
+        Vector3i snapped(const Vector3i & p_step) const{
+            return Vector3i(Math::snapped(x, p_step.x), Math::snapped(y, p_step.y), Math::snapped(z, p_step.z));
+        }
 
 
         Vector3i& operator-=(const Vector3i & rhs)
@@ -286,6 +288,12 @@ namespace lain
         @returns The previous length of the vector.
         */
 
+  L_INLINE Vector3i abs() const {
+    return Vector3i(Math::abs(x), Math::abs(y), Math::abs(z));
+  }
+  L_INLINE Vector3i sign() const {
+    return Vector3i(SIGN(x),SIGN(y),SIGN(z));
+    }
         /** Sets this vector's components to the minimum of its own and the
         ones of the passed in vector.
         @remarks
@@ -346,6 +354,10 @@ namespace lain
         static const Vector3i NEGATIVE_UNIT_Y;
         static const Vector3i NEGATIVE_UNIT_Z;
         static const Vector3i UNIT_SCALE;
+
+        operator String() const{
+            return "(" + itos(x) + ", " + itos(y) + ", " + itos(z) + ")";
+        }
     };
 } // namespace lain
 #endif // !__VECTOR3I_H__

@@ -3,534 +3,563 @@
 #define __VARIANT_H__
 #include "core/variant/variant_header.h"
 namespace lain {
-	typedef Vector<uint8_t> PackedByteArray;
-	typedef Vector<int32_t> PackedInt32Array;
-	typedef Vector<int64_t> PackedInt64Array;
-	typedef Vector<float> PackedFloat32Array;
-	typedef Vector<double> PackedFloat64Array;
-	typedef Vector<String> PackedStringArray;
-	typedef Vector<Vector2> PackedVector2Array;
-	typedef Vector<Vector3> PackedVector3Array;
-	typedef Vector<Color> PackedColorArray;
-	class Object;
-	class ConfigFile;
-	class VariantInternal;
-	class RID;
-	class Serializer;
-	// variant的实现和lua是一样的，但是多一些基本类，如果只有数学类和table就是lua了
-	// 就像lua一样，主要类是依靠字典来实现的
-	// 注意有一些引用计数的情况可能会导致问题
-	class Variant {
-		friend class VariantInternal;
-		friend class Serializer;
-	public:
-		enum Type
-		{
-			NIL,
+typedef Vector<uint8_t> PackedByteArray;
+typedef Vector<int32_t> PackedInt32Array;
+typedef Vector<int64_t> PackedInt64Array;
+typedef Vector<float> PackedFloat32Array;
+typedef Vector<double> PackedFloat64Array;
+typedef Vector<String> PackedStringArray;
+typedef Vector<Vector2> PackedVector2Array;
+typedef Vector<Vector3> PackedVector3Array;
+typedef Vector<Color> PackedColorArray;
+typedef Vector<Vector4> PackedVector4Array;
+class Object;
+class ConfigFile;
+class VariantInternal;
+class RID;
+class Serializer;
+// variant的实现和lua是一样的，但是多一些基本类，如果只有数学类和table就是lua了
+// 就像lua一样，主要类是依靠字典来实现的
+// 注意有一些引用计数的情况可能会导致问题
 
-			// atomic types
-			BOOL,
-			INT,
-			FLOAT,
-			STRING,
+class Variant {
+  friend class VariantInternal;
+  friend class Serializer;
 
-			// math types
-			VECTOR2,
-			VECTOR2I,
-			RECT2,
-			RECT2I,
-			VECTOR3,
-			VECTOR3I,
-			TRANSFORM2D,
-			VECTOR4,
-			VECTOR4I,
-			PLANE,
-			QUATERNION,
-			AABB,
-			BASIS,
-			TRANSFORM3D,
-			PROJECTION,
+ public:
+  enum Type {
+    NIL,
 
-			// misc types
-			COLOR,
-			STRING_NAME,
-			GOBJECT_PATH,
-			RID,
-			OBJECT,
-			CALLABLE,
-			SIGNAL,
-			DICTIONARY,
-			ARRAY,
+    // atomic types
+    BOOL,
+    INT,
+    FLOAT,
+    STRING,
 
-			// typed arrays
-			PACKED_BYTE_ARRAY,
-			PACKED_INT32_ARRAY,
-			PACKED_INT64_ARRAY,
-			PACKED_FLOAT32_ARRAY,
-			PACKED_FLOAT64_ARRAY,
-			PACKED_STRING_ARRAY,
-			PACKED_VECTOR2_ARRAY,
-			PACKED_VECTOR3_ARRAY,
-			PACKED_COLOR_ARRAY,
-			PACKED_VECTOR4_ARRAY,
+    // math types
+    VECTOR2,
+    VECTOR2I,
+    RECT2,
+    RECT2I,
+    VECTOR3,
+    VECTOR3I,
+    TRANSFORM2D,
+    VECTOR4,
+    VECTOR4I,
+    PLANE,
+    QUATERNION,
+    AABB,
+    BASIS,
+    TRANSFORM3D,
+    PROJECTION,
 
-			// reflect
-			REFLECTIONINSTANCE, //Reflection instance真的有必要吗？
-			VARIANT_MAX,
+    // misc types
+    COLOR,
+    STRING_NAME,
+    GOBJECT_PATH,
+    RID,
+    OBJECT,
+    CALLABLE,
+    SIGNAL,
+    DICTIONARY,
+    ARRAY,
 
+    // typed arrays
+    PACKED_BYTE_ARRAY,
+    PACKED_INT32_ARRAY,
+    PACKED_INT64_ARRAY,
+    PACKED_FLOAT32_ARRAY,
+    PACKED_FLOAT64_ARRAY,
+    PACKED_STRING_ARRAY,
+    PACKED_VECTOR2_ARRAY,
+    PACKED_VECTOR3_ARRAY,
+    PACKED_COLOR_ARRAY,
+    PACKED_VECTOR4_ARRAY,
 
+    // reflect
+    REFLECTIONINSTANCE,  //Reflection instance真的有必要吗？
+    VARIANT_MAX,
 
-		};
+  };
 
-		enum {
-			// Maximum recursion depth allowed when serializing variants.
-			MAX_RECURSION_DEPTH = 1024,
-		};
-	private:
+  enum {
+    // Maximum recursion depth allowed when serializing variants.
+    MAX_RECURSION_DEPTH = 1024,
+  };
 
-		Type type = NIL;
+ private:
+  Type type = NIL;
+  static bool can_convert(Type p_type_from, Type p_type_to);
+  static bool can_convert_strict(Type from, Type to);
 
-		/// <summary>
-		/// array helpers
-		/// </summary>
-		struct PackedArrayRefBase {
-			SafeRefCount refcount;
-			_FORCE_INLINE_ PackedArrayRefBase* reference() {
-				if (this->refcount.ref()) {
-					return this;
-				}
-				else {
-					return nullptr;
-				}
-			}
-			static _FORCE_INLINE_ PackedArrayRefBase* reference_from(PackedArrayRefBase* p_base, PackedArrayRefBase* p_from) {
-				if (p_base == p_from) {
-					return p_base; //same thing, do nothing
-				}
+  /// <summary>
+  /// array helpers
+  /// </summary>
+  // 注意用这种技术来进行类型擦除，子类型通过模板特化，只需保留一个对父类的引用
+  // 内部是一个Vector<T> array;
 
-				if (p_from->reference()) {
-					if (p_base->refcount.unref()) {
-						memdelete(p_base);
-					}
-					return p_from;
-				}
-				else {
-					return p_base; //keep, could not reference new
-				}
-			}
-			static _FORCE_INLINE_ void destroy(PackedArrayRefBase* p_array) {
-				if (p_array->refcount.unref()) {
-					memdelete(p_array);
-				}
-			}
-			_FORCE_INLINE_ virtual ~PackedArrayRefBase() {} //needs virtual destructor, but make inline
-		};
-		template <class T>
-		struct PackedArrayRef : public PackedArrayRefBase {
-			Vector<T> array;
-			static _FORCE_INLINE_ PackedArrayRef<T>* create() {
-				return memnew(PackedArrayRef<T>);
-			}
-			static _FORCE_INLINE_ PackedArrayRef<T>* create(const Vector<T>& p_from) {
-				return memnew(PackedArrayRef<T>(p_from));
-			}
+  struct PackedArrayRefBase {
+    SafeRefCount refcount;
+    _FORCE_INLINE_ PackedArrayRefBase* reference() {
+      if (this->refcount.ref()) {
+        return this;
+      } else {
+        return nullptr;
+      }
+    }
+    static _FORCE_INLINE_ PackedArrayRefBase* reference_from(PackedArrayRefBase* p_base, PackedArrayRefBase* p_from) {
+      if (p_base == p_from) {
+        return p_base;  //same thing, do nothing
+      }
 
-			static _FORCE_INLINE_ const Vector<T>& get_array(PackedArrayRefBase* p_base) {
-				return static_cast<PackedArrayRef<T> *>(p_base)->array;
-			}
-			static _FORCE_INLINE_ Vector<T>* get_array_ptr(const PackedArrayRefBase* p_base) {
-				return &const_cast<PackedArrayRef<T> *>(static_cast<const PackedArrayRef<T> *>(p_base))->array;
-			}
+      if (p_from->reference()) {
+        if (p_base->refcount.unref()) {
+          memdelete(p_base);
+        }
+        return p_from;
+      } else {
+        return p_base;  //keep, could not reference new
+      }
+    }
+    static _FORCE_INLINE_ void destroy(PackedArrayRefBase* p_array) {
+      if (p_array->refcount.unref()) {
+        memdelete(p_array);
+      }
+    }
+    _FORCE_INLINE_ virtual ~PackedArrayRefBase() {}  //needs virtual destructor, but make inline
+  };
+  template <class T>
+  struct PackedArrayRef : public PackedArrayRefBase {
+    Vector<T> array;
+    static _FORCE_INLINE_ PackedArrayRef<T>* create() { return memnew(PackedArrayRef<T>); }
+    static _FORCE_INLINE_ PackedArrayRef<T>* create(const Vector<T>& p_from) { return memnew(PackedArrayRef<T>(p_from)); }
 
-			_FORCE_INLINE_ PackedArrayRef(const Vector<T>& p_from) {
-				array = p_from;
-				refcount.init();
-			}
-			_FORCE_INLINE_ PackedArrayRef() {
-				refcount.init();
-			}
-		};
+    static _FORCE_INLINE_ const Vector<T>& get_array(PackedArrayRefBase* p_base) { return static_cast<PackedArrayRef<T>*>(p_base)->array; }
+    static _FORCE_INLINE_ Vector<T>* get_array_ptr(const PackedArrayRefBase* p_base) {
+      return &const_cast<PackedArrayRef<T>*>(static_cast<const PackedArrayRef<T>*>(p_base))->array;
+    }
 
-		struct ObjData {
-			ObjectID id;
-			Object* obj = nullptr;
-		};
+    _FORCE_INLINE_ PackedArrayRef(const Vector<T>& p_from) {
+      array = p_from;
+      refcount.init();
+    }
+    _FORCE_INLINE_ PackedArrayRef() { refcount.init(); }
+  };
 
-		union {
-			bool _bool;
-			int64_t _int;
-			double _float;
-			void* _ptr; //generic pointer
-			lain::AABB* _aabb;
-			Basis *_basis;
-			Transform3D *_transform3d;
-			Projection *_projection;
-			PackedArrayRefBase* packed_array;
-			uint8_t _mem[sizeof(ObjData) > (sizeof(real_t) * 4) ? sizeof(ObjData) : (sizeof(real_t) * 4)]{ 0 };
-		} _data alignas(8);
-		const ObjData& _get_obj() const;
-		ObjData& _get_obj();
-		// constructor
-		Variant(const Variant*);
-		Variant(const Variant**);
+  struct ObjData {
+    ObjectID id;
+    Object* obj = nullptr;
+  };
 
-	struct Pools { // 使用这个Allocator分配这几种类型资源的内存
-		union BucketSmall {
-			BucketSmall() {}
-			~BucketSmall() {}
-			// Transform2D _transform2d;
-			lain::AABB _aabb;
-		};
-		union BucketMedium {
-			BucketMedium() {}
-			~BucketMedium() {}
-			Basis _basis;
-			Transform3D _transform3d;
-		};
-		union BucketLarge {
-			BucketLarge() {}
-			~BucketLarge() {}
-			// Projection _projection;
-		};
+  union {
+    bool _bool;
+    int64_t _int;
+    double _float;
+    void* _ptr;  //generic pointer
+    lain::AABB* _aabb;
+    Basis* _basis;
+    Transform3D* _transform3d;
+    Transform2D* _transform2d;
+    Projection* _projection;
+    PackedArrayRefBase* packed_array;
+    uint8_t _mem[sizeof(ObjData) > (sizeof(real_t) * 4) ? sizeof(ObjData) : (sizeof(real_t) * 4)]{0};
+  } _data alignas(8);
 
-		static PagedAllocator<BucketSmall, true> _bucket_small;
-		static PagedAllocator<BucketMedium, true> _bucket_medium;
-		static PagedAllocator<BucketLarge, true> _bucket_large;
-	};
-	public:
-		String stringify(int recursion_count) const;
-		_FORCE_INLINE_ Type get_type() const {
-			return type;
-		}
-		static const char* get_c_type_name(Variant::Type p_type);
-		static String get_type_name(Variant::Type p_type) { return get_c_type_name(p_type); }
-		L_INLINE String get_type_name() {
-			return get_type_name(type);
-		}
-		void reference(const Variant& p_variant);
-		void operator=(const Variant& p_variant); // only this is enough for all the other 
+  void reference(const Variant& p_variant);
+  static bool initialize_ref(Object* p_object);
 
-		bool operator==(const Variant& p_variant) const;
-		bool operator<(const Variant &p_variant) const;
+  const ObjData& _get_obj() const;
+  ObjData& _get_obj();
+  // constructor
+  Variant(const Variant*);
+  Variant(const Variant**);
 
+  struct Pools {  // 使用这个Allocator分配这几种类型资源的内存
+    union BucketSmall {
+      BucketSmall() {}
+      ~BucketSmall() {}
+      // Transform2D _transform2d;
+      lain::AABB _aabb;
+    };
+    union BucketMedium {
+      BucketMedium() {}
+      ~BucketMedium() {}
+      Basis _basis;
+      Transform3D _transform3d;
+    };
+    union BucketLarge {
+      BucketLarge() {}
+      ~BucketLarge() {}
+      // Projection _projection;
+    };
 
-		typedef void (*ObjectConstruct)(const String& p_text, void* ud, Variant& r_value);
-		static void construct_from_string(const String& p_string, Variant& r_value, ObjectConstruct p_obj_construct = nullptr, void* p_construct_ud = nullptr);
+    static PagedAllocator<BucketSmall, true> _bucket_small;
+    static PagedAllocator<BucketMedium, true> _bucket_medium;
+    static PagedAllocator<BucketLarge, true> _bucket_large;
+  };
 
-		uint32_t recursive_hash(int recursion_count) const;
-		bool hash_compare(const Variant& p_variant, int recursion_count = 0, bool semantic_comparison = true) const;
+ public:
+  String stringify(int recursion_count) const;
+  String to_json_string() const;
 
-		uint32_t Variant::hash() const {
-			return recursive_hash(0);
-		}
+  _FORCE_INLINE_ Type get_type() const { return type; }
+  static const char* get_c_type_name(Variant::Type p_type);
+  static String get_type_name(Variant::Type p_type) { return get_c_type_name(p_type); }
+  L_INLINE String get_type_name() { return get_type_name(type); }
+  void reference(const Variant& p_variant);
+  void operator=(const Variant& p_variant);  // only this is enough for all the other
+  bool operator!=(const Variant& p_variant) const;
+  bool operator==(const Variant& p_variant) const;
+  bool operator<(const Variant& p_variant) const;
+  bool is_type_shared(Variant::Type p_type);
+  bool is_shared() const;
+	bool is_read_only() const;
 
-		void zero();
-		Variant duplicate(bool p_deep = false) const;
-		Variant recursive_duplicate(bool p_deep, int recursion_count) const;
-		void set_type(Type p_type) { type = p_type; };
-		// 装箱
-		// containers
-		/// Variant transform
-		Variant(const Array& p_array);
-		Variant(const Vector<String>& p_string_array);
-		Variant(const Vector<float>& p_float_array);
-		Variant(const Vector<int64_t>& p_int64_array);
-		Variant(const Vector<int32_t>& p_int32_array);
-		Variant(const Vector<double>& p_double_array);
-		Variant(const Vector<ui8>& p_ui8_array);
-		Variant(const Vector<Vector2>& p_vector2_array);
-		Variant(const Vector<Vector3>& p_vector3_array);
-		Variant(const Vector<Color>& p_color_array);
-		Variant(const Vector<Vector4>& p_vector4_array);
-		Variant(const Vector<Variant>& p_variant_array);
+  void static_assign(const Variant& p_variant);
+  typedef void (*ObjectConstruct)(const String& p_text, void* ud, Variant& r_value);
+  static void construct_from_string(const String& p_string, Variant& r_value, ObjectConstruct p_obj_construct = nullptr, void* p_construct_ud = nullptr);
 
-		Variant(const Dictionary& p_dictionary);
+  uint32_t recursive_hash(int recursion_count) const;
+  // 比较相等
+  bool hash_compare(const Variant& p_variant, int recursion_count = 0, bool semantic_comparison = true) const;
+  bool identity_compare(const Variant& p_variant) const;
+  uint32_t Variant::hash() const { return recursive_hash(0); }
 
-		// object
-		Variant(const Object* p_obj);
-		Variant(const Reflection::ReflectionInstance& p_instance);
+  void zero();
+  Variant duplicate(bool p_deep = false) const;
+  Variant recursive_duplicate(bool p_deep, int recursion_count) const;
+  void set_type(Type p_type) { type = p_type; };
+  // 装箱
+  // containers
+  /// Variant transform
+  Variant(const Array& p_array);
+  Variant(const PackedByteArray& p_byte_array);
+  Variant(const PackedInt32Array& p_int32_array);
+  Variant(const PackedInt64Array& p_int64_array);
+  Variant(const PackedFloat32Array& p_float32_array);
+  Variant(const PackedFloat64Array& p_float64_array);
+  Variant(const PackedStringArray& p_string_array);
+  Variant(const PackedVector2Array& p_vector2_array);
+  Variant(const PackedVector3Array& p_vector3_array);
+  Variant(const PackedColorArray& p_color_array);
+  Variant(const PackedVector4Array& p_vector4_array);
 
-		// basics
-		Variant(int64_t p_int); // real one
-		Variant(uint64_t p_int);
-		Variant(float p_float);
-		Variant(double p_double);
-		Variant(bool p_bool);
-		Variant(signed int p_int); // real one
-		Variant(unsigned int p_int);
-		// array
+  Variant(const Vector<lain::RID>& p_array);  // helper
+  Variant(const Vector<Plane>& p_array);      // helper
+  Variant(const Vector<Face3>& p_face_array);
+  Variant(const Vector<Variant>& p_array);
+  Variant(const Vector<StringName>& p_array);
 
+  Variant(const Dictionary& p_dictionary);
 
-		//other class
-		Variant(const Vector2& p_vector2);
-		Variant(const Vector3& p_vector3);
-		Variant(const Vector4& p_vector4);
-		Variant(const Vector2i& p_vector2);
-		Variant(const Vector3i& p_vector3);
-		Variant(const Vector4i& p_vector4);
-		Variant(const String& p_string);
-		Variant(const StringName& p_string);
-		Variant(const GObjectPath& p_string);
-		Variant(const Rect2& p_rect2);
-		Variant(const Rect2i& p_rect2);
-		Variant(const Plane &p_plane);
-		Variant(const lain::AABB &);
-		Variant(const lain::RID &);
-		Variant(const Signal &);
-		Variant(const Quaternion &);
-		Variant(const Basis &);
-		// Variant(const Transform2D &);
-		Variant(const Transform3D &);
+  // object
+  Variant(const Object* p_obj);
+  Variant(const Reflection::ReflectionInstance& p_instance);
 
+  // basics
+  Variant(bool p_bool);
+  Variant(int64_t p_int64);
+  Variant(int32_t p_int32);
+  Variant(int16_t p_int16);
+  Variant(int8_t p_int8);
+  Variant(uint64_t p_uint64);
+  Variant(uint32_t p_uint32);
+  Variant(uint16_t p_uint16);
+  Variant(uint8_t p_uint8);
+  Variant(float p_float);
+  Variant(double p_double);
+  // array
 
-		Variant(const char* const p_cstring);
-		Variant(const Color& p_cstring);
+  //other class
+  Variant(const ObjectID& p_id);
+  Variant(const String& p_string);
+  Variant(const StringName& p_string);
+  Variant(const char* const p_cstring);
+  Variant(const char32_t* p_wstring);
+  Variant(const Vector2& p_vector2);
+  Variant(const Vector2i& p_vector2i);
+  Variant(const Rect2& p_rect2);
+  Variant(const Rect2i& p_rect2i);
+  Variant(const Vector3& p_vector3);
+  Variant(const Vector3i& p_vector3i);
+  Variant(const Vector4& p_vector4);
+  Variant(const Vector4i& p_vector4i);
+  Variant(const Plane& p_plane);
+  Variant(const lain::AABB& p_aabb);
+  Variant(const Quaternion& p_quat);
+  Variant(const Basis& p_matrix);
+  Variant(const Transform2D& p_transform);
+  Variant(const Transform3D& p_transform);
+  Variant(const Projection& p_projection);
+  Variant(const Color& p_color);
+  Variant(const GObjectPath& p_node_path);
+  Variant(const lain::RID& p_rid);
+  Variant(const Object* p_object);
+  Variant(const Callable& p_callable);
+  Variant(const Signal& p_signal);
+  Variant(const Dictionary& p_dictionary);
+  Variant(const IPAddress& p_address);
 
+  // copy construct
+  Variant(const Variant& p_variant);
 
+ _FORCE_INLINE_ Variant() { type = NIL; }
 
-		// copy construct
-		Variant(const Variant& p_variant);
-
-
-		Variant() { type = NIL; }
-
-		// 拆箱
-		operator bool() const;
-		operator signed int() const;
-		operator unsigned int() const; // this is the real one
-		operator signed short() const;
-		operator unsigned short() const;
-		operator signed char() const;
-		operator unsigned char() const;
-		//operator long unsigned int() const;
-		operator int64_t() const;
-		operator uint64_t() const;
+  // 拆箱
+  operator bool() const;
+  operator signed int() const;
+  operator unsigned int() const;  // this is the real one
+  operator signed short() const;
+  operator unsigned short() const;
+  operator signed char() const;
+  operator unsigned char() const;
+  //operator long unsigned int() const;
+  operator int64_t() const;
+  operator uint64_t() const;
 #ifdef NEED_LONG_INT
-		operator signed long() const;
-		operator unsigned long() const;
+  operator signed long() const;
+  operator unsigned long() const;
 #endif
 
-		operator ObjectID() const;
+  operator ObjectID() const;
 
-		operator char32_t() const;
-		operator float() const;
-		operator double() const;
-		operator String() const;
-		operator StringName() const;
-		operator Vector2() const;
-		operator Vector2i() const;
-		operator Rect2() const;
-		operator Rect2i() const;
-		operator Vector3() const;
-		operator Vector3i() const;
-		operator Vector4() const;
-		operator Vector4i() const;
-		operator Plane() const;
-		operator lain::AABB() const;
-		operator Quaternion() const;
-		operator Basis() const;
-		operator Transform3D() const;
-		// operator Transform2D() const;
-		// operator Projection() const;
+  operator char32_t() const;
+  operator float() const;
+  operator double() const;
+  operator String() const;
+  operator StringName() const;
+  operator Vector2() const;
+  operator Vector2i() const;
+  operator Rect2() const;
+  operator Rect2i() const;
+  operator Vector3() const;
+  operator Vector3i() const;
+  operator Vector4() const;
+  operator Vector4i() const;
+  operator Plane() const;
+  operator lain::AABB() const;
+  operator Quaternion() const;
+  operator Basis() const;
+  operator Transform3D() const;
+  operator Transform2D() const;
+  operator Projection() const;
 
-		operator Color() const;
-		operator GObjectPath() const;
-		operator lain::RID() const;
+  operator Color() const;
+  operator GObjectPath() const;
+  operator lain::RID() const;
 
-		operator Object* () const;
+  operator Object*() const;
 
-		operator Callable() const;
-		operator Signal() const;
+  operator Callable() const;
+  operator Signal() const;
 
-		operator Dictionary() const;
-		operator Array() const;
+  operator Dictionary() const;
+  operator Array() const;
 
-		operator PackedByteArray() const;
-		operator PackedInt32Array() const;
-		operator PackedInt64Array() const;
-		operator PackedFloat32Array() const;
-		operator PackedFloat64Array() const;
-		operator PackedStringArray() const;
-		operator PackedVector3Array() const;
-		operator PackedVector2Array() const;
-		operator PackedColorArray() const;
+  operator PackedByteArray() const;
+  operator PackedInt32Array() const;
+  operator PackedInt64Array() const;
+  operator PackedFloat32Array() const;
+  operator PackedFloat64Array() const;
+  operator PackedStringArray() const;
+  operator PackedVector3Array() const;
+  operator PackedVector2Array() const;
+  operator PackedVector4Array() const;
+  operator PackedColorArray() const;
 
-		operator Vector<lain::RID>() const;
-		operator Vector<Plane>() const;
-		// operator Vector<Face3>() const;
-		operator Vector<Variant>() const;
-		operator Vector<StringName>() const;
+  operator Vector<lain::RID>() const;
+  operator Vector<Plane>() const;
+  operator Vector<Face3>() const;
+  operator Vector<Variant>() const;
+  operator Vector<StringName>() const;
 
-		// some core type enums to convert to
-		operator Side() const;
-		operator Orientation() const;
+  // some core type enums to convert to
+  operator Side() const;
+  operator Orientation() const;
 
-		//operator IPAddress() const;
+  operator IPAddress() const;
 
-		Object* get_validated_object() const;
+  Object* get_validated_object() const;
 
-		~Variant() { clear(); }
-		_FORCE_INLINE_ void clear() {
-			static const bool needs_deinit[Variant::VARIANT_MAX] = {
-				false, //NIL,
-				false, //BOOL,
-				false, //INT,
-				false, //FLOAT,
-				true, //STRING,
-				false, //VECTOR2,
-				false, //VECTOR2I,
-				false, //RECT2,
-				false, //RECT2I,
-				false, //VECTOR3,
-				false, //VECTOR3I,
-				true, //TRANSFORM2D,
-				false, //VECTOR4,
-				false, //VECTOR4I,
-				false, //PLANE,
-				false, //QUATERNION,
-				true, //AABB,
-				true, //BASIS,
-				true, //TRANSFORM,
-				true, //PROJECTION,
+  // operator
 
-				// misc types
-				false, //COLOR,
-				true, //STRING_NAME,
-				true, //GOBJECT_PATH,
-				false, //RID,
-				true, //OBJECT,
-				true, //CALLABLE,
-				true, //SIGNAL,
-				true, //DICTIONARY,
-				true, //ARRAY,
+  ~Variant() { clear(); }
+  _FORCE_INLINE_ void clear() {
+    static const bool needs_deinit[Variant::VARIANT_MAX] = {
+        false,  //NIL,
+        false,  //BOOL,
+        false,  //INT,
+        false,  //FLOAT,
+        true,   //STRING,
+        false,  //VECTOR2,
+        false,  //VECTOR2I,
+        false,  //RECT2,
+        false,  //RECT2I,
+        false,  //VECTOR3,
+        false,  //VECTOR3I,
+        true,   //TRANSFORM2D,
+        false,  //VECTOR4,
+        false,  //VECTOR4I,
+        false,  //PLANE,
+        false,  //QUATERNION,
+        true,   //AABB,
+        true,   //BASIS,
+        true,   //TRANSFORM,
+        true,   //PROJECTION,
 
-				// typed arrays
-				true, //PACKED_BYTE_ARRAY,
-				true, //PACKED_INT32_ARRAY,
-				true, //PACKED_INT64_ARRAY,
-				true, //PACKED_FLOAT32_ARRAY,
-				true, //PACKED_FLOAT64_ARRAY,
-				true, //PACKED_STRING_ARRAY,
-				true, //PACKED_VECTOR2_ARRAY,
-				true, //PACKED_VECTOR3_ARRAY,
-				true, //PACKED_COLOR_ARRAY,
-				true, // PACKED_VECTOR4_ARRAY
-				false, //ReflecionInstance
-			};
+        // misc types
+        false,  //COLOR,
+        true,   //STRING_NAME,
+        true,   //GOBJECT_PATH,
+        false,  //RID,
+        true,   //OBJECT,
+        true,   //CALLABLE,
+        true,   //SIGNAL,
+        true,   //DICTIONARY,
+        true,   //ARRAY,
 
-			if (unlikely(needs_deinit[type])) { // Make it fast for types that don't need deinit.
-				_clear_internal();
-			}
-			type = NIL;
-		}
+        // typed arrays
+        true,   //PACKED_BYTE_ARRAY,
+        true,   //PACKED_INT32_ARRAY,
+        true,   //PACKED_INT64_ARRAY,
+        true,   //PACKED_FLOAT32_ARRAY,
+        true,   //PACKED_FLOAT64_ARRAY,
+        true,   //PACKED_STRING_ARRAY,
+        true,   //PACKED_VECTOR2_ARRAY,
+        true,   //PACKED_VECTOR3_ARRAY,
+        true,   //PACKED_COLOR_ARRAY,
+        true,   // PACKED_VECTOR4_ARRAY
+        false,  //ReflecionInstance
+    };
 
-		void _clear_internal();
-		// convert function, type hint
-		static bool can_convert_strict(Type from, Type to);
-		bool is_ref_counted() const;
-		_FORCE_INLINE_ bool is_num() const {
-			return type == INT || type == FLOAT;
-		}
-		_FORCE_INLINE_ bool is_string() const {
-			return type == STRING || type == STRING_NAME;
-		}
-		_FORCE_INLINE_ bool is_array() const {
-			return type >= ARRAY;
-		}
-		bool is_shared() const;
-		bool is_zero() const;
-		bool is_one() const;
-		bool is_null() const;
-		
-	/// <summary>
-	/// variant operator
-	/// </summary>
-	public:
-		enum Operator {
-			//comparison
-			OP_EQUAL,
-			OP_NOT_EQUAL,
-			OP_LESS,
-			OP_LESS_EQUAL,
-			OP_GREATER,
-			OP_GREATER_EQUAL,
-			//mathematic
-			OP_ADD,
-			OP_SUBTRACT,
-			OP_MULTIPLY,
-			OP_DIVIDE,
-			OP_NEGATE,
-			OP_POSITIVE,
-			OP_MODULE,
-			OP_POWER,
-			//bitwise
-			OP_SHIFT_LEFT,
-			OP_SHIFT_RIGHT,
-			OP_BIT_AND,
-			OP_BIT_OR,
-			OP_BIT_XOR,
-			OP_BIT_NEGATE,
-			//logic
-			OP_AND,
-			OP_OR,
-			OP_XOR,
-			OP_NOT,
-			//containment
-			OP_IN,
-			OP_MAX
+    if (unlikely(needs_deinit[type])) {  // Make it fast for types that don't need deinit.
+      _clear_internal();
+    }
+    type = NIL;
+  }
 
-		};
-		typedef void (*VariantEvaluatorFunction)(const Variant& p_left, const Variant& p_right, Variant* r_ret, bool& r_valid);
-		static VariantEvaluatorFunction operator_evaluator_table[Variant::OP_MAX][Variant::VARIANT_MAX][Variant::VARIANT_MAX];
+  void _clear_internal();
+  // convert function, type hint
+  bool is_ref_counted() const;
+  _FORCE_INLINE_ bool is_num() const { return type == INT || type == FLOAT; }
+  _FORCE_INLINE_ bool is_string() const { return type == STRING || type == STRING_NAME; }
+  _FORCE_INLINE_ bool is_array() const { return type >= ARRAY; }
+  bool is_shared() const;
+  bool is_zero() const;
+  bool is_one() const;
+  bool is_null() const;
 
-		static String get_operator_name(Operator p_op);
-		static void evaluate(const Operator& p_op, const Variant& p_a, const Variant& p_b, Variant& r_ret, bool& r_valid);
-		static _FORCE_INLINE_ Variant evaluate(const Operator& p_op, const Variant& p_a, const Variant& p_b) {
-			bool valid = true;
-			Variant res;
-			evaluate(p_op, p_a, p_b, res, valid);
-			return res;
-		}
+  /// <summary>
+  /// variant operator
+  /// </summary>
+ public:
+  enum Operator {
+    //comparison
+    OP_EQUAL,
+    OP_NOT_EQUAL,
+    OP_LESS,
+    OP_LESS_EQUAL,
+    OP_GREATER,
+    OP_GREATER_EQUAL,
+    //mathematic
+    OP_ADD,
+    OP_SUBTRACT,
+    OP_MULTIPLY,
+    OP_DIVIDE,
+    OP_NEGATE,
+    OP_POSITIVE,
+    OP_MODULE,
+    OP_POWER,
+    //bitwise
+    OP_SHIFT_LEFT,
+    OP_SHIFT_RIGHT,
+    OP_BIT_AND,
+    OP_BIT_OR,
+    OP_BIT_XOR,
+    OP_BIT_NEGATE,
+    //logic
+    OP_AND,
+    OP_OR,
+    OP_XOR,
+    OP_NOT,
+    //containment
+    OP_IN,
+    OP_MAX
+
+  };
+  typedef void (*VariantEvaluatorFunction)(const Variant& p_left, const Variant& p_right, Variant* r_ret, bool& r_valid);
+  static VariantEvaluatorFunction operator_evaluator_table[Variant::OP_MAX][Variant::VARIANT_MAX][Variant::VARIANT_MAX];
+
+  static String get_operator_name(Operator p_op);
+  static void evaluate(const Operator& p_op, const Variant& p_a, const Variant& p_b, Variant& r_ret, bool& r_valid);
+  static _FORCE_INLINE_ Variant evaluate(const Operator& p_op, const Variant& p_a, const Variant& p_b) {
+    bool valid = true;
+    Variant res;
+    evaluate(p_op, p_a, p_b, res, valid);
+    return res;
+  }
+
+  enum VariantSetError { SET_OK, SET_KEYED_ERR, SET_NAMED_ERR, SET_INDEXED_ERR };
+  enum VariantGetError { GET_OK, GET_KEYED_ERR, GET_NAMED_ERR, GET_INDEXED_ERR };
+  // set ，get方法根据类型在表中查找对应的方法。
+
+  Variant get(const Variant& p_index, bool* r_valid, VariantGetError* err_code = nullptr) const;
+  Variant get_keyed(const Variant& p_key, bool& r_valid) const;
+  Variant get_named(const StringName& p_member, bool& r_valid) const;
+
+  L_INLINE bool booleanize() const { return !is_zero(); }
+
+  void call_utility_function(const StringName& p_name, Variant* r_ret, const Variant** p_args, int p_argcount, Callable::CallError& r_error);
+  // 反射构造
+  static void construct(Variant::Type, Variant& base, const Variant** p_args, int p_argcount, Callable::CallError& r_error);
+
+  Object* get_validated_object_with_check(bool& r_previously_freed) const;
+
+	String get_construct_string() const;
+	static String get_call_error_text(const StringName &p_method, const Variant **p_argptrs, int p_argcount, const Callable::CallError &ce);
+	static String get_call_error_text(Object *p_base, const StringName &p_method, const Variant **p_argptrs, int p_argcount, const Callable::CallError &ce);
+	static String get_callable_error_text(const Callable &p_callable, const Variant **p_argptrs, int p_argcount, const Callable::CallError &ce);
+	void _variant_call_error(const String &p_method, Callable::CallError &error);
 
 
-	};
-
-
-	/// <summary>
-	/// helper functions
-	/// </summary>
-
-	template <typename... VarArgs>
-	String vformat(const String& p_text, const VarArgs... p_args) {
-		Variant args[sizeof...(p_args) + 1] = { p_args..., Variant() }; // +1 makes sure zero sized arrays are also supported.
-		Array args_array;
-		args_array.resize(sizeof...(p_args));
-		for (uint32_t i = 0; i < sizeof...(p_args); i++) {
-			args_array[i] = args[i];
-		}
-
-		bool error = false;
-		String fmt = p_text.sprintf(args_array, &error);
-
-		ERR_FAIL_COND_V_MSG(error, String(), fmt);
-
-		return fmt;
-	}
-	struct VariantHasher {
-		static _FORCE_INLINE_ uint32_t hash(const Variant& p_variant) { return p_variant.hash(); }
-	};
-	struct StringLikeVariantComparator {
-		static bool compare(const Variant& p_lhs, const Variant& p_rhs);
-	};
-
-	struct VariantComparator {
-		static _FORCE_INLINE_ bool compare(const Variant& p_lhs, const Variant& p_rhs) { return p_lhs.hash_compare(p_rhs); }
-	};
-
-	// string helper function
-	template <typename T>
-	String stringify_vector(const T& vec, int recursion_count);
-	String stringify_variant_clean(const Variant& p_variant, int recursion_count);
 };
 
-#endif // !__VARIANT_H__
+/// <summary>
+/// helper functions
+/// </summary>
+
+template <typename... VarArgs>
+String vformat(const String& p_text, const VarArgs... p_args) {
+  Variant args[sizeof...(p_args) + 1] = {p_args..., Variant()};  // +1 makes sure zero sized arrays are also supported.
+  Array args_array;
+  args_array.resize(sizeof...(p_args));
+  for (uint32_t i = 0; i < sizeof...(p_args); i++) {
+    args_array[i] = args[i];
+  }
+
+  bool error = false;
+  String fmt = p_text.sprintf(args_array, &error);
+
+  ERR_FAIL_COND_V_MSG(error, String(), fmt);
+
+  return fmt;
+}
+struct VariantHasher {
+  static _FORCE_INLINE_ uint32_t hash(const Variant& p_variant) { return p_variant.hash(); }
+};
+struct StringLikeVariantComparator {
+  static bool compare(const Variant& p_lhs, const Variant& p_rhs);
+};
+
+struct VariantComparator {
+  static _FORCE_INLINE_ bool compare(const Variant& p_lhs, const Variant& p_rhs) { return p_lhs.hash_compare(p_rhs); }
+};
+
+// string helper function
+template <typename T>
+String stringify_vector(const T& vec, int recursion_count);
+String stringify_variant_clean(const Variant& p_variant, int recursion_count);
+
+};  // namespace lain
+
+#endif  // !__VARIANT_H__

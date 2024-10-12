@@ -109,7 +109,9 @@ namespace lain
 
             return *this;
         }
-
+        L_INLINE Vector2 sign() const {
+            return Vector2(SIGN(x), SIGN(y));
+        }
         Vector2& operator-=(const Vector2& rhs)
         {
             x -= rhs.x;
@@ -337,11 +339,15 @@ namespace lain
         bool isNaN() const { return Math::isNan(x) || Math::isNan(y); }
 
         static Vector2 lerp(const Vector2& lhs, const Vector2& rhs, float alpha) { return lhs + alpha * (rhs - lhs); }
-
+        Vector2 lerp(const Vector2& p_target, float p_alpha) const {
+            return Vector2(x + (p_target.x - x) * p_alpha, y + (p_target.y - y) * p_alpha);
+        }
         Vector2 min(const Vector2& p_vector2) const {
             return Vector2(MIN(x, p_vector2.x), MIN(y, p_vector2.y));
         }
-
+        Vector2 snapped(const Vector2& p_val) const {
+            return Vector2(Math::snapped(x, p_val.x), Math::snapped(y, p_val.y));
+        }
         Vector2 max(const Vector2& p_vector2) const {
             return Vector2(MAX(x, p_vector2.x), MAX(y, p_vector2.y));
         }
@@ -352,6 +358,13 @@ namespace lain
 
         _FORCE_INLINE_ Vector2 abs() const {
             return Vector2(Math::abs(x), Math::abs(y));
+        }
+
+    	L_INLINE Vector2 floor() const{
+            return Vector2(Math::floor(x), Math::floor(y));
+        }
+        L_INLINE Vector2 ceil() const {
+            return Vector2(Math::ceil(x), Math::ceil(y));
         }
 
         operator String() const;

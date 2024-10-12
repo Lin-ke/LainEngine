@@ -181,7 +181,11 @@ static_component("Renderer", "Core")
     )
     add_defines("VULKAN_ENABLED", {public = true})
     -- 
-
+static_component("Shader", "Core")
+    add_rules("mode.debug", "mode.release")
+    set_languages("cxx17")
+    add_files("engine/source/runtime/function/shader/**.cpp")
+    
 static_component("Display", "Renderer")
     set_languages("cxx17")
     add_files("engine/source/runtime/function/display/**.cpp")

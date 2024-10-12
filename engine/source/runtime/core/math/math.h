@@ -867,6 +867,27 @@ class Math {
 
     return hf;
   }
+	static _ALWAYS_INLINE_ double angle_difference(double p_from, double p_to) {
+		double difference = fmod(p_to - p_from, Math_TAU);
+		return fmod(2.0 * difference, Math_TAU) - difference;
+	}
+	static _ALWAYS_INLINE_ float angle_difference(float p_from, float p_to) {
+		float difference = fmod(p_to - p_from, (float)Math_TAU);
+		return fmod(2.0f * difference, (float)Math_TAU) - difference;
+	}
+
+  static _ALWAYS_INLINE_ double rotate_toward(double p_from, double p_to, double p_delta) {
+    double difference = Math::angle_difference(p_from, p_to);
+    double abs_difference = Math::abs(difference);
+    // When `p_delta < 0` move no further than to PI radians away from `p_to` (as PI is the max possible angle distance).
+    return p_from + CLAMP(p_delta, abs_difference - Math_PI, abs_difference) * (difference >= 0.0 ? 1.0 : -1.0);
+}
+static _ALWAYS_INLINE_ float rotate_toward(float p_from, float p_to, float p_delta) {
+    float difference = Math::angle_difference(p_from, p_to);
+    float abs_difference = Math::abs(difference);
+    // When `p_delta < 0` move no further than to PI radians away from `p_to` (as PI is the max possible angle distance).
+    return p_from + CLAMP(p_delta, abs_difference - (float)Math_PI, abs_difference) * (difference >= 0.0f ? 1.0f : -1.0f);
+}
 
   static _ALWAYS_INLINE_ float snap_scalar(float p_offset, float p_step, float p_target) {
     return p_step != 0 ? static_cast<float>(Math::snapped(p_target - p_offset, p_step) + p_offset) : p_target;

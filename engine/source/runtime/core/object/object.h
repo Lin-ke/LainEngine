@@ -85,9 +85,16 @@
       _bind_compatibility_methods();                                                                   \
     }                                                                                                  \
     initialized = true;                                                                                \
-  }                                                                                                    \
-                                                                                                       \
+  }
+
+#define OBJ_SAVE_TYPE(m_class)                     \
+ public:                                           \
+  virtual String get_save_class() const override { \
+    return #m_class;                               \
+  }                                                \
+                                                   \
  private:
+
 enum PropertyHint {
   PROPERTY_HINT_NONE,             ///< no hint provided.
   PROPERTY_HINT_RANGE,            ///< hint_text = "min,max[,step][,or_greater][,or_less][,hide_slider][,radians_as_degrees][,degrees][,exp][,suffix:<keyword>] range.
@@ -265,6 +272,7 @@ class Object {
   virtual String get_class() const { return String("Object"); }
   virtual char* get_c_class() const { return "Object"; }
   static String get_class_static() { return String("Object"); }
+	virtual String get_save_class() const { return get_class(); } //class stored when saving
 
   virtual const StringName* _get_class_namev() const {
     static StringName _class_name_static;
@@ -297,7 +305,10 @@ class Object {
   _FORCE_INLINE_ static void (*_get_bind_methods())() { return &Object::_bind_methods; }
   _FORCE_INLINE_ static void (*_get_bind_compatibility_methods())() { return &Object::_bind_compatibility_methods; }
 
-  Variant callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error);
+  Variant callp(const StringName& p_method, const Variant** p_args, int p_argcount, Callable::CallError& r_error);
+  L_INLINE virtual String to_string() const{
+    return "<" + get_class() + "#" + itos(get_instance_id()) + ">";
+  }
  private:
   ObjectID m_instance_id;
   bool m_type_is_reference = false;

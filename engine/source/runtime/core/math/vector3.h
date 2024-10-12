@@ -462,7 +462,8 @@ bool operator<=(const Vector3 &p_v) const {
   static Vector3 clamp(const Vector3& v, const Vector3& min, const Vector3& max) {
     return Vector3(Math::clamp(v.x, min.x, max.x), Math::clamp(v.y, min.y, max.y), Math::clamp(v.z, min.z, max.z));
   }
-
+  Vector3 floor() const { return Vector3(Math::floor(x), Math::floor(y), Math::floor(z)); }
+  Vector3 ceil() const { return Vector3(Math::ceil(x), Math::ceil(y), Math::ceil(z)); }
   static real_t getMaxElement(const Vector3& v) { return Math::getMaxElement(v.x, v.y, v.z); }
   bool isNaN() const { return Math::isNan(x) || Math::isNan(y) || Math::isNan(z); }
 
@@ -477,6 +478,12 @@ bool operator<=(const Vector3 &p_v) const {
     return Math::is_equal_approx(length_squared(), 1, (real_t)UNIT_EPSILON);  // 这里容忍的精度大一点
   }
 
+  L_INLINE Vector3 round() const{
+    return Vector3(Math::round(x), Math::round(y), Math::round(z));
+  }
+  L_INLINE Vector3 sign() const{
+    return Vector3(SIGN(x), SIGN(y), SIGN(z));
+  }
   void snap(const Vector3& p_step) {
     x = Math::snapped(x, p_step.x);
     y = Math::snapped(y, p_step.y);
@@ -498,6 +505,8 @@ bool operator<=(const Vector3 &p_v) const {
   static const Vector3 NEGATIVE_UNIT_Y;
   static const Vector3 NEGATIVE_UNIT_Z;
   static const Vector3 UNIT_SCALE;
+
+  operator Vector3i() const;
 };
 
 

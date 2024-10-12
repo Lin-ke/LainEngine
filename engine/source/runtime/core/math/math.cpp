@@ -208,6 +208,7 @@ namespace lain
 
         return proj_matrix;
     }
+        // 四舍五入到小数位
 
     double Math::snapped(double p_value, double p_step) {
         if (p_step != 0) {
@@ -226,6 +227,15 @@ uint32_t Math::rand_from_seed(uint64_t *seed) {
 void Math::seed(uint64_t x) {
 	default_rand.seed(x);
 }
+
+
+
+
+
+
+
+
+
 
 void Math::randomize() {
 	default_rand.randomize();

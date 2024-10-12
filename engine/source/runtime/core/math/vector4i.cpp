@@ -58,6 +58,11 @@ namespace lain {
 		w = (int32_t)p_vec4.w;
 	}
 
-	static_assert(sizeof(Vector4i) == 4 * sizeof(int32_t));
-
+	Vector4i Vector4i::abs() const {
+		return Vector4i(Math::abs(x), Math::abs(y), Math::abs(z), Math::abs(w));
+	}
+	
+	Vector4i Vector4i::sign() const {
+		return Vector4i(SIGN(x), SIGN(y), SIGN(z), SIGN(w));
+	}
 }

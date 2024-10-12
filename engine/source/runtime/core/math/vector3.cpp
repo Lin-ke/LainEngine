@@ -19,4 +19,7 @@ namespace lain
     Vector3::operator String() const {
         return "(" + String::num_real(x, false) + ", " + String::num_real(y, false) + ", " + String::num_real(z, false) + ")";
     }
+    Vector3::operator lain::Vector3i() const {
+        return Vector3i(static_cast<int32_t>(x), static_cast<int32_t>(y), static_cast<int32_t>(z));
+    }
 } // namespace lain
