@@ -3,12 +3,17 @@
 #include "runtime/core/math/math.h"
 #include "runtime/core/math/vector3.h"
 #include "runtime/core/meta/reflection/reflection_marcos.h"
-
+#include "core/string/ustring.h"
 namespace lain {
 REFLECTION_TYPE(Vector4)
 STRUCT(_NO_DISCARD_ Vector4, Fields) {
   REFLECTION_BODY(Vector4);
-
+enum Axis {
+		AXIS_X,
+		AXIS_Y,
+		AXIS_Z,
+		AXIS_W,
+	};
  public:
   real_t x{0.f}, y{0.f}, z{0.f}, w{0.f};
 

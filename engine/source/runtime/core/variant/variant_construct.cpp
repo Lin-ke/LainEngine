@@ -27,8 +27,9 @@
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
+#include "core/object/refcounted.h"
 #include "variant_construct.h"
+#include "core/object/object.h"
 namespace lain{
 struct VariantConstructData {
 	void (*construct)(Variant &r_base, const Variant **p_args, Callable::CallError &r_error) = nullptr;
@@ -79,7 +80,7 @@ void Variant::_register_variant_constructors() {
 	add_constructor<VariantConstructNoArgs<String>>(sarray());
 	add_constructor<VariantConstructor<String, String>>(sarray("from"));
 	add_constructor<VariantConstructor<String, StringName>>(sarray("from"));
-	add_constructor<VariantConstructor<String, NodePath>>(sarray("from"));
+	add_constructor<VariantConstructor<String, GObjectPath>>(sarray("from"));
 
 	add_constructor<VariantConstructNoArgs<Vector2>>(sarray());
 	add_constructor<VariantConstructor<Vector2, Vector2>>(sarray("from"));
@@ -144,9 +145,9 @@ void Variant::_register_variant_constructors() {
 	add_constructor<VariantConstructor<Quaternion, Vector3, Vector3>>(sarray("arc_from", "arc_to"));
 	add_constructor<VariantConstructor<Quaternion, double, double, double, double>>(sarray("x", "y", "z", "w"));
 
-	add_constructor<VariantConstructNoArgs<::AABB>>(sarray());
-	add_constructor<VariantConstructor<::AABB, ::AABB>>(sarray("from"));
-	add_constructor<VariantConstructor<::AABB, Vector3, Vector3>>(sarray("position", "size"));
+	add_constructor<VariantConstructNoArgs<lain::AABB>>(sarray());
+	add_constructor<VariantConstructor<lain::AABB, lain::AABB>>(sarray("from"));
+	add_constructor<VariantConstructor<lain::AABB, Vector3, Vector3>>(sarray("position", "size"));
 
 	add_constructor<VariantConstructNoArgs<Basis>>(sarray());
 	add_constructor<VariantConstructor<Basis, Basis>>(sarray("from"));
@@ -177,12 +178,12 @@ void Variant::_register_variant_constructors() {
 	add_constructor<VariantConstructor<StringName, StringName>>(sarray("from"));
 	add_constructor<VariantConstructor<StringName, String>>(sarray("from"));
 
-	add_constructor<VariantConstructNoArgs<NodePath>>(sarray());
-	add_constructor<VariantConstructor<NodePath, NodePath>>(sarray("from"));
-	add_constructor<VariantConstructor<NodePath, String>>(sarray("from"));
+	add_constructor<VariantConstructNoArgs<GObjectPath>>(sarray());
+	add_constructor<VariantConstructor<GObjectPath, GObjectPath>>(sarray("from"));
+	add_constructor<VariantConstructor<GObjectPath, String>>(sarray("from"));
 
-	add_constructor<VariantConstructNoArgs<::RID>>(sarray());
-	add_constructor<VariantConstructor<::RID, ::RID>>(sarray("from"));
+	add_constructor<VariantConstructNoArgs<lain::RID>>(sarray());
+	add_constructor<VariantConstructor<lain::RID, lain::RID>>(sarray("from"));
 
 	add_constructor<VariantConstructNoArgsObject>(sarray());
 	add_constructor<VariantConstructorObject>(sarray("from"));
@@ -326,10 +327,10 @@ void VariantInternal::refcounted_object_assign(Variant *v, const RefCounted *rc)
 	if (!rc || !const_cast<RefCounted *>(rc)->init_ref()) {
 		v->_get_obj().obj = nullptr;
 		v->_get_obj().id = ObjectID();
-		return;
+		return; // rc未初始化，新对象
 	}
 
-	v->_get_obj().obj = const_cast<RefCounted *>(rc);
+	v->_get_obj().obj = const_cast<RefCounted *>(rc); // 注意这里没有增加引用计数
 	v->_get_obj().id = rc->get_instance_id();
 }
 

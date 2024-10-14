@@ -8,12 +8,13 @@
 #include "core/string/print_string.h"
 #include "core/variant/variant_parser.h"
 #include "_generated/serializer/all_serializer.ipp"
+#include "core/meta/serializer/serializer.h"
 using namespace lain;
 PagedAllocator<Variant::Pools::BucketSmall, true> Variant::Pools::_bucket_small;
 PagedAllocator<Variant::Pools::BucketMedium, true> Variant::Pools::_bucket_medium;
 PagedAllocator<Variant::Pools::BucketLarge, true> Variant::Pools::_bucket_large;
 
-String Variant::get_type_name(Variant::Type p_type) {
+const char* Variant::get_c_type_name(Variant::Type p_type) {
 	switch (p_type) {
 		case NIL: {
 			return "Nil";
@@ -2895,9 +2896,6 @@ Variant::Variant(const Variant &p_variant) :
 	reference(p_variant);
 }
 
-uint32_t Variant::hash() const {
-	return recursive_hash(0);
-}
 
 uint32_t Variant::recursive_hash(int recursion_count) const {
 	switch (type) {

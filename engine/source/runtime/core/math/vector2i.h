@@ -15,7 +15,10 @@ namespace lain
         STRUCT(_NO_DISCARD_ Vector2i, Fields)
     {
         REFLECTION_BODY(Vector2i);
-
+    enum Axis {
+        AXIS_X,
+        AXIS_Y,
+    };
     public:
         int32_t x{ 0}, y{ 0};
 

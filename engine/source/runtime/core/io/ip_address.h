@@ -66,3 +66,4 @@ public:
 	IPAddress() { clear(); }
 };
 }
+#endif

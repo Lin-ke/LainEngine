@@ -2,13 +2,13 @@
 #ifndef VARIANT_INTERNAL_H
 #define VARIANT_INTERNAL_H
 #include "variant.h"
+#include "core/meta/type_info.h"
 namespace lain {
+	class RefCounted;
 
 	class VariantInternal {
 		friend class Variant;
 	public:
-		_FORCE_INLINE_ static StringName* get_string_name(Variant* v) { return reinterpret_cast<StringName*>(v->_data._mem); }
-		_FORCE_INLINE_ static const StringName* get_string_name(const Variant* v) { return reinterpret_cast<const StringName*>(v->_data._mem); }
 		static void initialize(Variant* v, Variant::Type p_type) {
 			v->clear();
 			v->type = p_type;
@@ -86,6 +86,10 @@ namespace lain {
 				break;
 			}
 		}
+			template <typename T>
+	_FORCE_INLINE_ static void init_generic(Variant *v) {
+		v->type = GetTypeInfo<T>::VARIANT_TYPE;
+	}
 			_FORCE_INLINE_ static void init_string(Variant *v) {
 		memnew_placement(v->_data._mem, String);
 		v->type = Variant::STRING;
@@ -179,8 +183,13 @@ namespace lain {
 		v->_data.packed_array = Variant::PackedArrayRef<Color>::create(Vector<Color>());
 		v->type = Variant::PACKED_COLOR_ARRAY;
 	}
-
-	static void object_assign(Variant *v, const Object *o){} // Needs RefCounted, so it's implemented elsewhere.
+	_FORCE_INLINE_ static void init_vector4_array(Variant *v) {
+		v->_data.packed_array = Variant::PackedArrayRef<Vector4>::create(Vector<Vector4>());
+		v->type = Variant::PACKED_VECTOR4_ARRAY;
+	}
+	// refcounted 需要 在 construct中实现。
+	static void refcounted_object_assign(Variant *v, const RefCounted *rc);
+	static void object_assign(Variant *v, const Object *o);// Needs RefCounted, so it's implemented elsewhere.
 	_FORCE_INLINE_ static void object_assign(Variant *v, const Variant *o) {
 		object_assign(v, o->_get_obj().obj);
 	}
@@ -289,6 +298,417 @@ namespace lain {
 	}
 	
 	};
+
+
+	template <typename T>
+struct VariantInitializer {
+};
+
+template <>
+struct VariantInitializer<bool> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<bool>(v); }
+};
+
+#define INITIALIZER_INT(m_type)                                                                    \
+	template <>                                                                                    \
+	struct VariantInitializer<m_type> {                                                            \
+		static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<int64_t>(v); } \
+	};
+
+INITIALIZER_INT(uint8_t)
+INITIALIZER_INT(int8_t)
+INITIALIZER_INT(uint16_t)
+INITIALIZER_INT(int16_t)
+INITIALIZER_INT(uint32_t)
+INITIALIZER_INT(int32_t)
+INITIALIZER_INT(uint64_t)
+INITIALIZER_INT(int64_t)
+INITIALIZER_INT(char32_t)
+INITIALIZER_INT(Error)
+INITIALIZER_INT(ObjectID)
+INITIALIZER_INT(Vector2::Axis)
+INITIALIZER_INT(Vector2i::Axis)
+INITIALIZER_INT(Vector3::Axis)
+INITIALIZER_INT(Vector3i::Axis)
+INITIALIZER_INT(Vector4::Axis)
+INITIALIZER_INT(Vector4i::Axis)
+
+template <>
+struct VariantInitializer<double> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<double>(v); }
+};
+
+template <>
+struct VariantInitializer<float> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<double>(v); }
+};
+
+template <>
+struct VariantInitializer<String> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_string(v); }
+};
+
+template <>
+struct VariantInitializer<Vector2> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<Vector2>(v); }
+};
+
+template <>
+struct VariantInitializer<Vector2i> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<Vector2i>(v); }
+};
+
+template <>
+struct VariantInitializer<Rect2> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<Rect2>(v); }
+};
+
+template <>
+struct VariantInitializer<Rect2i> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<Rect2i>(v); }
+};
+
+template <>
+struct VariantInitializer<Vector3> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<Vector3>(v); }
+};
+
+template <>
+struct VariantInitializer<Vector3i> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<Vector3i>(v); }
+};
+template <>
+struct VariantInitializer<Vector4> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<Vector4>(v); }
+};
+
+template <>
+struct VariantInitializer<Vector4i> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<Vector4i>(v); }
+};
+template <>
+struct VariantInitializer<Transform2D> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_transform2d(v); }
+};
+
+template <>
+struct VariantInitializer<Plane> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<Plane>(v); }
+};
+
+template <>
+struct VariantInitializer<Quaternion> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<Quaternion>(v); }
+};
+
+template <>
+struct VariantInitializer<AABB> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_aabb(v); }
+};
+
+template <>
+struct VariantInitializer<Basis> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_basis(v); }
+};
+
+template <>
+struct VariantInitializer<Transform3D> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_transform3d(v); }
+};
+template <>
+struct VariantInitializer<Projection> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_projection(v); }
+};
+
+template <>
+struct VariantInitializer<Color> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<Color>(v); }
+};
+
+template <>
+struct VariantInitializer<StringName> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_string_name(v); }
+};
+
+template <>
+struct VariantInitializer<GObjectPath> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_GOBJECT_PATH(v); }
+};
+
+template <>
+struct VariantInitializer<lain::RID> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<lain::RID>(v); }
+};
+
+template <>
+struct VariantInitializer<Callable> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_callable(v); }
+};
+
+template <>
+struct VariantInitializer<Signal> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_signal(v); }
+};
+
+template <>
+struct VariantInitializer<Dictionary> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_dictionary(v); }
+};
+
+template <>
+struct VariantInitializer<Array> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_array(v); }
+};
+
+template <>
+struct VariantInitializer<PackedByteArray> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_byte_array(v); }
+};
+
+template <>
+struct VariantInitializer<PackedInt32Array> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_int32_array(v); }
+};
+
+template <>
+struct VariantInitializer<PackedInt64Array> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_int64_array(v); }
+};
+
+template <>
+struct VariantInitializer<PackedFloat32Array> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_float32_array(v); }
+};
+
+template <>
+struct VariantInitializer<PackedFloat64Array> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_float64_array(v); }
+};
+
+template <>
+struct VariantInitializer<PackedStringArray> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_string_array(v); }
+};
+
+template <>
+struct VariantInitializer<PackedVector2Array> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_vector2_array(v); }
+};
+
+template <>
+struct VariantInitializer<PackedVector3Array> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_vector3_array(v); }
+};
+
+template <>
+struct VariantInitializer<PackedColorArray> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_color_array(v); }
+};
+
+template <>
+struct VariantInitializer<PackedVector4Array> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_vector4_array(v); }
+};
+
+template <>
+struct VariantInitializer<Object *> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_object(v); }
+};
+
+template <typename T>
+struct VariantDefaultInitializer {
+};
+
+template <>
+struct VariantDefaultInitializer<bool> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_bool(v) = false; }
+};
+
+template <>
+struct VariantDefaultInitializer<int64_t> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_int(v) = 0; }
+};
+
+template <>
+struct VariantDefaultInitializer<double> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_float(v) = 0.0; }
+};
+
+template <>
+struct VariantDefaultInitializer<float> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_float(v) = 0.0; }
+};
+
+template <>
+struct VariantDefaultInitializer<String> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_string(v) = String(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Vector2> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_vector2(v) = Vector2(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Vector2i> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_vector2i(v) = Vector2i(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Rect2> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_rect2(v) = Rect2(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Rect2i> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_rect2i(v) = Rect2i(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Vector3> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_vector3(v) = Vector3(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Vector3i> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_vector3i(v) = Vector3i(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Vector4> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_vector4(v) = Vector4(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Vector4i> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_vector4i(v) = Vector4i(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Transform2D> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_transform2d(v) = Transform2D(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Plane> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_plane(v) = Plane(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Quaternion> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_quaternion(v) = Quaternion(); }
+};
+
+template <>
+struct VariantDefaultInitializer<AABB> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_aabb(v) = AABB(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Basis> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_basis(v) = Basis(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Transform3D> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_transform(v) = Transform3D(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Projection> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_projection(v) = Projection(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Color> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_color(v) = Color(); }
+};
+
+template <>
+struct VariantDefaultInitializer<StringName> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_string_name(v) = StringName(); }
+};
+
+template <>
+struct VariantDefaultInitializer<GObjectPath> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_node_path(v) = GObjectPath(); }
+};
+
+template <>
+struct VariantDefaultInitializer<lain::RID> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_rid(v) = RID(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Callable> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_callable(v) = Callable(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Signal> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_signal(v) = Signal(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Dictionary> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_dictionary(v) = Dictionary(); }
+};
+
+template <>
+struct VariantDefaultInitializer<Array> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_array(v) = Array(); }
+};
+
+template <>
+struct VariantDefaultInitializer<PackedByteArray> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_byte_array(v) = PackedByteArray(); }
+};
+
+template <>
+struct VariantDefaultInitializer<PackedInt32Array> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_int32_array(v) = PackedInt32Array(); }
+};
+
+template <>
+struct VariantDefaultInitializer<PackedInt64Array> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_int64_array(v) = PackedInt64Array(); }
+};
+
+template <>
+struct VariantDefaultInitializer<PackedFloat32Array> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_float32_array(v) = PackedFloat32Array(); }
+};
+
+template <>
+struct VariantDefaultInitializer<PackedFloat64Array> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_float64_array(v) = PackedFloat64Array(); }
+};
+
+template <>
+struct VariantDefaultInitializer<PackedStringArray> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_string_array(v) = PackedStringArray(); }
+};
+
+template <>
+struct VariantDefaultInitializer<PackedVector2Array> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_vector2_array(v) = PackedVector2Array(); }
+};
+
+template <>
+struct VariantDefaultInitializer<PackedVector3Array> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_vector3_array(v) = PackedVector3Array(); }
+};
+
+template <>
+struct VariantDefaultInitializer<PackedColorArray> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_color_array(v) = PackedColorArray(); }
+};
+
+template <>
+struct VariantDefaultInitializer<PackedVector4Array> {
+	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_vector4_array(v) = PackedVector4Array(); }
+};
+
 // 为 variant 类型转换提供支持
 // clear之前的并init
 

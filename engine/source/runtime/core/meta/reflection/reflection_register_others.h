@@ -5,7 +5,7 @@
 #define REFLECT_REG(class) Reflection::TypeWrappersRegister::##class##();
 
 #include "core/meta/reflection/reflection.h"
-#include "core/meta/serializer/serializer.h"
+#include "core/meta/others/serializer.ipp"
 namespace lain {
 	// serializer随处可以定义，所以使用这个
 

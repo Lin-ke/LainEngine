@@ -4,6 +4,8 @@
 #include "core/string/ustring.h"
 #include "core/typedefs.h"
 #include "core/variant/variant.h"
+#include <type_traits>
+// 注意 include 该头文件，需要已经include 过 object.h 。
 namespace lain {
 template <bool C, typename T = void>
 struct EnableIf {
@@ -122,7 +124,7 @@ enum Metadata {
 //// include the actual declaration of 'T' in the source file where 'GetTypeInfo<T>' is instantiated.
 //template <typename T, typename = void>
 //struct GetTypeInfo;
-//
+// GetTypeInfo 通过特化提供对应的 VariantType 和 PropertyInfo
 template <typename T, typename = void>
 struct GetTypeInfo;
 
@@ -209,6 +211,7 @@ MAKE_TYPE_INFO(PackedStringArray, Variant::PACKED_STRING_ARRAY)
 MAKE_TYPE_INFO(PackedVector2Array, Variant::PACKED_VECTOR2_ARRAY)
 MAKE_TYPE_INFO(PackedVector3Array, Variant::PACKED_VECTOR3_ARRAY)
 MAKE_TYPE_INFO(PackedColorArray, Variant::PACKED_COLOR_ARRAY)
+MAKE_TYPE_INFO(PackedVector4Array, Variant::PACKED_VECTOR4_ARRAY)
 
 // MAKE_TYPE_INFO(IPAddress, Variant::STRING)
 

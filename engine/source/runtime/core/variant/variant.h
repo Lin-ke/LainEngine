@@ -2,7 +2,9 @@
 #ifndef __VARIANT_H__
 #define __VARIANT_H__
 #include "core/variant/variant_header.h"
+
 namespace lain {
+class Object;  // Object 里需要Variant （property），variant内部需要通过object指针
 typedef Vector<uint8_t> PackedByteArray;
 typedef Vector<int32_t> PackedInt32Array;
 typedef Vector<int64_t> PackedInt64Array;
@@ -18,6 +20,8 @@ class ConfigFile;
 class VariantInternal;
 class RID;
 class Serializer;
+struct MethodInfo;
+
 // variant的实现和lua是一样的，但是多一些基本类，如果只有数学类和table就是lua了
 // 就像lua一样，主要类是依靠字典来实现的
 // 注意有一些引用计数的情况可能会导致问题
@@ -89,9 +93,12 @@ class Variant {
 
  private:
   Type type = NIL;
+
+ public:
   static bool can_convert(Type p_type_from, Type p_type_to);
   static bool can_convert_strict(Type from, Type to);
 
+ private:
   /// <summary>
   /// array helpers
   /// </summary>
@@ -178,7 +185,7 @@ class Variant {
     union BucketSmall {
       BucketSmall() {}
       ~BucketSmall() {}
-      // Transform2D _transform2d;
+      Transform2D _transform2d;
       lain::AABB _aabb;
     };
     union BucketMedium {
@@ -190,7 +197,7 @@ class Variant {
     union BucketLarge {
       BucketLarge() {}
       ~BucketLarge() {}
-      // Projection _projection;
+      Projection _projection;
     };
 
     static PagedAllocator<BucketSmall, true> _bucket_small;
@@ -206,18 +213,30 @@ class Variant {
   static const char* get_c_type_name(Variant::Type p_type);
   static String get_type_name(Variant::Type p_type) { return get_c_type_name(p_type); }
   L_INLINE String get_type_name() { return get_type_name(type); }
-  void reference(const Variant& p_variant);
   void operator=(const Variant& p_variant);  // only this is enough for all the other
   bool operator!=(const Variant& p_variant) const;
   bool operator==(const Variant& p_variant) const;
   bool operator<(const Variant& p_variant) const;
   bool is_type_shared(Variant::Type p_type);
-  bool is_shared() const;
-	bool is_read_only() const;
+  bool is_read_only() const;
 
   void static_assign(const Variant& p_variant);
+
+  typedef void (*ValidatedConstructor)(Variant* r_base, const Variant** p_args);
+  typedef void (*PTRConstructor)(void* base, const void** p_args);
+
   typedef void (*ObjectConstruct)(const String& p_text, void* ud, Variant& r_value);
   static void construct_from_string(const String& p_string, Variant& r_value, ObjectConstruct p_obj_construct = nullptr, void* p_construct_ud = nullptr);
+  static int get_constructor_count(Variant::Type p_type);
+
+  static ValidatedConstructor get_validated_constructor(Variant::Type p_type, int p_constructor);
+  static PTRConstructor get_ptr_constructor(Variant::Type p_type, int p_constructor);
+  static int get_constructor_argument_count(Variant::Type p_type, int p_constructor);
+  static Variant::Type get_constructor_argument_type(Variant::Type p_type, int p_constructor, int p_argument);
+  static String get_constructor_argument_name(Variant::Type p_type, int p_constructor, int p_argument);
+	// 反射构造
+  static void construct(Variant::Type, Variant& base, const Variant** p_args, int p_argcount, Callable::CallError& r_error);
+  static void get_constructor_list(Type p_type, List<MethodInfo>* r_list);  //convenience
 
   uint32_t recursive_hash(int recursion_count) const;
   // 比较相等
@@ -294,16 +313,15 @@ class Variant {
   Variant(const Color& p_color);
   Variant(const GObjectPath& p_node_path);
   Variant(const lain::RID& p_rid);
-  Variant(const Object* p_object);
   Variant(const Callable& p_callable);
   Variant(const Signal& p_signal);
-  Variant(const Dictionary& p_dictionary);
   Variant(const IPAddress& p_address);
 
   // copy construct
   Variant(const Variant& p_variant);
 
- _FORCE_INLINE_ Variant() { type = NIL; }
+  _FORCE_INLINE_ Variant() { type = NIL; }
+  L_INLINE ~Variant() { clear(); }
 
   // 拆箱
   operator bool() const;
@@ -383,7 +401,6 @@ class Variant {
 
   // operator
 
-  ~Variant() { clear(); }
   _FORCE_INLINE_ void clear() {
     static const bool needs_deinit[Variant::VARIANT_MAX] = {
         false,  //NIL,
@@ -487,6 +504,13 @@ class Variant {
     OP_MAX
 
   };
+
+  enum UtilityFunctionType {
+    UTILITY_FUNC_TYPE_MATH,
+    UTILITY_FUNC_TYPE_RANDOM,
+    UTILITY_FUNC_TYPE_GENERAL,
+  };
+
   typedef void (*VariantEvaluatorFunction)(const Variant& p_left, const Variant& p_right, Variant* r_ret, bool& r_valid);
   static VariantEvaluatorFunction operator_evaluator_table[Variant::OP_MAX][Variant::VARIANT_MAX][Variant::VARIANT_MAX];
 
@@ -509,19 +533,44 @@ class Variant {
 
   L_INLINE bool booleanize() const { return !is_zero(); }
 
-  void call_utility_function(const StringName& p_name, Variant* r_ret, const Variant** p_args, int p_argcount, Callable::CallError& r_error);
-  // 反射构造
-  static void construct(Variant::Type, Variant& base, const Variant** p_args, int p_argcount, Callable::CallError& r_error);
-
+  static void call_utility_function(const StringName& p_name, Variant* r_ret, const Variant** p_args, int p_argcount, Callable::CallError& r_error);
   Object* get_validated_object_with_check(bool& r_previously_freed) const;
 
-	String get_construct_string() const;
-	static String get_call_error_text(const StringName &p_method, const Variant **p_argptrs, int p_argcount, const Callable::CallError &ce);
-	static String get_call_error_text(Object *p_base, const StringName &p_method, const Variant **p_argptrs, int p_argcount, const Callable::CallError &ce);
-	static String get_callable_error_text(const Callable &p_callable, const Variant **p_argptrs, int p_argcount, const Callable::CallError &ce);
-	void _variant_call_error(const String &p_method, Callable::CallError &error);
+  String get_construct_string() const;
+  static String get_call_error_text(const StringName& p_method, const Variant** p_argptrs, int p_argcount, const Callable::CallError& ce);
+  static String get_call_error_text(Object* p_base, const StringName& p_method, const Variant** p_argptrs, int p_argcount, const Callable::CallError& ce);
+  static String get_callable_error_text(const Callable& p_callable, const Variant** p_argptrs, int p_argcount, const Callable::CallError& ce);
+  void _variant_call_error(const String& p_method, Callable::CallError& error);
 
+  static void _register_variant_operators();
+  static void _unregister_variant_operators();
+  static void _register_variant_methods();
+  static void _unregister_variant_methods();
+  static void _register_variant_setters_getters();
+  static void _unregister_variant_setters_getters();
+  static void _register_variant_constructors();
+  static void _unregister_variant_destructors();
+  static void _register_variant_destructors();
+  static void _unregister_variant_constructors();
+  static void _register_variant_utility_functions();
+  static void _unregister_variant_utility_functions();
+  typedef void (*ValidatedUtilityFunction)(Variant* r_ret, const Variant** p_args, int p_argcount);
+  typedef void (*PTRUtilityFunction)(void* r_ret, const void** p_args, int p_argcount);
+  bool has_utility_function(const StringName& p_name);
+  static ValidatedUtilityFunction get_validated_utility_function(const StringName& p_name);
+  static PTRUtilityFunction get_ptr_utility_function(const StringName& p_name);
+  static UtilityFunctionType get_utility_function_type(const StringName& p_name);
+  static MethodInfo get_utility_function_info(const StringName& p_name);
+  static int get_utility_function_argument_count(const StringName& p_name);
+  static Variant::Type get_utility_function_argument_type(const StringName& p_name, int p_arg);
+  static String get_utility_function_argument_name(const StringName& p_name, int p_arg);
+  static bool has_utility_function_return_value(const StringName& p_name);
+  static Variant::Type get_utility_function_return_type(const StringName& p_name);
+  static bool is_utility_function_vararg(const StringName& p_name);
+  static uint32_t get_utility_function_hash(const StringName& p_name);
 
+  static void get_utility_function_list(List<StringName>* r_functions);
+  static int get_utility_function_count();
 };
 
 /// <summary>

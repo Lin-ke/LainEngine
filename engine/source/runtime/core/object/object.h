@@ -18,6 +18,7 @@
 //
 // 反射总归是通过字典实现的，但是A.传包装过的variant，B.直接传指针，我觉得还是B更可行，比如一些自定义类，在当前实现中需要通过object* 然后 variant来传
 // Macros
+namespace lain {
 
 #define LCLASS(m_class, m_inherits)                                                                    \
  private:                                                                                              \
@@ -173,7 +174,6 @@ enum PropertyUsageFlags {
   PROPERTY_USAGE_NO_EDITOR = PROPERTY_USAGE_STORAGE,
 };
 // base class of all object
-namespace lain {
 class Viewport;
 // signal mechanism
 REFLECTION_TYPE(Connection)
@@ -326,6 +326,27 @@ class Object {
   HashMap<StringName, SignalData> signal_map;
 
   // for gc
+};
+
+
+enum MethodFlags {
+	METHOD_FLAG_NORMAL = 1,
+	METHOD_FLAG_EDITOR = 2,
+	METHOD_FLAG_CONST = 4,
+	METHOD_FLAG_VIRTUAL = 8,
+	METHOD_FLAG_VARARG = 16,
+	METHOD_FLAG_STATIC = 32,
+	METHOD_FLAG_OBJECT_CORE = 64,
+	METHOD_FLAGS_DEFAULT = METHOD_FLAG_NORMAL,
+};
+
+struct MethodInfo {
+	String name;
+	PropertyInfo return_val;
+	uint32_t flags = METHOD_FLAGS_DEFAULT;
+	int id = 0;
+	List<PropertyInfo> arguments;
+	Vector<Variant> default_arguments;
 };
 }  // namespace lain
 

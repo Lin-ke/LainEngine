@@ -125,14 +125,6 @@ int64_t Vector4i::distance_squared_to(const Vector4i& p_to) const {
 	return (p_to - *this).length_squared();
 }
 
-Vector4i Vector4i::abs() const {
-	return Vector4i(Math::abs(x), Math::abs(y), Math::abs(z), Math::abs(w));
-}
-
-Vector4i Vector4i::sign() const {
-	return Vector4i(SIGN(x), SIGN(y), SIGN(z), SIGN(w));
-}
-
 /* Operators */
 
 Vector4i& Vector4i::operator+=(const Vector4i& p_v) {

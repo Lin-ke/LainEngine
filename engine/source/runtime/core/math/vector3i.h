@@ -4,7 +4,7 @@
 #include "runtime/core/math/math.h"
 #include "runtime/core/math/quaternion.h"
 #include "runtime/core/meta/reflection/reflection_marcos.h"
-
+#include "core/string/ustring.h"
 #include <cassert>
 
 namespace lain
@@ -13,6 +13,11 @@ namespace lain
     REFLECTION_TYPE(Vector3i)
         STRUCT( _NO_DISCARD_ Vector3i, Fields)
     {
+        enum Axis {
+		AXIS_X,
+		AXIS_Y,
+		AXIS_Z,
+	};
 
         REFLECTION_BODY(Vector3i);
         typedef int32_t i32;

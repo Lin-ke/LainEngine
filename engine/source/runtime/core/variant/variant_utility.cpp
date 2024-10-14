@@ -1,10 +1,10 @@
-
+#include "core/object/objectdb.h"
 #include "variant_utility.h"
 
 #include "core/io/marshalls.h"
 #include "core/object/refcounted.h"
 #include "core/os/os.h"
-// #include "core/templates/oa_hash_map.h"
+#include "core/templates/oa_hash_map.h"
 #include "core/io/rid.h"
 
 #include "core/io/rid_owner.h"
@@ -966,23 +966,23 @@ void VariantUtilityFunctions::print_rich(const Variant **p_args, int p_arg_count
 #undef print_verbose
 
 void VariantUtilityFunctions::print_verbose(const Variant **p_args, int p_arg_count, Callable::CallError &r_error) {
-	if (OS::get_singleton()->is_stdout_verbose()) {
-		String s;
-		for (int i = 0; i < p_arg_count; i++) {
-			String os = p_args[i]->operator String();
+	// if (OS::GetSingleton()->is_stdout_verbose()) {
+	// 	String s;
+	// 	for (int i = 0; i < p_arg_count; i++) {
+	// 		String os = p_args[i]->operator String();
 
-			if (i == 0) {
-				s = os;
-			} else {
-				s += os;
-			}
-		}
+	// 		if (i == 0) {
+	// 			s = os;
+	// 		} else {
+	// 			s += os;
+	// 		}
+	// 	}
 
-		// No need to use `print_verbose()` as this call already only happens
-		// when verbose mode is enabled. This avoids performing string argument concatenation
-		// when not needed.
-		print_line(s);
-	}
+	// 	// No need to use `print_verbose()` as this call already only happens
+	// 	// when verbose mode is enabled. This avoids performing string argument concatenation
+	// 	// when not needed.
+	// 	print_line(s);
+	// }
 
 	r_error.error = Callable::CallError::CALL_OK;
 }
@@ -1041,7 +1041,7 @@ void VariantUtilityFunctions::printraw(const Variant **p_args, int p_arg_count, 
 		}
 	}
 
-	OS::get_singleton()->print("%s", s.utf8().get_data());
+	print_line("%s", s.utf8().get_data());
 	r_error.error = Callable::CallError::CALL_OK;
 }
 
@@ -1085,23 +1085,23 @@ void VariantUtilityFunctions::push_warning(const Variant **p_args, int p_arg_cou
 	r_error.error = Callable::CallError::CALL_OK;
 }
 
-String VariantUtilityFunctions::var_to_str(const Variant &p_var) {
-	String vars;
-	VariantWriter::write_to_string(p_var, vars);
-	return vars;
-}
+// String VariantUtilityFunctions::var_to_str(const Variant &p_var) {
+// 	String vars;
+// 	VariantWriter::write_to_string(p_var, vars);
+// 	return vars;
+// }
 
-Variant VariantUtilityFunctions::str_to_var(const String &p_var) {
-	VariantParser::StreamString ss;
-	ss.s = p_var;
+// Variant VariantUtilityFunctions::str_to_var(const String &p_var) {
+// 	VariantParser::StreamString ss;
+// 	ss.s = p_var;
 
-	String errs;
-	int line;
-	Variant ret;
-	(void)VariantParser::parse(&ss, ret, errs, line);
+// 	String errs;
+// 	int line;
+// 	Variant ret;
+// 	(void)VariantParser::parse(&ss, ret, errs, line);
 
-	return ret;
-}
+// 	return ret;
+// }
 
 PackedByteArray VariantUtilityFunctions::var_to_bytes(const Variant &p_var) {
 	int len;
@@ -1199,6 +1199,7 @@ RID VariantUtilityFunctions::rid_from_int64(uint64_t p_base) {
 bool VariantUtilityFunctions::is_same(const Variant &p_a, const Variant &p_b) {
 	return p_a.identity_compare(p_b);
 }
+
 
 #ifdef DEBUG_METHODS_ENABLED
 #define VCALLR *ret = p_func(VariantCasterAndValidate<P>::cast(p_args, Is, r_error)...)
@@ -1602,6 +1603,7 @@ static _FORCE_INLINE_ Variant::Type get_ret_type_helper(void (*p_func)(P...)) {
 	};                                                                                                           \
 	register_utility_function<Func_##m_func>(#m_func, m_args)
 
+// 
 struct VariantUtilityFunctionInfo {
 	void (*call_utility)(Variant *r_ret, const Variant **p_args, int p_argcount, Callable::CallError &r_error) = nullptr;
 	Variant::ValidatedUtilityFunction validated_call_utility = nullptr;

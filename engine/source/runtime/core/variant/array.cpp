@@ -1,3 +1,5 @@
+#include "core/object/object.h" // 需要包含在variant_internal之前以保证propertyInfo得到
+// 包含。@todo：修正这个逻辑
 #include "array.h"
 #include "base.h"
 #include "core/math/hashfuncs.h"

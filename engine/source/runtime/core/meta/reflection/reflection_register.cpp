@@ -5,7 +5,6 @@
 #include "runtime/core/meta/reflection/reflection.h"
 #include "runtime/core/meta/reflection/reflection_register.h"
 #include "runtime/core/meta/serializer/serializer.h"
-#include "core/meta/type_info.h"
 #include "_generated/enums/all_enum.h"
 #include "_generated/reflection/all_reflection.h"
 #include "_generated/serializer/all_serializer.ipp"

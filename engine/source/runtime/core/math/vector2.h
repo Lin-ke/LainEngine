@@ -13,7 +13,10 @@ namespace lain
     STRUCT( _NO_DISCARD_ Vector2, Fields)
     {
         REFLECTION_BODY(Vector2);
-
+    enum Axis {
+        AXIS_X,
+        AXIS_Y,
+    };
     public:
         real_t x {0.f}, y {0.f};
 
