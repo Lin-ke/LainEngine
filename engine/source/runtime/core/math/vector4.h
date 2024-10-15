@@ -42,13 +42,7 @@ enum Axis {
     return &x;
   }
 
-  Vector4& operator=(real_t scalar) {
-    x = scalar;
-    y = scalar;
-    z = scalar;
-    w = scalar;
-    return *this;
-  }
+
 
   bool operator==(const Vector4& rhs) const {
     return (x == rhs.x && y == rhs.y && z == rhs.z && w == rhs.w);
