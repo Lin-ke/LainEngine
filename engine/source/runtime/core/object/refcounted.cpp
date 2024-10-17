@@ -1,4 +1,5 @@
 #include "refcounted.h"
+#include "core/object/objectdb.h"
 namespace lain {
 
 bool RefCounted::init_ref() {
@@ -31,4 +32,34 @@ RefCounted::RefCounted() :Object(true){
 	refcount.init();
 	refcount_init.init();
 }
+
+Variant WeakRef::get_ref() const {
+	if (ref.is_null()) {
+		return Variant();
+	}
+
+	Object *obj = ObjectDB::get_instance(ref);
+	if (!obj) {
+		return Variant();
+	}
+	RefCounted *r = cast_to<RefCounted>(obj);
+	if (r) {
+		return Ref<RefCounted>(r);
+	}
+
+	return obj;
+}
+
+void WeakRef::set_obj(Object *p_object) {
+	ref = p_object ? p_object->get_instance_id() : ObjectID();
+}
+
+void WeakRef::set_ref(const Ref<RefCounted> &p_ref) {
+	ref = p_ref.is_valid() ? p_ref->get_instance_id() : ObjectID();
+}
+
+// void WeakRef::_bind_methods() {
+// 	ClassDB::bind_method(D_METHOD("get_ref"), &WeakRef::get_ref);
+// }
+
 }

@@ -316,7 +316,7 @@ void lain::RendererRD::LightStorage::_light_initialize(RID p_light, RS::LightTyp
   Light light;
   light.type = p_type;
   // 这里的参数与其他地方的反射机制不同
-
+  // 默认的字面量是double还是float？
   light.param[RS::LIGHT_PARAM_ENERGY] = 1.0;
   light.param[RS::LIGHT_PARAM_INDIRECT_ENERGY] = 1.0;
   light.param[RS::LIGHT_PARAM_VOLUMETRIC_FOG_ENERGY] = 1.0;

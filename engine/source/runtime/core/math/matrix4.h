@@ -953,23 +953,7 @@ namespace lain
             return Matrix4x4(d00, d01, d02, d03, d10, d11, d12, d13, d20, d21, d22, d23, d30, d31, d32, d33);
         }
 
-        Vector3 transformCoord(const Vector3& v)
-        {
-            Vector4 temp(v, 1.0f);
-            Vector4 ret = (*this) * temp;
-            if (ret.w == 0.0f)
-            {
-                return Vector3::ZERO;
-            }
-            else
-            {
-                ret /= ret.w;
-                return Vector3(ret.x, ret.y, ret.z);
-            }
-
-            return Vector3::ZERO;
-        }
-
+       
         static const Matrix4x4 ZERO;
         static const Matrix4x4 ZEROAFFINE;
         static const Matrix4x4 IDENTITY;

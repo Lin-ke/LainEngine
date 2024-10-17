@@ -175,8 +175,12 @@ class Variant {
   void reference(const Variant& p_variant);
   static bool initialize_ref(Object* p_object);
 
-  const ObjData& _get_obj() const;
-  ObjData& _get_obj();
+  L_INLINE const ObjData& _get_obj() const{
+	return *reinterpret_cast<const ObjData *>(&_data._mem[0]);
+	}
+  L_INLINE ObjData& _get_obj(){
+		return *reinterpret_cast<ObjData*>(&_data._mem[0]);
+	}
   // constructor
   Variant(const Variant*);
   Variant(const Variant**);
@@ -217,7 +221,7 @@ class Variant {
   bool operator!=(const Variant& p_variant) const;
   bool operator==(const Variant& p_variant) const;
   bool operator<(const Variant& p_variant) const;
-  bool is_type_shared(Variant::Type p_type);
+  bool is_type_shared(Variant::Type p_type) const;
   bool is_read_only() const;
 
   void static_assign(const Variant& p_variant);
@@ -505,16 +509,7 @@ class Variant {
 
   };
 
-  enum UtilityFunctionType {
-    UTILITY_FUNC_TYPE_MATH,
-    UTILITY_FUNC_TYPE_RANDOM,
-    UTILITY_FUNC_TYPE_GENERAL,
-  };
-
-  typedef void (*VariantEvaluatorFunction)(const Variant& p_left, const Variant& p_right, Variant* r_ret, bool& r_valid);
-  static VariantEvaluatorFunction operator_evaluator_table[Variant::OP_MAX][Variant::VARIANT_MAX][Variant::VARIANT_MAX];
-
-  static String get_operator_name(Operator p_op);
+	static String get_operator_name(Operator p_op);
   static void evaluate(const Operator& p_op, const Variant& p_a, const Variant& p_b, Variant& r_ret, bool& r_valid);
   static _FORCE_INLINE_ Variant evaluate(const Operator& p_op, const Variant& p_a, const Variant& p_b) {
     bool valid = true;
@@ -523,19 +518,125 @@ class Variant {
     return res;
   }
 
+	static Variant::Type get_operator_return_type(Operator p_operator, Type p_type_a, Type p_type_b);
+	typedef void (*ValidatedOperatorEvaluator)(const Variant *left, const Variant *right, Variant *r_ret);
+	static ValidatedOperatorEvaluator get_validated_operator_evaluator(Operator p_operator, Type p_type_a, Type p_type_b);
+	typedef void (*PTROperatorEvaluator)(const void *left, const void *right, void *r_ret);
+	static PTROperatorEvaluator get_ptr_operator_evaluator(Operator p_operator, Type p_type_a, Type p_type_b);
+
+
+
+
+  /// <summary>
+  /// Keying
+  /// </summary>
+	// @todo
+
+	void set_keyed(const Variant &p_key, const Variant &p_value, bool &r_valid);
+  Variant get_keyed(const Variant& p_key, bool& r_valid) const;
+	bool has_key(const Variant &p_key, bool &r_valid) const;
+
+
+  /// <summary>
+  /// Properties
+  /// set ，get方法根据类型在表中查找对应的方法。
+  /// </summary>
+
+
   enum VariantSetError { SET_OK, SET_KEYED_ERR, SET_NAMED_ERR, SET_INDEXED_ERR };
   enum VariantGetError { GET_OK, GET_KEYED_ERR, GET_NAMED_ERR, GET_INDEXED_ERR };
-  // set ，get方法根据类型在表中查找对应的方法。
-
+	void set(const Variant &p_index, const Variant &p_value, bool *r_valid = nullptr, VariantSetError *err_code = nullptr);
   Variant get(const Variant& p_index, bool* r_valid, VariantGetError* err_code = nullptr) const;
-  Variant get_keyed(const Variant& p_key, bool& r_valid) const;
-  Variant get_named(const StringName& p_member, bool& r_valid) const;
+	bool in(const Variant &p_index, bool *r_valid) const;
 
-  L_INLINE bool booleanize() const { return !is_zero(); }
+	void set_named(const StringName &p_member, const Variant &p_value, bool &r_valid);
+	Variant get_named(const StringName &p_member, bool &r_valid) const;
+
+	typedef void (*ValidatedSetter)(Variant *base, const Variant *value);
+	typedef void (*ValidatedGetter)(const Variant *base, Variant *value);
+
+	static bool has_member(Variant::Type p_type, const StringName &p_member);
+	static Variant::Type get_member_type(Variant::Type p_type, const StringName &p_member);
+	static void get_member_list(Type p_type, List<StringName> *r_members);
+	static int get_member_count(Type p_type);
+
+	static ValidatedSetter get_member_validated_setter(Variant::Type p_type, const StringName &p_member);
+	static ValidatedGetter get_member_validated_getter(Variant::Type p_type, const StringName &p_member);
+
+	typedef void (*PTRSetter)(void *base, const void *value);
+	typedef void (*PTRGetter)(const void *base, void *value);
+
+	static PTRSetter get_member_ptr_setter(Variant::Type p_type, const StringName &p_member);
+	static PTRGetter get_member_ptr_getter(Variant::Type p_type, const StringName &p_member);
+/// <summary>
+	/* Indexing */
+/// </summary>
+	static bool has_indexing(Variant::Type p_type);
+	static Variant::Type get_indexed_element_type(Variant::Type p_type);
+	static uint32_t get_indexed_element_usage(Variant::Type p_type);
+
+	typedef void (*ValidatedIndexedSetter)(Variant *base, int64_t index, const Variant *value, bool *oob);
+	typedef void (*ValidatedIndexedGetter)(const Variant *base, int64_t index, Variant *value, bool *oob);
+
+	static ValidatedIndexedSetter get_member_validated_indexed_setter(Variant::Type p_type);
+	static ValidatedIndexedGetter get_member_validated_indexed_getter(Variant::Type p_type);
+
+	typedef void (*PTRIndexedSetter)(void *base, int64_t index, const void *value);
+	typedef void (*PTRIndexedGetter)(const void *base, int64_t index, void *value);
+
+	static PTRIndexedSetter get_member_ptr_indexed_setter(Variant::Type p_type);
+	static PTRIndexedGetter get_member_ptr_indexed_getter(Variant::Type p_type);
+
+	void set_indexed(int64_t p_index, const Variant &p_value, bool &r_valid, bool &r_oob);
+	Variant get_indexed(int64_t p_index, bool &r_valid, bool &r_oob) const;
+
+	uint64_t get_indexed_size() const;
+
+
+  /// <summary>
+  /// UtilityFunction
+  /// </summary>
+
+  enum UtilityFunctionType {
+    UTILITY_FUNC_TYPE_MATH,
+    UTILITY_FUNC_TYPE_RANDOM,
+    UTILITY_FUNC_TYPE_GENERAL,
+  };
+
+	typedef void (*ValidatedUtilityFunction)(Variant* r_ret, const Variant** p_args, int p_argcount);
+  typedef void (*PTRUtilityFunction)(void* r_ret, const void** p_args, int p_argcount);
+  bool has_utility_function(const StringName& p_name);
+  static ValidatedUtilityFunction get_validated_utility_function(const StringName& p_name);
+  static PTRUtilityFunction get_ptr_utility_function(const StringName& p_name);
+  static UtilityFunctionType get_utility_function_type(const StringName& p_name);
+  static MethodInfo get_utility_function_info(const StringName& p_name);
+  static int get_utility_function_argument_count(const StringName& p_name);
+  static Variant::Type get_utility_function_argument_type(const StringName& p_name, int p_arg);
+  static String get_utility_function_argument_name(const StringName& p_name, int p_arg);
+  static bool has_utility_function_return_value(const StringName& p_name);
+  static Variant::Type get_utility_function_return_type(const StringName& p_name);
+  static bool is_utility_function_vararg(const StringName& p_name);
+  static uint32_t get_utility_function_hash(const StringName& p_name);
+
+  static void get_utility_function_list(List<StringName>* r_functions);
+  static int get_utility_function_count();
 
   static void call_utility_function(const StringName& p_name, Variant* r_ret, const Variant** p_args, int p_argcount, Callable::CallError& r_error);
   Object* get_validated_object_with_check(bool& r_previously_freed) const;
+	/// buil-in  method
+	/// buil-in  method
+	/// built-in method 在 variant_callable.h中实现
+		typedef void (*ValidatedBuiltInMethod)(Variant *base, const Variant **p_args, int p_argcount, Variant *r_ret);
+	typedef void (*PTRBuiltInMethod)(void *p_base, const void **p_args, void *r_ret, int p_argcount);
+	static bool has_builtin_method_return_value(Variant::Type p_type, const StringName &p_method) ;
+	static bool has_builtin_method(Variant::Type p_type, const StringName &p_method) ;
+	static int get_builtin_method_argument_count(Variant::Type p_type, const StringName &p_method) ;
+	static uint32_t get_builtin_method_hash(Variant::Type p_type, const StringName &p_method);
+	void callp(const StringName &p_method, const Variant **p_args, int p_argcount, Variant &r_ret, Callable::CallError &r_error);
 
+	/// <summary>
+	/// Constructor
+	/// </summary>
   String get_construct_string() const;
   static String get_call_error_text(const StringName& p_method, const Variant** p_argptrs, int p_argcount, const Callable::CallError& ce);
   static String get_call_error_text(Object* p_base, const StringName& p_method, const Variant** p_argptrs, int p_argcount, const Callable::CallError& ce);
@@ -554,23 +655,11 @@ class Variant {
   static void _unregister_variant_constructors();
   static void _register_variant_utility_functions();
   static void _unregister_variant_utility_functions();
-  typedef void (*ValidatedUtilityFunction)(Variant* r_ret, const Variant** p_args, int p_argcount);
-  typedef void (*PTRUtilityFunction)(void* r_ret, const void** p_args, int p_argcount);
-  bool has_utility_function(const StringName& p_name);
-  static ValidatedUtilityFunction get_validated_utility_function(const StringName& p_name);
-  static PTRUtilityFunction get_ptr_utility_function(const StringName& p_name);
-  static UtilityFunctionType get_utility_function_type(const StringName& p_name);
-  static MethodInfo get_utility_function_info(const StringName& p_name);
-  static int get_utility_function_argument_count(const StringName& p_name);
-  static Variant::Type get_utility_function_argument_type(const StringName& p_name, int p_arg);
-  static String get_utility_function_argument_name(const StringName& p_name, int p_arg);
-  static bool has_utility_function_return_value(const StringName& p_name);
-  static Variant::Type get_utility_function_return_type(const StringName& p_name);
-  static bool is_utility_function_vararg(const StringName& p_name);
-  static uint32_t get_utility_function_hash(const StringName& p_name);
 
-  static void get_utility_function_list(List<StringName>* r_functions);
-  static int get_utility_function_count();
+
+	// helper
+  L_INLINE bool booleanize() const { return !is_zero(); }
+
 };
 
 /// <summary>
@@ -604,10 +693,6 @@ struct VariantComparator {
   static _FORCE_INLINE_ bool compare(const Variant& p_lhs, const Variant& p_rhs) { return p_lhs.hash_compare(p_rhs); }
 };
 
-// string helper function
-template <typename T>
-String stringify_vector(const T& vec, int recursion_count);
-String stringify_variant_clean(const Variant& p_variant, int recursion_count);
 
 };  // namespace lain
 

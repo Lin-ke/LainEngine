@@ -58,6 +58,11 @@ class RenderingMethod {
 	virtual void instance_set_visibility_parent(RID p_instance, RID p_parent_instance) = 0;
 
 	virtual void instance_set_ignore_culling(RID p_instance, bool p_enabled) = 0;
+
+	virtual void update() = 0;
+
+	virtual void render_probes() = 0;
+	virtual void update_visibility_notifiers() = 0;
 };
 }
 #endif // RENDERING_METHOD_API_H

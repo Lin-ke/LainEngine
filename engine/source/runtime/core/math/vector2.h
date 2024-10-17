@@ -1,182 +1,211 @@
 #pragma once
-
+#include "core/math/math_defs.h"
 #include "runtime/core/math/math.h"
 #include "runtime/core/meta/reflection/reflection_marcos.h"
 
 #include <cassert>
 #include <cmath>
 
-namespace lain
-{
+namespace lain {
 
-    REFLECTION_TYPE(Vector2)
-    STRUCT( _NO_DISCARD_ Vector2, Fields)
-    {
-        REFLECTION_BODY(Vector2);
-    enum Axis {
-        AXIS_X,
-        AXIS_Y,
-    };
-    public:
-        real_t x {0.f}, y {0.f};
+REFLECTION_TYPE(Vector2)
+STRUCT(_NO_DISCARD_ Vector2, Fields) {
+  REFLECTION_BODY(Vector2);
+  enum Axis {
+    AXIS_X,
+    AXIS_Y,
+  };
 
-    public:
-        Vector2() = default;
+ public:
+  real_t x{0.f}, y{0.f};
 
-        const real_t& width()  const { return x; }   
-        const real_t& height() const { return y; }
+ public:
+  Vector2() = default;
 
-        real_t& width() { return x; }   
-        real_t& height() { return y; }
+  const real_t& width() const {
+    return x;
+  }
+  const real_t& height() const {
+    return y;
+  }
 
-        Vector2(float x_, float y_) : x(x_), y(y_) {}
+  real_t& width() {
+    return x;
+  }
+  real_t& height() {
+    return y;
+  }
 
-        explicit Vector2(float scaler) : x(scaler), y(scaler) {}
+  Vector2(float x_, float y_) : x(x_), y(y_) {}
 
-        explicit Vector2(const float v[2]) : x(v[0]), y(v[1]) {}
+  explicit Vector2(float scaler) : x(scaler), y(scaler) {}
 
-        explicit Vector2(float* const r) : x(r[0]), y(r[1]) {}
+  explicit Vector2(const float v[2]) : x(v[0]), y(v[1]) {}
 
-        float* ptr() { return &x; }
+  explicit Vector2(float* const r) : x(r[0]), y(r[1]) {}
 
-        const float* ptr() const { return &x; }
+  float* ptr() {
+    return &x;
+  }
 
-        float operator[](size_t i) const
-        {
-            assert(i < 2);
-            return (i == 0 ? x : y);
-        }
+  const float* ptr() const {
+    return &x;
+  }
 
-        float& operator[](size_t i)
-        {
-            assert(i < 2);
-            return (i == 0 ? x : y);
-        }
+  float operator[](size_t i) const {
+    assert(i < 2);
+    return (i == 0 ? x : y);
+  }
 
-        bool operator==(const Vector2& rhs) const { return (x == rhs.x && y == rhs.y); }
+  float& operator[](size_t i) {
+    assert(i < 2);
+    return (i == 0 ? x : y);
+  }
 
-        bool operator!=(const Vector2& rhs) const { return (x != rhs.x || y != rhs.y); }
+  bool operator==(const Vector2& rhs) const {
+    return (x == rhs.x && y == rhs.y);
+  }
 
-        // arithmetic operations
-        Vector2 operator+(const Vector2& rhs) const { return Vector2(x + rhs.x, y + rhs.y); }
+  bool operator!=(const Vector2& rhs) const {
+    return (x != rhs.x || y != rhs.y);
+  }
 
-        Vector2 operator-(const Vector2& rhs) const { return Vector2(x - rhs.x, y - rhs.y); }
+  // arithmetic operations
+  Vector2 operator+(const Vector2& rhs) const {
+    return Vector2(x + rhs.x, y + rhs.y);
+  }
 
-        Vector2 operator*(float scalar) const { return Vector2(x * scalar, y * scalar); }
+  Vector2 operator-(const Vector2& rhs) const {
+    return Vector2(x - rhs.x, y - rhs.y);
+  }
 
-        Vector2 operator*(const Vector2& rhs) const { return Vector2(x * rhs.x, y * rhs.y); }
+  Vector2 operator*(float scalar) const {
+    return Vector2(x * scalar, y * scalar);
+  }
 
-        Vector2 operator/(float scale) const
-        {
-            assert(scale != 0.0);
+  Vector2 operator*(const Vector2& rhs) const {
+    return Vector2(x * rhs.x, y * rhs.y);
+  }
 
-            float inv = 1.0f / scale;
-            return Vector2(x * inv, y * inv);
-        }
+  Vector2 operator/(float scale) const {
+    assert(scale != 0.0);
 
-        Vector2 operator/(const Vector2& rhs) const { return Vector2(x / rhs.x, y / rhs.y); }
+    float inv = 1.0f / scale;
+    return Vector2(x * inv, y * inv);
+  }
 
-        const Vector2& operator+() const { return *this; }
+  Vector2 operator/(const Vector2& rhs) const {
+    return Vector2(x / rhs.x, y / rhs.y);
+  }
 
-        Vector2 operator-() const { return Vector2(-x, -y); }
+  const Vector2& operator+() const {
+    return *this;
+  }
 
-        // overloaded operators to help Vector2
-        friend Vector2 operator*(float scalar, const Vector2& rhs) { return Vector2(scalar * rhs.x, scalar * rhs.y); }
+  Vector2 operator-() const {
+    return Vector2(-x, -y);
+  }
 
-        friend Vector2 operator/(float fScalar, const Vector2& rhs)
-        {
-            return Vector2(fScalar / rhs.x, fScalar / rhs.y);
-        }
+  // overloaded operators to help Vector2
+  friend Vector2 operator*(float scalar, const Vector2& rhs) {
+    return Vector2(scalar * rhs.x, scalar * rhs.y);
+  }
 
-        friend Vector2 operator+(const Vector2& lhs, float rhs) { return Vector2(lhs.x + rhs, lhs.y + rhs); }
+  friend Vector2 operator/(float fScalar, const Vector2& rhs) {
+    return Vector2(fScalar / rhs.x, fScalar / rhs.y);
+  }
 
-        friend Vector2 operator+(float lhs, const Vector2& rhs) { return Vector2(lhs + rhs.x, lhs + rhs.y); }
+  friend Vector2 operator+(const Vector2& lhs, float rhs) {
+    return Vector2(lhs.x + rhs, lhs.y + rhs);
+  }
 
-        friend Vector2 operator-(const Vector2& lhs, float rhs) { return Vector2(lhs.x - rhs, lhs.y - rhs); }
+  friend Vector2 operator+(float lhs, const Vector2& rhs) {
+    return Vector2(lhs + rhs.x, lhs + rhs.y);
+  }
 
-        friend Vector2 operator-(float lhs, const Vector2& rhs) { return Vector2(lhs - rhs.x, lhs - rhs.y); }
+  friend Vector2 operator-(const Vector2& lhs, float rhs) {
+    return Vector2(lhs.x - rhs, lhs.y - rhs);
+  }
 
-        // arithmetic updates
-        Vector2& operator+=(const Vector2& rhs)
-        {
-            x += rhs.x;
-            y += rhs.y;
+  friend Vector2 operator-(float lhs, const Vector2& rhs) {
+    return Vector2(lhs - rhs.x, lhs - rhs.y);
+  }
 
-            return *this;
-        }
+  // arithmetic updates
+  Vector2& operator+=(const Vector2& rhs) {
+    x += rhs.x;
+    y += rhs.y;
 
-        Vector2& operator+=(float scalar)
-        {
-            x += scalar;
-            y += scalar;
+    return *this;
+  }
 
-            return *this;
-        }
-        L_INLINE Vector2 sign() const {
-            return Vector2(SIGN(x), SIGN(y));
-        }
-        Vector2& operator-=(const Vector2& rhs)
-        {
-            x -= rhs.x;
-            y -= rhs.y;
+  Vector2& operator+=(float scalar) {
+    x += scalar;
+    y += scalar;
 
-            return *this;
-        }
+    return *this;
+  }
+  L_INLINE Vector2 sign() const {
+    return Vector2(SIGN(x), SIGN(y));
+  }
+  Vector2& operator-=(const Vector2& rhs) {
+    x -= rhs.x;
+    y -= rhs.y;
 
-        Vector2& operator-=(float scalar)
-        {
-            x -= scalar;
-            y -= scalar;
+    return *this;
+  }
 
-            return *this;
-        }
+  Vector2& operator-=(float scalar) {
+    x -= scalar;
+    y -= scalar;
 
-        Vector2& operator*=(float scalar)
-        {
-            x *= scalar;
-            y *= scalar;
+    return *this;
+  }
 
-            return *this;
-        }
+  Vector2& operator*=(float scalar) {
+    x *= scalar;
+    y *= scalar;
 
-        Vector2& operator*=(const Vector2& rhs)
-        {
-            x *= rhs.x;
-            y *= rhs.y;
+    return *this;
+  }
 
-            return *this;
-        }
+  Vector2& operator*=(const Vector2& rhs) {
+    x *= rhs.x;
+    y *= rhs.y;
 
-        Vector2& operator/=(float scalar)
-        {
-            assert(scalar != 0.0);
+    return *this;
+  }
 
-            float inv = 1.0f / scalar;
+  Vector2& operator/=(float scalar) {
+    assert(scalar != 0.0);
 
-            x *= inv;
-            y *= inv;
+    float inv = 1.0f / scalar;
 
-            return *this;
-        }
+    x *= inv;
+    y *= inv;
 
-        Vector2& operator/=(const Vector2& rhs)
-        {
-            x /= rhs.x;
-            y /= rhs.y;
+    return *this;
+  }
 
-            return *this;
-        }
+  Vector2& operator/=(const Vector2& rhs) {
+    x /= rhs.x;
+    y /= rhs.y;
 
-        /** Returns the length (magnitude) of the vector.
+    return *this;
+  }
+
+  /** Returns the length (magnitude) of the vector.
         @warning
         This operation requires a square root and is expensive in
         terms of CPU operations. If you don't need to know the exact
         length (e.g. for just comparing lengths) use squaredLength()
         instead.
         */
-        float length() const { return std::hypot(x, y); }
+  float length() const {
+    return Math::sqrt(x * x + y * y);
+  }
 
-        /** Returns the square of the length(magnitude) of the vector.
+  /** Returns the square of the length(magnitude) of the vector.
         @remarks
         This  method is for efficiency - calculating the actual
         length of a vector requires a square root, which is expensive
@@ -186,18 +215,22 @@ namespace lain
         want to find the longest / shortest vector without incurring
         the square root.
         */
-        float squaredLength() const { return x * x + y * y; }
+  float squaredLength() const {
+    return x * x + y * y;
+  }
 
-        /** Returns the distance to another vector.
+  /** Returns the distance to another vector.
         @warning
         This operation requires a square root and is expensive in
         terms of CPU operations. If you don't need to know the exact
         distance (e.g. for just comparing distances) use squaredDistance()
         instead.
         */
-        float distance(const Vector2& rhs) const { return (*this - rhs).length(); }
+  float distance(const Vector2& rhs) const {
+    return (*this - rhs).length();
+  }
 
-        /** Returns the square of the distance to another vector.
+  /** Returns the square of the distance to another vector.
         @remarks
         This method is for efficiency - calculating the actual
         distance to another vector requires a square root, which is
@@ -207,11 +240,13 @@ namespace lain
         Use this if you want to find the longest / shortest distance
         without incurring the square root.
         */
-        float squaredDistance(const Vector2& rhs) const { return (*this - rhs).squaredLength(); }
-        Vector2 orthogonal() const {
-            return Vector2(y, -x);
-        }
-        /** Calculates the dot (scalar) product of this vector with another.
+  float squaredDistance(const Vector2& rhs) const {
+    return (*this - rhs).squaredLength();
+  }
+  Vector2 orthogonal() const {
+    return Vector2(y, -x);
+  }
+  /** Calculates the dot (scalar) product of this vector with another.
         @remarks
         The dot product can be used to calculate the angle between 2
         vectors. If both are unit vectors, the dot product is the
@@ -225,9 +260,11 @@ namespace lain
         @returns
         A float representing the dot product value.
         */
-        float dot(const Vector2& vec) const { return x * vec.x + y * vec.y; }
+  float dot(const Vector2& vec) const {
+    return x * vec.x + y * vec.y;
+  }
 
-        /** Normalizes the vector.
+  /** Normalizes the vector.
         @remarks
         This method normalizes the vector such that it's
         length / magnitude is 1. The result is called a unit vector.
@@ -237,148 +274,190 @@ namespace lain
         @returns The previous length of the vector.
         */
 
-        float normalise()
-        {
-            float lengh = std::hypot(x, y);
+  float normalise() {
+    float lengh = length();
 
-            if (lengh > 0.0f)
-            {
-                float inv_length = 1.0f / lengh;
-                x *= inv_length;
-                y *= inv_length;
-            }
+    if (lengh > 0.0f) {
+      float inv_length = 1.0f / lengh;
+      x *= inv_length;
+      y *= inv_length;
+    }
 
-            return lengh;
-        }
+    return lengh;
+  }
+  L_INLINE void normalize() {
+    normalise();
+  }
+  L_INLINE bool Vector2::is_equal_approx(const Vector2& p_v) const {
+    return Math::is_equal_approx(x, p_v.x) && Math::is_equal_approx(y, p_v.y);
+  }
+  L_INLINE bool Vector2::is_finite() const {
+    return Math::is_finite(x) && Math::is_finite(y);
+  }
 
-        float getX() const { return x; }
-        float getY() const { return y; }
+  L_INLINE real_t Vector2::angle() const {
+    return Math::atan2(y, x);
+  }
 
-        /** Returns a vector at a point half way between this and the passed
+  L_INLINE Vector2 normalized() const {
+    real_t l = length();
+    if (l == 0)
+      return Vector2();
+    return *this / l;
+  }
+  L_INLINE Vector2 rotated(real_t p_by) const {
+    real_t sine = Math::sin(p_by);
+    real_t cosi = Math::cos(p_by);
+    return Vector2(x * cosi - y * sine, x * sine + y * cosi);
+  }
+  bool operator>= (const Vector2& p_v) const{
+    return x >= p_v.x ? y >= p_v.y : false;
+  }
+  bool operator<= (const Vector2& p_v) const{
+    return x <= p_v.x ? y <= p_v.y : false;
+  }
+  
+  float getX() const {
+    return x;
+  }
+  float getY() const {
+    return y;
+  }
+
+  /** Returns a vector at a point half way between this and the passed
         in vector.
         */
-        Vector2 midPoint(const Vector2& vec) const { return Vector2((x + vec.x) * 0.5f, (y + vec.y) * 0.5f); }
+  Vector2 midPoint(const Vector2& vec) const {
+    return Vector2((x + vec.x) * 0.5f, (y + vec.y) * 0.5f);
+  }
 
-        /** Returns true if the vector's scalar components are all greater
+  /** Returns true if the vector's scalar components are all greater
         that the ones of the vector it is compared against.
         */
-        bool operator<(const Vector2& rhs) const { return x < rhs.x && y < rhs.y; }
+  bool operator<(const Vector2& rhs) const {
+    return x < rhs.x && y < rhs.y;
+  }
 
-        /** Returns true if the vector's scalar components are all smaller
+  /** Returns true if the vector's scalar components are all smaller
         that the ones of the vector it is compared against.
         */
-        bool operator>(const Vector2& rhs) const { return x > rhs.x && y > rhs.y; }
+  bool operator>(const Vector2& rhs) const {
+    return x > rhs.x && y > rhs.y;
+  }
 
-        /** Sets this vector's components to the minimum of its own and the
+  /** Sets this vector's components to the minimum of its own and the
         ones of the passed in vector.
         @remarks
         'Minimum' in this case means the combination of the lowest
         value of x, y and z from both vectors. Lowest is taken just
         numerically, not magnitude, so -1 < 0.
         */
-        void makeFloor(const Vector2& cmp)
-        {
-            if (cmp.x < x)
-                x = cmp.x;
-            if (cmp.y < y)
-                y = cmp.y;
-        }
+  void makeFloor(const Vector2& cmp) {
+    if (cmp.x < x)
+      x = cmp.x;
+    if (cmp.y < y)
+      y = cmp.y;
+  }
 
-        /** Sets this vector's components to the maximum of its own and the
+  /** Sets this vector's components to the maximum of its own and the
         ones of the passed in vector.
         @remarks
         'Maximum' in this case means the combination of the highest
         value of x, y and z from both vectors. Highest is taken just
         numerically, not magnitude, so 1 > -3.
         */
-        void makeCeil(const Vector2& cmp)
-        {
-            if (cmp.x > x)
-                x = cmp.x;
-            if (cmp.y > y)
-                y = cmp.y;
-        }
+  void makeCeil(const Vector2& cmp) {
+    if (cmp.x > x)
+      x = cmp.x;
+    if (cmp.y > y)
+      y = cmp.y;
+  }
 
-        /** Generates a vector perpendicular to this vector (eg an 'up' vector).
+  /** Generates a vector perpendicular to this vector (eg an 'up' vector).
         @remarks
         This method will return a vector which is perpendicular to this
         vector. There are an infinite number of possibilities but this
         method will guarantee to generate one of them. If you need more
         control you should use the Quaternion class.
         */
-        Vector2 perpendicular(void) const { return Vector2(-y, x); }
+  Vector2 perpendicular(void) const {
+    return Vector2(-y, x);
+  }
 
-        /** Calculates the 2 dimensional cross-product of 2 vectors, which results
+  /** Calculates the 2 dimensional cross-product of 2 vectors, which results
         in a single floating point value which is 2 times the area of the triangle.
         */
 
-        float cross(const Vector2& rhs) const { return x * rhs.y - y * rhs.x; }
+  float cross(const Vector2& rhs) const {
+    return x * rhs.y - y * rhs.x;
+  }
 
-        /** Returns true if this vector is zero length. */
-        bool isZeroLength(void) const
-        {
-            float sqlen = (x * x) + (y * y);
-            return (sqlen < (Float_EPSILON * Float_EPSILON));
-        }
+  /** Returns true if this vector is zero length. */
+  bool isZeroLength(void) const {
+    float sqlen = (x * x) + (y * y);
+    return (sqlen < (Float_EPSILON * Float_EPSILON));
+  }
 
-        /** As normalise, except that this vector is unaffected and the
+  /** As normalise, except that this vector is unaffected and the
         normalised vector is returned as a copy. */
-        Vector2 normalisedCopy(void) const
-        {
-            Vector2 ret = *this;
-            ret.normalise();
-            return ret;
-        }
+  Vector2 normalisedCopy(void) const {
+    Vector2 ret = *this;
+    ret.normalise();
+    return ret;
+  }
 
-        /** Calculates a reflection vector to the plane with the given normal .
+  /** Calculates a reflection vector to the plane with the given normal .
         @remarks NB assumes 'this' is pointing AWAY FROM the plane, invert if it is not.
         */
-        Vector2 reflect(const Vector2& normal) const
-        {
-            return Vector2(*this - (2 * this->dot(normal) * normal));
-        }
+  Vector2 reflect(const Vector2& normal) const {
+    return Vector2(*this - (2 * this->dot(normal) * normal));
+  }
 
-        /// Check whether this vector contains valid values
-        bool isNaN() const { return Math::isNan(x) || Math::isNan(y); }
+  /// Check whether this vector contains valid values
+  bool isNaN() const {
+    return Math::isNan(x) || Math::isNan(y);
+  }
 
-        static Vector2 lerp(const Vector2& lhs, const Vector2& rhs, float alpha) { return lhs + alpha * (rhs - lhs); }
-        Vector2 lerp(const Vector2& p_target, float p_alpha) const {
-            return Vector2(x + (p_target.x - x) * p_alpha, y + (p_target.y - y) * p_alpha);
-        }
-        Vector2 min(const Vector2& p_vector2) const {
-            return Vector2(MIN(x, p_vector2.x), MIN(y, p_vector2.y));
-        }
-        Vector2 snapped(const Vector2& p_val) const {
-            return Vector2(Math::snapped(x, p_val.x), Math::snapped(y, p_val.y));
-        }
-        Vector2 max(const Vector2& p_vector2) const {
-            return Vector2(MAX(x, p_vector2.x), MAX(y, p_vector2.y));
-        }
+  static Vector2 lerp(const Vector2& lhs, const Vector2& rhs, float alpha) {
+    return lhs + alpha * (rhs - lhs);
+  }
+  Vector2 lerp(const Vector2& p_target, float p_alpha) const {
+    return Vector2(x + (p_target.x - x) * p_alpha, y + (p_target.y - y) * p_alpha);
+  }
+  Vector2 min(const Vector2& p_vector2) const {
+    return Vector2(MIN(x, p_vector2.x), MIN(y, p_vector2.y));
+  }
+  Vector2 snapped(const Vector2& p_val) const {
+    return Vector2(Math::snapped(x, p_val.x), Math::snapped(y, p_val.y));
+  }
+  Vector2 max(const Vector2& p_vector2) const {
+    return Vector2(MAX(x, p_vector2.x), MAX(y, p_vector2.y));
+  }
 
-        Vector2 round() const {
-                return Vector2(Math::round(x), Math::round(y));
-        }
+  Vector2 round() const {
+    return Vector2(Math::round(x), Math::round(y));
+  }
 
-        _FORCE_INLINE_ Vector2 abs() const {
-            return Vector2(Math::abs(x), Math::abs(y));
-        }
+  _FORCE_INLINE_ Vector2 abs() const {
+    return Vector2(Math::abs(x), Math::abs(y));
+  }
 
-    	L_INLINE Vector2 floor() const{
-            return Vector2(Math::floor(x), Math::floor(y));
-        }
-        L_INLINE Vector2 ceil() const {
-            return Vector2(Math::ceil(x), Math::ceil(y));
-        }
+  L_INLINE Vector2 floor() const {
+    return Vector2(Math::floor(x), Math::floor(y));
+  }
+  L_INLINE Vector2 ceil() const {
+    return Vector2(Math::ceil(x), Math::ceil(y));
+  }
 
-        operator String() const;
-        // special points
-        static const Vector2 ZERO;
-        static const Vector2 UNIT_X;
-        static const Vector2 UNIT_Y;
-        static const Vector2 NEGATIVE_UNIT_X;
-        static const Vector2 NEGATIVE_UNIT_Y;
-        static const Vector2 UNIT_SCALE;
-    };
-    typedef Vector2 Size2;
-    typedef Vector2 Point2;
-} // namespace lain
+  operator String() const;
+  // special points
+  static const Vector2 ZERO;
+  static const Vector2 UNIT_X;
+  static const Vector2 UNIT_Y;
+  static const Vector2 NEGATIVE_UNIT_X;
+  static const Vector2 NEGATIVE_UNIT_Y;
+  static const Vector2 UNIT_SCALE;
+};
+typedef Vector2 Size2;
+typedef Vector2 Point2;
+}  // namespace lain

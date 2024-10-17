@@ -54,6 +54,19 @@ static inline uint32_t decode_uint32(const uint8_t *p_arr) {
 
 	return u;
 }
+static inline uint16_t decode_uint16(const uint8_t *p_arr) {
+	uint16_t u = 0;
+
+	for (int i = 0; i < 2; i++) {
+		uint16_t b = *p_arr;
+		b <<= (i * 8);
+		u |= b;
+		p_arr++;
+	}
+
+	return u;
+}
+
 
 static inline unsigned int encode_uint64(uint64_t p_uint, uint8_t *p_arr) {
 	for (int i = 0; i < 8; i++) {
@@ -103,6 +116,17 @@ static inline float decode_float(const uint8_t *p_arr) {
 	mf.i = decode_uint32(p_arr);
 	return mf.f;
 }
+
+static inline unsigned int encode_uint16(uint16_t p_uint, uint8_t *p_arr) {
+	for (int i = 0; i < 2; i++) {
+		*p_arr = p_uint & 0xFF;
+		p_arr++;
+		p_uint >>= 8;
+	}
+
+	return sizeof(uint16_t);
+}
+
 Error decode_variant(Variant& r_variant, const uint8_t* p_buffer, int p_len, int* r_len = nullptr, bool p_allow_objects = false, int p_depth = 0);
 Error encode_variant(const Variant& p_variant, uint8_t* r_buffer, int& r_len, bool p_full_objects = false, int p_depth = 0);
 class EncodedObjectAsID : public RefCounted {
@@ -119,6 +143,7 @@ public:
 
 	EncodedObjectAsID() {}
 }; 
+
 
 }
 

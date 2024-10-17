@@ -1,8 +1,8 @@
 #include "function/shader/shader_preprocessor.h"
 namespace lain::test{
   void test_shader(){
-    String p_code = "#define a 123\n b = a;";
-
+    String p_code = "#define a 123\nint b = a;";
+    using namespace shader;
     ShaderPreprocessor processor;
     String path = "res://";
 		String pp_code;

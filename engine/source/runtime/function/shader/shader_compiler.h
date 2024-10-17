@@ -34,6 +34,7 @@
 #include "core/templates/pair.h"
 #include "shader_language.h"
 #include "function/render/rendering_system/rendering_system.h"
+namespace lain::shader{
 
 class ShaderCompiler {
 public:
@@ -133,5 +134,6 @@ public:
 	void initialize(DefaultIdentifierActions p_actions);
 	ShaderCompiler();
 };
+}
 
 #endif // SHADER_COMPILER_H

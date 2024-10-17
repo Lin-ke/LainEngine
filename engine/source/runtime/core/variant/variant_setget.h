@@ -2,8 +2,9 @@
 #define VARIANT_SETGET_H
 
 #include "variant.h"
-
+#include "core/variant/method_ptrcall.h"
 // #include "core/debugger/engine_debugger.h"
+#include "core/object/object.h"
 #include "core/meta/class_db.h"
 #include "core/templates/local_vector.h"
 #include "core/variant/variant_internal.h"

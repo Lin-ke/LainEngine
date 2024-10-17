@@ -74,22 +74,6 @@ class RenderingSystemDefault: public RenderingSystem{
 	 * SHADER API  
 	 ***************/
 	// Shader 的 server 是 RendererMaterialStorage
-	#define ServerName RendererMaterialStorage
-	#define server_name RSG::material_storage 
-	FUNCRIDSPLIT(shader)
-	FUNC2(shader_set_code, RID, const String &)
-	FUNC2(shader_set_path_hint, RID, const String &)
-	FUNC1RC(String, shader_get_code, RID)
-
-	FUNC2SC(get_shader_parameter_list, RID, List<PropertyInfo> *)
-
-	FUNC4(shader_set_default_texture_parameter, RID, const StringName &, RID, int)
-	FUNC3RC(RID, shader_get_default_texture_parameter, RID, const StringName &, int)
-	FUNC2RC(Variant, shader_get_parameter_default, RID, const StringName &)
-
-	FUNC1RC(ShaderNativeSourceCode, shader_get_native_source_code, RID)
-	
-
 #define ServerName RendererMaterialStorage
 #define server_name RSG::material_storage
 

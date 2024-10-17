@@ -77,7 +77,7 @@ namespace lain {
 		int get_bound_arguments_count() const;
 		void get_bound_arguments_ref(Vector<Variant>& r_arguments, int& r_argcount) const; // Internal engine use, the exposed one is below.
 		Array get_bound_arguments() const;
-
+		int get_argument_count() const;
 		uint32_t hash() const;
 
 		const Callable* get_base_comparator() const; //used for bind/unbind to do less precise comparisons (ignoring binds) in signal connect/disconnect
@@ -120,7 +120,7 @@ namespace lain {
 		virtual const Callable* get_base_comparator() const;
 		virtual int get_bound_arguments_count() const;
 		virtual void get_bound_arguments(Vector<Variant>& r_arguments, int& r_argcount) const;
-
+		virtual int get_argument_count(bool &r_is_valid) const;
 		CallableCustom() {
 			ref_count.init();
 		}

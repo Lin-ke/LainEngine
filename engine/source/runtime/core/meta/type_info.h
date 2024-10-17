@@ -278,99 +278,35 @@ struct GetTypeInfo<T *, std::enable_if_t<std::is_base_of_v<Object, T>>> {
 	}
 };
 
-//namespace godot {
-//namespace details {
-//inline String enum_qualified_name_to_class_info_name(const String &p_qualified_name) {
-//	Vector<String> parts = p_qualified_name.split("::", false);
-//	if (parts.size() <= 2) {
-//		return String(".").join(parts);
-//	}
-//	// Contains namespace. We only want the class and enum names.
-//	return parts[parts.size() - 2] + "." + parts[parts.size() - 1];
-//}
-//} // namespace details
-//} // namespace godot
-//
-//#define TEMPL_MAKE_ENUM_TYPE_INFO(m_enum, m_impl)                                                                                            \
-//	template <>                                                                                                                              \
-//	struct GetTypeInfo<m_impl> {                                                                                                             \
-//		static const Variant::Type VARIANT_TYPE = Variant::INT;                                                                              \
-//		static const Reflection::Metadata METADATA = Reflection::METADATA_NONE;                                                        \
-//		static inline PropertyInfo get_class_info() {                                                                                        \
-//			return PropertyInfo(Variant::INT, String(), PROPERTY_HINT_NONE, String(), PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_CLASS_IS_ENUM, \
-//					godot::details::enum_qualified_name_to_class_info_name(String(#m_enum)));                                                \
-//		}                                                                                                                                    \
-//	};
-//
-//#define MAKE_ENUM_TYPE_INFO(m_enum)                 \
-//	TEMPL_MAKE_ENUM_TYPE_INFO(m_enum, m_enum)       \
-//	TEMPL_MAKE_ENUM_TYPE_INFO(m_enum, m_enum const) \
-//	TEMPL_MAKE_ENUM_TYPE_INFO(m_enum, m_enum &)     \
-//	TEMPL_MAKE_ENUM_TYPE_INFO(m_enum, const m_enum &)
-//
-//template <typename T>
-//inline StringName __constant_get_enum_name(T param, const String &p_constant) {
-//	if constexpr (GetTypeInfo<T>::VARIANT_TYPE == Variant::NIL) {
-//		ERR_PRINT("Missing VARIANT_ENUM_CAST for constant's enum: " + p_constant);
-//	}
-//	return GetTypeInfo<T>::get_class_info().class_name;
-//}
-//
-//template <typename T>
-//class BitField {
-//	int64_t value = 0;
-//
-//public:
-//	_FORCE_INLINE_ BitField<T> &set_flag(T p_flag) {
-//		value |= (int64_t)p_flag;
-//		return *this;
-//	}
-//	_FORCE_INLINE_ bool has_flag(T p_flag) const { return value & (int64_t)p_flag; }
-//	_FORCE_INLINE_ bool is_empty() const { return value == 0; }
-//	_FORCE_INLINE_ void clear_flag(T p_flag) { value &= ~(int64_t)p_flag; }
-//	_FORCE_INLINE_ void clear() { value = 0; }
-//	_FORCE_INLINE_ constexpr BitField() = default;
-//	_FORCE_INLINE_ constexpr BitField(int64_t p_value) { value = p_value; }
-//	_FORCE_INLINE_ constexpr BitField(T p_value) { value = (int64_t)p_value; }
-//	_FORCE_INLINE_ operator int64_t() const { return value; }
-//	_FORCE_INLINE_ operator Variant() const { return value; }
-//	_FORCE_INLINE_ BitField<T> operator^(const BitField<T> &p_b) const { return BitField<T>(value ^ p_b.value); }
-//};
-//
-//#define TEMPL_MAKE_BITFIELD_TYPE_INFO(m_enum, m_impl)                                                                                            \
-//	template <>                                                                                                                                  \
-//	struct GetTypeInfo<m_impl> {                                                                                                                 \
-//		static const Variant::Type VARIANT_TYPE = Variant::INT;                                                                                  \
-//		static const Reflection::Metadata METADATA = Reflection::METADATA_NONE;                                                            \
-//		static inline PropertyInfo get_class_info() {                                                                                            \
-//			return PropertyInfo(Variant::INT, String(), PROPERTY_HINT_NONE, String(), PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_CLASS_IS_BITFIELD, \
-//					godot::details::enum_qualified_name_to_class_info_name(String(#m_enum)));                                                    \
-//		}                                                                                                                                        \
-//	};                                                                                                                                           \
-//	template <>                                                                                                                                  \
-//	struct GetTypeInfo<BitField<m_impl>> {                                                                                                       \
-//		static const Variant::Type VARIANT_TYPE = Variant::INT;                                                                                  \
-//		static const Reflection::Metadata METADATA = Reflection::METADATA_NONE;                                                            \
-//		static inline PropertyInfo get_class_info() {                                                                                            \
-//			return PropertyInfo(Variant::INT, String(), PROPERTY_HINT_NONE, String(), PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_CLASS_IS_BITFIELD, \
-//					godot::details::enum_qualified_name_to_class_info_name(String(#m_enum)));                                                    \
-//		}                                                                                                                                        \
-//	};
-//
-//#define MAKE_BITFIELD_TYPE_INFO(m_enum)                 \
-//	TEMPL_MAKE_BITFIELD_TYPE_INFO(m_enum, m_enum)       \
-//	TEMPL_MAKE_BITFIELD_TYPE_INFO(m_enum, m_enum const) \
-//	TEMPL_MAKE_BITFIELD_TYPE_INFO(m_enum, m_enum &)     \
-//	TEMPL_MAKE_BITFIELD_TYPE_INFO(m_enum, const m_enum &)
-//
-//template <typename T>
-//inline StringName __constant_get_bitfield_name(T param, const String &p_constant) {
-//	if (GetTypeInfo<T>::VARIANT_TYPE == Variant::NIL) {
-//		ERR_PRINT("Missing VARIANT_ENUM_CAST for constant's bitfield: " + p_constant);
-//	}
-//	return GetTypeInfo<BitField<T>>::get_class_info().class_name;
-//}
-//#define CLASS_INFO(m_type) (GetTypeInfo<m_type *>::get_class_info())
-//
+namespace Reflection{
+  // 类中枚举，最后形式为 class_name.enum_name 
+  // 问题：无法进行类内部类的枚举?
+  inline String enum_qualified_name_to_class_info_name(const String &p_qualified_name) {
+	Vector<String> parts = p_qualified_name.split("::", false);
+	if (parts.size() <= 2) {
+		return String(".").join(parts);
+	}
+	// Contains namespace. We only want the class and enum names.
+	return parts[parts.size() - 2] + "." + parts[parts.size() - 1];
+}
+}
+#define TEMPL_MAKE_ENUM_TYPE_INFO(m_enum, m_impl)                                                                                            \
+	template <>                                                                                                                              \
+	struct GetTypeInfo<m_impl> {                                                                                                             \
+		static const Variant::Type VARIANT_TYPE = Variant::INT;                                                                              \
+		static const Reflection::Metadata METADATA = Reflection::METADATA_NONE;                                                        \
+		static inline PropertyInfo get_class_info() {                                                                                        \
+			return PropertyInfo(Variant::INT, String(), PROPERTY_HINT_NONE, String(), PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_CLASS_IS_ENUM, \
+					Reflection::enum_qualified_name_to_class_info_name(String(#m_enum)));                                                \
+		}                                                                                                                                    \
+	};
+
+
+#define MAKE_ENUM_TYPE_INFO(m_enum)                 \
+	TEMPL_MAKE_ENUM_TYPE_INFO(m_enum, m_enum)       \
+	TEMPL_MAKE_ENUM_TYPE_INFO(m_enum, m_enum const) \
+	TEMPL_MAKE_ENUM_TYPE_INFO(m_enum, m_enum &)     \
+	TEMPL_MAKE_ENUM_TYPE_INFO(m_enum, const m_enum &)
+
 }  // namespace lain
 #endif  // TYPE_INFO_H

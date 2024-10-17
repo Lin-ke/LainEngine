@@ -24,6 +24,7 @@ public:
 	virtual Error set_uid(const String& p_path, ResourceUID::ID p_uid);
 	//virtual bool recognize(const Ref<Resource>& p_resource) const;
 	virtual void get_recognized_extensions(const Ref<Resource>& p_resource, List<String>* p_extensions) const;
+	// 这两个会在 add 处被调用，以注册自己
 	virtual void get_recognized_extensions(List<String>* p_extensions) const {}
 	virtual void get_recognized_resources(List<String>* p_extensions) const {}
 

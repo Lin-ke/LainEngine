@@ -40,6 +40,9 @@ class Engine {
   bool m_frame_server_synced = false;  // 这是干什么？
   int m_server_syncs = 0;
   int m_frames_drawn = 0;
+  
+  // 这个设置在 RendererCompositor里，但是会导致shader Parser 依赖renderer
+  bool m_xr_enabled = false;
 
  public:
   ENGINE_GET(get_gpu_index, m_gpu_idx);
@@ -53,6 +56,7 @@ class Engine {
   ENGINE_GET(get_frames_drawn, m_frames_drawn);
   ENGINE_SET(set_editor_hint, bool, m_editor_hint);
   ENGINE_SET(set_frame_ticks, ui64, m_frame_ticks);
+  ENGINE_GET(is_xr_enabled, m_xr_enabled);
   Engine::Engine() { singleton = this; }
   L_INLINE static Engine* Engine::GetSingleton() { return singleton; }
 

@@ -54,19 +54,17 @@ PropertyInfo PropertyInfo::from_dict(const Dictionary& p_dict) {
   return pi;
 }
 PropertyInfo::operator Dictionary() const {
-	Dictionary d;
-	d["name"] = name;
-	d["class_name"] = class_name;
-	d["type"] = type;
-	d["hint"] = hint;
-	d["hint_string"] = hint_string;
-	d["usage"] = usage;
-	return d;
+  Dictionary d;
+  d["name"] = name;
+  d["class_name"] = class_name;
+  d["type"] = type;
+  d["hint"] = hint;
+  d["hint_string"] = hint_string;
+  d["usage"] = usage;
+  return d;
 }
 
-
-
-Variant Object::callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
+Variant Object::callp(const StringName& p_method, const Variant** p_args, int p_argcount, Callable::CallError& r_error) {
   // 处理free
 
   // 如果是脚本调用
@@ -74,7 +72,25 @@ Variant Object::callp(const StringName &p_method, const Variant **p_args, int p_
   // 通过反射获得类的方法并调用
   return Variant();
 }
+// @todo classdb 需要提供 get_property, 这是怎么实现的呢
+Variant Object::get(const StringName& p_name, bool* r_valid) const {
+  Variant ret;
+  // Try built-in getter.
+  {
+    if (ClassDB::get_property(const_cast<Object*>(this), p_name, ret)) {
+      if (r_valid) {
+        *r_valid = true;
+      }
+      return ret;
+    }
+  }
+}
+
+void Object::set(const StringName& p_name, const Variant& p_value, bool* r_valid) {
+  // Try built-in setter.
+  if (ClassDB::set_property(this, p_name, p_value)) {
+    return;
+  }
+}
 
 }  // namespace lain
-
-

@@ -18,7 +18,7 @@ class LightStorage : public RendererLightStorage {
   /* LIGHT */
   struct Light {
     RS::LightType type;
-    float param[RS::LIGHT_PARAM_MAX];  // 光照参数
+    double param[RS::LIGHT_PARAM_MAX];  // 光照参数
     Color color = Color(1, 1, 1, 1);
     RID projector;
     bool shadow = false;

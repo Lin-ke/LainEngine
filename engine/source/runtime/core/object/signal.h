@@ -2,6 +2,7 @@
 #include "base.h"
 #include "object_id.h"
 #include "core/string/string_name.h"
+// object 需要在cpp里
 namespace lain{
 	class Object;
 	class Variant;
@@ -14,7 +15,7 @@ namespace lain{
 	ObjectID object;
 	
 	public:
-		_FORCE_INLINE_ bool is_null() const;
+		bool is_null() const;
 		Object* get_object() const;
 		_FORCE_INLINE_ ObjectID get_object_id() const { return object; }
 		_FORCE_INLINE_ StringName get_name() const { return name; }

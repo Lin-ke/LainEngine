@@ -88,8 +88,13 @@ namespace lain {
 	/*StringName ClassDB::get_parent_class(const StringName& p_class) {
 		
 	}*/
-	
+// 我感觉这里直接用我们的后端就可以
+	bool ClassDB::get_property(Object* p_object, const StringName& p_property, Variant& r_value) {
+		return true;
+	}
 
-
-
+	bool ClassDB::set_property(Object* p_object, const StringName& p_property, const Variant& r_value) {
+		return true;
+	}
 }
+

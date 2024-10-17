@@ -3,25 +3,11 @@
 #define SIMPLE_TYPE_H
 
 /* Batch of specializations to obtain the actual simple type */
+namespace lain{
+template <typename T>
+using GetSimpleTypeT = typename std::remove_cv_t<std::remove_reference_t<T>>;
 
-template <class T>
-struct GetSimpleTypeT {
-	typedef T type_t;
-};
 
-template <class T>
-struct GetSimpleTypeT<T&> {
-	typedef T type_t;
-};
-
-template <class T>
-struct GetSimpleTypeT<T const> {
-	typedef T type_t;
-};
-
-template <class T>
-struct GetSimpleTypeT<T const&> {
-	typedef T type_t;
-};
+}
 
 #endif // SIMPLE_TYPE_H

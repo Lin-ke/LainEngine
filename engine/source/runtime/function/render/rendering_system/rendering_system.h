@@ -30,7 +30,7 @@ class RenderingSystem : public Object {
   L_INLINE static RenderingSystem* get_singleton() { return p_singleton; }
   bool is_render_loop_enabled() const { return render_loop_enabled; }
   void set_render_loop_enabled(bool p_enabled) { render_loop_enabled = p_enabled; }
-
+	bool is_low_end() const {return false;}
  private:
   static RenderingSystem* p_singleton;
   bool render_loop_enabled = true;

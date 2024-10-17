@@ -131,8 +131,44 @@ namespace lain
         y            = sin_v * axis.y;
         z            = sin_v * axis.z;
     }
+  Quaternion::Quaternion(const Vector3& p_axis, real_t p_angle)
+ {
+    real_t d = p_axis.length();
+    if (d == 0) {
+      x = 0;
+      y = 0;
+      z = 0;
+      w = 0;
+    } else {
+      real_t sin_angle = Math::sin(p_angle * 0.5f);
+      real_t cos_angle = Math::cos(p_angle * 0.5f);
+      real_t s = sin_angle / d;
+      x = p_axis.x * s;
+      y = p_axis.y * s;
+      z = p_axis.z * s;
+      w = cos_angle;
+    }
+  }
+  Quaternion::Quaternion(const Vector3& p_v0, const Vector3& p_v1)
+     {  // Shortest arc.
+    Vector3 c = p_v0.cross(p_v1);
+    real_t d = p_v0.dot(p_v1);
 
-    Quaternion Quaternion::getQuaternionFromAngleAxis(const Radian& angle, const Vector3& axis)
+    if (d < -1.0f + (real_t)CMP_EPSILON) {
+      x = 0;
+      y = 1;
+      z = 0;
+      w = 0;
+    } else {
+      real_t s = Math::sqrt((1.0f + d) * 2.0f);
+      real_t rs = 1.0f / s;
+
+      x = c.x * rs;
+      y = c.y * rs;
+      z = c.z * rs;
+      w = s * 0.5f;
+    }
+  }Quaternion Quaternion::getQuaternionFromAngleAxis(const Radian& angle, const Vector3& axis)
     {
         Quaternion q;
         q.fromAngleAxis(angle, axis);

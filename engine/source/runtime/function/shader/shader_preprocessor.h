@@ -13,7 +13,7 @@
 #include "core/os/os.h"
 #include "scene/resources/common/shader.h"
 #include "scene/resources/common/shader_include.h"
-namespace lain{
+namespace lain::shader{
 
 class ShaderPreprocessor {
 public:
@@ -99,7 +99,6 @@ private:
 
 		CommentRemover(const String &p_code);
 	};
-
 	struct Define {
 		Vector<String> arguments;
 		String body;
@@ -119,7 +118,7 @@ private:
 	};
 
 	struct State {
-		RBMap<String, Define *> defines;
+		RBMap<String, Define *> defines; // label -> {args, body}
 		List<Branch> branches;
 		Branch *current_branch = nullptr;
 		int condition_depth = 0;
@@ -193,7 +192,7 @@ public:
 	// typedef void (*IncludeCompletionFunction)(List<ScriptLanguage::CodeCompletionOption> *);
 
 	// Error preprocess(const String &p_code, const String &p_filename, String &r_result, String *r_error_text = nullptr, List<FilePosition> *r_error_position = nullptr, List<Region> *r_regions = nullptr, HashSet<Ref<ShaderInclude>> *r_includes = nullptr, List<ScriptLanguage::CodeCompletionOption> *r_completion_options = nullptr, List<ScriptLanguage::CodeCompletionOption> *r_completion_defines = nullptr, IncludeCompletionFunction p_include_completion_func = nullptr);
-
+	// 负责 处理 define, endif if等等
 	Error preprocess(const String &p_code, const String &p_filename, String &r_result, String *r_error_text = nullptr, List<FilePosition> *r_error_position = nullptr, List<Region> *r_regions = nullptr, HashSet<Ref<ShaderInclude>> *r_includes = nullptr);
 
 	static void get_keyword_list(List<String> *r_keywords, bool p_include_shader_keywords, bool p_ignore_context_keywords = false);

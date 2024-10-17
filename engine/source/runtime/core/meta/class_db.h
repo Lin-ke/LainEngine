@@ -64,8 +64,9 @@ namespace lain {
 	static bool can_instantiate(const StringName& cp_class);
 	static void* instantiate_with_name_json(const StringName& cp_class,const Json& json);
 	static void* instantiate_with_json(const Json& json);
-
-
+	// @todo
+	static bool get_property(Object* p_object, const StringName& p_property, Variant& r_value);
+	static bool set_property(Object* p_object, const StringName& p_property, const Variant& p_value);
 	template <typename T>
 	static void register_class(bool p_virtual = false) {
 		GLOBAL_LOCK_FUNCTION;
@@ -107,7 +108,6 @@ namespace lain {
 	};
 
 	
-
 
 
 }

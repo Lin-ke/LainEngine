@@ -3,6 +3,7 @@
 #define VARIANT_INTERNAL_H
 #include "variant.h"
 #include "core/meta/type_info.h"
+#include "core/templates/simple_type.h" // 提供GetSimpleTypeT
 namespace lain {
 	class RefCounted;
 
@@ -729,8 +730,6 @@ struct VariantTypeChanger {
 		VariantDefaultInitializer<T>::init(v);
 	}
 };
-template <typename T>
-using GetSimpleTypeT = typename std::remove_cv_t<std::remove_reference_t<T>>;
 
 template <typename T>
 struct VariantTypeAdjust {

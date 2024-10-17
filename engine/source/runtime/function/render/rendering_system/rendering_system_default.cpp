@@ -103,7 +103,7 @@ void RenderingSystemDefault::_draw(bool p_swap_buffers, double frame_step) {
 
 	frame_setup_time = double(OS::GetSingleton()->GetTicksUsec() - time_usec) / 1000.0;
 
-	RSG::particles_storage->update_particles(); //need to be done after instances are updated (colliders and particle transforms), and colliders are rendered
+	// RSG::particles_storage->update_particles(); //need to be done after instances are updated (colliders and particle transforms), and colliders are rendered
 
 	RSG::scene->render_probes();
 

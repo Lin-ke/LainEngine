@@ -3,6 +3,7 @@
 #include "core/math/expression.h"
 
 const char32_t CURSOR = 0xFFFF;
+using namespace lain::shader;
 using namespace lain;
 // Tokenizer
 

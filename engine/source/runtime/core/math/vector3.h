@@ -1,7 +1,6 @@
 #pragma once
 
 #include "runtime/core/math/math.h"
-#include "runtime/core/math/quaternion.h"
 #include "runtime/core/meta/reflection/reflection_marcos.h"
 
 #include <cassert>
@@ -373,47 +372,6 @@ bool operator<=(const Vector3 &p_v) const {
         (if specified, or a generated axis if not) since in this case
         ANY axis of rotation is valid.
         */
-
-  Quaternion getRotationTo(const Vector3& dest, const Vector3& fallback_axis = Vector3::ZERO) const {
-    // Based on Stan Melax's article in Game Programming Gems
-    Quaternion q;
-    // Copy, since cannot modify local
-    Vector3 v0 = *this;
-    Vector3 v1 = dest;
-    v0.normalise();
-    v1.normalise();
-
-    real_t d = v0.dot(v1);
-    // If dot == 1, vectors are the same
-    if (d >= 1.0f) {
-      return Quaternion::IDENTITY;
-    }
-    if (d < (1e-6f - 1.0f)) {
-      if (fallback_axis != Vector3::ZERO) {
-        // rotate 180 degrees about the fall back axis
-        q.fromAngleAxis(Radian(Math_PIF), fallback_axis);
-      } else {
-        // Generate an axis
-        Vector3 axis = Vector3::UNIT_X.cross(*this);
-        if (axis.isZeroLength())  // pick another if collinear
-          axis = Vector3::UNIT_Y.cross(*this);
-        axis.normalise();
-        q.fromAngleAxis(Radian(Math_PIF), axis);
-      }
-    } else {
-      real_t s = Math::sqrt((1 + d) * 2);
-      real_t invs = 1 / s;
-
-      Vector3 c = v0.cross(v1);
-
-      q.x = c.x * invs;
-      q.y = c.y * invs;
-      q.z = c.z * invs;
-      q.w = s * 0.5f;
-      q.normalise();
-    }
-    return q;
-  }
 
   L_INLINE Vector3 inverse() const { return Vector3(1.0f / x, 1.0f / y, 1.0f / z); }
   /** Returns true if this vector is zero length. */

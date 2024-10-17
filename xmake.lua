@@ -181,7 +181,7 @@ static_component("Renderer", "Core")
     )
     add_defines("VULKAN_ENABLED", {public = true})
     -- 
-static_component("Shader", "Core")
+static_component("Shader", "Renderer")
     add_rules("mode.debug", "mode.release")
     set_languages("cxx17")
     add_files("engine/source/runtime/function/shader/**.cpp")
@@ -214,7 +214,7 @@ target("main")
     add_includedirs("engine/source/runtime", {public = true})
     add_deps("Core")
     -- functions
-    add_deps("Renderer", "Display", "Scene", "lglslang") -- @todo 给lglslang 这一步以后做成自动的
+    add_deps("Renderer", "Display", "Scene", "Shader", "lglslang") -- @todo 给lglslang 这一步以后做成自动的 add_deps 在 Module中的 xmake 项目
     -- editor
     add_deps("Editor")
     -- modules?

@@ -38,7 +38,7 @@
 #include "core/templates/rb_map.h"
 #include "core/typedefs.h"
 #include "core/variant/variant.h"
-#include "scene/resources/shader_include.h"
+#include "scene/resources/common/shader_include.h"
 
 #ifdef DEBUG_ENABLED
 #include "shader_warnings.h"
@@ -1142,7 +1142,7 @@ public:
 	};
 
 	Error compile(const String& p_code, const ShaderCompileInfo& p_info);
-	Error complete(const String& p_code, const ShaderCompileInfo& p_info, List<ScriptLanguage::CodeCompletionOption>* r_options, String& r_call_hint);
+	Error complete(const String& p_code, const ShaderCompileInfo& p_info, String& r_call_hint);
 
 	String get_error_text();
 	Vector<FilePosition> get_include_positions();

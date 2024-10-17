@@ -181,7 +181,7 @@
 #define ARG(N) p##N
 #define PARAM(N) P##N p##N
 #define TYPE_PARAM(N) class P##N
-#define PARAM_DECL(N) typename GetSimpleTypeT<P##N>::type_t p##N
+#define PARAM_DECL(N) typename GetSimpleTypeT<P##N> p##N
 
 // 带返回的需要sync
 

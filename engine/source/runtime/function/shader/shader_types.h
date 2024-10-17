@@ -3,7 +3,7 @@
 #include "core/templates/rb_map.h"
 #include "function/render/rendering_system/rendering_system.h"
 #include "shader_language.h"
-namespace lain{
+namespace lain::shader{
 
 class ShaderTypes {
 	struct Type {

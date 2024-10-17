@@ -10,7 +10,6 @@
 #include "runtime/core/meta/reflection/reflection.h"
 #include "runtime/core/string/ustring.h"
 #include "runtime/core/templates/vector.h"
-//@todo 换成合适的json（使用 core/io/json.h 或者重写 json11）
 namespace lain {
 class Object;
 template <typename...>

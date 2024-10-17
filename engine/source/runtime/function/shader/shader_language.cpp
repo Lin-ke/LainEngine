@@ -33,10 +33,10 @@
 #include "core/os/os.h"
 #include "core/string/print_string.h"
 #include "core/templates/local_vector.h"
-#include "function/render/rendering_system/renderer_compositor_api.h"
-
+#include "core/engine/engine.h"
 #include "function/render/rendering_system/rendering_system.h"
 #include "shader_types.h"
+#include "core/templates/rb_set.h"
 
 #define HAS_WARNING(flag) (warning_flags & flag)
 namespace lain::shader {
@@ -1335,8 +1335,8 @@ void ShaderLanguage::_parse_used_identifier(const StringName& p_identifier, Iden
 
 bool ShaderLanguage::_find_identifier(const BlockNode* p_block, bool p_allow_reassign, const FunctionInfo& p_function_info, const StringName& p_identifier, DataType* r_data_type, IdentifierType* r_type, bool* r_is_const, int* r_array_size, StringName* r_struct_name, ConstantNode::Value* r_constant_value) {
 	if (is_shader_inc) {
-		for (int i = 0; i < RenderingServer::SHADER_MAX; i++) {
-			for (const KeyValue<StringName, FunctionInfo>& E : ShaderTypes::get_singleton()->get_functions(RenderingServer::ShaderMode(i))) {
+		for (int i = 0; i < RenderingSystem::SHADER_MAX; i++) {
+			for (const KeyValue<StringName, FunctionInfo>& E : ShaderTypes::get_singleton()->get_functions(RenderingSystem::ShaderMode(i))) {
 				if ((current_function == E.key || E.key == "global" || E.key == "constants") && E.value.built_ins.has(p_identifier)) {
 					if (r_data_type) {
 						*r_data_type = E.value.built_ins[p_identifier].type;
@@ -3269,7 +3269,7 @@ bool ShaderLanguage::_validate_function_call(BlockNode* p_block, const FunctionI
 				}
 
 				if (!fail) {
-					if (RenderingServer::get_singleton()->is_low_end()) {
+					if (RenderingSystem::get_singleton()->is_low_end()) {
 						if (builtin_func_defs[idx].high_end) {
 							fail = true;
 							unsupported_builtin = true;
@@ -5669,7 +5669,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block, cons
 											ShaderNode::Uniform* u = &shader->uniforms[varname];
 											ERR_CONTINUE(u->type != call_function->arguments[i].type); //this should have been validated previously
 
-											if (RendererCompositor::get_singleton()->is_xr_enabled() && is_custom_func) {
+											if (Engine::GetSingleton()->is_xr_enabled() && is_custom_func) {
 												ShaderNode::Uniform::Hint hint = u->hint;
 
 												if (hint == ShaderNode::Uniform::HINT_DEPTH_TEXTURE || hint == ShaderNode::Uniform::HINT_SCREEN_TEXTURE || hint == ShaderNode::Uniform::HINT_NORMAL_ROUGHNESS_TEXTURE) {
@@ -8422,8 +8422,8 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 				bool found = false;
 
 				if (is_shader_inc) {
-					for (int i = 0; i < RenderingServer::SHADER_MAX; i++) {
-						const Vector<ModeInfo> modes = ShaderTypes::get_singleton()->get_modes(RenderingServer::ShaderMode(i));
+					for (int i = 0; i < RenderingSystem::SHADER_MAX; i++) {
+						const Vector<ModeInfo> modes = ShaderTypes::get_singleton()->get_modes(RenderingSystem::ShaderMode(i));
 
 						for (int j = 0; j < modes.size(); j++) {
 							const ModeInfo& info = modes[j];
@@ -8706,10 +8706,10 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 					_set_error(vformat(RTR("Uniform instances are not yet implemented for '%s' shaders."), shader_type_identifier));
 					return ERR_PARSE_ERROR;
 				}
-				if (OS::get_singleton()->get_current_rendering_method() == "gl_compatibility") {
-					_set_error(RTR("Uniform instances are not supported in gl_compatibility shaders."));
-					return ERR_PARSE_ERROR;
-				}
+				// if (OS::GetSingleton()->get_current_rendering_method() == "gl_compatibility") {
+				// 	_set_error(RTR("Uniform instances are not supported in gl_compatibility shaders."));
+				// 	return ERR_PARSE_ERROR;
+				// }
 				if (uniform_scope == ShaderNode::Uniform::SCOPE_LOCAL) {
 					tk = _get_token();
 					if (tk.type != TK_UNIFORM) {
@@ -8896,7 +8896,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 			}
 
 			if (is_uniform) {
-				if (uniform_scope == ShaderNode::Uniform::SCOPE_GLOBAL && Engine::get_singleton()->is_editor_hint()) { // Type checking for global uniforms is not allowed outside the editor.
+				if (uniform_scope == ShaderNode::Uniform::SCOPE_GLOBAL && Engine::GetSingleton()->is_editor_hint()) { // Type checking for global uniforms is not allowed outside the editor.
 					//validate global uniform
 					DataType gvtype = global_shader_uniform_get_type_func(name);
 					if (gvtype == TYPE_MAX) {
@@ -9197,7 +9197,9 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo>& p_f
 							new_hint = ShaderNode::Uniform::HINT_NORMAL_ROUGHNESS_TEXTURE;
 							--texture_uniforms;
 							--texture_binding;
-							if (OS::get_singleton()->get_current_rendering_method() != "forward_plus") {
+              // @todo 不应该这样字符串硬编码
+              
+							if (OS::GetSingleton()->GetCurrentRenderingMethod() != "forward_plus") {
 								_set_error(RTR("'hint_normal_roughness_texture' is only available when using the Forward+ backend."));
 								return ERR_PARSE_ERROR;
 							}
@@ -10416,8 +10418,8 @@ Error ShaderLanguage::compile(const String& p_code, const ShaderCompileInfo& p_i
 	}
 	return OK;
 }
-
-Error ShaderLanguage::complete(const String& p_code, const ShaderCompileInfo& p_info, List<ScriptLanguage::CodeCompletionOption>* r_options, String& r_call_hint) {
+// 这里注释了complete回调的逻辑
+Error ShaderLanguage::complete(const String& p_code, const ShaderCompileInfo& p_info, String& r_call_hint) {
 	clear();
 	is_shader_inc = p_info.is_include;
 
@@ -10445,608 +10447,608 @@ Error ShaderLanguage::complete(const String& p_code, const ShaderCompileInfo& p_
 				if (!keyword_list[i].functions.is_empty() && !keyword_list[i].functions.has(current_function)) {
 					continue;
 				}
-				ScriptLanguage::CodeCompletionOption option(keyword_list[i].text, ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
-				r_options->push_back(option);
+				// ScriptLanguage::CodeCompletionOption option(keyword_list[i].text, ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
+				// r_options->push_back(option);
 			}
 		}
 	}
 #endif // DEBUG_ENABLED
 
-	switch (completion_type) {
-	case COMPLETION_NONE: {
-		//do nothing
-		return OK;
-	} break;
-	case COMPLETION_SHADER_TYPE: {
-		for (const String& shader_type : p_info.shader_types) {
-			ScriptLanguage::CodeCompletionOption option(shader_type, ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
-			r_options->push_back(option);
-		}
-		return OK;
-	} break;
-	case COMPLETION_RENDER_MODE: {
-		if (is_shader_inc) {
-			for (int i = 0; i < RenderingServer::SHADER_MAX; i++) {
-				const Vector<ModeInfo> modes = ShaderTypes::get_singleton()->get_modes(RenderingServer::ShaderMode(i));
-
-				for (int j = 0; j < modes.size(); j++) {
-					const ModeInfo& info = modes[j];
-
-					if (!info.options.is_empty()) {
-						bool found = false;
-
-						for (int k = 0; k < info.options.size(); k++) {
-							if (shader->render_modes.has(String(info.name) + "_" + String(info.options[k]))) {
-								found = true;
-							}
-						}
-
-						if (!found) {
-							for (int k = 0; k < info.options.size(); k++) {
-								ScriptLanguage::CodeCompletionOption option(String(info.name) + "_" + String(info.options[k]), ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
-								r_options->push_back(option);
-							}
-						}
-					}
-					else {
-						const String name = String(info.name);
-
-						if (!shader->render_modes.has(name)) {
-							ScriptLanguage::CodeCompletionOption option(name, ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
-							r_options->push_back(option);
-						}
-					}
-				}
-			}
-		}
-		else {
-			for (int i = 0; i < p_info.render_modes.size(); i++) {
-				const ModeInfo& info = p_info.render_modes[i];
-
-				if (!info.options.is_empty()) {
-					bool found = false;
-
-					for (int j = 0; j < info.options.size(); j++) {
-						if (shader->render_modes.has(String(info.name) + "_" + String(info.options[j]))) {
-							found = true;
-						}
-					}
-
-					if (!found) {
-						for (int j = 0; j < info.options.size(); j++) {
-							ScriptLanguage::CodeCompletionOption option(String(info.name) + "_" + String(info.options[j]), ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
-							r_options->push_back(option);
-						}
-					}
-				}
-				else {
-					const String name = String(info.name);
-
-					if (!shader->render_modes.has(name)) {
-						ScriptLanguage::CodeCompletionOption option(name, ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
-						r_options->push_back(option);
-					}
-				}
-			}
-		}
-
-		return OK;
-	} break;
-	case COMPLETION_STRUCT: {
-		if (shader->structs.has(completion_struct)) {
-			StructNode* node = shader->structs[completion_struct].shader_struct;
-			for (int i = 0; i < node->members.size(); i++) {
-				ScriptLanguage::CodeCompletionOption option(node->members[i]->name, ScriptLanguage::CODE_COMPLETION_KIND_MEMBER);
-				r_options->push_back(option);
-			}
-		}
-
-		return OK;
-	} break;
-	case COMPLETION_MAIN_FUNCTION: {
-		for (const KeyValue<StringName, FunctionInfo>& E : p_info.functions) {
-			if (!E.value.main_function) {
-				continue;
-			}
-			bool found = false;
-			for (int i = 0; i < shader->vfunctions.size(); i++) {
-				if (shader->vfunctions[i].name == E.key) {
-					found = true;
-					break;
-				}
-			}
-			if (found) {
-				continue;
-			}
-			ScriptLanguage::CodeCompletionOption option(E.key, ScriptLanguage::CODE_COMPLETION_KIND_FUNCTION);
-			r_options->push_back(option);
-		}
-
-		return OK;
-	} break;
-	case COMPLETION_IDENTIFIER:
-	case COMPLETION_FUNCTION_CALL: {
-		bool comp_ident = completion_type == COMPLETION_IDENTIFIER;
-		HashMap<String, ScriptLanguage::CodeCompletionKind> matches;
-		StringName skip_function;
-		BlockNode* block = completion_block;
-
-		if (completion_class == TAG_GLOBAL) {
-			while (block) {
-				if (comp_ident) {
-					for (const KeyValue<StringName, BlockNode::Variable>& E : block->variables) {
-						if (E.value.line < completion_line) {
-							matches.insert(E.key, ScriptLanguage::CODE_COMPLETION_KIND_VARIABLE);
-						}
-					}
-				}
-
-				if (block->parent_function) {
-					if (comp_ident) {
-						for (int i = 0; i < block->parent_function->arguments.size(); i++) {
-							matches.insert(block->parent_function->arguments[i].name, ScriptLanguage::CODE_COMPLETION_KIND_VARIABLE);
-						}
-					}
-					skip_function = block->parent_function->name;
-				}
-				block = block->parent_block;
-			}
-
-			if (comp_ident) {
-				if (is_shader_inc) {
-					for (int i = 0; i < RenderingServer::SHADER_MAX; i++) {
-						const HashMap<StringName, ShaderLanguage::FunctionInfo> info = ShaderTypes::get_singleton()->get_functions(RenderingServer::ShaderMode(i));
-
-						if (info.has("global")) {
-							for (const KeyValue<StringName, BuiltInInfo>& E : info["global"].built_ins) {
-								ScriptLanguage::CodeCompletionKind kind = ScriptLanguage::CODE_COMPLETION_KIND_MEMBER;
-								if (E.value.constant) {
-									kind = ScriptLanguage::CODE_COMPLETION_KIND_CONSTANT;
-								}
-								matches.insert(E.key, kind);
-							}
-						}
-
-						if (info.has("constants")) {
-							for (const KeyValue<StringName, BuiltInInfo>& E : info["constants"].built_ins) {
-								ScriptLanguage::CodeCompletionKind kind = ScriptLanguage::CODE_COMPLETION_KIND_MEMBER;
-								if (E.value.constant) {
-									kind = ScriptLanguage::CODE_COMPLETION_KIND_CONSTANT;
-								}
-								matches.insert(E.key, kind);
-							}
-						}
-
-						if (skip_function != StringName() && info.has(skip_function)) {
-							for (const KeyValue<StringName, BuiltInInfo>& E : info[skip_function].built_ins) {
-								ScriptLanguage::CodeCompletionKind kind = ScriptLanguage::CODE_COMPLETION_KIND_MEMBER;
-								if (E.value.constant) {
-									kind = ScriptLanguage::CODE_COMPLETION_KIND_CONSTANT;
-								}
-								matches.insert(E.key, kind);
-							}
-						}
-					}
-				}
-				else {
-					if (p_info.functions.has("global")) {
-						for (const KeyValue<StringName, BuiltInInfo>& E : p_info.functions["global"].built_ins) {
-							ScriptLanguage::CodeCompletionKind kind = ScriptLanguage::CODE_COMPLETION_KIND_MEMBER;
-							if (E.value.constant) {
-								kind = ScriptLanguage::CODE_COMPLETION_KIND_CONSTANT;
-							}
-							matches.insert(E.key, kind);
-						}
-					}
-
-					if (p_info.functions.has("constants")) {
-						for (const KeyValue<StringName, BuiltInInfo>& E : p_info.functions["constants"].built_ins) {
-							ScriptLanguage::CodeCompletionKind kind = ScriptLanguage::CODE_COMPLETION_KIND_MEMBER;
-							if (E.value.constant) {
-								kind = ScriptLanguage::CODE_COMPLETION_KIND_CONSTANT;
-							}
-							matches.insert(E.key, kind);
-						}
-					}
-
-					if (skip_function != StringName() && p_info.functions.has(skip_function)) {
-						for (const KeyValue<StringName, BuiltInInfo>& E : p_info.functions[skip_function].built_ins) {
-							ScriptLanguage::CodeCompletionKind kind = ScriptLanguage::CODE_COMPLETION_KIND_MEMBER;
-							if (E.value.constant) {
-								kind = ScriptLanguage::CODE_COMPLETION_KIND_CONSTANT;
-							}
-							matches.insert(E.key, kind);
-						}
-					}
-				}
-
-				for (const KeyValue<StringName, ShaderNode::Constant>& E : shader->constants) {
-					matches.insert(E.key, ScriptLanguage::CODE_COMPLETION_KIND_CONSTANT);
-				}
-				for (const KeyValue<StringName, ShaderNode::Varying>& E : shader->varyings) {
-					matches.insert(E.key, ScriptLanguage::CODE_COMPLETION_KIND_VARIABLE);
-				}
-				for (const KeyValue<StringName, ShaderNode::Uniform>& E : shader->uniforms) {
-					matches.insert(E.key, ScriptLanguage::CODE_COMPLETION_KIND_MEMBER);
-				}
-			}
-
-			for (int i = 0; i < shader->vfunctions.size(); i++) {
-				if (!shader->vfunctions[i].callable || shader->vfunctions[i].name == skip_function) {
-					continue;
-				}
-				matches.insert(String(shader->vfunctions[i].name), ScriptLanguage::CODE_COMPLETION_KIND_FUNCTION);
-			}
-
-			int idx = 0;
-			bool low_end = RenderingServer::get_singleton()->is_low_end();
-
-			if (stages && stages->has(skip_function)) {
-				for (const KeyValue<StringName, StageFunctionInfo>& E : (*stages)[skip_function].stage_functions) {
-					matches.insert(String(E.key), ScriptLanguage::CODE_COMPLETION_KIND_FUNCTION);
-				}
-			}
-
-			while (builtin_func_defs[idx].name) {
-				if (low_end && builtin_func_defs[idx].high_end) {
-					idx++;
-					continue;
-				}
-				matches.insert(String(builtin_func_defs[idx].name), ScriptLanguage::CODE_COMPLETION_KIND_FUNCTION);
-				idx++;
-			}
-
-		}
-		else { // sub-class
-			int idx = 0;
-			bool low_end = RenderingServer::get_singleton()->is_low_end();
-
-			while (builtin_func_defs[idx].name) {
-				if (low_end && builtin_func_defs[idx].high_end) {
-					idx++;
-					continue;
-				}
-				if (builtin_func_defs[idx].tag == completion_class) {
-					matches.insert(String(builtin_func_defs[idx].name), ScriptLanguage::CODE_COMPLETION_KIND_FUNCTION);
-				}
-				idx++;
-			}
-		}
-
-		for (const KeyValue<String, ScriptLanguage::CodeCompletionKind>& E : matches) {
-			ScriptLanguage::CodeCompletionOption option(E.key, E.value);
-			if (E.value == ScriptLanguage::CODE_COMPLETION_KIND_FUNCTION) {
-				option.insert_text += "(";
-			}
-			r_options->push_back(option);
-		}
-
-		return OK;
-	} break;
-	case COMPLETION_CALL_ARGUMENTS: {
-		StringName block_function;
-		BlockNode* block = completion_block;
-
-		while (block) {
-			if (block->parent_function) {
-				block_function = block->parent_function->name;
-			}
-			block = block->parent_block;
-		}
-
-		for (int i = 0; i < shader->vfunctions.size(); i++) {
-			if (!shader->vfunctions[i].callable) {
-				continue;
-			}
-			if (shader->vfunctions[i].name == completion_function) {
-				String calltip;
-
-				calltip += get_datatype_name(shader->vfunctions[i].function->return_type);
-
-				if (shader->vfunctions[i].function->return_array_size > 0) {
-					calltip += "[";
-					calltip += itos(shader->vfunctions[i].function->return_array_size);
-					calltip += "]";
-				}
-
-				calltip += " ";
-				calltip += shader->vfunctions[i].name;
-				calltip += "(";
-
-				for (int j = 0; j < shader->vfunctions[i].function->arguments.size(); j++) {
-					if (j > 0) {
-						calltip += ", ";
-					}
-					else {
-						calltip += " ";
-					}
-
-					if (j == completion_argument) {
-						calltip += char32_t(0xFFFF);
-					}
-
-					if (shader->vfunctions[i].function->arguments[j].is_const) {
-						calltip += "const ";
-					}
-
-					if (shader->vfunctions[i].function->arguments[j].qualifier != ArgumentQualifier::ARGUMENT_QUALIFIER_IN) {
-						if (shader->vfunctions[i].function->arguments[j].qualifier == ArgumentQualifier::ARGUMENT_QUALIFIER_OUT) {
-							calltip += "out ";
-						}
-						else { // ArgumentQualifier::ARGUMENT_QUALIFIER_INOUT
-							calltip += "inout ";
-						}
-					}
-
-					calltip += get_datatype_name(shader->vfunctions[i].function->arguments[j].type);
-					calltip += " ";
-					calltip += shader->vfunctions[i].function->arguments[j].name;
-
-					if (shader->vfunctions[i].function->arguments[j].array_size > 0) {
-						calltip += "[";
-						calltip += itos(shader->vfunctions[i].function->arguments[j].array_size);
-						calltip += "]";
-					}
-
-					if (j == completion_argument) {
-						calltip += char32_t(0xFFFF);
-					}
-				}
-
-				if (shader->vfunctions[i].function->arguments.size()) {
-					calltip += " ";
-				}
-				calltip += ")";
-
-				r_call_hint = calltip;
-				return OK;
-			}
-		}
-
-		int idx = 0;
-
-		String calltip;
-		bool low_end = RenderingServer::get_singleton()->is_low_end();
-
-		if (stages && stages->has(block_function)) {
-			for (const KeyValue<StringName, StageFunctionInfo>& E : (*stages)[block_function].stage_functions) {
-				if (completion_function == E.key) {
-					calltip += get_datatype_name(E.value.return_type);
-					calltip += " ";
-					calltip += E.key;
-					calltip += "(";
-
-					for (int i = 0; i < E.value.arguments.size(); i++) {
-						if (i > 0) {
-							calltip += ", ";
-						}
-						else {
-							calltip += " ";
-						}
-
-						if (i == completion_argument) {
-							calltip += char32_t(0xFFFF);
-						}
-
-						calltip += get_datatype_name(E.value.arguments[i].type);
-						calltip += " ";
-						calltip += E.value.arguments[i].name;
-
-						if (i == completion_argument) {
-							calltip += char32_t(0xFFFF);
-						}
-					}
-
-					if (E.value.arguments.size()) {
-						calltip += " ";
-					}
-					calltip += ")";
-
-					r_call_hint = calltip;
-					return OK;
-				}
-			}
-		}
-
-		while (builtin_func_defs[idx].name) {
-			if (low_end && builtin_func_defs[idx].high_end) {
-				idx++;
-				continue;
-			}
-
-			int idx2 = 0;
-			HashSet<int> out_args;
-			while (builtin_func_out_args[idx2].name != nullptr) {
-				if (builtin_func_out_args[idx2].name == builtin_func_defs[idx].name) {
-					for (int i = 0; i < BuiltinFuncOutArgs::MAX_ARGS; i++) {
-						int arg = builtin_func_out_args[idx2].arguments[i];
-						if (arg == -1) {
-							break;
-						}
-						out_args.insert(arg);
-					}
-					break;
-				}
-				idx2++;
-			}
-
-			if (completion_function == builtin_func_defs[idx].name) {
-				if (builtin_func_defs[idx].tag != completion_class) {
-					idx++;
-					continue;
-				}
-
-				if (calltip.length()) {
-					calltip += "\n";
-				}
-
-				calltip += get_datatype_name(builtin_func_defs[idx].rettype);
-				calltip += " ";
-				calltip += builtin_func_defs[idx].name;
-				calltip += "(";
-
-				bool found_arg = false;
-				for (int i = 0; i < BuiltinFuncDef::MAX_ARGS - 1; i++) {
-					if (builtin_func_defs[idx].args[i] == TYPE_VOID) {
-						break;
-					}
-
-					if (i > 0) {
-						calltip += ", ";
-					}
-					else {
-						calltip += " ";
-					}
-
-					if (i == completion_argument) {
-						calltip += char32_t(0xFFFF);
-					}
-
-					if (out_args.has(i)) {
-						calltip += "out ";
-					}
-
-					calltip += get_datatype_name(builtin_func_defs[idx].args[i]);
-
-					String arg_name = (String)builtin_func_defs[idx].args_names[i];
-					if (!arg_name.is_empty()) {
-						calltip += " ";
-						calltip += arg_name;
-					}
-
-					if (i == completion_argument) {
-						calltip += char32_t(0xFFFF);
-					}
-
-					found_arg = true;
-				}
-
-				if (found_arg) {
-					calltip += " ";
-				}
-				calltip += ")";
-			}
-			idx++;
-		}
-
-		r_call_hint = calltip;
-
-		return OK;
-
-	} break;
-	case COMPLETION_INDEX: {
-		const char colv[4] = { 'r', 'g', 'b', 'a' };
-		const char coordv[4] = { 'x', 'y', 'z', 'w' };
-		const char coordt[4] = { 's', 't', 'p', 'q' };
-		const String theme_color_names[4] = { "axis_x_color", "axis_y_color", "axis_z_color", "axis_w_color" };
-
-		int limit = 0;
-
-		switch (completion_base) {
-		case TYPE_BVEC2:
-		case TYPE_IVEC2:
-		case TYPE_UVEC2:
-		case TYPE_VEC2: {
-			limit = 2;
-
-		} break;
-		case TYPE_BVEC3:
-		case TYPE_IVEC3:
-		case TYPE_UVEC3:
-		case TYPE_VEC3: {
-			limit = 3;
-
-		} break;
-		case TYPE_BVEC4:
-		case TYPE_IVEC4:
-		case TYPE_UVEC4:
-		case TYPE_VEC4: {
-			limit = 4;
-
-		} break;
-		default: {
-		}
-		}
-
-		for (int i = 0; i < limit; i++) {
-			r_options->push_back(ScriptLanguage::CodeCompletionOption(String::chr(colv[i]), ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT, ScriptLanguage::LOCATION_OTHER, theme_color_names[i]));
-			r_options->push_back(ScriptLanguage::CodeCompletionOption(String::chr(coordv[i]), ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT, ScriptLanguage::LOCATION_OTHER, theme_color_names[i]));
-			r_options->push_back(ScriptLanguage::CodeCompletionOption(String::chr(coordt[i]), ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT, ScriptLanguage::LOCATION_OTHER, theme_color_names[i]));
-		}
-
-	} break;
-	case COMPLETION_HINT: {
-		if (completion_base == DataType::TYPE_VEC3 || completion_base == DataType::TYPE_VEC4) {
-			if (current_uniform_hint == ShaderNode::Uniform::HINT_NONE) {
-				ScriptLanguage::CodeCompletionOption option("source_color", ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
-				r_options->push_back(option);
-			}
-		}
-		else if ((completion_base == DataType::TYPE_INT || completion_base == DataType::TYPE_FLOAT) && !completion_base_array) {
-			if (current_uniform_hint == ShaderNode::Uniform::HINT_NONE) {
-				ScriptLanguage::CodeCompletionOption option("hint_range", ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
-
-				if (completion_base == DataType::TYPE_INT) {
-					option.insert_text = "hint_range(0, 100, 1)";
-				}
-				else {
-					option.insert_text = "hint_range(0.0, 1.0, 0.1)";
-				}
-
-				r_options->push_back(option);
-			}
-		}
-		else if ((int(completion_base) > int(TYPE_MAT4) && int(completion_base) < int(TYPE_STRUCT))) {
-			Vector<String> options;
-			if (current_uniform_filter == FILTER_DEFAULT) {
-				options.push_back("filter_linear");
-				options.push_back("filter_linear_mipmap");
-				options.push_back("filter_linear_mipmap_anisotropic");
-				options.push_back("filter_nearest");
-				options.push_back("filter_nearest_mipmap");
-				options.push_back("filter_nearest_mipmap_anisotropic");
-			}
-			if (current_uniform_repeat == REPEAT_DEFAULT) {
-				options.push_back("repeat_enable");
-				options.push_back("repeat_disable");
-			}
-			if (completion_base_array) {
-				if (current_uniform_hint == ShaderNode::Uniform::HINT_NONE) {
-					options.push_back("source_color");
-				}
-			}
-			else {
-				if (current_uniform_hint == ShaderNode::Uniform::HINT_NONE) {
-					options.push_back("hint_anisotropy");
-					options.push_back("hint_default_black");
-					options.push_back("hint_default_white");
-					options.push_back("hint_default_transparent");
-					options.push_back("hint_normal");
-					options.push_back("hint_roughness_a");
-					options.push_back("hint_roughness_b");
-					options.push_back("hint_roughness_g");
-					options.push_back("hint_roughness_gray");
-					options.push_back("hint_roughness_normal");
-					options.push_back("hint_roughness_r");
-					options.push_back("hint_screen_texture");
-					options.push_back("hint_normal_roughness_texture");
-					options.push_back("hint_depth_texture");
-					options.push_back("source_color");
-				}
-			}
-
-			for (int i = 0; i < options.size(); i++) {
-				ScriptLanguage::CodeCompletionOption option(options[i], ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
-				r_options->push_back(option);
-			}
-		}
-		if (!completion_base_array && !current_uniform_instance_index_defined) {
-			ScriptLanguage::CodeCompletionOption option("instance_index", ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
-			option.insert_text = "instance_index(0)";
-			r_options->push_back(option);
-		}
-	} break;
-	}
+	// switch (completion_type) {
+	// case COMPLETION_NONE: {
+	// 	//do nothing
+	// 	return OK;
+	// } break;
+	// case COMPLETION_SHADER_TYPE: {
+	// 	for (const String& shader_type : p_info.shader_types) {
+	// 		ScriptLanguage::CodeCompletionOption option(shader_type, ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
+	// 		r_options->push_back(option);
+	// 	}
+	// 	return OK;
+	// } break;
+	// case COMPLETION_RENDER_MODE: {
+	// 	if (is_shader_inc) {
+	// 		for (int i = 0; i < RenderingSystem::SHADER_MAX; i++) {
+	// 			const Vector<ModeInfo> modes = ShaderTypes::get_singleton()->get_modes(RenderingSystem::ShaderMode(i));
+
+	// 			for (int j = 0; j < modes.size(); j++) {
+	// 				const ModeInfo& info = modes[j];
+
+	// 				if (!info.options.is_empty()) {
+	// 					bool found = false;
+
+	// 					for (int k = 0; k < info.options.size(); k++) {
+	// 						if (shader->render_modes.has(String(info.name) + "_" + String(info.options[k]))) {
+	// 							found = true;
+	// 						}
+	// 					}
+
+	// 					if (!found) {
+	// 						for (int k = 0; k < info.options.size(); k++) {
+	// 							ScriptLanguage::CodeCompletionOption option(String(info.name) + "_" + String(info.options[k]), ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
+	// 							r_options->push_back(option);
+	// 						}
+	// 					}
+	// 				}
+	// 				else {
+	// 					const String name = String(info.name);
+
+	// 					if (!shader->render_modes.has(name)) {
+	// 						ScriptLanguage::CodeCompletionOption option(name, ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
+	// 						r_options->push_back(option);
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// 	else {
+	// 		for (int i = 0; i < p_info.render_modes.size(); i++) {
+	// 			const ModeInfo& info = p_info.render_modes[i];
+
+	// 			if (!info.options.is_empty()) {
+	// 				bool found = false;
+
+	// 				for (int j = 0; j < info.options.size(); j++) {
+	// 					if (shader->render_modes.has(String(info.name) + "_" + String(info.options[j]))) {
+	// 						found = true;
+	// 					}
+	// 				}
+
+	// 				if (!found) {
+	// 					for (int j = 0; j < info.options.size(); j++) {
+	// 						ScriptLanguage::CodeCompletionOption option(String(info.name) + "_" + String(info.options[j]), ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
+	// 						r_options->push_back(option);
+	// 					}
+	// 				}
+	// 			}
+	// 			else {
+	// 				const String name = String(info.name);
+
+	// 				if (!shader->render_modes.has(name)) {
+	// 					ScriptLanguage::CodeCompletionOption option(name, ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
+	// 					r_options->push_back(option);
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+
+	// 	return OK;
+	// } break;
+	// case COMPLETION_STRUCT: {
+	// 	if (shader->structs.has(completion_struct)) {
+	// 		StructNode* node = shader->structs[completion_struct].shader_struct;
+	// 		for (int i = 0; i < node->members.size(); i++) {
+	// 			ScriptLanguage::CodeCompletionOption option(node->members[i]->name, ScriptLanguage::CODE_COMPLETION_KIND_MEMBER);
+	// 			r_options->push_back(option);
+	// 		}
+	// 	}
+
+	// 	return OK;
+	// } break;
+	// case COMPLETION_MAIN_FUNCTION: {
+	// 	for (const KeyValue<StringName, FunctionInfo>& E : p_info.functions) {
+	// 		if (!E.value.main_function) {
+	// 			continue;
+	// 		}
+	// 		bool found = false;
+	// 		for (int i = 0; i < shader->vfunctions.size(); i++) {
+	// 			if (shader->vfunctions[i].name == E.key) {
+	// 				found = true;
+	// 				break;
+	// 			}
+	// 		}
+	// 		if (found) {
+	// 			continue;
+	// 		}
+	// 		ScriptLanguage::CodeCompletionOption option(E.key, ScriptLanguage::CODE_COMPLETION_KIND_FUNCTION);
+	// 		r_options->push_back(option);
+	// 	}
+
+	// 	return OK;
+	// } break;
+	// case COMPLETION_IDENTIFIER:
+	// case COMPLETION_FUNCTION_CALL: {
+	// 	bool comp_ident = completion_type == COMPLETION_IDENTIFIER;
+	// 	HashMap<String, ScriptLanguage::CodeCompletionKind> matches;
+	// 	StringName skip_function;
+	// 	BlockNode* block = completion_block;
+
+	// 	if (completion_class == TAG_GLOBAL) {
+	// 		while (block) {
+	// 			if (comp_ident) {
+	// 				for (const KeyValue<StringName, BlockNode::Variable>& E : block->variables) {
+	// 					if (E.value.line < completion_line) {
+	// 						matches.insert(E.key, ScriptLanguage::CODE_COMPLETION_KIND_VARIABLE);
+	// 					}
+	// 				}
+	// 			}
+
+	// 			if (block->parent_function) {
+	// 				if (comp_ident) {
+	// 					for (int i = 0; i < block->parent_function->arguments.size(); i++) {
+	// 						matches.insert(block->parent_function->arguments[i].name, ScriptLanguage::CODE_COMPLETION_KIND_VARIABLE);
+	// 					}
+	// 				}
+	// 				skip_function = block->parent_function->name;
+	// 			}
+	// 			block = block->parent_block;
+	// 		}
+
+	// 		if (comp_ident) {
+	// 			if (is_shader_inc) {
+	// 				for (int i = 0; i < RenderingSystem::SHADER_MAX; i++) {
+	// 					const HashMap<StringName, ShaderLanguage::FunctionInfo> info = ShaderTypes::get_singleton()->get_functions(RenderingSystem::ShaderMode(i));
+
+	// 					if (info.has("global")) {
+	// 						for (const KeyValue<StringName, BuiltInInfo>& E : info["global"].built_ins) {
+	// 							ScriptLanguage::CodeCompletionKind kind = ScriptLanguage::CODE_COMPLETION_KIND_MEMBER;
+	// 							if (E.value.constant) {
+	// 								kind = ScriptLanguage::CODE_COMPLETION_KIND_CONSTANT;
+	// 							}
+	// 							matches.insert(E.key, kind);
+	// 						}
+	// 					}
+
+	// 					if (info.has("constants")) {
+	// 						for (const KeyValue<StringName, BuiltInInfo>& E : info["constants"].built_ins) {
+	// 							ScriptLanguage::CodeCompletionKind kind = ScriptLanguage::CODE_COMPLETION_KIND_MEMBER;
+	// 							if (E.value.constant) {
+	// 								kind = ScriptLanguage::CODE_COMPLETION_KIND_CONSTANT;
+	// 							}
+	// 							matches.insert(E.key, kind);
+	// 						}
+	// 					}
+
+	// 					if (skip_function != StringName() && info.has(skip_function)) {
+	// 						for (const KeyValue<StringName, BuiltInInfo>& E : info[skip_function].built_ins) {
+	// 							ScriptLanguage::CodeCompletionKind kind = ScriptLanguage::CODE_COMPLETION_KIND_MEMBER;
+	// 							if (E.value.constant) {
+	// 								kind = ScriptLanguage::CODE_COMPLETION_KIND_CONSTANT;
+	// 							}
+	// 							matches.insert(E.key, kind);
+	// 						}
+	// 					}
+	// 				}
+	// 			}
+	// 			else {
+	// 				if (p_info.functions.has("global")) {
+	// 					for (const KeyValue<StringName, BuiltInInfo>& E : p_info.functions["global"].built_ins) {
+	// 						ScriptLanguage::CodeCompletionKind kind = ScriptLanguage::CODE_COMPLETION_KIND_MEMBER;
+	// 						if (E.value.constant) {
+	// 							kind = ScriptLanguage::CODE_COMPLETION_KIND_CONSTANT;
+	// 						}
+	// 						matches.insert(E.key, kind);
+	// 					}
+	// 				}
+
+	// 				if (p_info.functions.has("constants")) {
+	// 					for (const KeyValue<StringName, BuiltInInfo>& E : p_info.functions["constants"].built_ins) {
+	// 						ScriptLanguage::CodeCompletionKind kind = ScriptLanguage::CODE_COMPLETION_KIND_MEMBER;
+	// 						if (E.value.constant) {
+	// 							kind = ScriptLanguage::CODE_COMPLETION_KIND_CONSTANT;
+	// 						}
+	// 						matches.insert(E.key, kind);
+	// 					}
+	// 				}
+
+	// 				if (skip_function != StringName() && p_info.functions.has(skip_function)) {
+	// 					for (const KeyValue<StringName, BuiltInInfo>& E : p_info.functions[skip_function].built_ins) {
+	// 						ScriptLanguage::CodeCompletionKind kind = ScriptLanguage::CODE_COMPLETION_KIND_MEMBER;
+	// 						if (E.value.constant) {
+	// 							kind = ScriptLanguage::CODE_COMPLETION_KIND_CONSTANT;
+	// 						}
+	// 						matches.insert(E.key, kind);
+	// 					}
+	// 				}
+	// 			}
+
+	// 			for (const KeyValue<StringName, ShaderNode::Constant>& E : shader->constants) {
+	// 				matches.insert(E.key, ScriptLanguage::CODE_COMPLETION_KIND_CONSTANT);
+	// 			}
+	// 			for (const KeyValue<StringName, ShaderNode::Varying>& E : shader->varyings) {
+	// 				matches.insert(E.key, ScriptLanguage::CODE_COMPLETION_KIND_VARIABLE);
+	// 			}
+	// 			for (const KeyValue<StringName, ShaderNode::Uniform>& E : shader->uniforms) {
+	// 				matches.insert(E.key, ScriptLanguage::CODE_COMPLETION_KIND_MEMBER);
+	// 			}
+	// 		}
+
+	// 		for (int i = 0; i < shader->vfunctions.size(); i++) {
+	// 			if (!shader->vfunctions[i].callable || shader->vfunctions[i].name == skip_function) {
+	// 				continue;
+	// 			}
+	// 			matches.insert(String(shader->vfunctions[i].name), ScriptLanguage::CODE_COMPLETION_KIND_FUNCTION);
+	// 		}
+
+	// 		int idx = 0;
+	// 		bool low_end = RenderingSystem::get_singleton()->is_low_end();
+
+	// 		if (stages && stages->has(skip_function)) {
+	// 			for (const KeyValue<StringName, StageFunctionInfo>& E : (*stages)[skip_function].stage_functions) {
+	// 				matches.insert(String(E.key), ScriptLanguage::CODE_COMPLETION_KIND_FUNCTION);
+	// 			}
+	// 		}
+
+	// 		while (builtin_func_defs[idx].name) {
+	// 			if (low_end && builtin_func_defs[idx].high_end) {
+	// 				idx++;
+	// 				continue;
+	// 			}
+	// 			matches.insert(String(builtin_func_defs[idx].name), ScriptLanguage::CODE_COMPLETION_KIND_FUNCTION);
+	// 			idx++;
+	// 		}
+
+	// 	}
+	// 	else { // sub-class
+	// 		int idx = 0;
+	// 		bool low_end = RenderingSystem::get_singleton()->is_low_end();
+
+	// 		while (builtin_func_defs[idx].name) {
+	// 			if (low_end && builtin_func_defs[idx].high_end) {
+	// 				idx++;
+	// 				continue;
+	// 			}
+	// 			if (builtin_func_defs[idx].tag == completion_class) {
+	// 				matches.insert(String(builtin_func_defs[idx].name), ScriptLanguage::CODE_COMPLETION_KIND_FUNCTION);
+	// 			}
+	// 			idx++;
+	// 		}
+	// 	}
+
+	// 	for (const KeyValue<String, ScriptLanguage::CodeCompletionKind>& E : matches) {
+	// 		ScriptLanguage::CodeCompletionOption option(E.key, E.value);
+	// 		if (E.value == ScriptLanguage::CODE_COMPLETION_KIND_FUNCTION) {
+	// 			option.insert_text += "(";
+	// 		}
+	// 		r_options->push_back(option);
+	// 	}
+
+	// 	return OK;
+	// } break;
+	// case COMPLETION_CALL_ARGUMENTS: {
+	// 	StringName block_function;
+	// 	BlockNode* block = completion_block;
+
+	// 	while (block) {
+	// 		if (block->parent_function) {
+	// 			block_function = block->parent_function->name;
+	// 		}
+	// 		block = block->parent_block;
+	// 	}
+
+	// 	for (int i = 0; i < shader->vfunctions.size(); i++) {
+	// 		if (!shader->vfunctions[i].callable) {
+	// 			continue;
+	// 		}
+	// 		if (shader->vfunctions[i].name == completion_function) {
+	// 			String calltip;
+
+	// 			calltip += get_datatype_name(shader->vfunctions[i].function->return_type);
+
+	// 			if (shader->vfunctions[i].function->return_array_size > 0) {
+	// 				calltip += "[";
+	// 				calltip += itos(shader->vfunctions[i].function->return_array_size);
+	// 				calltip += "]";
+	// 			}
+
+	// 			calltip += " ";
+	// 			calltip += shader->vfunctions[i].name;
+	// 			calltip += "(";
+
+	// 			for (int j = 0; j < shader->vfunctions[i].function->arguments.size(); j++) {
+	// 				if (j > 0) {
+	// 					calltip += ", ";
+	// 				}
+	// 				else {
+	// 					calltip += " ";
+	// 				}
+
+	// 				if (j == completion_argument) {
+	// 					calltip += char32_t(0xFFFF);
+	// 				}
+
+	// 				if (shader->vfunctions[i].function->arguments[j].is_const) {
+	// 					calltip += "const ";
+	// 				}
+
+	// 				if (shader->vfunctions[i].function->arguments[j].qualifier != ArgumentQualifier::ARGUMENT_QUALIFIER_IN) {
+	// 					if (shader->vfunctions[i].function->arguments[j].qualifier == ArgumentQualifier::ARGUMENT_QUALIFIER_OUT) {
+	// 						calltip += "out ";
+	// 					}
+	// 					else { // ArgumentQualifier::ARGUMENT_QUALIFIER_INOUT
+	// 						calltip += "inout ";
+	// 					}
+	// 				}
+
+	// 				calltip += get_datatype_name(shader->vfunctions[i].function->arguments[j].type);
+	// 				calltip += " ";
+	// 				calltip += shader->vfunctions[i].function->arguments[j].name;
+
+	// 				if (shader->vfunctions[i].function->arguments[j].array_size > 0) {
+	// 					calltip += "[";
+	// 					calltip += itos(shader->vfunctions[i].function->arguments[j].array_size);
+	// 					calltip += "]";
+	// 				}
+
+	// 				if (j == completion_argument) {
+	// 					calltip += char32_t(0xFFFF);
+	// 				}
+	// 			}
+
+	// 			if (shader->vfunctions[i].function->arguments.size()) {
+	// 				calltip += " ";
+	// 			}
+	// 			calltip += ")";
+
+	// 			r_call_hint = calltip;
+	// 			return OK;
+	// 		}
+	// 	}
+
+	// 	int idx = 0;
+
+	// 	String calltip;
+	// 	bool low_end = RenderingSystem::get_singleton()->is_low_end();
+
+	// 	if (stages && stages->has(block_function)) {
+	// 		for (const KeyValue<StringName, StageFunctionInfo>& E : (*stages)[block_function].stage_functions) {
+	// 			if (completion_function == E.key) {
+	// 				calltip += get_datatype_name(E.value.return_type);
+	// 				calltip += " ";
+	// 				calltip += E.key;
+	// 				calltip += "(";
+
+	// 				for (int i = 0; i < E.value.arguments.size(); i++) {
+	// 					if (i > 0) {
+	// 						calltip += ", ";
+	// 					}
+	// 					else {
+	// 						calltip += " ";
+	// 					}
+
+	// 					if (i == completion_argument) {
+	// 						calltip += char32_t(0xFFFF);
+	// 					}
+
+	// 					calltip += get_datatype_name(E.value.arguments[i].type);
+	// 					calltip += " ";
+	// 					calltip += E.value.arguments[i].name;
+
+	// 					if (i == completion_argument) {
+	// 						calltip += char32_t(0xFFFF);
+	// 					}
+	// 				}
+
+	// 				if (E.value.arguments.size()) {
+	// 					calltip += " ";
+	// 				}
+	// 				calltip += ")";
+
+	// 				r_call_hint = calltip;
+	// 				return OK;
+	// 			}
+	// 		}
+	// 	}
+
+	// 	while (builtin_func_defs[idx].name) {
+	// 		if (low_end && builtin_func_defs[idx].high_end) {
+	// 			idx++;
+	// 			continue;
+	// 		}
+
+	// 		int idx2 = 0;
+	// 		HashSet<int> out_args;
+	// 		while (builtin_func_out_args[idx2].name != nullptr) {
+	// 			if (builtin_func_out_args[idx2].name == builtin_func_defs[idx].name) {
+	// 				for (int i = 0; i < BuiltinFuncOutArgs::MAX_ARGS; i++) {
+	// 					int arg = builtin_func_out_args[idx2].arguments[i];
+	// 					if (arg == -1) {
+	// 						break;
+	// 					}
+	// 					out_args.insert(arg);
+	// 				}
+	// 				break;
+	// 			}
+	// 			idx2++;
+	// 		}
+
+	// 		if (completion_function == builtin_func_defs[idx].name) {
+	// 			if (builtin_func_defs[idx].tag != completion_class) {
+	// 				idx++;
+	// 				continue;
+	// 			}
+
+	// 			if (calltip.length()) {
+	// 				calltip += "\n";
+	// 			}
+
+	// 			calltip += get_datatype_name(builtin_func_defs[idx].rettype);
+	// 			calltip += " ";
+	// 			calltip += builtin_func_defs[idx].name;
+	// 			calltip += "(";
+
+	// 			bool found_arg = false;
+	// 			for (int i = 0; i < BuiltinFuncDef::MAX_ARGS - 1; i++) {
+	// 				if (builtin_func_defs[idx].args[i] == TYPE_VOID) {
+	// 					break;
+	// 				}
+
+	// 				if (i > 0) {
+	// 					calltip += ", ";
+	// 				}
+	// 				else {
+	// 					calltip += " ";
+	// 				}
+
+	// 				if (i == completion_argument) {
+	// 					calltip += char32_t(0xFFFF);
+	// 				}
+
+	// 				if (out_args.has(i)) {
+	// 					calltip += "out ";
+	// 				}
+
+	// 				calltip += get_datatype_name(builtin_func_defs[idx].args[i]);
+
+	// 				String arg_name = (String)builtin_func_defs[idx].args_names[i];
+	// 				if (!arg_name.is_empty()) {
+	// 					calltip += " ";
+	// 					calltip += arg_name;
+	// 				}
+
+	// 				if (i == completion_argument) {
+	// 					calltip += char32_t(0xFFFF);
+	// 				}
+
+	// 				found_arg = true;
+	// 			}
+
+	// 			if (found_arg) {
+	// 				calltip += " ";
+	// 			}
+	// 			calltip += ")";
+	// 		}
+	// 		idx++;
+	// 	}
+
+	// 	r_call_hint = calltip;
+
+	// 	return OK;
+
+	// } break;
+	// case COMPLETION_INDEX: {
+	// 	const char colv[4] = { 'r', 'g', 'b', 'a' };
+	// 	const char coordv[4] = { 'x', 'y', 'z', 'w' };
+	// 	const char coordt[4] = { 's', 't', 'p', 'q' };
+	// 	const String theme_color_names[4] = { "axis_x_color", "axis_y_color", "axis_z_color", "axis_w_color" };
+
+	// 	int limit = 0;
+
+	// 	switch (completion_base) {
+	// 	case TYPE_BVEC2:
+	// 	case TYPE_IVEC2:
+	// 	case TYPE_UVEC2:
+	// 	case TYPE_VEC2: {
+	// 		limit = 2;
+
+	// 	} break;
+	// 	case TYPE_BVEC3:
+	// 	case TYPE_IVEC3:
+	// 	case TYPE_UVEC3:
+	// 	case TYPE_VEC3: {
+	// 		limit = 3;
+
+	// 	} break;
+	// 	case TYPE_BVEC4:
+	// 	case TYPE_IVEC4:
+	// 	case TYPE_UVEC4:
+	// 	case TYPE_VEC4: {
+	// 		limit = 4;
+
+	// 	} break;
+	// 	default: {
+	// 	}
+	// 	}
+
+	// 	for (int i = 0; i < limit; i++) {
+	// 		r_options->push_back(ScriptLanguage::CodeCompletionOption(String::chr(colv[i]), ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT, ScriptLanguage::LOCATION_OTHER, theme_color_names[i]));
+	// 		r_options->push_back(ScriptLanguage::CodeCompletionOption(String::chr(coordv[i]), ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT, ScriptLanguage::LOCATION_OTHER, theme_color_names[i]));
+	// 		r_options->push_back(ScriptLanguage::CodeCompletionOption(String::chr(coordt[i]), ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT, ScriptLanguage::LOCATION_OTHER, theme_color_names[i]));
+	// 	}
+
+	// } break;
+	// case COMPLETION_HINT: {
+	// 	if (completion_base == DataType::TYPE_VEC3 || completion_base == DataType::TYPE_VEC4) {
+	// 		if (current_uniform_hint == ShaderNode::Uniform::HINT_NONE) {
+	// 			ScriptLanguage::CodeCompletionOption option("source_color", ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
+	// 			r_options->push_back(option);
+	// 		}
+	// 	}
+	// 	else if ((completion_base == DataType::TYPE_INT || completion_base == DataType::TYPE_FLOAT) && !completion_base_array) {
+	// 		if (current_uniform_hint == ShaderNode::Uniform::HINT_NONE) {
+	// 			ScriptLanguage::CodeCompletionOption option("hint_range", ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
+
+	// 			if (completion_base == DataType::TYPE_INT) {
+	// 				option.insert_text = "hint_range(0, 100, 1)";
+	// 			}
+	// 			else {
+	// 				option.insert_text = "hint_range(0.0, 1.0, 0.1)";
+	// 			}
+
+	// 			r_options->push_back(option);
+	// 		}
+	// 	}
+	// 	else if ((int(completion_base) > int(TYPE_MAT4) && int(completion_base) < int(TYPE_STRUCT))) {
+	// 		Vector<String> options;
+	// 		if (current_uniform_filter == FILTER_DEFAULT) {
+	// 			options.push_back("filter_linear");
+	// 			options.push_back("filter_linear_mipmap");
+	// 			options.push_back("filter_linear_mipmap_anisotropic");
+	// 			options.push_back("filter_nearest");
+	// 			options.push_back("filter_nearest_mipmap");
+	// 			options.push_back("filter_nearest_mipmap_anisotropic");
+	// 		}
+	// 		if (current_uniform_repeat == REPEAT_DEFAULT) {
+	// 			options.push_back("repeat_enable");
+	// 			options.push_back("repeat_disable");
+	// 		}
+	// 		if (completion_base_array) {
+	// 			if (current_uniform_hint == ShaderNode::Uniform::HINT_NONE) {
+	// 				options.push_back("source_color");
+	// 			}
+	// 		}
+	// 		else {
+	// 			if (current_uniform_hint == ShaderNode::Uniform::HINT_NONE) {
+	// 				options.push_back("hint_anisotropy");
+	// 				options.push_back("hint_default_black");
+	// 				options.push_back("hint_default_white");
+	// 				options.push_back("hint_default_transparent");
+	// 				options.push_back("hint_normal");
+	// 				options.push_back("hint_roughness_a");
+	// 				options.push_back("hint_roughness_b");
+	// 				options.push_back("hint_roughness_g");
+	// 				options.push_back("hint_roughness_gray");
+	// 				options.push_back("hint_roughness_normal");
+	// 				options.push_back("hint_roughness_r");
+	// 				options.push_back("hint_screen_texture");
+	// 				options.push_back("hint_normal_roughness_texture");
+	// 				options.push_back("hint_depth_texture");
+	// 				options.push_back("source_color");
+	// 			}
+	// 		}
+
+	// 		for (int i = 0; i < options.size(); i++) {
+	// 			ScriptLanguage::CodeCompletionOption option(options[i], ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
+	// 			r_options->push_back(option);
+	// 		}
+	// 	}
+	// 	if (!completion_base_array && !current_uniform_instance_index_defined) {
+	// 		ScriptLanguage::CodeCompletionOption option("instance_index", ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
+	// 		option.insert_text = "instance_index(0)";
+	// 		r_options->push_back(option);
+	// 	}
+	// } break;
+	// }
 
 	return ERR_PARSE_ERROR;
 }

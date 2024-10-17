@@ -547,8 +547,8 @@ namespace lain {
 #define GNAME(m_value, m_prefix) (m_value)
 
 // Runtime translate for the public node API.
-	String RTR(const String& p_text, const String& p_context = "") {return p_text;}
-	String RTRN(const String& p_text, const String& p_text_plural, int p_n, const String& p_context = ""){return p_text;}
+	L_INLINE String RTR(const String& p_text, const String& p_context = "") {return p_text;}
+	L_INLINE String RTRN(const String& p_text, const String& p_text_plural, int p_n, const String& p_context = ""){return p_text;}
 
 	bool select_word(const String& p_s, int p_col, int& r_beg, int& r_end);
 

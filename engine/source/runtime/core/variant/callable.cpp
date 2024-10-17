@@ -36,6 +36,15 @@ Callable::Callable(const Callable& p_callable) {
 StringName CallableCustom::get_method() const {
   ERR_FAIL_V_MSG(StringName(), vformat("Can't get method on CallableCustom \"%s\".", get_as_text()));
 }
+void CallableCustom::get_bound_arguments(Vector<Variant>& r_arguments, int& r_argcount) const {
+  	r_arguments = Vector<Variant>();
+	r_argcount = 0;
+}
+
+bool Callable::operator!=(const Callable &p_callable) const {
+	return !(*this == p_callable);
+}
+
 Callable::Callable(ObjectID p_object, const StringName& p_method) {
   if (unlikely(p_method == StringName())) {
     object = 0;
@@ -120,6 +129,61 @@ bool Callable::operator==(const Callable& p_callable) const {
     return false;
   }
 }
+bool Callable::is_valid() const {
+  if (is_custom()) {
+		return get_custom()->is_valid();
+	} else {
+    // @todo 需要class db记录 method信息 
+		// return get_object() && get_object()->has_method(get_method());
+    return true;
+	}
+}
+
+CallableCustom *Callable::get_custom() const {
+	ERR_FAIL_COND_V_MSG(!is_custom(), nullptr,
+			vformat("Can't get custom on non-CallableCustom \"%s\".", operator String()));
+	return custom;
+}
+
+Callable::operator String() const {
+	if (is_custom()) {
+		return custom->get_as_text();
+	} else {
+		if (is_null()) {
+			return "null::null";
+		}
+
+		Object *base = get_object();
+		// if (base) {
+			String class_name = base->get_class();
+		// 	Ref<Script> script = base->get_script();
+		// 	if (script.is_valid() && script->get_path().is_resource_file()) {
+		// 		class_name += "(" + script->get_path().get_file() + ")";
+		// 	}
+			return class_name + "::" + String(method);
+		// } else {
+		// 	return "null::" + String(method);
+		// }
+	}
+}
+
+Object *Callable::get_object() const {
+	if (is_null()) {
+		return nullptr;
+	} else if (is_custom()) {
+		return ObjectDB::get_instance(custom->get_object());
+	} else {
+		return ObjectDB::get_instance(ObjectID(object));
+	}
+}
+
+StringName Callable::get_method() const {
+	if (is_custom()) {
+		return get_custom()->get_method();
+	}
+	return method;
+}
+
 
 void Callable::callp(const Variant** p_arguments, int p_argcount, Variant& r_return_value, CallError& r_call_error) const {
   if (is_null()) {
@@ -150,4 +214,14 @@ void Callable::callp(const Variant** p_arguments, int p_argcount, Variant& r_ret
     r_return_value = obj->callp(method, p_arguments, p_argcount, r_call_error);
   }
 }
+
+void Callable::get_bound_arguments_ref(Vector<Variant> &r_arguments, int &r_argcount) const {
+	if (!is_null() && is_custom()) {
+		custom->get_bound_arguments(r_arguments, r_argcount);
+	} else {
+		r_arguments.clear();
+		r_argcount = 0;
+	}
+}
+
 }  // namespace lain

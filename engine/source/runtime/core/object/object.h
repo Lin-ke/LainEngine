@@ -173,6 +173,10 @@ enum PropertyUsageFlags {
   PROPERTY_USAGE_DEFAULT = PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
   PROPERTY_USAGE_NO_EDITOR = PROPERTY_USAGE_STORAGE,
 };
+
+#define MAKE_RESOURCE_TYPE_HINT(m_type) vformat("%s/%s:%s", Variant::OBJECT, PROPERTY_HINT_RESOURCE_TYPE, m_type)
+
+
 // base class of all object
 class Viewport;
 // signal mechanism
@@ -309,6 +313,9 @@ class Object {
   L_INLINE virtual String to_string() const{
     return "<" + get_class() + "#" + itos(get_instance_id()) + ">";
   }
+
+  Variant get(const StringName& p_name, bool *r_valid) const;
+  void set(const StringName& p_name, const Variant& p_value, bool *r_valid);
  private:
   ObjectID m_instance_id;
   bool m_type_is_reference = false;

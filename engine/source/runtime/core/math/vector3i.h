@@ -56,7 +56,6 @@ namespace lain
 
         Vector3i operator-(const Vector3i & rhs) const { return Vector3i(x - rhs.x, y - rhs.y, z - rhs.z); }
 
-        Vector3i operator*(float scalar) const { return Vector3i(static_cast<i32>(x * scalar), static_cast<i32>(y * scalar), static_cast<i32>(z * scalar)); }
 
         Vector3i operator*(const Vector3i & rhs) const { return Vector3i(x * rhs.x, y * rhs.y, z * rhs.z); }
         
@@ -64,11 +63,6 @@ namespace lain
             return Vector3i(x * p_scalar, y * p_scalar, z * p_scalar);
         }
 
-        Vector3i operator/(float scalar) const
-        {
-            assert(scalar != 0.0);
-            return Vector3i(static_cast<i32>(x / scalar), static_cast<i32>(y / scalar), static_cast<i32>(z / scalar));
-        }
 
         Vector3i operator/(const Vector3i & rhs) const
         {
@@ -122,6 +116,13 @@ namespace lain
             z = static_cast<i32> (z + scalar);
             return *this;
         }
+          Vector3i operator%(const Vector3i& p_v1) const{
+            return Vector3i(x % p_v1.x, y % p_v1.y, z % p_v1.z);
+
+        }
+        Vector3i operator%(int32_t p_rvalue) const{
+            return Vector3i(x % p_rvalue, y % p_rvalue, z% p_rvalue);
+        }
 
         Vector3i& operator+=(i32 scalar)
         {
@@ -156,15 +157,6 @@ namespace lain
             x -= scalar;
             y -= scalar;
             z -= scalar;
-            return *this;
-        }
-        
-        Vector3i& operator*=(float scalar)
-        {
-            x = static_cast<i32>(x * scalar);
-            y = static_cast<i32>(y * scalar);
-            z = static_cast<i32>(z * scalar);
-
             return *this;
         }
 
@@ -215,12 +207,30 @@ namespace lain
             z %= p_scalar;
             return *this;
         }
-
-        Vector3i Vector3i::operator%(const i32 p_scalar) const {
-            return Vector3i(x % p_scalar, y % p_scalar, z % p_scalar);
+        L_INLINE bool operator<(const Vector3i & p_v) const {
+            if (x == p_v.x) {
+                if (y == p_v.y) {
+                    return z < p_v.z;
+                }
+                return y < p_v.y;
+            }
+            return x < p_v.x;
         }
-
-
+        L_INLINE bool operator>(const Vector3i & p_v) const {
+            if (x == p_v.x) {
+                if (y == p_v.y) {
+                    return z > p_v.z;
+                }
+                return y > p_v.y;
+            }
+            return x > p_v.x;
+        }
+        bool operator>=(const Vector3i & p_v) const {
+          return !(*this < p_v);
+        }
+        bool operator<=(const Vector3i & p_v) const{
+            return !(*this > p_v );
+        }
         /** Returns the length (magnitude) of the vector.
         @warning
         This operation requires a square root and is expensive in

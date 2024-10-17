@@ -10,6 +10,7 @@
 #include "core/io/rid_owner.h"
 #include "core/variant/binder_common.h"
 #include "core/variant/variant_parser.h"
+#include "core/meta/serializer/serializer.h"
 using namespace lain;
 // Math
 double VariantUtilityFunctions::sin(double arg) {
@@ -923,7 +924,7 @@ String VariantUtilityFunctions::error_string(Error error) {
 		return String("(invalid error code)");
 	}
 
-	return String(error_names[error]);
+	return String(itos((int)error));
 }
 
 String VariantUtilityFunctions::type_string(Variant::Type p_type) {
@@ -1085,23 +1086,25 @@ void VariantUtilityFunctions::push_warning(const Variant **p_args, int p_arg_cou
 	r_error.error = Callable::CallError::CALL_OK;
 }
 
-// String VariantUtilityFunctions::var_to_str(const Variant &p_var) {
-// 	String vars;
-// 	VariantWriter::write_to_string(p_var, vars);
-// 	return vars;
-// }
+String VariantUtilityFunctions::var_to_str(const Variant &p_var) {
+	String vars;
+	// VariantWriter::write_to_string(p_var, vars);
+	vars = Serializer::write(p_var).dump();
+	return vars;
+}
 
-// Variant VariantUtilityFunctions::str_to_var(const String &p_var) {
-// 	VariantParser::StreamString ss;
-// 	ss.s = p_var;
+Variant VariantUtilityFunctions::str_to_var(const String &p_var) {
+	// VariantParser::StreamString ss;
+	// ss.s = p_var;
 
-// 	String errs;
-// 	int line;
-// 	Variant ret;
-// 	(void)VariantParser::parse(&ss, ret, errs, line);
+	// String errs;
+	// int line;
+	// Variant ret;
+	// (void)VariantParser::parse(&ss, ret, errs, line);
 
-// 	return ret;
-// }
+	// return ret;
+	return Variant();
+}
 
 PackedByteArray VariantUtilityFunctions::var_to_bytes(const Variant &p_var) {
 	int len;
@@ -1222,7 +1225,9 @@ static _FORCE_INLINE_ void validated_call_helperpr(R (*p_func)(P...), Variant *r
 	*ret = p_func(VariantCaster<P>::cast(*p_args[Is])...);
 	(void)p_args;
 }
-
+// R和 P都必须 特化 template <typename> PtrToArg
+// 一般类型的特化在 method_ptrcall.h中， enum的特化在 binder_common中，提供了 VARIANT_ENUM_CAST 宏
+// 特化的形式是< type1, type2,...., 0, 1)
 template <typename R, typename... P, size_t... Is>
 static _FORCE_INLINE_ void ptr_call_helperpr(R (*p_func)(P...), void *ret, const void **p_args, IndexSequence<Is...>) {
 	PtrToArg<R>::encode(p_func(PtrToArg<P>::convert(p_args[Is])...), ret);

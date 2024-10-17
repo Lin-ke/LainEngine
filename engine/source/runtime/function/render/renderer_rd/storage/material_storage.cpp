@@ -43,4 +43,3 @@ void lain::RendererRD::MaterialStorage::ShaderData::set_default_texture_paramete
 
 
 
-void Mate
