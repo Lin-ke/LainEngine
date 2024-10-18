@@ -18,6 +18,83 @@ void MaterialStorage::shader_initialize(RID p_rid) {
   shader_owner.initialize_rid(p_rid, shader);
 }
 
+void lain::RendererRD::MaterialStorage::shader_set_code(RID p_shader, const String& p_code) {
+  Shader *shader = shader_owner.get_or_null(p_shader);
+	ERR_FAIL_NULL(shader);
+
+	shader->code = p_code;
+	String mode_string = shader::ShaderLanguage::get_shader_type(p_code);
+
+	ShaderType new_type;
+	if (mode_string == "canvas_item") {
+		new_type = SHADER_TYPE_2D;
+	} else if (mode_string == "particles") {
+		new_type = SHADER_TYPE_PARTICLES;
+	} else if (mode_string == "spatial") {
+		new_type = SHADER_TYPE_3D;
+	} else if (mode_string == "sky") {
+		new_type = SHADER_TYPE_SKY;
+	} else if (mode_string == "fog") {
+		new_type = SHADER_TYPE_FOG;
+	} else {
+		new_type = SHADER_TYPE_MAX;
+	}
+
+	if (new_type != shader->type) {
+		if (shader->data) {
+			memdelete(shader->data);
+			shader->data = nullptr;
+		}
+
+		for (Material *E : shader->owners) {
+			Material *material = E;
+			material->shader_type = new_type;
+			if (material->data) {
+				memdelete(material->data);
+				material->data = nullptr;
+			}
+		}
+
+		shader->type = new_type;
+
+		if (new_type < SHADER_TYPE_MAX && shader_data_request_func[new_type]) {
+			shader->data = shader_data_request_func[new_type]();
+		} else {
+			shader->type = SHADER_TYPE_MAX; //invalid
+		}
+
+		for (Material *E : shader->owners) {
+			Material *material = E;
+			if (shader->data) {
+				material->data = material_get_data_request_function(new_type)(shader->data);
+				material->data->self = material->self;
+				material->data->set_next_pass(material->next_pass);
+				material->data->set_render_priority(material->priority);
+			}
+			material->shader_type = new_type;
+		}
+
+		if (shader->data) {
+			for (const KeyValue<StringName, HashMap<int, RID>> &E : shader->default_texture_parameter) {
+				for (const KeyValue<int, RID> &E2 : E.value) {
+					shader->data->set_default_texture_parameter(E.key, E2.value, E2.key);
+				}
+			}
+		}
+	}
+
+	if (shader->data) {
+		shader->data->set_path_hint(shader->path_hint);
+		shader->data->set_code(p_code);
+	}
+
+	for (Material *E : shader->owners) {
+		Material *material = E;
+		material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
+		_material_queue_update(material, true, true);
+	}
+}
+
 void lain::RendererRD::MaterialStorage::ShaderData::set_path_hint(const String& p_hint) {
   path = p_hint;
 }

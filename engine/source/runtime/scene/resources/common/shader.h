@@ -37,7 +37,7 @@ class Shader : public Resource {
   virtual void set_path(const String& p_path, bool p_take_over = false) override;
   L_INLINE void set_include_path(const String& p_path) { include_path = p_path; }
 
-  L_INLINE void set_code(const String& p_code) { code = p_code; }
+  L_INLINE void set_code(const String& p_code);
   String get_code() const;
   virtual void _update_shader() const{} //used for visual shader
 

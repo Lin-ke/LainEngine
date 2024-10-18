@@ -47,7 +47,8 @@ class MaterialStorage : public RendererMaterialStorage {
   };
   
   mutable RID_Owner<Shader, true> shader_owner;
-
+	typedef ShaderData *(*ShaderDataRequestFunction)();
+	ShaderDataRequestFunction shader_data_request_func[SHADER_TYPE_MAX];
   
 	struct MaterialData {
 		Vector<RendererRD::TextureStorage::RenderTarget *> render_target_cache;
@@ -77,6 +78,28 @@ class MaterialStorage : public RendererMaterialStorage {
 		Vector<uint8_t> ubo_data[2]; // 0: linear buffer; 1: sRGB buffer.
 		RID uniform_buffer[2]; // 0: linear buffer; 1: sRGB buffer.
 		Vector<RID> texture_cache;
+	};
+
+	typedef MaterialData *(*MaterialDataRequestFunction)(ShaderData *);
+  
+	struct Material {
+		RID self;
+		MaterialData *data = nullptr;
+		Shader *shader = nullptr;
+		//shortcut to shader data and type
+		ShaderType shader_type = SHADER_TYPE_MAX;
+		uint32_t shader_id = 0;
+		bool uniform_dirty = false;
+		bool texture_dirty = false;
+		HashMap<StringName, Variant> params;
+		int32_t priority = 0;
+		RID next_pass;
+		SelfList<Material> update_element;
+
+		Dependency dependency;
+
+		Material() :
+				update_element(this) {}
 	};
 
  public:
@@ -133,6 +156,8 @@ class MaterialStorage : public RendererMaterialStorage {
   virtual void material_get_instance_shader_parameters(RID p_material, List<InstanceShaderParam>* r_parameters) override;
 
   virtual void material_update_dependency(RID p_material, DependencyTracker* p_instance) override;
+	void material_set_data_request_function(ShaderType p_shader_type, MaterialDataRequestFunction p_function);
+	MaterialDataRequestFunction material_get_data_request_function(ShaderType p_shader_type);
 };
 }  // namespace lain::RendererRD
 

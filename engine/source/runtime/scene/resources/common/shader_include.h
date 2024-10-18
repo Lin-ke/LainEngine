@@ -14,7 +14,7 @@ class ShaderInclude : public Resource {
 private:
 	String code;
 	String include_path;
-	HashSet<Ref<ShaderInclude>> dependencies; // 依赖的其他Include
+	HashSet<Ref<ShaderInclude>> include_dependencies; // 依赖的其他Include
 	void _dependency_changed();
 
 protected:
