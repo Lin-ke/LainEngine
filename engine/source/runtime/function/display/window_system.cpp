@@ -3,6 +3,7 @@
 #include "core/config/project_settings.h"
 #include "function/render/rendering_device/rendering_device.h"
 #include "platform/render/rendering_context_driver_vulkan_windows.h"
+#include "function/render/renderer_rd/renderer_compositor_rd.h"
 namespace lain {
 
 WindowSystem *WindowSystem::p_singleton = nullptr;
@@ -328,7 +329,13 @@ WindowSystem::WindowSystem(const String &p_rendering_driver, WindowMode p_mode, 
 		};
 		rendering_device->screen_create(MAIN_WINDOW_ID); // swap chain
 
-		// RendererCompositorRD::make_current();
+		RendererCompositorRD::make_current();
+		// 在这里将_create_func 指向自己的memnew，这个函数将在
+		// RendererCompositor::create()中调用 
+		// 即在RenderingSystemDefault::_init() 时
+		// 该函数在memnew(RenderingServerDefault)时调用， 在 main.cpp rendering_server = memnew(...)
+		// 因此要求先进行 DisplayServer的初始化，再进行RenderingServer的构造
+
 	}
 }
 

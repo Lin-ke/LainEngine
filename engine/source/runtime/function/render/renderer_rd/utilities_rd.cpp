@@ -57,3 +57,14 @@ RS::InstanceType Utilities::get_base_type(RID p_rid) const {
 void lain::RendererRD::Utilities::update_dirty_resources() {
   // @todo
 }
+
+uint64_t lain::RendererRD::Utilities::get_rendering_info(RS::RenderingInfo p_info) {
+if (p_info == RS::RENDERING_INFO_TEXTURE_MEM_USED) {
+		return texture_mem_cache;
+	} else if (p_info == RS::RENDERING_INFO_BUFFER_MEM_USED) {
+		return buffer_mem_cache;
+	} else if (p_info == RS::RENDERING_INFO_VIDEO_MEM_USED) {
+		return total_mem_cache;
+	}
+	return 0;
+}

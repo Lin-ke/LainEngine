@@ -73,7 +73,7 @@ void lain::RendererRD::MaterialStorage::shader_set_code(RID p_shader, const Stri
 			}
 			material->shader_type = new_type;
 		}
-
+		// 如果data 存在就 Update default texture parameters，这个因果关系是为什么？
 		if (shader->data) {
 			for (const KeyValue<StringName, HashMap<int, RID>> &E : shader->default_texture_parameter) {
 				for (const KeyValue<int, RID> &E2 : E.value) {
@@ -120,3 +120,14 @@ void lain::RendererRD::MaterialStorage::ShaderData::set_default_texture_paramete
 
 
 
+
+void MaterialStorage::_material_queue_update(Material *material, bool p_uniform, bool p_texture) {
+	material->uniform_dirty = material->uniform_dirty || p_uniform;
+	material->texture_dirty = material->texture_dirty || p_texture;
+
+	if (material->update_element.in_list()) {
+		return;
+	}
+
+	material_update_list.add(&material->update_element);
+}

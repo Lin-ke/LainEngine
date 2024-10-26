@@ -54,9 +54,17 @@ class RenderingSystem : public Object {
 	};
 	virtual RID texture_2d_create(const Ref<Image> &p_image) = 0;
 	virtual RID texture_2d_layered_create(const Vector<Ref<Image>> &p_layers, TextureLayeredType p_layered_type) = 0;
+	virtual RID texture_3d_create(Image::Format, int p_width, int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>> &p_data) = 0; //all slices, then all the mipmaps, must be coherent
  	virtual Ref<Image> texture_2d_get(RID p_texture) const = 0;
 	virtual Ref<Image> texture_2d_layer_get(RID p_texture, int p_layer) const = 0;
 	virtual Vector<Ref<Image>> texture_3d_get(RID p_texture) const = 0;
+
+	virtual void texture_2d_update(RID p_texture, const Ref<Image> &p_image, int p_layer = 0) = 0;
+	virtual void texture_3d_update(RID p_texture, const Vector<Ref<Image>> &p_data) = 0;
+
+	virtual RID texture_rd_create(const RID &p_rd_texture, const RenderingSystem::TextureLayeredType p_layer_type = RenderingSystem::TEXTURE_LAYERED_2D_ARRAY) = 0;
+	virtual RID texture_get_rd_texture(RID p_texture, bool p_srgb = false) const = 0;
+	virtual uint64_t texture_get_native_handle(RID p_texture, bool p_srgb = false) const = 0;
 
   /********SHADER ******* */
   /********SHADER ******* */
@@ -386,6 +394,67 @@ class RenderingSystem : public Object {
 	virtual void viewport_set_msaa_3d(RID p_viewport, ViewportMSAA p_msaa) = 0;
 	virtual void viewport_set_msaa_2d(RID p_viewport, ViewportMSAA p_msaa) = 0;
 
+
+	enum ViewportEnvironmentMode {
+		VIEWPORT_ENVIRONMENT_DISABLED,
+		VIEWPORT_ENVIRONMENT_ENABLED,
+		VIEWPORT_ENVIRONMENT_INHERIT,
+		VIEWPORT_ENVIRONMENT_MAX,
+	};
+
+	enum ViewportScreenSpaceAA {
+		VIEWPORT_SCREEN_SPACE_AA_DISABLED,
+		VIEWPORT_SCREEN_SPACE_AA_FXAA,
+		VIEWPORT_SCREEN_SPACE_AA_MAX,
+	};
+
+		enum ViewportOcclusionCullingBuildQuality {
+		VIEWPORT_OCCLUSION_BUILD_QUALITY_LOW = 0,
+		VIEWPORT_OCCLUSION_BUILD_QUALITY_MEDIUM = 1,
+		VIEWPORT_OCCLUSION_BUILD_QUALITY_HIGH = 2,
+	};
+	enum ViewportRenderInfo {
+		VIEWPORT_RENDER_INFO_OBJECTS_IN_FRAME,
+		VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME,
+		VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME,
+		VIEWPORT_RENDER_INFO_MAX,
+	};
+		enum ViewportRenderInfoType {
+		VIEWPORT_RENDER_INFO_TYPE_VISIBLE,
+		VIEWPORT_RENDER_INFO_TYPE_SHADOW,
+		VIEWPORT_RENDER_INFO_TYPE_CANVAS,
+		VIEWPORT_RENDER_INFO_TYPE_MAX
+	};
+
+		enum ViewportDebugDraw {
+		VIEWPORT_DEBUG_DRAW_DISABLED,
+		VIEWPORT_DEBUG_DRAW_UNSHADED,
+		VIEWPORT_DEBUG_DRAW_LIGHTING,
+		VIEWPORT_DEBUG_DRAW_OVERDRAW,
+		VIEWPORT_DEBUG_DRAW_WIREFRAME,
+		VIEWPORT_DEBUG_DRAW_NORMAL_BUFFER,
+		VIEWPORT_DEBUG_DRAW_VOXEL_GI_ALBEDO,
+		VIEWPORT_DEBUG_DRAW_VOXEL_GI_LIGHTING,
+		VIEWPORT_DEBUG_DRAW_VOXEL_GI_EMISSION,
+		VIEWPORT_DEBUG_DRAW_SHADOW_ATLAS,
+		VIEWPORT_DEBUG_DRAW_DIRECTIONAL_SHADOW_ATLAS,
+		VIEWPORT_DEBUG_DRAW_SCENE_LUMINANCE,
+		VIEWPORT_DEBUG_DRAW_SSAO,
+		VIEWPORT_DEBUG_DRAW_SSIL,
+		VIEWPORT_DEBUG_DRAW_PSSM_SPLITS,
+		VIEWPORT_DEBUG_DRAW_DECAL_ATLAS,
+		VIEWPORT_DEBUG_DRAW_SDFGI,
+		VIEWPORT_DEBUG_DRAW_SDFGI_PROBES,
+		VIEWPORT_DEBUG_DRAW_GI_BUFFER,
+		VIEWPORT_DEBUG_DRAW_DISABLE_LOD,
+		VIEWPORT_DEBUG_DRAW_CLUSTER_OMNI_LIGHTS,
+		VIEWPORT_DEBUG_DRAW_CLUSTER_SPOT_LIGHTS,
+		VIEWPORT_DEBUG_DRAW_CLUSTER_DECALS,
+		VIEWPORT_DEBUG_DRAW_CLUSTER_REFLECTION_PROBES,
+		VIEWPORT_DEBUG_DRAW_OCCLUDERS,
+		VIEWPORT_DEBUG_DRAW_MOTION_VECTORS,
+		VIEWPORT_DEBUG_DRAW_INTERNAL_BUFFER,
+	};
   /// *************** ///
   /// ***DECAL API*** /// 贴花
   /// *************** ///
@@ -543,10 +612,7 @@ class RenderingSystem : public Object {
 		SHADOW_QUALITY_MAX
 	};
 
-	virtual void positional_soft_shadow_filter_set_quality(ShadowQuality p_quality) = 0;
-	virtual void directional_soft_shadow_filter_set_quality(ShadowQuality p_quality) = 0;
 
-	virtual void light_projectors_set_filter(LightProjectorFilter p_filter) = 0;
 	/* PROBE API */
 
 
@@ -560,10 +626,9 @@ public:
 	virtual void init();
 	virtual void finish() = 0;
 	virtual void tick() = 0;
-	virtual void pre_draw(bool p_will_draw) = 0;
  /* STATUS INFORMATION */
 
-	enum RenderingInfo {
+	enum RenderingInfo { // 绘制指令的数量（位于viewport.h) 和 缓存的数量 (utilities.h)
 		RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME,
 		RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME,
 		RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME,
@@ -585,6 +650,50 @@ public:
 		SHADOW_CASTING_SETTING_ON,
 		SHADOW_CASTING_SETTING_DOUBLE_SIDED,
 		SHADOW_CASTING_SETTING_SHADOWS_ONLY,
+	};
+/* ENVIRONMENT API */
+	enum EnvironmentBG { // 背景类型
+		ENV_BG_CLEAR_COLOR,
+		ENV_BG_COLOR,
+		ENV_BG_SKY,
+		ENV_BG_CANVAS,
+		ENV_BG_KEEP,
+		ENV_BG_CAMERA_FEED,
+		ENV_BG_MAX
+	};
+
+	enum EnvironmentAmbientSource {
+		ENV_AMBIENT_SOURCE_BG,
+		ENV_AMBIENT_SOURCE_DISABLED,
+		ENV_AMBIENT_SOURCE_COLOR,
+		ENV_AMBIENT_SOURCE_SKY,
+	};
+	enum EnvironmentReflectionSource {
+		ENV_REFLECTION_SOURCE_BG,
+		ENV_REFLECTION_SOURCE_DISABLED,
+		ENV_REFLECTION_SOURCE_SKY,
+	};
+
+	enum EnvironmentGlowBlendMode {
+		ENV_GLOW_BLEND_MODE_ADDITIVE,
+		ENV_GLOW_BLEND_MODE_SCREEN,
+		ENV_GLOW_BLEND_MODE_SOFTLIGHT,
+		ENV_GLOW_BLEND_MODE_REPLACE,
+		ENV_GLOW_BLEND_MODE_MIX,
+	};
+
+	enum EnvironmentToneMapper {
+		ENV_TONE_MAPPER_LINEAR,
+		ENV_TONE_MAPPER_REINHARD,
+		ENV_TONE_MAPPER_FILMIC,
+		ENV_TONE_MAPPER_ACES
+	};
+
+	
+	enum EnvironmentSDFGIYScale {
+		ENV_SDFGI_Y_SCALE_50_PERCENT,
+		ENV_SDFGI_Y_SCALE_75_PERCENT,
+		ENV_SDFGI_Y_SCALE_100_PERCENT,
 	};
 
   virtual void free(RID p_rid) = 0;

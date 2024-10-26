@@ -7,7 +7,10 @@
 #include "memory.h"
 #include "thread_safe.h"
 #include "time_enums.h"
-
+#define ForwardRenderingMethodName "forward"
+#define CompatiblilityRenderingMethodName "gl_compatiblitity"
+#define VulkanDriver "vulkan"
+#define OpenGLDriver "opengl"
 // abstruct of the OS
 namespace lain {
 
@@ -82,8 +85,13 @@ public:
 	int GetProcessorCount() const;
 	int GetDefaultThreadPoolSize() const { return GetProcessorCount(); }
 	String GetCurrentRenderingMethod() const { return _current_rendering_method; }
+
 	void EnsureUserDataDir();
 	String GetCurrentRenderingDriverName() const { return _current_rendering_driver_name; }
+	bool is_gl_rd() const {return _current_rendering_driver_name.begins_with("opengl"); }
+	bool is_vulkan_rd() const {return _current_rendering_driver_name.begins_with("vulkan"); }
+	bool is_gl_rdm() const {return _current_rendering_method == CompatiblilityRenderingMethodName; }
+	bool is_forward_rdm() const {return _current_rendering_method == ForwardRenderingMethodName; }
 	void set_current_rendering_driver_name(const String &p_driver_name) { _current_rendering_driver_name = p_driver_name; }
 	void set_current_rendering_method(const String &p_name) { _current_rendering_method = p_name; }
 	enum RenderThreadMode {

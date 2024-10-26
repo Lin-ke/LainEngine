@@ -12,6 +12,8 @@
 #include "core/scene/object/gobject.h"
 
 #include "scene/resources/io/resource_format_shader.h"
+#include "scene/resources/common/shader_include.h"
+
 
 namespace lain {
 	static WorkerThreadPool* worker_thread_pool = nullptr;
@@ -37,8 +39,9 @@ namespace lain {
 	static Ref<ResourceFormatLoaderImage> resource_format_loader_image;
 	static Ref<ResourceFormatLoaderShader> resource_format_loader_shader;
 	static Ref<ResourceFormatSaverShader> resource_format_saver_shader;
-
-
+	static Ref<ResourceFormatLoaderShaderInclude> resource_format_loader_shader_include;
+	static Ref<ResourceFormatSaverShaderInclude> resource_format_saver_shader_include;
+	
 
 
 	void register_core_types() {
@@ -86,10 +89,15 @@ namespace lain {
 		resource_format_saver_shader.instantiate();
 		ResourceSaver::add_resource_format_saver(resource_format_saver_shader);
 
+		resource_format_loader_shader_include.instantiate();
+		ResourceLoader::add_resource_format_loader(resource_format_loader_shader_include);
+
+		resource_format_saver_shader_include.instantiate();
+		ResourceSaver::add_resource_format_saver(resource_format_saver_shader_include);
 		
 
-		/*auto&& dict = ResourceLoader::ext_to_loader_idx;
-		L_JSON(dict);*/
+		auto&& dict = ResourceLoader::ext_to_loader_idx;
+		L_JSON(dict);
 		
 
 		GObject::init_gobj_hrcr();

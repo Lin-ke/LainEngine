@@ -1,4 +1,5 @@
 #include "function/shader/shader_preprocessor.h"
+#include "function/shader/shader_compiler.h"
 namespace lain::test{
   void test_shader(){
     String p_code = "#define a 123\nint b = a;";
@@ -14,5 +15,7 @@ namespace lain::test{
     else{
       L_PRINT("Error");
     }
+    ResourceLoader::load("res://1.lshader");
+
   }
 }

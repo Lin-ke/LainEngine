@@ -109,31 +109,6 @@ public:
 
 	typedef T ValueType;
 
-	struct Iterator {
-		_FORCE_INLINE_ T& operator*() const {
-			return E->get();
-		}
-		_FORCE_INLINE_ T* operator->() const { return &E->get(); }
-		_FORCE_INLINE_ Iterator& operator++() {
-			E = E->next();
-			return *this;
-		}
-		_FORCE_INLINE_ Iterator& operator--() {
-			E = E->prev();
-			return *this;
-		}
-
-		_FORCE_INLINE_ bool operator==(const Iterator& b) const { return E == b.E; }
-		_FORCE_INLINE_ bool operator!=(const Iterator& b) const { return E != b.E; }
-
-		Iterator(Element* p_E) { E = p_E; }
-		Iterator() {}
-		Iterator(const Iterator& p_it) { E = p_it.E; }
-
-	private:
-		Element* E = nullptr;
-	};
-
 	struct ConstIterator {
 		_FORCE_INLINE_ const T& operator*() const {
 			return E->get();
@@ -159,12 +134,44 @@ public:
 		const Element* E = nullptr;
 	};
 
+	struct Iterator {
+		_FORCE_INLINE_ T& operator*() const {
+			return E->get();
+		}
+		_FORCE_INLINE_ T* operator->() const { return &E->get(); }
+		_FORCE_INLINE_ Iterator& operator++() {
+			E = E->next();
+			return *this;
+		}
+		_FORCE_INLINE_ Iterator& operator--() {
+			E = E->prev();
+			return *this;
+		}
+
+		_FORCE_INLINE_ bool operator==(const Iterator& b) const { return E == b.E; }
+		_FORCE_INLINE_ bool operator!=(const Iterator& b) const { return E != b.E; }
+
+		Iterator(Element* p_E) { E = p_E; }
+		Iterator() {}
+		Iterator(const Iterator& p_it) { E = p_it.E; }
+// 应该允许iterator 隐式转换为const iterator
+		operator ConstIterator() const {
+			return ConstIterator(E);
+		}
+	
+	private:
+		Element* E = nullptr;
+	};
+
+
+
 	_FORCE_INLINE_ Iterator begin() {
 		return Iterator(front());
 	}
 	_FORCE_INLINE_ Iterator end() {
 		return Iterator(nullptr);
 	}
+
 
 #if 0
 	//to use when replacing find()
@@ -723,7 +730,35 @@ public:
 	const void* id() const {
 		return (void*)_data;
 	}
+	// Random access to elements, use with care,
+	// do not use for iteration.
+	T &get(int p_index) {
+		CRASH_BAD_INDEX(p_index, size());
 
+		Element *I = front();
+		int c = 0;
+		while (c < p_index) {
+			I = I->next();
+			c++;
+		}
+
+		return I->get();
+	}
+
+	// Random access to elements, use with care,
+	// do not use for iteration.
+	const T &get(int p_index) const {
+		CRASH_BAD_INDEX(p_index, size());
+
+		const Element *I = front();
+		int c = 0;
+		while (c < p_index) {
+			I = I->next();
+			c++;
+		}
+
+		return I->get();
+	}
 	/**
 	 * copy constructor for the list
 	 */

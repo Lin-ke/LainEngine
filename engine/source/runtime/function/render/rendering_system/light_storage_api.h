@@ -6,7 +6,7 @@ namespace lain{
 
 class RendererLightStorage {
 	virtual ~RendererLightStorage() {}
-  
+  public:
 	/* Light API */
 
 	virtual RID directional_light_allocate() = 0;

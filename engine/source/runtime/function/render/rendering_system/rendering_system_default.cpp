@@ -1,4 +1,6 @@
 #include "rendering_system_default.h"
+#include "function/render/scene/renderer_scene_cull.h"
+
 using namespace lain;
 int RenderingSystemDefault::changes = 0;
 
@@ -23,7 +25,13 @@ void RenderingSystemDefault::init(){
 		DEV_ASSERT(server_task_id == tid);
 	}
 }
-
+void RenderingSystemDefault::sync() {
+	if (create_thread) {
+		command_queue.sync();
+	} else {
+		command_queue.flush_all(); // Flush all pending from other threads.
+	}
+}
 void RenderingSystemDefault::_free(RID p_rid) {
 // 	if (unlikely(p_rid.is_null())) {
 // 		return;
@@ -43,6 +51,18 @@ void RenderingSystemDefault::_free(RID p_rid) {
 // }
 }
 
+void lain::RenderingSystemDefault::_finish() {
+
+
+	// RSG::canvas->finalize();
+	// memdelete(RSG::canvas);
+	RSG::rasterizer->finalize();
+	memdelete(RSG::viewport);
+	memdelete(RSG::rasterizer);
+	memdelete(RSG::scene);
+	// memdelete(RSG::camera_attributes);
+}
+
 void lain::RenderingSystemDefault::_thread_loop(void* p_data) {
 	while (!exit) { 
 		WorkerThreadPool::get_singleton()->yield(); // 等待， 直到push 会 notify
@@ -53,6 +73,28 @@ void lain::RenderingSystemDefault::_thread_loop(void* p_data) {
 void lain::RenderingSystemDefault::_assign_mt_ids(WorkerThreadPool::TaskID p_pump_task_id) {
 	server_thread = Thread::get_caller_id();
 	server_task_id = p_pump_task_id;
+}
+
+void lain::RenderingSystemDefault::_init() {
+	RSG::threaded = create_thread;
+
+	// RSG::canvas = memnew(RendererCanvasCull);
+	RSG::viewport = memnew(RendererViewport);
+	RendererSceneCull *sr = memnew(RendererSceneCull);
+	// RSG::camera_attributes = memnew(RendererCameraAttributes);
+	RSG::scene = sr;
+	RSG::rasterizer = RendererCompositor::create();
+	RSG::utilities = RSG::rasterizer->get_utilities();
+	RSG::rasterizer->initialize();
+	RSG::light_storage = RSG::rasterizer->get_light_storage();
+	RSG::material_storage = RSG::rasterizer->get_material_storage();
+	RSG::mesh_storage = RSG::rasterizer->get_mesh_storage();
+	// RSG::particles_storage = RSG::rasterizer->get_particles_storage();
+	RSG::texture_storage = RSG::rasterizer->get_texture_storage();
+	// RSG::gi = RSG::rasterizer->get_gi();
+	// RSG::fog = RSG::rasterizer->get_fog();
+	// RSG::canvas_render = RSG::rasterizer->get_canvas();
+	sr->set_scene_render(RSG::rasterizer->get_scene());
 }
 
 void lain::RenderingSystemDefault::free(RID p_rid) {
@@ -89,6 +131,26 @@ ERR_FAIL_COND_MSG(!Thread::is_main_thread(), "Manually triggering the draw funct
 	} else {
 		_draw(p_swap_buffers, frame_step);
 	}	
+}
+
+void lain::RenderingSystemDefault::tick() {
+	// canvas tick
+}
+
+bool lain::RenderingSystemDefault::has_changed() const {
+  	return changes > 0;
+}
+
+uint64_t lain::RenderingSystemDefault::get_rendering_info(RenderingInfo p_info)
+{
+	if (p_info == RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME) {
+		return RSG::viewport->get_total_objects_drawn();
+	} else if (p_info == RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME) {
+		return RSG::viewport->get_total_primitives_drawn();
+	} else if (p_info == RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME) {
+		return RSG::viewport->get_total_draw_calls_used();
+	}
+	return RSG::utilities->get_rendering_info(p_info);
 }
 
 void RenderingSystemDefault::_draw(bool p_swap_buffers, double frame_step) {

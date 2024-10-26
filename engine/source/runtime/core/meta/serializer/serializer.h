@@ -142,8 +142,14 @@ class Serializer {
   template <typename K, typename V>
   static Json write(const lain::HashMap<K, V>& instance) {
     Json::object ret_context;
+    // 这里需要避免双引号
     for (const KeyValue<K, V>& E : instance) {
-      ret_context.insert_or_assign(Serializer::write(E.key).dump(), Serializer::write(E.value));
+      Json obj = Serializer::write(E.key);
+      if (obj.is_string()) {
+        ret_context.insert(obj.string_value(), Serializer::write(E.value));
+      } else {
+        ret_context.insert(Serializer::write(E.key).dump(), Serializer::write(E.value));
+      }
     }
     return ret_context;
   }

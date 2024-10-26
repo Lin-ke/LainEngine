@@ -9,6 +9,7 @@ namespace lain {
 class Variant;
 REFLECTION_TYPE(Plane);
 struct _NO_DISCARD_ Plane {
+	// 4 number
 	REFLECTION_BODY(Plane);
 	Vector3 normal;
 	real_t d = 0;

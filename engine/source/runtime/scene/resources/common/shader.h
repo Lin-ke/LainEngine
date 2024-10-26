@@ -5,13 +5,13 @@
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "scene/resources/common/texture.h"
-
+#include "shader_include.h"
 namespace lain {
 // Shader -> Shader compiler -> Uber shader -> Compile to SPRIV
 
 class Shader : public Resource {
   LCLASS(Shader, Resource);
-  // OBJ_SAVE_TYPE(Shader);
+  OBJ_SAVE_TYPE(Shader);
 
  public:
   enum Mode { MODE_SPATIAL, MODE_CANVAS_ITEM, MODE_PARTICLES, MODE_SKY, MODE_FOG, MODE_MAX };
@@ -28,7 +28,7 @@ class Shader : public Resource {
  public:
   RID shader;
   Mode mode = MODE_SPATIAL;  // 我感觉这不是一个好设计
-  //HashSet<Ref<ShaderInclude>> include_dependencies;
+  HashSet<Ref<ShaderInclude>> include_dependencies;
   String code;
   String include_path;
 
@@ -37,7 +37,7 @@ class Shader : public Resource {
   virtual void set_path(const String& p_path, bool p_take_over = false) override;
   L_INLINE void set_include_path(const String& p_path) { include_path = p_path; }
 
-  L_INLINE void set_code(const String& p_code);
+  void set_code(const String& p_code);
   String get_code() const;
   virtual void _update_shader() const{} //used for visual shader
 

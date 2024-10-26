@@ -1,6 +1,7 @@
 #include "resource_format_shader.h"
 #include "scene/resources/common/shader.h"
-using namespace lain;
+namespace lain{
+
 
 Ref<Resource> ResourceFormatLoaderShader::load(const String& p_path, const String& p_original_path, Error* r_error, bool p_use_sub_threads, float* r_progress,
                                                CacheMode p_cache_mode) {
@@ -73,4 +74,5 @@ void lain::ResourceFormatSaverShader::get_recognized_extensions(List<String>* p_
 
 void lain::ResourceFormatSaverShader::get_recognized_resources(List<String>* p_resource_class) const {
     p_resource_class->push_back("Shader");
+}
 }

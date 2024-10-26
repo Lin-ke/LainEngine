@@ -34,16 +34,22 @@ STRUCT(_NO_DISCARD_ Vector2i, Fields) {
   int* ptr() {
     return &x;
   }
+  int32_t & width() {
+    return x;
+  }
+  int32_t & height() {
+    return y;
+  }
+  const int32_t & width() const {
+    return x;
+  }
+  const int32_t & height() const {
+    return y;
+  }
+	real_t aspect() const { return width() / (real_t)height(); }
 
   const int* ptr() const {
     return &x;
-  }
-
-  L_INLINE int& width() {
-    return x;
-  }
-  L_INLINE int& height() {
-    return y;
   }
 
   int operator[](size_t i) const {

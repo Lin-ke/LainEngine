@@ -3,7 +3,7 @@
 #include "function/render/rendering_system/rendering_system.h"
 #include "function/shader/shader_language.h"
 #include "function/shader/shader_preprocessor.h"
-using namespace lain;
+namespace lain{
 
 Shader::Mode Shader::get_mode() const {
   return mode;
@@ -68,4 +68,6 @@ Shader::Shader() {
 Shader::~Shader() {
 	ERR_FAIL_NULL(RenderingSystem::get_singleton());
 	RenderingSystem::get_singleton()->free(shader);
+}
+	
 }

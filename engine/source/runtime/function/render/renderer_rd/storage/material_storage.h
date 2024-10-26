@@ -19,7 +19,7 @@ class MaterialStorage : public RendererMaterialStorage {
   // 这里很复杂，@？ 如何与shader的反射相结合
   struct ShaderData {
     String path;
-    // HashMap<StringName, ShaderLanguage::ShaderNode::Uniform> uniforms;
+    HashMap<StringName, shader::ShaderLanguage::ShaderNode::Uniform> uniforms;
     HashMap<StringName, HashMap<int, RID>> default_texture_params;
 
     virtual void set_path_hint(const String& p_hint);
@@ -43,7 +43,7 @@ class MaterialStorage : public RendererMaterialStorage {
     String path_hint;
     ShaderType type;
     HashMap<StringName, HashMap<int, RID>> default_texture_parameter;
-    HashSet<Material*> owners;
+    HashSet<Material*> owners; // 这个shader 管着这些材质
   };
   
   mutable RID_Owner<Shader, true> shader_owner;
@@ -52,6 +52,7 @@ class MaterialStorage : public RendererMaterialStorage {
   
 	struct MaterialData {
 		Vector<RendererRD::TextureStorage::RenderTarget *> render_target_cache;
+    // 我觉得这里没有想到多shader语言的问题，应该提供接口
 		void update_uniform_buffer(const HashMap<StringName, shader::ShaderLanguage::ShaderNode::Uniform> &p_uniforms, const uint32_t *p_uniform_offsets, const HashMap<StringName, Variant> &p_parameters, uint8_t *p_buffer, uint32_t p_buffer_size, bool p_use_linear_color);
 		void update_textures(const HashMap<StringName, Variant> &p_parameters, const HashMap<StringName, HashMap<int, RID>> &p_default_textures, const Vector<shader::ShaderCompiler::GeneratedCode::Texture> &p_texture_uniforms, RID *p_textures, bool p_use_linear_color, bool p_3d_material);
 		void set_as_used();
@@ -68,7 +69,7 @@ class MaterialStorage : public RendererMaterialStorage {
 	private:
 		friend class MaterialStorage;
 
-		RID self;
+		RID self; // 与 Material.self 一致
 		List<RID>::Element *global_buffer_E = nullptr;
 		List<RID>::Element *global_texture_E = nullptr;
 		uint64_t global_textures_pass = 0;
@@ -94,7 +95,7 @@ class MaterialStorage : public RendererMaterialStorage {
 		HashMap<StringName, Variant> params;
 		int32_t priority = 0;
 		RID next_pass;
-		SelfList<Material> update_element;
+		SelfList<Material> update_element; // 更新链表的结点
 
 		Dependency dependency;
 
@@ -158,6 +159,9 @@ class MaterialStorage : public RendererMaterialStorage {
   virtual void material_update_dependency(RID p_material, DependencyTracker* p_instance) override;
 	void material_set_data_request_function(ShaderType p_shader_type, MaterialDataRequestFunction p_function);
 	MaterialDataRequestFunction material_get_data_request_function(ShaderType p_shader_type);
+  private:
+	SelfList<Material>::List material_update_list;
+  void _material_queue_update(Material *material, bool p_uniform, bool p_texture);
 };
 }  // namespace lain::RendererRD
 

@@ -22,8 +22,8 @@ static ProjectSettings* globals = nullptr;
 static ProjectManager* pmanager = nullptr;
 // Drviers
 String display_driver = "";
-String rendering_driver = "Vulkan";
-String rendering_method = "";
+String rendering_driver = VulkanDriver;
+String rendering_method = ForwardRenderingMethodName;
 
 
 // Main loop vairables
@@ -113,6 +113,15 @@ Error Main::Initialize(int argc, char* argv[]) {
     }
   }
 
+  // note this is the desired rendering driver, it doesn't mean we will get it.
+	// TODO - make sure this is updated in the case of fallbacks, so that the user interface
+	// shows the correct driver string.
+	OS::GetSingleton()->set_current_rendering_driver_name(rendering_driver);
+	OS::GetSingleton()->set_current_rendering_method(rendering_method);
+
+	// always convert to lower case for consistency in the code
+	rendering_driver = rendering_driver.to_lower();
+
   /// --- windows related ----
 
   Vector2i* window_position = nullptr;
@@ -150,12 +159,13 @@ Error Main::Initialize(int argc, char* argv[]) {
   }
   MainLoop* main_loop = memnew(SceneTree);
   Error err;
+  // 注意这里的顺序（见WindowSystem里的注释）
   window_system = memnew(WindowSystem(rendering_driver, window_mode, window_vsync_mode, window_flags, window_position, window_size, init_screen, err));
   { // rendering thread mode
     int rtm = -1;
     rtm = GLOBAL_DEF("rendering/driver/render_thread_mode", OS::RENDER_SEPARATE_THREAD);
     OS::GetSingleton()->set_render_thread_mode(OS::RenderThreadMode(rtm));
-    // render_system = memnew(RenderingSystemDefault(OS::GetSingleton()->get_render_thread_mode() == OS::RENDER_SEPARATE_THREAD));
+    render_system = memnew(RenderingSystemDefault(OS::GetSingleton()->get_render_thread_mode() == OS::RENDER_SEPARATE_THREAD));
   }
 
   if (main_scene != "") {}

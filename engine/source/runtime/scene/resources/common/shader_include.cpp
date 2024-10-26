@@ -5,7 +5,7 @@ using namespace lain;
 void ShaderInclude::set_code(const String &p_code) {
 	code = p_code;
 
-	for (const Ref<ShaderInclude> &E : dependencies) {
+	for (const Ref<ShaderInclude> &E : include_dependencies) {
 		// E->disconnect_changed(callable_mp(this, &ShaderInclude::_dependency_changed));
 	}
 
@@ -21,11 +21,11 @@ void ShaderInclude::set_code(const String &p_code) {
 		Error result = preprocessor.preprocess(p_code, path, pp_code, nullptr, nullptr, nullptr, &new_dependencies);
 		if (result == OK) {
 			// This ensures previous include resources are not freed and then re-loaded during parse (which would make compiling slower)
-			dependencies = new_dependencies;
+			include_dependencies = new_dependencies;
 		}
 	}
 
-	for (const Ref<ShaderInclude> &E : dependencies) {
+	for (const Ref<ShaderInclude> &E : include_dependencies) {
 		// E->connect_changed(callable_mp(this, &ShaderInclude::_dependency_changed));
 	}
 

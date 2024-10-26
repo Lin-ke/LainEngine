@@ -1,9 +1,15 @@
 #ifndef RENDERING_METHOD_API_H
 #define RENDERING_METHOD_API_H
 #include "rendering_system.h"
+#include "render_scene_buffers_api.h"
 namespace lain{
 class RenderingMethod {
   public:
+	
+	struct RenderInfo {
+		int info[RS::VIEWPORT_RENDER_INFO_TYPE_MAX][RS::VIEWPORT_RENDER_INFO_MAX] = {};
+	};
+
   // camera 
   virtual RID camera_allocate() = 0;
 	virtual void camera_initialize(RID p_rid) = 0;
@@ -59,8 +65,19 @@ class RenderingMethod {
 
 	virtual void instance_set_ignore_culling(RID p_instance, bool p_enabled) = 0;
 
+	virtual bool is_environment(RID p_environment) const = 0; // 确保rid是environment
+	virtual RS::EnvironmentBG environment_get_background(RID p_Env) const = 0;
+	virtual int environment_get_canvas_max_layer(RID p_env) const = 0;
+
+	/* Render Buffers */
+
+	virtual Ref<RenderSceneBuffers> render_buffers_create() = 0;
+	virtual void render_empty_scene(const Ref<RenderSceneBuffers> &p_render_buffers, RID p_scenario, RID p_shadow_atlas) = 0;
+
+	
 	virtual void update() = 0;
 
+	virtual void render_camera(const Ref<RenderSceneBuffers> &p_render_buffers, RID p_camera, RID p_scenario, RID p_viewport, Size2 p_viewport_size, uint32_t p_jitter_phase_count, float p_screen_mesh_lod_threshold, RID p_shadow_atlas, RenderInfo *r_render_info) = 0;
 	virtual void render_probes() = 0;
 	virtual void update_visibility_notifiers() = 0;
 };
