@@ -497,7 +497,7 @@ Vector<Plane> Projection::get_projection_planes(const Transform3D &p_transform) 
 			matrix[11] + matrix[10],
 			matrix[15] + matrix[14]);
 
-	new_plane.normal = -new_plane.normal;
+	new_plane.normal = -new_plane.normal; 
 	new_plane.normalize();
 
 	planes.write[0] = p_transform.xform(new_plane);

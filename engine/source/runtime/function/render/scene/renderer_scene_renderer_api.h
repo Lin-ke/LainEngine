@@ -66,9 +66,9 @@ class RendererSceneRender {
 
 		void set_camera(const Transform3D p_transform, const Projection p_projection, bool p_is_orthogonal, bool p_vaspect, const Vector2 &p_taa_jitter = Vector2(), uint32_t p_visible_layers = 0xFFFFFFFF);
 		void set_multiview_camera(uint32_t p_view_count, const Transform3D *p_transforms, const Projection *p_projections, bool p_is_orthogonal, bool p_vaspect);
-		virtual void set_scene_pass(uint64_t p_pass) = 0;
 
 	};
+	virtual void set_scene_pass(uint64_t p_pass) = 0;
 	
 
 };

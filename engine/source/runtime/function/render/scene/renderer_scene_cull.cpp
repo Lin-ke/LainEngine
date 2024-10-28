@@ -1159,7 +1159,9 @@ void RendererSceneCull::render_camera(const Ref<RenderSceneBuffers>& p_render_bu
       projection.set_frustum(camera->size, p_viewport_size.width() / (float)p_viewport_size.height(), camera->offset, camera->znear, camera->zfar, camera->vaspect);
     } break;
   }
-
+  // transform: camera的 global transform，其逆是 ViewMatrix
+  // projection 
+  // vaspect 
   camera_data.set_camera(transform, projection, is_orthogonal, vaspect, jitter, camera->visible_layers);
   RID environment = _render_get_environment(p_camera, p_scenario);
   RID compositor = _render_get_compositor(p_camera, p_scenario);
@@ -1218,7 +1220,7 @@ void lain::RendererSceneCull::_render_scene(const RendererSceneRender::CameraDat
       if (visibility_cull_data.cull_count == 0) {
         continue;
       }
-
+      // _visibility_cull 设置被 cull 的每个instance 的 visibility flag (instance_data)
       if (visibility_cull_data.cull_count > thread_cull_threshold) {
         WorkerThreadPool::GroupID group_task =
             WorkerThreadPool::get_singleton()->add_template_group_task(this, &RendererSceneCull::_visibility_cull_threaded, &visibility_cull_data,

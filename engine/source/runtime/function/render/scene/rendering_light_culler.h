@@ -69,7 +69,9 @@ class RenderingLightCuller {
 		uint32_t rejected_count = 0;
 #endif
 	};
-	bool _prepare_light(const RendererSceneCull::Instance &p_instance, int32_t p_directional_light_id = -1);
+	bool _prepare_light(const RendererSceneCull::Instance &p_instance, int32_t p_directional_light_id = -1, RS::LightType p_light_type = RS::LightType::LIGHT_DIRECTIONAL);
+	bool _add_light_camera_planes(LightCullPlanes &r_cull_planes, const LightSource &p_light_source);
+
 struct Data {
 		// Camera frustum planes (world space) - order ePlane.
 		Vector<Plane> frustum_planes;
