@@ -55,7 +55,10 @@ class RendererSceneRender {
 		bool is_orthogonal;
 		uint32_t visible_layers;
 		bool vaspect;
-
+		// OpenGL风格，摄像机位于原点，与z轴方向相反
+		// transform包括旋转(basis) 和 位移(origin)
+		// projection是相机的投影矩阵
+	
 		// Main/center projection
 		Transform3D main_transform;
 		Projection main_projection;

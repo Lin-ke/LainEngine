@@ -3,6 +3,7 @@
 #include "render_scene_buffers_api.h"
 #include "rendering_system.h"
 #include "rendering_method_api.h"
+#include "../scene/renderer_scene_renderer_api.h"
 namespace lain {
 class RendererViewport {
  public:
@@ -104,8 +105,8 @@ class RendererViewport {
   RID viewport_get_texture(RID p_viewport) const;
   RID viewport_get_occluder_debug_texture(RID p_viewport) const;
 
-  // void viewport_set_prev_camera_data(RID p_viewport, const RendererSceneRender::CameraData *p_camera_data);
-  // const RendererSceneRender::CameraData *viewport_get_prev_camera_data(RID p_viewport);
+  void viewport_set_prev_camera_data(RID p_viewport, const RendererSceneRender::CameraData *p_camera_data);
+  const RendererSceneRender::CameraData *viewport_get_prev_camera_data(RID p_viewport);
 
   void viewport_set_disable_2d(RID p_viewport, bool p_disable);
   void viewport_set_environment_mode(RID p_viewport, RS::ViewportEnvironmentMode p_mode);

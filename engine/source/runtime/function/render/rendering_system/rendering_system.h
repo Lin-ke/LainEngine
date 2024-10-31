@@ -578,6 +578,7 @@ class RenderingSystem : public Object {
 	virtual void light_omni_set_shadow_mode(RID p_light, LightOmniShadowMode p_mode) = 0;
 
 	// Directional light
+	// PSSM 或者说CSM
 	enum LightDirectionalShadowMode {
 		LIGHT_DIRECTIONAL_SHADOW_ORTHOGONAL,
 		LIGHT_DIRECTIONAL_SHADOW_PARALLEL_2_SPLITS,

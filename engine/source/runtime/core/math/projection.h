@@ -71,7 +71,8 @@ struct [[nodiscard]] Projection {
 	static real_t get_fovy(real_t p_fovx, real_t p_aspect) {
 		return Math::rad_to_deg(Math::atan(p_aspect * Math::tan(Math::deg_to_rad(p_fovx) * 0.5)) * 2.0);
 	}
-
+	// 相机空间中的 z_far z_near fov etc.
+	// 返回是正的，实际应该是负值(相机向-z方向看)
 	real_t get_z_far() const;
 	real_t get_z_near() const;
 	real_t get_aspect() const;

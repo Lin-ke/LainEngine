@@ -215,11 +215,6 @@ Transform3D::Transform3D(real_t p_xx, real_t p_xy, real_t p_xz, real_t p_yx, rea
 	origin = Vector3(p_ox, p_oy, p_oz);
 }
 
-_FORCE_INLINE_ Vector3 Transform3D::xform(const Vector3 &p_vector) const {
-	return Vector3(
-			basis[0].dot(p_vector) + origin.x,
-			basis[1].dot(p_vector) + origin.y,
-			basis[2].dot(p_vector) + origin.z);
-}
+
 
 }  // namespace lain

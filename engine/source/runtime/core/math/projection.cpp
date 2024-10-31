@@ -372,6 +372,7 @@ void Projection::set_frustum(real_t p_size, real_t p_aspect, Vector2 p_offset, r
 	set_frustum(-p_size / 2 + p_offset.x, +p_size / 2 + p_offset.x, -p_size / p_aspect / 2 + p_offset.y, +p_size / p_aspect / 2 + p_offset.y, p_near, p_far);
 }
 
+//  get_projection_planes
 real_t Projection::get_z_far() const {
 	const real_t *matrix = (const real_t *)columns;
 	Plane new_plane = Plane(matrix[3] - matrix[2],
@@ -384,6 +385,8 @@ real_t Projection::get_z_far() const {
 	return new_plane.d;
 }
 
+// 关于这个，可见 https://web.archive.org/web/20061020020112/https://www2.ravensoft.com/users/ggribb/plane%20extraction.pdf
+// 以及 函数 get_projection_planes
 real_t Projection::get_z_near() const {
 	const real_t *matrix = (const real_t *)columns;
 	Plane new_plane = Plane(matrix[3] + matrix[2],
@@ -395,6 +398,8 @@ real_t Projection::get_z_near() const {
 	return new_plane.d;
 }
 
+// 关于这个，可见 https://web.archive.org/web/20061020020112/https://www2.ravensoft.com/users/ggribb/plane%20extraction.pdf
+// 以及 函数 get_projection_planes
 Vector2 Projection::get_viewport_half_extents() const {
 	const real_t *matrix = (const real_t *)columns;
 	///////--- Near Plane ---///////
@@ -764,7 +769,7 @@ Projection::operator String() const {
 
 	return str;
 }
-
+// 这个好复杂
 real_t Projection::get_aspect() const {
 	Vector2 vp_he = get_viewport_half_extents();
 	return vp_he.x / vp_he.y;

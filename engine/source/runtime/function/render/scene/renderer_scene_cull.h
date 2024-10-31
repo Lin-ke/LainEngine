@@ -9,8 +9,10 @@
 #include "renderer_geometry_instance_api.h"
 #include "renderer_scene_occlusion_cull.h"
 #include "renderer_scene_renderer_api.h"
+
 namespace lain {
 // RendererSceneCull: scene renderer implementation, does indexing and frustum culling using CPU
+class RenderingLightCuller;
 class RendererSceneCull : public RenderingMethod {
   uint64_t render_pass;
 
@@ -193,7 +195,7 @@ class RendererSceneCull : public RenderingMethod {
       FLAG_VISIBILITY_DEPENDENCY_NEEDS_CHECK = (3 << 20),  // 2 bits, overlaps with the other vis. dependency flags
       FLAG_VISIBILITY_DEPENDENCY_HIDDEN_CLOSE_RANGE = (1 << 20),
       FLAG_VISIBILITY_DEPENDENCY_HIDDEN = (1 << 21),
-      FLAG_VISIBILITY_DEPENDENCY_FADE_CHILDREN = (1 << 22),
+      FLAG_VISIBILITY_DEPENDENCY_FADE_CHILDREN = (1 << 22), // 设置这标志位即parent 会设置好children_fade_alpha
       FLAG_GEOM_PROJECTOR_SOFTSHADOW_DIRTY = (1 << 23),
       FLAG_IGNORE_ALL_CULLING = (1 << 24),
     };
@@ -204,9 +206,18 @@ class RendererSceneCull : public RenderingMethod {
     Instance* instance = nullptr;
     int32_t visibility_index = -1;
     union {
+      // 如果light
+			uint64_t instance_data_rid;
+      // 如果geometry instance
       RenderGeometryInstance* instance_geometry = nullptr;
     };
     int32_t vis_parent_array_index = -1;
+    // Each time occlusion culling determines an instance is visible,
+		// set this to occlusion_frame plus some delay.
+		// Once the timeout is reached, allow the instance to be occlusion culled.
+		// This creates a delay for occlusion culling, which prevents flickering
+		// when jittering the raster occlusion projection.
+		uint64_t occlusion_timeout = 0;
   };
 
   LocalVector<Vector2> camera_jitter_array;
@@ -414,6 +425,18 @@ class RendererSceneCull : public RenderingMethod {
     DependencyTracker dependency_tracker;
     Instance();
   };
+
+  struct CullData {
+		Cull *cull = nullptr;
+		Scenario *scenario = nullptr;
+		RID shadow_atlas;
+		Transform3D cam_transform;
+		uint32_t visible_layers;
+		Instance *render_reflection_probe = nullptr;
+		const RendererSceneOcclusionCull::HZBuffer *occlusion_buffer;
+		const Projection *camera_matrix;
+		uint64_t visibility_viewport_mask;
+	};
   struct InstanceBaseData {
     virtual ~InstanceBaseData() {}
   };
@@ -435,9 +458,49 @@ class RendererSceneCull : public RenderingMethod {
     bool light_intersects_multiple_cameras;
     uint32_t light_intersects_multiple_cameras_timeout_frame_id;
     RS::LightBakeMode bake_mode;
-    List<Instance*>::Element* D;  // 存到场景的directional_lights中的返回值
+		uint64_t last_version;
     // 通过这种方式保存了对链表整体的引用
+    List<Instance*>::Element* D;  // 存到场景的directional_lights中的返回值
+		bool is_shadow_dirty() const { return shadow_dirty_count != 0; }
+    
     void make_shadow_dirty() { shadow_dirty_count = light_intersects_multiple_cameras ? 1 : 2; }
+    // 一个light在p_frame_id帧中是否被多个camera看到（调用该函数）
+    // 多线程？
+    void detect_light_intersects_multiple_cameras(uint32_t p_frame_id) {
+			// We need to detect the case where shadow updates are occurring
+			// more than once per frame. In this case, we need to turn off
+			// tighter caster culling, so situation reverts to one full shadow update
+			// per frame (light_intersects_multiple_cameras is set).
+			if (p_frame_id == light_update_frame_id) {
+				light_intersects_multiple_cameras = true;
+				light_intersects_multiple_cameras_timeout_frame_id = p_frame_id + 60;
+			} else {
+				// When shadow_volume_intersects_multiple_cameras is set, we
+				// want to detect the situation this is no longer the case, via a timeout.
+				// The system can go back to tighter caster culling in this situation.
+				// Having a long-ish timeout prevents rapid cycling.
+				if (light_intersects_multiple_cameras && (p_frame_id >= light_intersects_multiple_cameras_timeout_frame_id)) {
+					light_intersects_multiple_cameras = false;
+					light_intersects_multiple_cameras_timeout_frame_id = UINT32_MAX;
+				}
+			}
+			light_update_frame_id = p_frame_id;
+		}
+    void decrement_shadow_dirty() {
+			shadow_dirty_count--;
+			DEV_ASSERT(shadow_dirty_count >= 0);
+		}
+    InstanceLightData() {
+			bake_mode = RS::LIGHT_BAKE_DISABLED;
+			D = nullptr;
+			last_version = 0;
+			// baked_light = nullptr;
+
+			shadow_dirty_count = 1;
+			light_update_frame_id = UINT32_MAX;
+			light_intersects_multiple_cameras_timeout_frame_id = UINT32_MAX;
+			light_intersects_multiple_cameras = false;
+		}
   };
   struct InstanceDecalData : public InstanceBaseData {};
 
@@ -459,6 +522,8 @@ class RendererSceneCull : public RenderingMethod {
   struct InstanceParticlesCollisionData : public InstanceBaseData {
     RID instance;
   };
+  	PagedArray<Instance *> instance_cull_result;
+	PagedArray<Instance *> instance_shadow_cull_result;
   struct InstanceCullResult {  // 这里全用RID，感觉PageArray就很没意义。。
     PagedArray<RenderGeometryInstance*> geometry_instances;
     PagedArray<Instance*> lights;
@@ -484,7 +549,7 @@ class RendererSceneCull : public RenderingMethod {
 
   InstanceCullResult scene_cull_result;
   LocalVector<InstanceCullResult> scene_cull_result_threads;
-  RendererSceneRender::RenderShadowData render_shadow_data[MAX_UPDATE_SHADOWS];
+  RendererSceneRender::RenderShadowData render_shadow_data[MAX_UPDATE_SHADOWS]; // 这里填写所有的shadow数据（在render_scene里）
   uint32_t max_shadows_used = 0;
   uint32_t thread_cull_threshold = 200;  // 多线程cull
 
@@ -540,7 +605,6 @@ class RendererSceneCull : public RenderingMethod {
   void render_particle_colliders() {}
 
   void set_scene_render(RendererSceneRender* p_scene_render) { scene_render = p_scene_render; }
-
   RenderingLightCuller* light_culler = nullptr;
 
  private:
@@ -557,7 +621,7 @@ class RendererSceneCull : public RenderingMethod {
   RID _render_get_environment(RID camera, RID p_scenario);
   RID _render_get_compositor(RID camera, RID p_scenario);
 
-  void RendererSceneCull::_render_scene(const RendererSceneRender::CameraData* p_camera_data, const Ref<RenderSceneBuffers>& p_render_buffers, RID p_environment,
+  void _render_scene(const RendererSceneRender::CameraData* p_camera_data, const Ref<RenderSceneBuffers>& p_render_buffers, RID p_environment,
                                         RID p_force_camera_attributes, RID p_compositor, uint32_t p_visible_layers, RID p_scenario, RID p_viewport, RID p_shadow_atlas,
                                         RID p_reflection_probe, int p_reflection_probe_pass, float p_screen_mesh_lod_threshold, bool p_using_shadows,
                                         RenderingMethod::RenderInfo* r_render_info);
@@ -567,6 +631,41 @@ class RendererSceneCull : public RenderingMethod {
   _FORCE_INLINE_ int _visibility_range_check(InstanceVisibilityData& r_vis_data, const Vector3& p_camera_pos, uint64_t p_viewport_mask);
   void _light_instance_setup_directional_shadow(int p_shadow_index, Instance* p_instance, const Transform3D p_cam_transform, const Projection& p_cam_projection,
                                                 bool p_cam_orthogonal, bool p_cam_vaspect);
+  void _scene_cull_threaded(uint32_t p_thread, CullData *cull_data);
+	void _scene_cull(CullData &cull_data, InstanceCullResult &cull_result, uint64_t p_from, uint64_t p_to);
+  bool _visibility_parent_check(const CullData &p_cull_data, const InstanceData &p_instance_data);
+	bool _light_instance_update_shadow(Instance *p_instance, const Transform3D p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, bool p_cam_vaspect, RID p_shadow_atlas, Scenario *p_scenario, float p_scren_mesh_lod_threshold, uint32_t p_visible_layers = 0xFFFFFF);
+
+	L_INLINE bool _is_colinear_tri(const Vector3 &p_a, const Vector3 &p_b, const Vector3 &p_c) const {
+		// Lengths of sides a, b and c.
+		float la = (p_b - p_a).length();
+		float lb = (p_c - p_b).length();
+		float lc = (p_c - p_a).length();
+
+		// Get longest side into lc.
+		if (lb < la) {
+			SWAP(la, lb);
+		}
+		if (lc < lb) {
+			SWAP(lb, lc);
+		}
+
+		// Prevent divide by zero.
+		if (lc > 0.001f) {
+			// If the summed length of the smaller two
+			// sides is close to the length of the longest side,
+			// the points are colinear, and the triangle is near degenerate.
+			float ld = ((la + lb) - lc) / lc;
+
+			// ld will be close to zero for colinear tris.
+			return ld < 0.001f;
+		}
+
+		// Don't create planes from tiny triangles,
+		// they won't be accurate.
+		return true;
+	}
+
 };
 }  // namespace lain
 #endif

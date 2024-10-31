@@ -60,6 +60,9 @@ class RenderingLightCuller {
 	// Can turn on and off from the engine if desired.
 	void set_caster_culling_active(bool p_active) { data.caster_culling_active = p_active; }
 	void set_light_culling_active(bool p_active) { data.light_culling_active = p_active; }
+
+	bool is_caster_culling_active() const { return data.caster_culling_active; }
+
   private:
 	struct LightCullPlanes {
 		void add_cull_plane(const Plane &p);
@@ -71,6 +74,7 @@ class RenderingLightCuller {
 	};
 	bool _prepare_light(const RendererSceneCull::Instance &p_instance, int32_t p_directional_light_id = -1, RS::LightType p_light_type = RS::LightType::LIGHT_DIRECTIONAL);
 	bool _add_light_camera_planes(LightCullPlanes &r_cull_planes, const LightSource &p_light_source);
+	bool add_light_camera_planes_directional(LightCullPlanes &r_cull_planes, const LightSource &p_light_source);
 
 struct Data {
 		// Camera frustum planes (world space) - order ePlane.

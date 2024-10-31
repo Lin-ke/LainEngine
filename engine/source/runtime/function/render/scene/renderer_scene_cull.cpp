@@ -1,5 +1,7 @@
 #include "renderer_scene_cull.h"
+#include "function/render/rendering_system/rendering_system_default.h"
 #include "function/render/rendering_system/rendering_system_globals.h"
+#include "core/math/geometry_3d.h"
 using namespace lain;
 RID lain::RendererSceneCull::camera_allocate() {
   return camera_owner.allocate_rid();
@@ -1160,8 +1162,8 @@ void RendererSceneCull::render_camera(const Ref<RenderSceneBuffers>& p_render_bu
     } break;
   }
   // transform: camera的 global transform，其逆是 ViewMatrix
-  // projection 
-  // vaspect 
+  // projection
+  // vaspect
   camera_data.set_camera(transform, projection, is_orthogonal, vaspect, jitter, camera->visible_layers);
   RID environment = _render_get_environment(p_camera, p_scenario);
   RID compositor = _render_get_compositor(p_camera, p_scenario);
@@ -1231,47 +1233,244 @@ void lain::RendererSceneCull::_render_scene(const RendererSceneRender::CameraDat
       }
     }
   }
-	RENDER_TIMESTAMP("Cull 3D Scene");
-	/* STEP 2 - CULL */
+  RENDER_TIMESTAMP("Cull 3D Scene");
+  /* STEP 2 - CULL */
 
   Vector<Plane> planes = p_camera_data->main_projection.get_projection_planes(p_camera_data->main_transform);
-	cull.frustum = Frustum(planes);
+  cull.frustum = Frustum(planes);
 
-	Vector<RID> directional_lights;
-	// directional lights
-	{
-		cull.shadow_count = 0;
+  Vector<RID> directional_lights;
+  // directional lights
+  {
+    cull.shadow_count = 0;
 
-		Vector<Instance *> lights_with_shadow;
+    Vector<Instance*> lights_with_shadow;
 
-		for (Instance *E : scenario->directional_lights) {
-			if (!E->visible) {
-				continue;
-			}
+    for (Instance* E : scenario->directional_lights) {
+      if (!E->visible) {
+        continue;
+      }
 
-			if (directional_lights.size() > RendererSceneRender::MAX_DIRECTIONAL_LIGHTS) {
-				break;
-			}
+      if (directional_lights.size() > RendererSceneRender::MAX_DIRECTIONAL_LIGHTS) {
+        break;
+      }
 
-			InstanceLightData *light = static_cast<InstanceLightData *>(E->base_data);
+      InstanceLightData* light = static_cast<InstanceLightData*>(E->base_data);
 
-			//check shadow..
+      //check shadow..
 
-			if (light) {
-				if (p_using_shadows && p_shadow_atlas.is_valid() && RSG::light_storage->light_has_shadow(E->base) && !(RSG::light_storage->light_get_type(E->base) == RS::LIGHT_DIRECTIONAL && RSG::light_storage->light_directional_get_sky_mode(E->base) == RS::LIGHT_DIRECTIONAL_SKY_MODE_SKY_ONLY)) {
-					lights_with_shadow.push_back(E);
-				}
-				//add to list
-				directional_lights.push_back(light->instance);
-			}
-		}
+      if (light) {
+        if (p_using_shadows && p_shadow_atlas.is_valid() && RSG::light_storage->light_has_shadow(E->base) &&
+            !(RSG::light_storage->light_get_type(E->base) == RS::LIGHT_DIRECTIONAL &&
+              RSG::light_storage->light_directional_get_sky_mode(E->base) == RS::LIGHT_DIRECTIONAL_SKY_MODE_SKY_ONLY)) {
+          lights_with_shadow.push_back(E);
+        }
+        //add to list
+        directional_lights.push_back(light->instance);
+      }
+    }
 
-		RSG::light_storage->set_directional_shadow_count(lights_with_shadow.size());
+    RSG::light_storage->set_directional_shadow_count(lights_with_shadow.size());
 
-		for (int i = 0; i < lights_with_shadow.size(); i++) {
-			_light_instance_setup_directional_shadow(i, lights_with_shadow[i], p_camera_data->main_transform, p_camera_data->main_projection, p_camera_data->is_orthogonal, p_camera_data->vaspect);
-		}
-	}
+    for (int i = 0; i < lights_with_shadow.size(); i++) {
+      _light_instance_setup_directional_shadow(i, lights_with_shadow[i], p_camera_data->main_transform, p_camera_data->main_projection, p_camera_data->is_orthogonal,
+                                               p_camera_data->vaspect);
+    }
+  }
+
+  scene_cull_result.clear();
+  {
+    uint64_t cull_from = 0;
+    uint64_t cull_to = scenario->instance_data.size();
+
+    CullData cull_data;
+
+    //prepare for eventual thread usage
+    cull_data.cull = &cull;
+    cull_data.scenario = scenario;
+    cull_data.shadow_atlas = p_shadow_atlas;
+    cull_data.cam_transform = p_camera_data->main_transform;
+    cull_data.visible_layers = p_visible_layers;
+    // cull_data.render_reflection_probe = render_reflection_probe;
+    // cull_data.occlusion_buffer = RendererSceneOcclusionCull::get_singleton()->buffer_get_ptr(p_viewport);
+    cull_data.camera_matrix = &p_camera_data->main_projection;
+    cull_data.visibility_viewport_mask = scenario->viewport_visibility_masks.has(p_viewport) ? scenario->viewport_visibility_masks[p_viewport] : 0;
+#define DEBUG_CULL_TIME
+#ifdef DEBUG_CULL_TIME
+    uint64_t time_from = OS::GetSingleton()->GetTicksUsec();
+#endif
+
+    if (cull_to > thread_cull_threshold) {
+      //multiple threads
+      for (InstanceCullResult& thread : scene_cull_result_threads) {
+        thread.clear();
+      }
+
+      WorkerThreadPool::GroupID group_task = WorkerThreadPool::get_singleton()->add_template_group_task(
+          this, &RendererSceneCull::_scene_cull_threaded, &cull_data, scene_cull_result_threads.size(), -1, true, SNAME("RenderCullInstances"));
+      WorkerThreadPool::get_singleton()->wait_for_group_task_completion(group_task);
+
+      for (InstanceCullResult& thread : scene_cull_result_threads) {
+        scene_cull_result.append_from(thread);
+      }
+
+    } else {
+      //single threaded
+      _scene_cull(cull_data, scene_cull_result, cull_from, cull_to);
+    }
+
+#ifdef DEBUG_CULL_TIME
+    static float time_avg = 0;
+    static uint32_t time_count = 0;
+    time_avg += double(OS::GetSingleton()->GetTicksUsec(); -time_from) / 1000.0;
+    time_count++;
+    print_line("time taken: " + rtos(time_avg / time_count));
+#endif
+
+    if (scene_cull_result.mesh_instances.size()) {
+      for (uint64_t i = 0; i < scene_cull_result.mesh_instances.size(); i++) {
+        RSG::mesh_storage->mesh_instance_check_for_update(scene_cull_result.mesh_instances[i]);
+      }
+      RSG::mesh_storage->update_mesh_instances();
+    }
+  }
+  /*Render Shadows*/
+  if (p_using_shadows) {
+    // Directional Shadows
+    for (uint32_t i = 0; i < cull.shadow_count; i++) {
+      for (uint32_t j = 0; j < cull.shadows[i].cascade_count; j++) {
+        const Cull::Shadow::Cascade& c = cull.shadows[i].cascades[j];
+        //			print_line("shadow " + itos(i) + " cascade " + itos(j) + " elements: " + itos(c.cull_result.size()));
+        RSG::light_storage->light_instance_set_shadow_transform(cull.shadows[i].light_instance, c.projection, c.transform, c.zfar, c.split, j, c.shadow_texel_size,
+                                                                c.bias_scale, c.range_begin, c.uv_scale);
+        if (max_shadows_used == MAX_UPDATE_SHADOWS) {
+          continue;
+        }
+        render_shadow_data[max_shadows_used].light = cull.shadows[i].light_instance;
+        render_shadow_data[max_shadows_used].pass = j;
+        render_shadow_data[max_shadows_used].instances.merge_unordered(scene_cull_result.directional_shadows[i].cascade_geometry_instances[j]);
+        max_shadows_used++;
+      }
+    }
+    // Positional Shadows 方向光的阴影
+    for (uint32_t i = 0; i < (uint32_t)scene_cull_result.lights.size(); i++) {
+      Instance* ins = scene_cull_result.lights[i];
+      if (!p_shadow_atlas.is_valid()) {
+        continue;
+      }
+      InstanceLightData* light = static_cast<InstanceLightData*>(ins->base_data);
+      if (!RSG::light_storage->light_instance_is_shadow_visible_at_position(light->instance, camera_position)) {
+        continue;
+      }
+      float coverage = 0.f;
+
+      {  //compute coverage
+
+        Transform3D cam_xf = p_camera_data->main_transform;
+        float zn = p_camera_data->main_projection.get_z_near();
+        // 世界空间
+        Plane p(-cam_xf.basis.get_column(2), cam_xf.origin + cam_xf.basis.get_column(2) * -zn);  //camera near plane
+
+        // near plane half width and height
+        Vector2 vp_half_extents = p_camera_data->main_projection.get_viewport_half_extents();
+
+        switch (RSG::light_storage->light_get_type(ins->base)) {
+          case RS::LIGHT_OMNI: {
+            float radius = RSG::light_storage->light_get_param(ins->base, RS::LIGHT_PARAM_RANGE);
+
+            //get two points parallel to near plane
+            Vector3 points[2] = {
+                ins->transform.origin,
+                ins->transform.origin + cam_xf.basis.get_column(0) * radius  // 在相机的视角里走radius，@bug应该normalize
+            };
+
+            if (!p_camera_data->is_orthogonal) {
+              //if using perspetive, map them to near plane
+              for (int j = 0; j < 2; j++) {
+                if (p.distance_to(points[j]) < 0) {
+                  points[j].z = -zn;  //small hack to keep size constant when hitting the screen
+                }
+
+                p.intersects_segment(cam_xf.origin, points[j], &points[j]);  //map to plane
+              }
+            }
+
+            float screen_diameter = points[0].distance_to(points[1]) * 2;          // radius * 2
+            coverage = screen_diameter / (vp_half_extents.x + vp_half_extents.y);  // 为什么这么计算？都这么计算
+          } break;
+          case RS::LIGHT_SPOT: {
+            float radius = RSG::light_storage->light_get_param(ins->base, RS::LIGHT_PARAM_RANGE);
+            float angle = RSG::light_storage->light_get_param(ins->base, RS::LIGHT_PARAM_SPOT_ANGLE);
+
+            float w = radius * Math::sin(Math::deg_to_rad(angle));
+            float d = radius * Math::cos(Math::deg_to_rad(angle));
+
+            Vector3 base = ins->transform.origin - ins->transform.basis.get_column(2).normalized() * d;  // 在光的空间里-z方向是打光的方向
+
+            Vector3 points[2] = {base, base + cam_xf.basis.get_column(0) * w};
+
+            if (!p_camera_data->is_orthogonal) {
+              //if using perspetive, map them to near plane
+              for (int j = 0; j < 2; j++) {
+                if (p.distance_to(points[j]) < 0) {
+                  points[j].z = -zn;  //small hack to keep size constant when hitting the screen
+                }
+
+                p.intersects_segment(cam_xf.origin, points[j], &points[j]);  //map to plane
+              }
+            }
+
+            float screen_diameter = points[0].distance_to(points[1]) * 2;
+            coverage = screen_diameter / (vp_half_extents.x + vp_half_extents.y);
+
+          } break;
+          default: {
+            ERR_PRINT("Invalid Light Type");
+          }
+        }  // end of switch
+      }  // end of compute coverage
+      // We can detect whether multiple cameras are hitting this light, whether or not the shadow is dirty,
+      // so that we can turn off tighter caster culling.
+      light->detect_light_intersects_multiple_cameras(Engine::GetSingleton()->get_frames_drawn());
+      if (light->is_shadow_dirty()) {
+        // Dirty shadows have no need to be drawn if
+        // the light volume doesn't intersect the camera frustum.
+
+        // Returns false if the entire light can be culled.
+        bool allow_redraw = light_culler->prepare_regular_light(*ins);
+
+        // Directional lights aren't handled here, _light_instance_update_shadow is called from elsewhere.
+        // Checking for this in case this changes, as this is assumed.
+        // DEV_CHECK_ONCE(RSG::light_storage->light_get_type(ins->base) != RS::LIGHT_DIRECTIONAL);
+
+        // Tighter caster culling to the camera frustum should work correctly with multiple viewports + cameras.
+        // The first camera will cull tightly, but if the light is present on more than 1 camera, the second will
+        // do a full render, and mark the light as non-dirty.
+        // There is however a cost to tighter shadow culling in this situation (2 shadow updates in 1 frame),
+        // so we should detect this and switch off tighter caster culling automatically.
+        // This is done in the logic for `decrement_shadow_dirty()`.
+        if (allow_redraw) {
+          light->last_version++;
+          light->decrement_shadow_dirty();
+        }
+      }  // end of if (light->is_shadow_dirty())
+      bool redraw = RSG::light_storage->shadow_atlas_update_light(p_shadow_atlas, light->instance, coverage, light->last_version);
+      if (redraw && max_shadows_used < MAX_UPDATE_SHADOWS) {
+        //must redraw!
+        RENDER_TIMESTAMP("> Render Light3D " + itos(i));
+
+        if (_light_instance_update_shadow(ins, p_camera_data->main_transform, p_camera_data->main_projection, p_camera_data->is_orthogonal, p_camera_data->vaspect,
+                                          p_shadow_atlas, scenario, p_screen_mesh_lod_threshold, p_visible_layers)) {
+          light->make_shadow_dirty();
+        }
+        RENDER_TIMESTAMP("< Render Light3D " + itos(i));
+      } else {
+        if (redraw) {
+          light->make_shadow_dirty();
+        }
+      }
+    }
+  }
 }
 
 RID RendererSceneCull::_render_get_environment(RID p_camera, RID p_scenario) {
@@ -1336,7 +1535,7 @@ void RendererSceneCull::_visibility_cull(const VisibilityCullData& cull_data, ui
       idata.flags &= ~InstanceData::FLAG_VISIBILITY_DEPENDENCY_HIDDEN_CLOSE_RANGE;
       if (range_check == 2) {
         idata.flags |= InstanceData::FLAG_VISIBILITY_DEPENDENCY_FADE_CHILDREN;
-      } else { // 0
+      } else {  // 0
         idata.flags &= ~InstanceData::FLAG_VISIBILITY_DEPENDENCY_FADE_CHILDREN;
       }
     }
@@ -1358,10 +1557,10 @@ _FORCE_INLINE_ int RendererSceneCull::_visibility_range_check(InstanceVisibility
 
   if (r_vis_data.range_end > 0.0f && dist > r_vis_data.range_end + end_offset) {
     r_vis_data.viewport_state &= ~p_viewport_mask;
-    return -1; // 太远
+    return -1;  // 太远
   } else if (r_vis_data.range_begin > 0.0f && dist < r_vis_data.range_begin + begin_offset) {
     r_vis_data.viewport_state &= ~p_viewport_mask;
-    return 1; // 太近
+    return 1;  // 太近
   } else {
     r_vis_data.viewport_state |= p_viewport_mask;
     if (p_fade_check) {
@@ -1384,222 +1583,604 @@ _FORCE_INLINE_ int RendererSceneCull::_visibility_range_check(InstanceVisibility
   }
 }
 
-void RendererSceneCull::_light_instance_setup_directional_shadow(int p_shadow_index, Instance *p_instance, const Transform3D p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, bool p_cam_vaspect) {
-	// For later tight culling, the light culler needs to know the details of the directional light.
-	light_culler->prepare_directional_light(p_instance, p_shadow_index);
+void RendererSceneCull::_light_instance_setup_directional_shadow(int p_shadow_index, Instance* p_instance, const Transform3D p_cam_transform,
+                                                                 const Projection& p_cam_projection, bool p_cam_orthogonal, bool p_cam_vaspect) {
+  // For later tight culling, the light culler needs to know the details of the directional light.
+  light_culler->prepare_directional_light(p_instance, p_shadow_index);
 
-	InstanceLightData *light = static_cast<InstanceLightData *>(p_instance->base_data);
+  InstanceLightData* light = static_cast<InstanceLightData*>(p_instance->base_data);
 
-	Transform3D light_transform = p_instance->transform;
-	light_transform.orthonormalize(); //scale does not count on lights
+  Transform3D light_transform = p_instance->transform;
+  light_transform.orthonormalize();  //scale does not count on lights
 
-	real_t max_distance = p_cam_projection.get_z_far();
-	real_t shadow_max = RSG::light_storage->light_get_param(p_instance->base, RS::LIGHT_PARAM_SHADOW_MAX_DISTANCE);
-	if (shadow_max > 0 && !p_cam_orthogonal) { //its impractical (and leads to unwanted behaviors) to set max distance in orthogonal camera
-		max_distance = MIN(shadow_max, max_distance);
-	}
-	max_distance = MAX(max_distance, p_cam_projection.get_z_near() + 0.001);
-	real_t min_distance = MIN(p_cam_projection.get_z_near(), max_distance);
+  real_t max_distance = p_cam_projection.get_z_far();
+  real_t shadow_max = RSG::light_storage->light_get_param(p_instance->base, RS::LIGHT_PARAM_SHADOW_MAX_DISTANCE);
+  if (shadow_max > 0 && !p_cam_orthogonal) {  //its impractical (and leads to unwanted behaviors) to set max distance in orthogonal camera
+    max_distance = MIN(shadow_max, max_distance);
+  }
+  max_distance = MAX(max_distance, p_cam_projection.get_z_near() + 0.001);
+  real_t min_distance = MIN(p_cam_projection.get_z_near(), max_distance);  // @bug 多余的判断，直接用 p_cam_projection.get_z_near()即可
+                                                                           //定向阴影压平区域的大小
+  real_t pancake_size = RSG::light_storage->light_get_param(p_instance->base, RS::LIGHT_PARAM_SHADOW_PANCAKE_SIZE);
 
-	real_t pancake_size = RSG::light_storage->light_get_param(p_instance->base, RS::LIGHT_PARAM_SHADOW_PANCAKE_SIZE);
+  real_t range = max_distance - min_distance;
 
-	real_t range = max_distance - min_distance;
+  int splits = 0;
 
-	int splits = 0;
-	switch (RSG::light_storage->light_directional_get_shadow_mode(p_instance->base)) {
-		case RS::LIGHT_DIRECTIONAL_SHADOW_ORTHOGONAL:
-			splits = 1;
-			break;
-		case RS::LIGHT_DIRECTIONAL_SHADOW_PARALLEL_2_SPLITS:
-			splits = 2;
-			break;
-		case RS::LIGHT_DIRECTIONAL_SHADOW_PARALLEL_4_SPLITS:
-			splits = 4;
-			break;
-	}
+  switch (RSG::light_storage->light_directional_get_shadow_mode(p_instance->base)) {
+    case RS::LIGHT_DIRECTIONAL_SHADOW_ORTHOGONAL:
+      splits = 1;
+      break;
+    case RS::LIGHT_DIRECTIONAL_SHADOW_PARALLEL_2_SPLITS:
+      splits = 2;
+      break;
+    case RS::LIGHT_DIRECTIONAL_SHADOW_PARALLEL_4_SPLITS:
+      splits = 4;
+      break;
+  }
 
-	real_t distances[5];
+  real_t distances[5];
+  // CSM distance
+  distances[0] = min_distance;
+  for (int i = 0; i < splits; i++) {
+    distances[i + 1] = min_distance + RSG::light_storage->light_get_param(p_instance->base, RS::LightParam(RS::LIGHT_PARAM_SHADOW_SPLIT_1_OFFSET + i)) * range;
+  };
 
-	distances[0] = min_distance;
-	for (int i = 0; i < splits; i++) {
-		distances[i + 1] = min_distance + RSG::light_storage->light_get_param(p_instance->base, RS::LightParam(RS::LIGHT_PARAM_SHADOW_SPLIT_1_OFFSET + i)) * range;
-	};
+  distances[splits] = max_distance;
 
-	distances[splits] = max_distance;
+  real_t texture_size = RSG::light_storage->get_directional_light_shadow_size(light->instance);
 
-	real_t texture_size = RSG::light_storage->get_directional_light_shadow_size(light->instance);
+  bool overlap = RSG::light_storage->light_directional_get_blend_splits(p_instance->base);
 
-	bool overlap = RSG::light_storage->light_directional_get_blend_splits(p_instance->base);
+  cull.shadow_count = p_shadow_index + 1;
+  cull.shadows[p_shadow_index].cascade_count = splits;
+  cull.shadows[p_shadow_index].light_instance = light->instance;
 
-	cull.shadow_count = p_shadow_index + 1;
-	cull.shadows[p_shadow_index].cascade_count = splits;
-	cull.shadows[p_shadow_index].light_instance = light->instance;
+  for (int i = 0; i < splits; i++) {
+    RENDER_TIMESTAMP("Cull DirectionalLight3D, Split " + itos(i));
 
-	for (int i = 0; i < splits; i++) {
-		RENDER_TIMESTAMP("Cull DirectionalLight3D, Split " + itos(i));
+    // setup a camera matrix for that range!
+    Projection camera_matrix;
 
-		// setup a camera matrix for that range!
-		Projection camera_matrix;
+    real_t aspect = p_cam_projection.get_aspect();
+    // 重新设置相机的投影矩阵
+    if (p_cam_orthogonal) {
+      Vector2 vp_he = p_cam_projection.get_viewport_half_extents();
 
-		real_t aspect = p_cam_projection.get_aspect();
+      camera_matrix.set_orthogonal(vp_he.y * 2.0, aspect, distances[(i == 0 || !overlap) ? i : i - 1], distances[i + 1], false);
+    } else {
+      // z_near z_far变了
+      real_t fov = p_cam_projection.get_fov();  //this is actually yfov, because set aspect tries to keep it
+      camera_matrix.set_perspective(fov, aspect, distances[(i == 0 || !overlap) ? i : i - 1], distances[i + 1], true);
+    }
 
-		if (p_cam_orthogonal) {
-			Vector2 vp_he = p_cam_projection.get_viewport_half_extents();
+    //obtain the frustum endpoints
 
-			camera_matrix.set_orthogonal(vp_he.y * 2.0, aspect, distances[(i == 0 || !overlap) ? i : i - 1], distances[i + 1], false);
-		} else {
-			real_t fov = p_cam_projection.get_fov(); //this is actually yfov, because set aspect tries to keep it
-			camera_matrix.set_perspective(fov, aspect, distances[(i == 0 || !overlap) ? i : i - 1], distances[i + 1], true);
-		}
+    Vector3 endpoints[8];  // frustum plane endpoints
+    bool res = camera_matrix.get_endpoints(p_cam_transform, endpoints);
+    ERR_CONTINUE(!res);
 
-		//obtain the frustum endpoints
+    // obtain the light frustum ranges (given endpoints)
 
-		Vector3 endpoints[8]; // frustum plane endpoints
-		bool res = camera_matrix.get_endpoints(p_cam_transform, endpoints);
-		ERR_CONTINUE(!res);
+    Transform3D transform = light_transform;  //discard scale and stabilize light
 
-		// obtain the light frustum ranges (given endpoints)
+    Vector3 x_vec = transform.basis.get_column(Vector3::AXIS_X).normalized();
+    Vector3 y_vec = transform.basis.get_column(Vector3::AXIS_Y).normalized();
+    Vector3 z_vec = transform.basis.get_column(Vector3::AXIS_Z).normalized();
+    //z_vec points against the camera, like in default opengl
 
-		Transform3D transform = light_transform; //discard scale and stabilize light
+    real_t x_min = 0.f, x_max = 0.f;
+    real_t y_min = 0.f, y_max = 0.f;
+    real_t z_min = 0.f, z_max = 0.f;
 
-		Vector3 x_vec = transform.basis.get_column(Vector3::AXIS_X).normalized();
-		Vector3 y_vec = transform.basis.get_column(Vector3::AXIS_Y).normalized();
-		Vector3 z_vec = transform.basis.get_column(Vector3::AXIS_Z).normalized();
-		//z_vec points against the camera, like in default opengl
+    // FIXME: z_max_cam is defined, computed, but not used below when setting up
+    // ortho_camera. Commented out for now to fix warnings but should be investigated.
+    real_t x_min_cam = 0.f, x_max_cam = 0.f;
+    real_t y_min_cam = 0.f, y_max_cam = 0.f;
+    real_t z_min_cam = 0.f;
+    //real_t z_max_cam = 0.f;
 
-		real_t x_min = 0.f, x_max = 0.f;
-		real_t y_min = 0.f, y_max = 0.f;
-		real_t z_min = 0.f, z_max = 0.f;
+    //real_t bias_scale = 1.0;
+    //real_t aspect_bias_scale = 1.0;
 
-		// FIXME: z_max_cam is defined, computed, but not used below when setting up
-		// ortho_camera. Commented out for now to fix warnings but should be investigated.
-		real_t x_min_cam = 0.f, x_max_cam = 0.f;
-		real_t y_min_cam = 0.f, y_max_cam = 0.f;
-		real_t z_min_cam = 0.f;
-		//real_t z_max_cam = 0.f;
+    //used for culling
 
-		//real_t bias_scale = 1.0;
-		//real_t aspect_bias_scale = 1.0;
+    // endpoints在该坐标系下的最小范围
 
-		//used for culling
+    for (int j = 0; j < 8; j++) {
+      real_t d_x = x_vec.dot(endpoints[j]);
+      real_t d_y = y_vec.dot(endpoints[j]);
+      real_t d_z = z_vec.dot(endpoints[j]);
 
-		for (int j = 0; j < 8; j++) {
-			real_t d_x = x_vec.dot(endpoints[j]);
-			real_t d_y = y_vec.dot(endpoints[j]);
-			real_t d_z = z_vec.dot(endpoints[j]);
+      if (j == 0 || d_x < x_min) {
+        x_min = d_x;
+      }
+      if (j == 0 || d_x > x_max) {
+        x_max = d_x;
+      }
 
-			if (j == 0 || d_x < x_min) {
-				x_min = d_x;
-			}
-			if (j == 0 || d_x > x_max) {
-				x_max = d_x;
-			}
+      if (j == 0 || d_y < y_min) {
+        y_min = d_y;
+      }
+      if (j == 0 || d_y > y_max) {
+        y_max = d_y;
+      }
 
-			if (j == 0 || d_y < y_min) {
-				y_min = d_y;
-			}
-			if (j == 0 || d_y > y_max) {
-				y_max = d_y;
-			}
+      if (j == 0 || d_z < z_min) {
+        z_min = d_z;
+      }
+      if (j == 0 || d_z > z_max) {
+        z_max = d_z;
+      }
+    }
 
-			if (j == 0 || d_z < z_min) {
-				z_min = d_z;
-			}
-			if (j == 0 || d_z > z_max) {
-				z_max = d_z;
-			}
-		}
+    real_t radius = 0;  // 能容纳视锥体的最小球半径
+    real_t soft_shadow_expand = 0;
+    Vector3 center;
 
-		real_t radius = 0;
-		real_t soft_shadow_expand = 0;
-		Vector3 center;
+    {
+      //camera viewport stuff
 
-		{
-			//camera viewport stuff
+      for (int j = 0; j < 8; j++) {
+        center += endpoints[j];
+      }
+      center /= 8.0;
 
-			for (int j = 0; j < 8; j++) {
-				center += endpoints[j];
-			}
-			center /= 8.0;
+      //center=x_vec*(x_max-x_min)*0.5 + y_vec*(y_max-y_min)*0.5 + z_vec*(z_max-z_min)*0.5;
 
-			//center=x_vec*(x_max-x_min)*0.5 + y_vec*(y_max-y_min)*0.5 + z_vec*(z_max-z_min)*0.5;
+      for (int j = 0; j < 8; j++) {
+        real_t d = center.distance_to(endpoints[j]);
+        if (d > radius) {
+          radius = d;
+        }
+      }
 
-			for (int j = 0; j < 8; j++) {
-				real_t d = center.distance_to(endpoints[j]);
-				if (d > radius) {
-					radius = d;
-				}
-			}
+      radius *= texture_size / (texture_size - 2.0);  //add a texel by each side
 
-			radius *= texture_size / (texture_size - 2.0); //add a texel by each side
+      z_min_cam = z_vec.dot(center) - radius;
+      // 再计算soft
+      {
+        float soft_shadow_angle = RSG::light_storage->light_get_param(p_instance->base, RS::LIGHT_PARAM_SIZE);
 
-			z_min_cam = z_vec.dot(center) - radius;
+        if (soft_shadow_angle > 0.0) {
+          float z_range = (z_vec.dot(center) + radius + pancake_size) - z_min_cam;  // 就是 2*radius + pancake_size
+          soft_shadow_expand = Math::tan(Math::deg_to_rad(soft_shadow_angle)) * z_range;
 
-			{
-				float soft_shadow_angle = RSG::light_storage->light_get_param(p_instance->base, RS::LIGHT_PARAM_SIZE);
+          x_max += soft_shadow_expand;
+          y_max += soft_shadow_expand;
 
-				if (soft_shadow_angle > 0.0) {
-					float z_range = (z_vec.dot(center) + radius + pancake_size) - z_min_cam;
-					soft_shadow_expand = Math::tan(Math::deg_to_rad(soft_shadow_angle)) * z_range;
+          x_min -= soft_shadow_expand;
+          y_min -= soft_shadow_expand;
+        }
+      }
+      // 这里有一些trick，相机要比计算的结果再大一点
+      // This trick here is what stabilizes the shadow (make potential jaggies to not move)
+      // at the cost of some wasted resolution. Still, the quality increase is very well worth it.
+      const real_t unit = (radius + soft_shadow_expand) * 4.0 / texture_size;
+      x_max_cam = Math::snapped(x_vec.dot(center) + radius + soft_shadow_expand, unit);
+      x_min_cam = Math::snapped(x_vec.dot(center) - radius - soft_shadow_expand, unit);
+      y_max_cam = Math::snapped(y_vec.dot(center) + radius + soft_shadow_expand, unit);
+      y_min_cam = Math::snapped(y_vec.dot(center) - radius - soft_shadow_expand, unit);
+    }
 
-					x_max += soft_shadow_expand;
-					y_max += soft_shadow_expand;
+    //now that we know all ranges, we can proceed to make the light frustum planes, for culling octree
 
-					x_min -= soft_shadow_expand;
-					y_min -= soft_shadow_expand;
-				}
-			}
+    Vector<Plane> light_frustum_planes;
+    light_frustum_planes.resize(6);
 
-			// This trick here is what stabilizes the shadow (make potential jaggies to not move)
-			// at the cost of some wasted resolution. Still, the quality increase is very well worth it.
-			const real_t unit = (radius + soft_shadow_expand) * 4.0 / texture_size;
-			x_max_cam = Math::snapped(x_vec.dot(center) + radius + soft_shadow_expand, unit);
-			x_min_cam = Math::snapped(x_vec.dot(center) - radius - soft_shadow_expand, unit);
-			y_max_cam = Math::snapped(y_vec.dot(center) + radius + soft_shadow_expand, unit);
-			y_min_cam = Math::snapped(y_vec.dot(center) - radius - soft_shadow_expand, unit);
-		}
+    //right/left
+    light_frustum_planes.write[0] = Plane(x_vec, x_max);
+    light_frustum_planes.write[1] = Plane(-x_vec, -x_min);
+    //top/bottom
+    light_frustum_planes.write[2] = Plane(y_vec, y_max);
+    light_frustum_planes.write[3] = Plane(-y_vec, -y_min);
+    //near/far
+    light_frustum_planes.write[4] = Plane(z_vec, z_max + 1e6);
+    light_frustum_planes.write[5] = Plane(-z_vec, -z_min);  // z_min is ok, since casters further than far-light plane are not needed
 
-		//now that we know all ranges, we can proceed to make the light frustum planes, for culling octree
+    // a pre pass will need to be needed to determine the actual z-near to be used
 
-		Vector<Plane> light_frustum_planes;
-		light_frustum_planes.resize(6);
+    z_max = z_vec.dot(center) + radius + pancake_size;
 
-		//right/left
-		light_frustum_planes.write[0] = Plane(x_vec, x_max);
-		light_frustum_planes.write[1] = Plane(-x_vec, -x_min);
-		//top/bottom
-		light_frustum_planes.write[2] = Plane(y_vec, y_max);
-		light_frustum_planes.write[3] = Plane(-y_vec, -y_min);
-		//near/far
-		light_frustum_planes.write[4] = Plane(z_vec, z_max + 1e6);
-		light_frustum_planes.write[5] = Plane(-z_vec, -z_min); // z_min is ok, since casters further than far-light plane are not needed
+    {  // 可以看成一个正交相机
+      Projection ortho_camera;
+      real_t half_x = (x_max_cam - x_min_cam) * 0.5;
+      real_t half_y = (y_max_cam - y_min_cam) * 0.5;
 
-		// a pre pass will need to be needed to determine the actual z-near to be used
+      ortho_camera.set_orthogonal(-half_x, half_x, -half_y, half_y, 0, (z_max - z_min_cam));
 
-		z_max = z_vec.dot(center) + radius + pancake_size;
+      Vector2 uv_scale(1.0 / (x_max_cam - x_min_cam), 1.0 / (y_max_cam - y_min_cam));
 
-		{
-			Projection ortho_camera;
-			real_t half_x = (x_max_cam - x_min_cam) * 0.5;
-			real_t half_y = (y_max_cam - y_min_cam) * 0.5;
+      Transform3D ortho_transform;
+      ortho_transform.basis = transform.basis;
+      ortho_transform.origin = x_vec * (x_min_cam + half_x) + y_vec * (y_min_cam + half_y) + z_vec * z_max;
 
-			ortho_camera.set_orthogonal(-half_x, half_x, -half_y, half_y, 0, (z_max - z_min_cam));
+      cull.shadows[p_shadow_index].cascades[i].frustum = Frustum(light_frustum_planes);
+      cull.shadows[p_shadow_index].cascades[i].projection = ortho_camera;
+      cull.shadows[p_shadow_index].cascades[i].transform = ortho_transform;
+      cull.shadows[p_shadow_index].cascades[i].zfar = z_max - z_min_cam;
+      cull.shadows[p_shadow_index].cascades[i].split = distances[i + 1];
+      cull.shadows[p_shadow_index].cascades[i].shadow_texel_size = radius * 2.0 / texture_size;
+      cull.shadows[p_shadow_index].cascades[i].bias_scale = (z_max - z_min_cam);
+      cull.shadows[p_shadow_index].cascades[i].range_begin = z_max;
+      cull.shadows[p_shadow_index].cascades[i].uv_scale = uv_scale;
+    }
+  }
+}
 
-			Vector2 uv_scale(1.0 / (x_max_cam - x_min_cam), 1.0 / (y_max_cam - y_min_cam));
+void lain::RendererSceneCull::_scene_cull_threaded(uint32_t p_thread, CullData* cull_data) {
+  uint32_t cull_total = cull_data->scenario->instance_data.size();
+  uint32_t total_threads = WorkerThreadPool::get_singleton()->get_thread_count();
+  uint32_t cull_from = p_thread * cull_total / total_threads;
+  uint32_t cull_to = (p_thread + 1 == total_threads) ? cull_total : ((p_thread + 1) * cull_total / total_threads);
 
-			Transform3D ortho_transform;
-			ortho_transform.basis = transform.basis;
-			ortho_transform.origin = x_vec * (x_min_cam + half_x) + y_vec * (y_min_cam + half_y) + z_vec * z_max;
+  _scene_cull(*cull_data, scene_cull_result_threads[p_thread], cull_from, cull_to);
+}
 
-			cull.shadows[p_shadow_index].cascades[i].frustum = Frustum(light_frustum_planes);
-			cull.shadows[p_shadow_index].cascades[i].projection = ortho_camera;
-			cull.shadows[p_shadow_index].cascades[i].transform = ortho_transform;
-			cull.shadows[p_shadow_index].cascades[i].zfar = z_max - z_min_cam;
-			cull.shadows[p_shadow_index].cascades[i].split = distances[i + 1];
-			cull.shadows[p_shadow_index].cascades[i].shadow_texel_size = radius * 2.0 / texture_size;
-			cull.shadows[p_shadow_index].cascades[i].bias_scale = (z_max - z_min_cam);
-			cull.shadows[p_shadow_index].cascades[i].range_begin = z_max;
-			cull.shadows[p_shadow_index].cascades[i].uv_scale = uv_scale;
-		}
-	}
+void RendererSceneCull::_scene_cull(CullData& cull_data, InstanceCullResult& cull_result, uint64_t p_from, uint64_t p_to) {
+  uint64_t frame_number = RSG::rasterizer->get_frame_number();
+  Transform3D inv_cam_transform = cull_data.cam_transform.inverse();
+  float z_near = cull_data.camera_matrix->get_z_near();
+
+  for (uint64_t i = p_from; i < p_to; i++) {
+    bool mesh_visible = false;  // 是mesh 且 visible
+
+    InstanceData& idata = cull_data.scenario->instance_data[i];
+    uint32_t visibility_flags = idata.flags & (InstanceData::FLAG_VISIBILITY_DEPENDENCY_HIDDEN_CLOSE_RANGE | InstanceData::FLAG_VISIBILITY_DEPENDENCY_HIDDEN |
+                                               InstanceData::FLAG_VISIBILITY_DEPENDENCY_FADE_CHILDREN);
+    int32_t visibility_check = -1;
+
+#define HIDDEN_BY_VISIBILITY_CHECKS \
+  (visibility_flags == InstanceData::FLAG_VISIBILITY_DEPENDENCY_HIDDEN_CLOSE_RANGE || visibility_flags == InstanceData::FLAG_VISIBILITY_DEPENDENCY_HIDDEN)
+#define LAYER_CHECK (cull_data.visible_layers & idata.layer_mask)
+#define IN_FRUSTUM(f) (cull_data.scenario->instance_aabbs[i].in_frustum(f))
+#define VIS_RANGE_CHECK              \
+  ((idata.visibility_index == -1) || \
+   _visibility_range_check<false>(cull_data.scenario->instance_visibility[idata.visibility_index], cull_data.cam_transform.origin, cull_data.visibility_viewport_mask) == 0)
+#define VIS_PARENT_CHECK (_visibility_parent_check(cull_data, idata))
+#define VIS_CHECK                                                                                                                                                  \
+  (visibility_check < 0 ? (visibility_check = (visibility_flags != InstanceData::FLAG_VISIBILITY_DEPENDENCY_NEEDS_CHECK || (VIS_RANGE_CHECK && VIS_PARENT_CHECK))) \
+                        : visibility_check)
+#define OCCLUSION_CULLED                                                                                                                                                      \
+  (cull_data.occlusion_buffer != nullptr && (cull_data.scenario->instance_data[i].flags & InstanceData::FLAG_IGNORE_OCCLUSION_CULLING) == 0 &&                                \
+   cull_data.occlusion_buffer->is_occluded(cull_data.scenario->instance_aabbs[i].bounds, cull_data.cam_transform.origin, inv_cam_transform, *cull_data.camera_matrix, z_near, \
+                                           cull_data.scenario->instance_data[i].occlusion_timeout))
+    if (!HIDDEN_BY_VISIBILITY_CHECKS) {
+      if ((LAYER_CHECK && IN_FRUSTUM(cull_data.cull->frustum) && VIS_CHECK && !OCCLUSION_CULLED) ||
+          (cull_data.scenario->instance_data[i].flags & InstanceData::FLAG_IGNORE_ALL_CULLING)) {
+        // 通过了所有测试
+        uint32_t base_type = idata.flags & InstanceData::FLAG_BASE_TYPE_MASK;
+        if (base_type == RS::INSTANCE_LIGHT) {
+          cull_result.lights.push_back(idata.instance);
+          cull_result.light_instances.push_back(RID::from_uint64(idata.instance_data_rid));
+          if (cull_data.shadow_atlas.is_valid() && RSG::light_storage->light_has_shadow(idata.base_rid)) {
+            RSG::light_storage->light_instance_mark_visible(RID::from_uint64(idata.instance_data_rid));  //mark it visible for shadow allocation later
+          }
+        } else if (base_type == RS::INSTANCE_REFLECTION_PROBE) {
+
+        } else if (base_type == RS::INSTANCE_DECAL) {
+          cull_result.decals.push_back(RID::from_uint64(idata.instance_data_rid));
+
+        } else if (base_type == RS::INSTANCE_VOXEL_GI) {
+        } else if (base_type == RS::INSTANCE_LIGHTMAP) {
+
+        } else if (((1 << base_type) & RS::INSTANCE_GEOMETRY_MASK) && !(idata.flags & InstanceData::FLAG_CAST_SHADOWS_ONLY)) {
+          bool keep = true;
+
+          if (idata.flags & InstanceData::FLAG_REDRAW_IF_VISIBLE) {
+            RenderingSystemDefault::redraw_request();
+          }
+          if (base_type == RS::INSTANCE_MESH) {
+            mesh_visible = true;
+          } else if (base_type == RS::INSTANCE_PARTICLES) {
+            // //particles visible? process them
+            // if (RSG::particles_storage->particles_is_inactive(idata.base_rid)) {
+            // 	//but if nothing is going on, don't do it.
+            // 	keep = false;
+            // } else {
+            // 	cull_data.cull->lock.lock();
+            // 	RSG::particles_storage->particles_request_process(idata.base_rid);
+            // 	cull_data.cull->lock.unlock();
+            // 	RSG::particles_storage->particles_set_view_axis(idata.base_rid, -cull_data.cam_transform.basis.get_column(2).normalized(), cull_data.cam_transform.basis.get_column(1).normalized());
+            // 	//particles visible? request redraw
+            // 	RenderingServerDefault::redraw_request();
+            // }
+          }
+          if (idata.vis_parent_array_index != -1) {
+            float fade = 1.0f;
+            const uint32_t& parent_flags = cull_data.scenario->instance_data[idata.vis_parent_array_index].flags;
+            if (parent_flags & InstanceData::FLAG_VISIBILITY_DEPENDENCY_FADE_CHILDREN) {
+              const int32_t& parent_idx = cull_data.scenario->instance_data[idata.vis_parent_array_index].visibility_index;
+              fade = cull_data.scenario->instance_visibility[parent_idx].children_fade_alpha;
+            }
+            idata.instance_geometry->set_parent_fade_alpha(fade);
+          }
+        }
+        // if (geometry_instance_pair_mask & (1 << RS::INSTANCE_LIGHT) && (idata.flags & InstanceData::FLAG_GEOM_LIGHTING_DIRTY)) {
+        // 		InstanceGeometryData *geom = static_cast<InstanceGeometryData *>(idata.instance->base_data);
+        // 		uint32_t idx = 0;
+
+        // 		for (const Instance *E : geom->lights) {
+        // 			InstanceLightData *light = static_cast<InstanceLightData *>(E->base_data);
+        // 			instance_pair_buffer[idx++] = light->instance;
+        // 			if (idx == MAX_INSTANCE_PAIRS) {
+        // 				break;
+        // 			}
+        // 		}
+
+        // 		ERR_FAIL_NULL(geom->geometry_instance);
+        // 		geom->geometry_instance->pair_light_instances(instance_pair_buffer, idx);
+        // 		idata.flags &= ~uint32_t(InstanceData::FLAG_GEOM_LIGHTING_DIRTY);
+        // 	}
+        if (idata.flags & InstanceData::FLAG_GEOM_PROJECTOR_SOFTSHADOW_DIRTY) {
+          InstanceGeometryData* geom = static_cast<InstanceGeometryData*>(idata.instance->base_data);
+
+          ERR_FAIL_NULL(geom->geometry_instance);
+          cull_data.cull->lock.lock();
+          // geom->geometry_instance->set_softshadow_projector_pairing(geom->softshadow_count > 0, geom->projector_count > 0);
+          cull_data.cull->lock.unlock();
+          idata.flags &= ~uint32_t(InstanceData::FLAG_GEOM_PROJECTOR_SOFTSHADOW_DIRTY);
+        }
+        for (uint32_t j = 0; j < cull_data.cull->shadow_count; j++) {
+          if (!light_culler->cull_directional_light(cull_data.scenario->instance_aabbs[i], j)) {
+            continue;
+          }
+          for (uint32_t k = 0; k < cull_data.cull->shadows[j].cascade_count; k++) {
+            if (IN_FRUSTUM(cull_data.cull->shadows[j].cascades[k].frustum) && VIS_CHECK) {
+              uint32_t base_type = idata.flags & InstanceData::FLAG_BASE_TYPE_MASK;
+
+              if (((1 << base_type) & RS::INSTANCE_GEOMETRY_MASK) && idata.flags & InstanceData::FLAG_CAST_SHADOWS && LAYER_CHECK) {
+                cull_result.directional_shadows[j].cascade_geometry_instances[k].push_back(idata.instance_geometry);
+                mesh_visible = true;
+              }
+            }
+          }
+        }
+      }
+#undef HIDDEN_BY_VISIBILITY_CHECKS
+#undef LAYER_CHECK
+#undef IN_FRUSTUM
+#undef VIS_RANGE_CHECK
+#undef VIS_PARENT_CHECK
+#undef VIS_CHECK
+#undef OCCLUSION_CULLED
+    };
+  };
+}
+
+bool RendererSceneCull::_visibility_parent_check(const CullData& p_cull_data, const InstanceData& p_instance_data) {
+  if (p_instance_data.vis_parent_array_index == -1) {
+    return true;
+  }
+  const uint32_t& parent_flags = p_cull_data.scenario->instance_data[p_instance_data.vis_parent_array_index].flags;
+  return ((parent_flags & InstanceData::FLAG_VISIBILITY_DEPENDENCY_NEEDS_CHECK) == InstanceData::FLAG_VISIBILITY_DEPENDENCY_HIDDEN_CLOSE_RANGE) ||
+         (parent_flags & InstanceData::FLAG_VISIBILITY_DEPENDENCY_FADE_CHILDREN);
+}
+
+bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance, const Transform3D p_cam_transform, const Projection& p_cam_projection, bool p_cam_orthogonal,
+                                                      bool p_cam_vaspect, RID p_shadow_atlas, Scenario* p_scenario, float p_screen_mesh_lod_threshold,
+                                                      uint32_t p_visible_layers) {
+  InstanceLightData* light = static_cast<InstanceLightData*>(p_instance->base_data);
+
+  Transform3D light_transform = p_instance->transform;
+  light_transform.orthonormalize();  //scale does not count on lights
+
+  bool animated_material_found = false;
+
+  switch (RSG::light_storage->light_get_type(p_instance->base)) {
+    case RS::LIGHT_DIRECTIONAL: {
+    } break;
+    case RS::LIGHT_OMNI: {
+      RS::LightOmniShadowMode shadow_mode = RSG::light_storage->light_omni_get_shadow_mode(p_instance->base);
+
+      if (shadow_mode == RS::LIGHT_OMNI_SHADOW_DUAL_PARABOLOID || !RSG::light_storage->light_instances_can_render_shadow_cube()) {
+        if (max_shadows_used + 2 > MAX_UPDATE_SHADOWS) {
+          return true;
+        }
+        for (int i = 0; i < 2; i++) {
+          //using this one ensures that raster deferred will have it
+          RENDER_TIMESTAMP("Cull OmniLight3D Shadow Paraboloid, Half " + itos(i));
+
+          real_t radius = RSG::light_storage->light_get_param(p_instance->base, RS::LIGHT_PARAM_RANGE);
+
+          real_t z = i == 0 ? -1 : 1;
+          Vector<Plane> planes;
+          planes.resize(6);
+          // 这些是 omnilight光的范围
+          // 一个……平头截体
+          planes.write[0] = light_transform.xform(Plane(Vector3(0, 0, z), radius));
+          planes.write[1] = light_transform.xform(Plane(Vector3(1, 0, z).normalized(), radius));
+          planes.write[2] = light_transform.xform(Plane(Vector3(-1, 0, z).normalized(), radius));
+          planes.write[3] = light_transform.xform(Plane(Vector3(0, 1, z).normalized(), radius));
+          planes.write[4] = light_transform.xform(Plane(Vector3(0, -1, z).normalized(), radius));
+          planes.write[5] = light_transform.xform(Plane(Vector3(0, 0, -z), 0));
+
+          instance_shadow_cull_result.clear();
+
+          Vector<Vector3> points = Geometry3D::compute_convex_mesh_points(&planes[0], planes.size());
+
+          struct CullConvex {
+            PagedArray<Instance*>* result;
+            _FORCE_INLINE_ bool operator()(void* p_data) {
+              Instance* p_instance = (Instance*)p_data;
+              result->push_back(p_instance);
+              return false;
+            }
+          };
+
+          CullConvex cull_convex;
+          cull_convex.result = &instance_shadow_cull_result;
+
+          p_scenario->indexers[Scenario::INDEXER_GEOMETRY].convex_query(planes.ptr(), planes.size(), points.ptr(), points.size(), cull_convex);
+
+          RendererSceneRender::RenderShadowData& shadow_data = render_shadow_data[max_shadows_used++];
+
+          if (!light->is_shadow_update_full()) {
+            light_culler->cull_regular_light(instance_shadow_cull_result);
+          }
+
+          for (int j = 0; j < (int)instance_shadow_cull_result.size(); j++) {
+            Instance* instance = instance_shadow_cull_result[j];
+            if (!instance->visible || !((1 << instance->base_type) & RS::INSTANCE_GEOMETRY_MASK) ||
+                !static_cast<InstanceGeometryData*>(instance->base_data)->can_cast_shadows || !(p_visible_layers & instance->layer_mask)) {
+              continue;
+            } else {
+              if (static_cast<InstanceGeometryData*>(instance->base_data)->material_is_animated) {
+                animated_material_found = true;
+              }
+
+              if (instance->mesh_instance.is_valid()) {
+                RSG::mesh_storage->mesh_instance_check_for_update(instance->mesh_instance);
+              }
+            }
+
+            shadow_data.instances.push_back(static_cast<InstanceGeometryData*>(instance->base_data)->geometry_instance);
+          }
+
+          RSG::mesh_storage->update_mesh_instances();
+
+          RSG::light_storage->light_instance_set_shadow_transform(light->instance, Projection(), light_transform, radius, 0, i, 0);
+          shadow_data.light = light->instance;
+          shadow_data.pass = i;
+        }
+      } else {  //shadow cube
+
+        if (max_shadows_used + 6 > MAX_UPDATE_SHADOWS) {
+          return true;
+        }
+
+        real_t radius = RSG::light_storage->light_get_param(p_instance->base, RS::LIGHT_PARAM_RANGE);
+        Projection cm;
+        cm.set_perspective(90, 1, radius * 0.005f, radius);
+
+        for (int i = 0; i < 6; i++) {
+          RENDER_TIMESTAMP("Cull OmniLight3D Shadow Cube, Side " + itos(i));
+          //using this one ensures that raster deferred will have it
+
+          static const Vector3 view_normals[6] = {Vector3(+1, 0, 0), Vector3(-1, 0, 0), Vector3(0, -1, 0), Vector3(0, +1, 0), Vector3(0, 0, +1), Vector3(0, 0, -1)};
+          static const Vector3 view_up[6] = {Vector3(0, -1, 0), Vector3(0, -1, 0), Vector3(0, 0, -1), Vector3(0, 0, +1), Vector3(0, -1, 0), Vector3(0, -1, 0)};
+
+          Transform3D xform = light_transform * Transform3D().looking_at(view_normals[i], view_up[i]);
+
+          Vector<Plane> planes = cm.get_projection_planes(xform);
+
+          instance_shadow_cull_result.clear();
+
+          Vector<Vector3> points = Geometry3D::compute_convex_mesh_points(&planes[0], planes.size());
+
+          struct CullConvex {
+            PagedArray<Instance*>* result;
+            _FORCE_INLINE_ bool operator()(void* p_data) {
+              Instance* p_instance = (Instance*)p_data;
+              result->push_back(p_instance);
+              return false;
+            }
+          };
+
+          CullConvex cull_convex;
+          cull_convex.result = &instance_shadow_cull_result;
+
+          p_scenario->indexers[Scenario::INDEXER_GEOMETRY].convex_query(planes.ptr(), planes.size(), points.ptr(), points.size(), cull_convex);
+
+          RendererSceneRender::RenderShadowData& shadow_data = render_shadow_data[max_shadows_used++];
+
+          if (!light->is_shadow_update_full()) {
+            light_culler->cull_regular_light(instance_shadow_cull_result);
+          }
+
+          for (int j = 0; j < (int)instance_shadow_cull_result.size(); j++) {
+            Instance* instance = instance_shadow_cull_result[j];
+            if (!instance->visible || !((1 << instance->base_type) & RS::INSTANCE_GEOMETRY_MASK) ||
+                !static_cast<InstanceGeometryData*>(instance->base_data)->can_cast_shadows || !(p_visible_layers & instance->layer_mask)) {
+              continue;
+            } else {
+              if (static_cast<InstanceGeometryData*>(instance->base_data)->material_is_animated) {
+                animated_material_found = true;
+              }
+              if (instance->mesh_instance.is_valid()) {
+                RSG::mesh_storage->mesh_instance_check_for_update(instance->mesh_instance);
+              }
+            }
+
+            shadow_data.instances.push_back(static_cast<InstanceGeometryData*>(instance->base_data)->geometry_instance);
+          }
+
+          RSG::mesh_storage->update_mesh_instances();
+          RSG::light_storage->light_instance_set_shadow_transform(light->instance, cm, xform, radius, 0, i, 0);
+
+          shadow_data.light = light->instance;
+          shadow_data.pass = i;
+        }
+
+        //restore the regular DP matrix
+        //RSG::light_storage->light_instance_set_shadow_transform(light->instance, Projection(), light_transform, radius, 0, 0, 0);
+      }
+
+    } break;
+    case RS::LIGHT_SPOT: {
+      RENDER_TIMESTAMP("Cull SpotLight3D Shadow");
+
+      if (max_shadows_used + 1 > MAX_UPDATE_SHADOWS) {
+        return true;
+      }
+
+      real_t radius = RSG::light_storage->light_get_param(p_instance->base, RS::LIGHT_PARAM_RANGE);
+      real_t angle = RSG::light_storage->light_get_param(p_instance->base, RS::LIGHT_PARAM_SPOT_ANGLE);
+
+      Projection cm;
+      cm.set_perspective(angle * 2.0, 1.0, 0.005f * radius, radius);
+
+      Vector<Plane> planes = cm.get_projection_planes(light_transform);
+
+      instance_shadow_cull_result.clear();
+
+      Vector<Vector3> points = Geometry3D::compute_convex_mesh_points(&planes[0], planes.size());
+
+      struct CullConvex {
+        PagedArray<Instance*>* result;
+        _FORCE_INLINE_ bool operator()(void* p_data) {
+          Instance* p_instance = (Instance*)p_data;
+          result->push_back(p_instance);
+          return false;
+        }
+      };
+
+      CullConvex cull_convex;
+      cull_convex.result = &instance_shadow_cull_result;
+
+      p_scenario->indexers[Scenario::INDEXER_GEOMETRY].convex_query(planes.ptr(), planes.size(), points.ptr(), points.size(), cull_convex);
+
+      RendererSceneRender::RenderShadowData& shadow_data = render_shadow_data[max_shadows_used++];
+
+      if (!light->is_shadow_update_full()) {
+        light_culler->cull_regular_light(instance_shadow_cull_result);
+      }
+
+      for (int j = 0; j < (int)instance_shadow_cull_result.size(); j++) {
+        Instance* instance = instance_shadow_cull_result[j];
+        if (!instance->visible || !((1 << instance->base_type) & RS::INSTANCE_GEOMETRY_MASK) || !static_cast<InstanceGeometryData*>(instance->base_data)->can_cast_shadows ||
+            !(p_visible_layers & instance->layer_mask)) {
+          continue;
+        } else {
+          if (static_cast<InstanceGeometryData*>(instance->base_data)->material_is_animated) {
+            animated_material_found = true;
+          }
+
+          if (instance->mesh_instance.is_valid()) {
+            RSG::mesh_storage->mesh_instance_check_for_update(instance->mesh_instance);
+          }
+        }
+        shadow_data.instances.push_back(static_cast<InstanceGeometryData*>(instance->base_data)->geometry_instance);
+      }
+
+      RSG::mesh_storage->update_mesh_instances();
+
+      RSG::light_storage->light_instance_set_shadow_transform(light->instance, cm, light_transform, radius, 0, 0, 0);
+      shadow_data.light = light->instance;
+      shadow_data.pass = 0;
+
+    } break;
+  }
+
+  return animated_material_found;
 }

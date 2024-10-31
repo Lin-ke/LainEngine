@@ -291,7 +291,7 @@ static Rect2i _get_directional_shadow_rect(int p_size, int p_shadow_count, int p
 
 int LightStorage::get_directional_light_shadow_size(RID p_light_intance) {
 	ERR_FAIL_COND_V(directional_shadow.light_count == 0, 0);
-  // 从总size 和count计算出 第index 个的大小 
+  // 从总阴影图的 size和count计算出 第index个的大小 
 	Rect2i r = _get_directional_shadow_rect(directional_shadow.size, directional_shadow.light_count, 0);
 
 	LightInstance *light_instance = light_instance_owner.get_or_null(p_light_intance);
@@ -301,7 +301,7 @@ int LightStorage::get_directional_light_shadow_size(RID p_light_intance) {
 		case RS::LIGHT_DIRECTIONAL_SHADOW_ORTHOGONAL:
 			break; //none
 		case RS::LIGHT_DIRECTIONAL_SHADOW_PARALLEL_2_SPLITS:
-			r.size.height() /= 2;
+			r.size.height() /= 2; // csm的阴影贴图分辨率相同
 			break;
 		case RS::LIGHT_DIRECTIONAL_SHADOW_PARALLEL_4_SPLITS:
 			r.size /= 2;

@@ -57,6 +57,34 @@ void lain::RenderingLightCuller::prepare_directional_light(const RendererSceneCu
   _prepare_light(*p_instance, p_directional_light_id, RS::LIGHT_DIRECTIONAL);
 }
 
+bool lain::RenderingLightCuller::cull_directional_light(const RendererSceneCull::InstanceBounds& p_bound, int32_t p_directional_light_id) {
+	if (!data.is_active() || !is_caster_culling_active()) {
+		return true;
+	}
+
+	ERR_FAIL_INDEX_V(p_directional_light_id, (int32_t)data.directional_cull_planes.size(), true);
+
+	LightCullPlanes &cull_planes = data.directional_cull_planes[p_directional_light_id];
+
+	Vector3 mins = Vector3(p_bound.bounds[0], p_bound.bounds[1], p_bound.bounds[2]);
+	Vector3 maxs = Vector3(p_bound.bounds[3], p_bound.bounds[4], p_bound.bounds[5]);
+	AABB bb(mins, maxs - mins);
+
+	real_t r_min, r_max;
+	for (int p = 0; p < cull_planes.num_cull_planes; p++) {
+		bb.project_range_in_plane(cull_planes.cull_planes[p], r_min, r_max);
+		if (r_min > 0.0f) {
+#ifdef LIGHT_CULLER_DEBUG_DIRECTIONAL_LIGHT
+			cull_planes.rejected_count++;
+#endif
+
+			return false;
+		}
+	}
+
+	return true;
+}
+
 bool lain::RenderingLightCuller::_prepare_light(const RendererSceneCull::Instance& p_instance, int32_t p_directional_light_id, RS::LightType p_light_type) {
   if (!data.is_active()) {
     return true;
@@ -207,7 +235,7 @@ bool RenderingLightCuller::_add_light_camera_planes(LightCullPlanes &r_cull_plan
 	// Deal with special case... if the light is INSIDE the view frustum (i.e. all planes face away)
 	// then we will add the camera frustum planes to clip the light volume .. there is no need to
 	// render shadow casters outside the frustum as shadows can never re-enter the frustum.
-  //  viewing frustum 的法线是向外的，如果distance 为 负数说明点在视锥内
+  //  viewing frustum 的法线是向外的，如果distance 为 负数说明点在视锥内， 
 	if (lookup == 63) {
 		r_cull_planes.num_cull_planes = 0;
 		for (int n = 0; n < data.frustum_planes.size(); n++) {
@@ -254,6 +282,91 @@ bool RenderingLightCuller::_add_light_camera_planes(LightCullPlanes &r_cull_plan
 #ifdef LIGHT_CULLER_DEBUG_LOGGING
 	if (is_logging()) {
 		print_line("lsource.pos is " + String(p_light_source.pos));
+	}
+#endif
+
+	return true;
+}
+
+bool lain::RenderingLightCuller::add_light_camera_planes_directional(LightCullPlanes& r_cull_planes, const LightSource& p_light_source) {
+uint32_t lookup = 0;
+	r_cull_planes.num_cull_planes = 0;
+
+	// Directional light, we will use dot against the light direction to determine back facing planes.
+	for (int n = 0; n < 6; n++) {
+		float dot = data.frustum_planes[n].normal.dot(p_light_source.dir);
+		if (dot > 0.0f) {
+			lookup |= 1 << n;
+
+			// Add backfacing camera frustum planes.
+			r_cull_planes.add_cull_plane(data.frustum_planes[n]);
+		}
+	}
+
+	ERR_FAIL_COND_V(lookup >= LUT_SIZE, true);
+
+	// Deal with special case... if the light is INSIDE the view frustum (i.e. all planes face away)
+	// then we will add the camera frustum planes to clip the light volume .. there is no need to
+	// render shadow casters outside the frustum as shadows can never re-enter the frustum.
+
+	// Should never happen with directional light?? This may be able to be removed.
+	if (lookup == 63) {
+		r_cull_planes.num_cull_planes = 0;
+		for (int n = 0; n < data.frustum_planes.size(); n++) {
+			r_cull_planes.add_cull_plane(data.frustum_planes[n]);
+		}
+
+		return true;
+	}
+
+// Each edge forms a plane.
+#ifdef RENDERING_LIGHT_CULLER_CALCULATE_LUT
+	const LocalVector<uint8_t> &entry = _calculated_LUT[lookup];
+
+	// each edge forms a plane
+	int n_edges = entry.size() - 1;
+#else
+	uint8_t *entry = &data.LUT_entries[lookup][0];
+	int n_edges = data.LUT_entry_sizes[lookup] - 1;
+#endif
+
+	for (int e = 0; e < n_edges; e++) {
+		int i0 = entry[e];
+		int i1 = entry[e + 1];
+		const Vector3 &pt0 = data.frustum_points[i0];
+		const Vector3 &pt1 = data.frustum_points[i1];
+
+		// Create a third point from the light direction.
+		Vector3 pt2 = pt0 - p_light_source.dir;
+
+		if (!_is_colinear_tri(pt0, pt1, pt2)) {
+			// Create plane from 3 points.
+			Plane p(pt0, pt1, pt2);
+			r_cull_planes.add_cull_plane(p);
+		}
+	}
+
+	// Last to 0 edge.
+	if (n_edges) {
+		int i0 = entry[n_edges]; // Last.
+		int i1 = entry[0]; // First.
+
+		const Vector3 &pt0 = data.frustum_points[i0];
+		const Vector3 &pt1 = data.frustum_points[i1];
+
+		// Create a third point from the light direction.
+		Vector3 pt2 = pt0 - p_light_source.dir;
+
+		if (!_is_colinear_tri(pt0, pt1, pt2)) {
+			// Create plane from 3 points.
+			Plane p(pt0, pt1, pt2);
+			r_cull_planes.add_cull_plane(p);
+		}
+	}
+
+#ifdef LIGHT_CULLER_DEBUG_LOGGING
+	if (is_logging()) {
+		print_line("lcam.pos is " + String(p_light_source.pos));
 	}
 #endif
 
