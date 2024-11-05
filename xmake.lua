@@ -82,6 +82,39 @@ target("MetaParser")
         end
     end
     )
+
+target("GenShader")
+    set_kind("phony")
+    before_build(
+        function (target) 
+            import ("glsl_builders", {alias = "gbd"})
+            import("core.base.process")
+            print("--Gen ShaderFiles--")
+            local err_name = "./setup/shader_generate.log" 
+            os.rm(err_name)
+            glsl_files = os.files("$(projectdir)/**.glsl")
+            err_file = io.open(err_name, "w")
+            try{
+                function ()
+                    print(glsl_files)
+                    gbd.build_rd_headers(glsl_files)   
+                end,
+                catch {
+                    function (v) 
+                        err_file:write(v)
+                    end
+                },
+                finally{
+                    function (ok, errors)
+                        err_file:write(v)
+                    end
+                }
+            }
+            
+            err_file:close()
+            -- lock:unlock()
+        end
+    )
 target("CompileShader")
     set_kind("phony")
     before_build(

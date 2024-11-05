@@ -5,7 +5,11 @@ using namespace lain;
 
 
 void ShaderRD::_add_stage(const char *p_code, StageType p_stage_type) {
-	Vector<String> lines = String(p_code).split("\n");
+	_add_stage(String(p_code), p_stage_type);
+}
+
+void lain::ShaderRD::_add_stage(const String& p_code, StageType p_stage_type) {
+	Vector<String> lines = p_code.split("\n");
 
 	String text;
 
@@ -65,18 +69,18 @@ void ShaderRD::_add_stage(const char *p_code, StageType p_stage_type) {
 	}
 }
 
-void ShaderRD::setup(const char *p_vertex_code, const char *p_fragment_code, const char *p_compute_code, const char *p_name) {
+void ShaderRD::setup(const String& p_vertex_code, const String& p_fragment_code, const String& p_compute_code, const String& p_name) {
 	name = p_name;
 
-	if (p_compute_code) {
+	if (p_compute_code.is_empty()) {
 		_add_stage(p_compute_code, STAGE_TYPE_COMPUTE);
 		is_compute = true;
 	} else {
 		is_compute = false;
-		if (p_vertex_code) {
+		if (p_vertex_code.is_empty()) {
 			_add_stage(p_vertex_code, STAGE_TYPE_VERTEX);
 		}
-		if (p_fragment_code) {
+		if (p_fragment_code.is_empty()) {
 			_add_stage(p_fragment_code, STAGE_TYPE_FRAGMENT);
 		}
 	}
@@ -91,16 +95,20 @@ void ShaderRD::setup(const char *p_vertex_code, const char *p_fragment_code, con
 	tohash.append("[BinaryCacheKey]");
 	tohash.append(RenderingDevice::get_singleton()->shader_get_binary_cache_key());
 	tohash.append("[Vertex]");
-	tohash.append(p_vertex_code ? p_vertex_code : "");
+	tohash.append(p_vertex_code.is_empty() ? p_vertex_code : "");
 	tohash.append("[Fragment]");
-	tohash.append(p_fragment_code ? p_fragment_code : "");
+	tohash.append(p_fragment_code.is_empty() ? p_fragment_code : "");
 	tohash.append("[Compute]");
-	tohash.append(p_compute_code ? p_compute_code : "");
+	tohash.append(p_compute_code.is_empty() ? p_compute_code : "");
 	// Hash
 	base_sha256 = tohash.as_string().sha256_text();
 }
+// 注意如果char * 是空的话String的copy_from也可以正常进行
+void ShaderRD::setup(const char *p_vertex_code, const char *p_fragment_code, const char *p_compute_code, const char *p_name) {
+	setup(String(p_vertex_code), String(p_fragment_code), String(p_compute_code), String(p_name));
+}
 
-// 将变量编译到ubershader里
+// 将变量编译到ubershader里，形成variant
 
 void ShaderRD::_compile_variant(uint32_t p_variant, const CompileData *p_data) {
 	uint32_t variant = group_to_variant_map[p_data->group][p_variant];

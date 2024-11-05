@@ -71,10 +71,10 @@ namespace lain{
 	virtual int multimesh_get_instance_count(RID p_multimesh) const = 0;
 
 	virtual void multimesh_set_mesh(RID p_multimesh, RID p_mesh) = 0;
-	virtual void multimesh_instance_set_transform(RID p_multimesh, int p_index, const Transform3D &p_transform) = 0;
-	virtual void multimesh_instance_set_transform_2d(RID p_multimesh, int p_index, const Transform2D &p_transform) = 0;
-	virtual void multimesh_instance_set_color(RID p_multimesh, int p_index, const Color &p_color) = 0;
-	virtual void multimesh_instance_set_custom_data(RID p_multimesh, int p_index, const Color &p_color) = 0;
+	// virtual void multimesh_instance_set_transform(RID p_multimesh, int p_index, const Transform3D &p_transform) = 0;
+	// virtual void multimesh_instance_set_transform_2d(RID p_multimesh, int p_index, const Transform2D &p_transform) = 0;
+	// virtual void multimesh_instance_set_color(RID p_multimesh, int p_index, const Color &p_color) = 0;
+	// virtual void multimesh_instance_set_custom_data(RID p_multimesh, int p_index, const Color &p_color) = 0;
 
 	virtual void multimesh_set_custom_aabb(RID p_multimesh, const AABB &p_aabb) = 0;
 	virtual AABB multimesh_get_custom_aabb(RID p_multimesh) const = 0;
@@ -95,20 +95,19 @@ namespace lain{
 	virtual AABB multimesh_get_aabb(RID p_multimesh) const = 0;
 
 	/* SKELETON API */
+	// virtual RID skeleton_allocate() = 0;
+	// virtual void skeleton_initialize(RID p_rid) = 0;
+	// virtual void skeleton_free(RID p_rid) = 0;
 
-	virtual RID skeleton_allocate() = 0;
-	virtual void skeleton_initialize(RID p_rid) = 0;
-	virtual void skeleton_free(RID p_rid) = 0;
+	// virtual void skeleton_allocate_data(RID p_skeleton, int p_bones, bool p_2d_skeleton = false) = 0;
+	// virtual int skeleton_get_bone_count(RID p_skeleton) const = 0;
+	// virtual void skeleton_bone_set_transform(RID p_skeleton, int p_bone, const Transform3D &p_transform) = 0;
+	// virtual Transform3D skeleton_bone_get_transform(RID p_skeleton, int p_bone) const = 0;
+	// virtual void skeleton_bone_set_transform_2d(RID p_skeleton, int p_bone, const Transform2D &p_transform) = 0;
+	// virtual Transform2D skeleton_bone_get_transform_2d(RID p_skeleton, int p_bone) const = 0;
+	// virtual void skeleton_set_base_transform_2d(RID p_skeleton, const Transform2D &p_base_transform) = 0;
 
-	virtual void skeleton_allocate_data(RID p_skeleton, int p_bones, bool p_2d_skeleton = false) = 0;
-	virtual int skeleton_get_bone_count(RID p_skeleton) const = 0;
-	virtual void skeleton_bone_set_transform(RID p_skeleton, int p_bone, const Transform3D &p_transform) = 0;
-	virtual Transform3D skeleton_bone_get_transform(RID p_skeleton, int p_bone) const = 0;
-	virtual void skeleton_bone_set_transform_2d(RID p_skeleton, int p_bone, const Transform2D &p_transform) = 0;
-	virtual Transform2D skeleton_bone_get_transform_2d(RID p_skeleton, int p_bone) const = 0;
-	virtual void skeleton_set_base_transform_2d(RID p_skeleton, const Transform2D &p_base_transform) = 0;
-
-	virtual void skeleton_update_dependency(RID p_base, DependencyTracker *p_instance) = 0;
+	// virtual void skeleton_update_dependency(RID p_base, DependencyTracker *p_instance) = 0;
 
 };
 }; // namespace lain

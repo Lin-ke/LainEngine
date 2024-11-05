@@ -103,6 +103,21 @@ class MaterialStorage : public RendererMaterialStorage {
 				update_element(this) {}
 	};
 
+  	struct Samplers {
+		RID rids[RS::CANVAS_ITEM_TEXTURE_FILTER_MAX][RS::CANVAS_ITEM_TEXTURE_REPEAT_MAX];
+		float mipmap_bias = 0.0f;
+		bool use_nearest_mipmap_filter = false;
+		int anisotropic_filtering_level = 2;
+
+		_FORCE_INLINE_ RID get_sampler(RS::CanvasItemTextureFilter p_filter, RS::CanvasItemTextureRepeat p_repeat) const {
+			return rids[p_filter][p_repeat];
+		}
+
+		Vector<RD::Uniform> get_uniforms(int p_first_index) const;
+		bool is_valid() const;
+		bool is_null() const;
+	};
+
  public:
   /* GLOBAL SHADER UNIFORM API */
   // 为所有的着色器设置全局参数 @todo

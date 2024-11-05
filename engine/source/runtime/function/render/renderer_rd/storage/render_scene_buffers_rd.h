@@ -1,0 +1,153 @@
+#ifndef RENDER_SCENE_BUFFERS_RD_H
+#define RENDER_SCENE_BUFFERS_RD_H
+#define RB_SCOPE_BUFFERS SNAME("render_buffers")
+
+#define RB_SCOPE_VRS SNAME("VRS")
+
+#define RB_TEXTURE SNAME("texture")
+#define RB_TEX_COLOR SNAME("color")
+#define RB_TEX_COLOR_MSAA SNAME("color_msaa")
+#define RB_TEX_COLOR_UPSCALED SNAME("color_upscaled")
+#define RB_TEX_DEPTH SNAME("depth")
+#define RB_TEX_DEPTH_MSAA SNAME("depth_msaa")
+#define RB_TEX_VELOCITY SNAME("velocity")
+#define RB_TEX_VELOCITY_MSAA SNAME("velocity_msaa")
+
+#define RB_TEX_BLUR_0 SNAME("blur_0")
+#define RB_TEX_BLUR_1 SNAME("blur_1")
+#define RB_TEX_HALF_BLUR SNAME("half_blur")  // only for raster!
+
+#define RB_TEX_BACK_COLOR SNAME("back_color")
+#define RB_TEX_BACK_DEPTH SNAME("back_depth")
+#include "function/render/rendering_system/render_scene_buffers_api.h"
+#include "material_storage.h"
+namespace lain::RendererRD {
+  class RenderBufferCustomDataRD;
+class RenderSceneBuffersRD : public RenderSceneBuffers {
+  LCLASS(RenderSceneBuffersRD, RenderSceneBuffers);
+
+ private:
+  bool can_be_storage = true;
+  uint32_t max_cluster_elements = 512;
+  RD::DataFormat base_data_format = RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
+  // RendererRD::VRS* vrs = nullptr;
+  uint64_t auto_exposure_version = 1;
+
+  // Our render target represents our final destination that we display on screen.
+  RID render_target;
+  Size2i target_size = Size2i(0, 0);
+  uint32_t view_count = 1;
+
+  // The internal size of the textures we render 3D to in case we render at a lower resolution and upscale
+  Size2i internal_size = Size2i(0, 0);
+  RS::ViewportScaling3DMode scaling_3d_mode = RS::VIEWPORT_SCALING_3D_MODE_OFF;
+  float fsr_sharpness = 0.2f;
+  float texture_mipmap_bias = 0.0f;
+
+  // Aliassing settings
+  RS::ViewportMSAA msaa_3d = RS::VIEWPORT_MSAA_DISABLED;
+  RS::ViewportScreenSpaceAA screen_space_aa = RS::VIEWPORT_SCREEN_SPACE_AA_DISABLED;
+  bool use_taa = false;
+  bool use_debanding = false;
+  RD::TextureSamples texture_samples = RD::TEXTURE_SAMPLES_1;
+  public:
+  virtual void configure(const RenderSceneBuffersConfiguration* p_config) override;
+  virtual void set_fsr_sharpness(float p_fsr_sharpness) override;
+  virtual void set_texture_mipmap_bias(float p_texture_mipmap_bias) override;
+  virtual void set_use_debanding(bool p_use_debanding) override;
+
+  // Named Textures
+	struct NTKey {
+		StringName context;
+		StringName buffer_name;
+
+		bool operator==(const NTKey &p_val) const {
+			return (context == p_val.context) && (buffer_name == p_val.buffer_name);
+		}
+
+		static uint32_t hash(const NTKey &p_val) {
+			uint32_t h = p_val.context.hash();
+			h = hash_murmur3_one_32(p_val.buffer_name.hash(), h);
+			return hash_fmix32(h);
+		}
+
+		NTKey() {}
+		NTKey(const StringName &p_context, const StringName &p_texture_name) {
+			context = p_context;
+			buffer_name = p_texture_name;
+		}
+	};
+  	struct NTSliceKey {
+		uint32_t layer;
+		uint32_t layers;
+		uint32_t mipmap;
+		uint32_t mipmaps;
+		RD::TextureView texture_view;
+
+		bool operator==(const NTSliceKey &p_val) const {
+			return (layer == p_val.layer) && (layers == p_val.layers) && (mipmap == p_val.mipmap) && (mipmaps == p_val.mipmaps) && (texture_view == p_val.texture_view);
+		}
+
+		static uint32_t hash(const NTSliceKey &p_val) {
+			uint32_t h = hash_murmur3_one_32(p_val.layer);
+			h = hash_murmur3_one_32(p_val.layers, h);
+			h = hash_murmur3_one_32(p_val.mipmap, h);
+			h = hash_murmur3_one_32(p_val.mipmaps, h);
+			h = hash_murmur3_one_32(p_val.texture_view.format_override);
+			h = hash_murmur3_one_32(p_val.texture_view.swizzle_r, h);
+			h = hash_murmur3_one_32(p_val.texture_view.swizzle_g, h);
+			h = hash_murmur3_one_32(p_val.texture_view.swizzle_b, h);
+			h = hash_murmur3_one_32(p_val.texture_view.swizzle_a, h);
+			return hash_fmix32(h);
+		}
+
+		NTSliceKey() {}
+		NTSliceKey(uint32_t p_layer, uint32_t p_layers, uint32_t p_mipmap, uint32_t p_mipmaps, RD::TextureView p_texture_view) {
+			layer = p_layer;
+			layers = p_layers;
+			mipmap = p_mipmap;
+			mipmaps = p_mipmaps;
+			texture_view = p_texture_view;
+		}
+	};
+  struct NamedTexture {
+		// Cache the data used to create our texture
+		RD::TextureFormat format;
+		bool is_unique; // If marked as unique, we return it into our pool
+
+		// Our texture objects, slices are lazy (i.e. only created when requested).
+		RID texture;
+		mutable HashMap<NTSliceKey, RID, NTSliceKey> slices;
+		Vector<Size2i> sizes; // 记录每个mipmap的size （就是逐渐的/2)
+	};
+
+
+  bool has_texture(const StringName& p_context, const StringName& p_texture_name) const;
+  RID create_texture(const StringName& p_context, const StringName& p_texture_name, const RD::DataFormat p_data_format, const uint32_t p_usage_bits,
+                     const RD::TextureSamples p_texture_samples = RD::TEXTURE_SAMPLES_1, const Size2i p_size = Size2i(0, 0), const uint32_t p_layers = 0,
+                     const uint32_t p_mipmaps = 1, bool p_unique = true);
+  RID create_texture_from_format(const StringName& p_context, const StringName& p_texture_name, const RD::TextureFormat& p_texture_format,
+                                 RD::TextureView p_view = RD::TextureView(), bool p_unique = true);
+  RID create_texture_view(const StringName& p_context, const StringName& p_texture_name, const StringName& p_view_name, RD::TextureView p_view = RD::TextureView());
+  RID get_texture(const StringName& p_context, const StringName& p_texture_name) const;
+  const RD::TextureFormat get_texture_format(const StringName& p_context, const StringName& p_texture_name) const;
+  RID get_texture_slice(const StringName& p_context, const StringName& p_texture_name, const uint32_t p_layer, const uint32_t p_mipmap, const uint32_t p_layers = 1,
+                        const uint32_t p_mipmaps = 1);
+  RID get_texture_slice_view(const StringName& p_context, const StringName& p_texture_name, const uint32_t p_layer, const uint32_t p_mipmap, const uint32_t p_layers = 1,
+                             const uint32_t p_mipmaps = 1, RD::TextureView p_view = RD::TextureView());
+  Size2i get_texture_slice_size(const StringName& p_context, const StringName& p_texture_name, const uint32_t p_mipmap);
+  void free_named_texture(NamedTexture& p_texture);
+  void clear_context(const StringName& p_context);
+
+	mutable HashMap<NTKey, NamedTexture, NTKey> named_textures;
+	mutable HashMap<StringName, Ref<RenderBufferCustomDataRD>> data_buffers;
+  
+	// Samplers.
+	RendererRD::MaterialStorage::Samplers samplers;
+
+	void update_samplers();
+  void cleanup();
+  void update_sizes(NamedTexture &);
+};
+};  // namespace lain::RendererRD
+#endif  // !RENDER_SCENE_BUFFERS_RD_H

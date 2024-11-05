@@ -1,7 +1,8 @@
 #include "renderer_scene_cull.h"
+#include "core/math/geometry_3d.h"
 #include "function/render/rendering_system/rendering_system_default.h"
 #include "function/render/rendering_system/rendering_system_globals.h"
-#include "core/math/geometry_3d.h"
+#include "rendering_light_culler.h"
 using namespace lain;
 RID lain::RendererSceneCull::camera_allocate() {
   return camera_owner.allocate_rid();
@@ -287,9 +288,6 @@ void lain::RendererSceneCull::InstanceCullResult::init(PagedArrayPool<RID>* p_ri
   }
 }
 
-RendererSceneCull::Instance::Instance() : update_item(this) {
-  dependency_tracker.userdata = this;
-}
 RID lain::RendererSceneCull::instance_allocate() {
   return instance_owner.allocate_rid();
 }
@@ -701,7 +699,7 @@ void RendererSceneCull::instance_attach_skeleton(RID p_instance, RID p_skeleton)
 
   if (p_skeleton.is_valid()) {
     //update the dependency now, so if cleared, we remove it
-    RSG::mesh_storage->skeleton_update_dependency(p_skeleton, &instance->dependency_tracker);
+    // RSG::mesh_storage->skeleton_update_dependency(p_skeleton, &instance->dependency_tracker);
   }
 
   _instance_queue_update(instance, true, true);
@@ -1060,7 +1058,7 @@ void RendererSceneCull::_update_dirty_instance(Instance* p_instance) {
     }
 
     if (p_instance->skeleton.is_valid()) {
-      RSG::mesh_storage->skeleton_update_dependency(p_instance->skeleton, &p_instance->dependency_tracker);
+      // RSG::mesh_storage->skeleton_update_dependency(p_instance->skeleton, &p_instance->dependency_tracker);
     }
 
     p_instance->dependency_tracker.update_end();
@@ -1322,7 +1320,7 @@ void lain::RendererSceneCull::_render_scene(const RendererSceneRender::CameraDat
 #ifdef DEBUG_CULL_TIME
     static float time_avg = 0;
     static uint32_t time_count = 0;
-    time_avg += double(OS::GetSingleton()->GetTicksUsec(); -time_from) / 1000.0;
+    time_avg += double(OS::GetSingleton()->GetTicksUsec() - time_from) / 1000.0;
     time_count++;
     print_line("time taken: " + rtos(time_avg / time_count));
 #endif
@@ -1469,8 +1467,49 @@ void lain::RendererSceneCull::_render_scene(const RendererSceneRender::CameraDat
           light->make_shadow_dirty();
         }
       }
-    }
+    }  // end of all lights
+  }  // end of if (p_using_shadows)
+
+  //append the directional lights to the lights culled
+  for (int i = 0; i < directional_lights.size(); i++) {
+    scene_cull_result.light_instances.push_back(directional_lights[i]);
   }
+
+  RID camera_attributes;
+  if (p_force_camera_attributes.is_valid()) {
+    camera_attributes = p_force_camera_attributes;
+  } else {
+    camera_attributes = scenario->camera_attributes;
+  }
+
+  /* PROCESS GEOMETRY AND DRAW SCENE */
+
+  RID occluders_tex;
+  const RendererSceneRender::CameraData* prev_camera_data = p_camera_data;
+  if (p_viewport.is_valid()) {
+    occluders_tex = RSG::viewport->viewport_get_occluder_debug_texture(p_viewport);
+    prev_camera_data = RSG::viewport->viewport_get_prev_camera_data(p_viewport);
+  }
+
+  RENDER_TIMESTAMP("Render 3D Scene");
+  scene_render->render_scene(p_render_buffers, p_camera_data, prev_camera_data, scene_cull_result.geometry_instances, scene_cull_result.light_instances,
+                             scene_cull_result.reflections, scene_cull_result.voxel_gi_instances, scene_cull_result.decals, scene_cull_result.lightmaps,
+                             scene_cull_result.fog_volumes, p_environment, camera_attributes, p_compositor, p_shadow_atlas, occluders_tex,
+                             p_reflection_probe.is_valid() ? RID() : scenario->reflection_atlas, p_reflection_probe, p_reflection_probe_pass, p_screen_mesh_lod_threshold,
+                             render_shadow_data, max_shadows_used, render_sdfgi_data, cull.sdfgi.region_count, &sdfgi_update_data, r_render_info);
+
+  if (p_viewport.is_valid()) {
+    RSG::viewport->viewport_set_prev_camera_data(p_viewport, p_camera_data);
+  }
+
+  for (uint32_t i = 0; i < max_shadows_used; i++) {
+    render_shadow_data[i].instances.clear();
+  }
+  max_shadows_used = 0;
+
+  // for (uint32_t i = 0; i < cull.sdfgi.region_count; i++) {
+  // 	render_sdfgi_data[i].instances.clear();
+  // }
 }
 
 RID RendererSceneCull::_render_get_environment(RID p_camera, RID p_scenario) {
@@ -1987,7 +2026,8 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance, cons
           Vector<Plane> planes;
           planes.resize(6);
           // 这些是 omnilight光的范围
-          // 一个……平头截体
+          // 一个……平头截体?
+          // 快速裁剪一次先
           planes.write[0] = light_transform.xform(Plane(Vector3(0, 0, z), radius));
           planes.write[1] = light_transform.xform(Plane(Vector3(1, 0, z).normalized(), radius));
           planes.write[2] = light_transform.xform(Plane(Vector3(-1, 0, z).normalized(), radius));
@@ -2016,6 +2056,7 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance, cons
           RendererSceneRender::RenderShadowData& shadow_data = render_shadow_data[max_shadows_used++];
 
           if (!light->is_shadow_update_full()) {
+            // 遍历，判断是否在light的裁剪平面内
             light_culler->cull_regular_light(instance_shadow_cull_result);
           }
 
@@ -2060,8 +2101,9 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance, cons
           static const Vector3 view_normals[6] = {Vector3(+1, 0, 0), Vector3(-1, 0, 0), Vector3(0, -1, 0), Vector3(0, +1, 0), Vector3(0, 0, +1), Vector3(0, 0, -1)};
           static const Vector3 view_up[6] = {Vector3(0, -1, 0), Vector3(0, -1, 0), Vector3(0, 0, -1), Vector3(0, 0, +1), Vector3(0, -1, 0), Vector3(0, -1, 0)};
 
+          // 这个变换是模型空间+变换到灯光空间中（轴由 view_normals[i] 和 view_up[i] 确定）
+          // 即 model view 变换
           Transform3D xform = light_transform * Transform3D().looking_at(view_normals[i], view_up[i]);
-
           Vector<Plane> planes = cm.get_projection_planes(xform);
 
           instance_shadow_cull_result.clear();

@@ -34,6 +34,9 @@ STRUCT(_NO_DISCARD_ Vector2i, Fields) {
   int* ptr() {
     return &x;
   }
+  Vector2i maxi(int32_t p_scalar) const {
+		return Vector2i(MAX(x, p_scalar), MAX(y, p_scalar));
+	}
   int32_t & width() {
     return x;
   }

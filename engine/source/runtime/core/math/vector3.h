@@ -19,6 +19,11 @@ struct _NO_DISCARD_ Vector3 {
   real_t y;
   real_t z;
 
+  real_t distance_squared_to(const Vector3& p_to) const { return (p_to - *this).length_squared(); }
+
+  Vector3 max(const Vector3& p_vector3) const { return Vector3(MAX(x, p_vector3.x), MAX(y, p_vector3.y), MAX(z, p_vector3.z)); }
+  Vector3 min(const Vector3& p_vector3) const { return Vector3(MIN(x, p_vector3.x), MIN(y, p_vector3.y), MIN(z, p_vector3.z)); }
+  Vector3 maxf(real_t p_scalar) const { return Vector3(MAX(x, p_scalar), MAX(y, p_scalar), MAX(z, p_scalar)); }
   void Vector3::zero() { x = y = z = 0; }
   Vector3() = default;
   Vector3(real_t x_, real_t y_, real_t z_) : x{x_}, y{y_}, z{z_} {}
@@ -85,35 +90,34 @@ struct _NO_DISCARD_ Vector3 {
     return x < p_v.x;
   }
 
-  bool operator>(const Vector3 &p_v) const {
-	if (x == p_v.x) {
-		if (y == p_v.y) {
-			return z > p_v.z;
-		}
-		return y > p_v.y;
-	}
-	return x > p_v.x;
-}
+  bool operator>(const Vector3& p_v) const {
+    if (x == p_v.x) {
+      if (y == p_v.y) {
+        return z > p_v.z;
+      }
+      return y > p_v.y;
+    }
+    return x > p_v.x;
+  }
 
-bool operator>=(const Vector3 &p_v) const {
-	if (x == p_v.x) {
-		if (y == p_v.y) {
-			return z >= p_v.z;
-		}
-		return y > p_v.y;
-	}
-	return x > p_v.x;
-}
-bool operator<=(const Vector3 &p_v) const {
-	if (x == p_v.x) {
-		if (y == p_v.y) {
-			return z <= p_v.z;
-		}
-		return y < p_v.y;
-	}
-	return x < p_v.x;
-}
-
+  bool operator>=(const Vector3& p_v) const {
+    if (x == p_v.x) {
+      if (y == p_v.y) {
+        return z >= p_v.z;
+      }
+      return y > p_v.y;
+    }
+    return x > p_v.x;
+  }
+  bool operator<=(const Vector3& p_v) const {
+    if (x == p_v.x) {
+      if (y == p_v.y) {
+        return z <= p_v.z;
+      }
+      return y < p_v.y;
+    }
+    return x < p_v.x;
+  }
 
   // overloaded operators to help Vector3
   friend Vector3 operator*(real_t scalar, const Vector3& rhs) { return Vector3(scalar * rhs.x, scalar * rhs.y, scalar * rhs.z); }
@@ -436,12 +440,8 @@ bool operator<=(const Vector3 &p_v) const {
     return Math::is_equal_approx(length_squared(), 1, (real_t)UNIT_EPSILON);  // 这里容忍的精度大一点
   }
 
-  L_INLINE Vector3 round() const{
-    return Vector3(Math::round(x), Math::round(y), Math::round(z));
-  }
-  L_INLINE Vector3 sign() const{
-    return Vector3(SIGN(x), SIGN(y), SIGN(z));
-  }
+  L_INLINE Vector3 round() const { return Vector3(Math::round(x), Math::round(y), Math::round(z)); }
+  L_INLINE Vector3 sign() const { return Vector3(SIGN(x), SIGN(y), SIGN(z)); }
   void snap(const Vector3& p_step) {
     x = Math::snapped(x, p_step.x);
     y = Math::snapped(y, p_step.y);
@@ -467,8 +467,7 @@ bool operator<=(const Vector3 &p_v) const {
   operator Vector3i() const;
 };
 
-
-_FORCE_INLINE_ Vector3 vec3_cross(const Vector3 &p_a, const Vector3 &p_b) {
-	return p_a.cross(p_b);
+_FORCE_INLINE_ Vector3 vec3_cross(const Vector3& p_a, const Vector3& p_b) {
+  return p_a.cross(p_b);
 }
 }  // namespace lain

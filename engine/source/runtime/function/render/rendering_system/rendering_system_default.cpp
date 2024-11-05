@@ -167,7 +167,7 @@ void RenderingSystemDefault::_draw(bool p_swap_buffers, double frame_step) {
 
 	// RSG::particles_storage->update_particles(); //need to be done after instances are updated (colliders and particle transforms), and colliders are rendered
 
-	RSG::scene->render_probes();
+	// RSG::scene->render_probes();
 
 	RSG::viewport->draw_viewports(p_swap_buffers);
 	// RSG::canvas_render->update();
@@ -183,7 +183,7 @@ void RenderingSystemDefault::_draw(bool p_swap_buffers, double frame_step) {
 // #endif // _3D_DISABLED
 
 	// RSG::canvas->update_visibility_notifiers();
-	RSG::scene->update_visibility_notifiers();
+	// RSG::scene->update_visibility_notifiers();
 
 	// if (create_thread) {
 	// 	callable_mp(this, &RenderingSystemDefault::_run_post_draw_steps).call_deferred();

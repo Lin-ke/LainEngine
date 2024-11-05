@@ -307,10 +307,10 @@ class MeshStorage : public RendererMeshStorage {
 	virtual int multimesh_get_instance_count(RID p_multimesh) const override;
 
 	virtual void multimesh_set_mesh(RID p_multimesh, RID p_mesh) override;
-	virtual void multimesh_instance_set_transform(RID p_multimesh, int p_index, const Transform3D &p_transform) override;
-	virtual void multimesh_instance_set_transform_2d(RID p_multimesh, int p_index, const Transform2D &p_transform) override;
-	virtual void multimesh_instance_set_color(RID p_multimesh, int p_index, const Color &p_color) override;
-	virtual void multimesh_instance_set_custom_data(RID p_multimesh, int p_index, const Color &p_color) override;
+	// virtual void multimesh_instance_set_transform(RID p_multimesh, int p_index, const Transform3D &p_transform) override;
+	// virtual void multimesh_instance_set_transform_2d(RID p_multimesh, int p_index, const Transform2D &p_transform) override;
+	// virtual void multimesh_instance_set_color(RID p_multimesh, int p_index, const Color &p_color) override;
+	// virtual void multimesh_instance_set_custom_data(RID p_multimesh, int p_index, const Color &p_color) override;
 
 	virtual void multimesh_set_custom_aabb(RID p_multimesh, const AABB &p_aabb) override;
 	virtual AABB multimesh_get_custom_aabb(RID p_multimesh) const override;
@@ -331,19 +331,19 @@ class MeshStorage : public RendererMeshStorage {
 	virtual AABB multimesh_get_aabb(RID p_multimesh) const override;
 	/* SKELETON API */
 
-	virtual RID skeleton_allocate() override;
-	virtual void skeleton_initialize(RID p_rid) override;
-	virtual void skeleton_free(RID p_rid) override;
+	// virtual RID skeleton_allocate() override;
+	// virtual void skeleton_initialize(RID p_rid) override;
+	// virtual void skeleton_free(RID p_rid) override;
 
-	virtual void skeleton_allocate_data(RID p_skeleton, int p_bones, bool p_2d_skeleton = false) override;
-	virtual int skeleton_get_bone_count(RID p_skeleton) const override;
-	virtual void skeleton_bone_set_transform(RID p_skeleton, int p_bone, const Transform3D &p_transform) override;
-	virtual Transform3D skeleton_bone_get_transform(RID p_skeleton, int p_bone) const override;
-	virtual void skeleton_bone_set_transform_2d(RID p_skeleton, int p_bone, const Transform2D &p_transform) override;
-	virtual Transform2D skeleton_bone_get_transform_2d(RID p_skeleton, int p_bone) const override;
-	virtual void skeleton_set_base_transform_2d(RID p_skeleton, const Transform2D &p_base_transform) override;
+	// virtual void skeleton_allocate_data(RID p_skeleton, int p_bones, bool p_2d_skeleton = false) override;
+	// virtual int skeleton_get_bone_count(RID p_skeleton) const override;
+	// virtual void skeleton_bone_set_transform(RID p_skeleton, int p_bone, const Transform3D &p_transform) override;
+	// virtual Transform3D skeleton_bone_get_transform(RID p_skeleton, int p_bone) const override;
+	// virtual void skeleton_bone_set_transform_2d(RID p_skeleton, int p_bone, const Transform2D &p_transform) override;
+	// virtual Transform2D skeleton_bone_get_transform_2d(RID p_skeleton, int p_bone) const override;
+	// virtual void skeleton_set_base_transform_2d(RID p_skeleton, const Transform2D &p_base_transform) override;
 
-	virtual void skeleton_update_dependency(RID p_base, DependencyTracker *p_instance) override;
+	// virtual void skeleton_update_dependency(RID p_base, DependencyTracker *p_instance) override;
 	private:
 	void _mesh_instance_add_surface(MeshInstance *mi, Mesh *mesh, uint32_t p_surface);
 	void _mesh_instance_add_surface_buffer(MeshInstance *mi, Mesh *mesh, MeshInstance::Surface *s, uint32_t p_surface, uint32_t p_buffer_index);

@@ -244,16 +244,16 @@ class RendererSceneCull : public RenderingMethod {
 
     uint32_t shadow_count;
 
-    // struct SDFGI {
-    //   //have arrays here because SDFGI functions expects this, plus regions can have areas
-    //   AABB region_aabb[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE];         //max 3 regions per cascade
-    //   uint32_t region_cascade[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE];  //max 3 regions per cascade
-    //   uint32_t region_count = 0;
+    struct SDFGI {
+      //have arrays here because SDFGI functions expects this, plus regions can have areas
+      AABB region_aabb[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE];         //max 3 regions per cascade
+      uint32_t region_cascade[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE];  //max 3 regions per cascade
+      uint32_t region_count = 0;
 
-    //   uint32_t cascade_light_index[SDFGI_MAX_CASCADES];
-    //   uint32_t cascade_light_count = 0;
+      uint32_t cascade_light_index[SDFGI_MAX_CASCADES];
+      uint32_t cascade_light_count = 0;
 
-    // } sdfgi;
+    } sdfgi;
 
     SpinLock lock;
 
@@ -423,7 +423,13 @@ class RendererSceneCull : public RenderingMethod {
     float transparency = 0.0;
     // dependency
     DependencyTracker dependency_tracker;
-    Instance();
+    Instance()
+    :
+				scenario_item(this),
+				update_item(this) // 这个不能放到cpp里，需要调查一下为什么@todo
+    {
+
+    }
   };
 
   struct CullData {
@@ -441,7 +447,7 @@ class RendererSceneCull : public RenderingMethod {
     virtual ~InstanceBaseData() {}
   };
   struct InstanceGeometryData : public InstanceBaseData {
-    RenderGeometryInstance* geometry_instance = nullptr;
+    RenderGeometryInstance* geometry_instance = nullptr; 
     bool can_cast_shadows = false;
     HashSet<Instance*> lights;  // 照射该instance的灯光
     bool material_is_animated = false;
@@ -464,6 +470,8 @@ class RendererSceneCull : public RenderingMethod {
 		bool is_shadow_dirty() const { return shadow_dirty_count != 0; }
     
     void make_shadow_dirty() { shadow_dirty_count = light_intersects_multiple_cameras ? 1 : 2; }
+		bool is_shadow_update_full() const { return shadow_dirty_count == 0; }
+
     // 一个light在p_frame_id帧中是否被多个camera看到（调用该函数）
     // 多线程？
     void detect_light_intersects_multiple_cameras(uint32_t p_frame_id) {
@@ -550,8 +558,13 @@ class RendererSceneCull : public RenderingMethod {
   InstanceCullResult scene_cull_result;
   LocalVector<InstanceCullResult> scene_cull_result_threads;
   RendererSceneRender::RenderShadowData render_shadow_data[MAX_UPDATE_SHADOWS]; // 这里填写所有的shadow数据（在render_scene里）
+	RendererSceneRender::RenderSDFGIData render_sdfgi_data[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE];
+	RendererSceneRender::RenderSDFGIUpdateData sdfgi_update_data;
+
   uint32_t max_shadows_used = 0;
   uint32_t thread_cull_threshold = 200;  // 多线程cull
+
+
 
   // RendererSceneRender::RenderSDFGIData render_sdfgi_data[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE];
   // RendererSceneRender::RenderSDFGIUpdateData sdfgi_update_data;
@@ -595,12 +608,12 @@ class RendererSceneCull : public RenderingMethod {
   virtual void render_camera(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_camera, RID p_scenario, RID p_viewport, Size2 p_viewport_size,
                              uint32_t p_jitter_phase_count, float p_screen_mesh_lod_threshold, RID p_shadow_atlas,
                              RenderingMethod::RenderInfo* r_render_info = nullptr) override;
-  virtual void render_empty_scene(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_scenario, RID p_shadow_atlas) override;
-  virtual void render_probes() override;
+  // virtual void render_empty_scene(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_scenario, RID p_shadow_atlas) override;
+  // virtual void render_probes() override;
 
   // update
   virtual void update();
-  virtual void update_visibility_notifiers();
+  // virtual void update_visibility_notifiers();
   void update_dirty_instances();
   void render_particle_colliders() {}
 
@@ -635,36 +648,6 @@ class RendererSceneCull : public RenderingMethod {
 	void _scene_cull(CullData &cull_data, InstanceCullResult &cull_result, uint64_t p_from, uint64_t p_to);
   bool _visibility_parent_check(const CullData &p_cull_data, const InstanceData &p_instance_data);
 	bool _light_instance_update_shadow(Instance *p_instance, const Transform3D p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, bool p_cam_vaspect, RID p_shadow_atlas, Scenario *p_scenario, float p_scren_mesh_lod_threshold, uint32_t p_visible_layers = 0xFFFFFF);
-
-	L_INLINE bool _is_colinear_tri(const Vector3 &p_a, const Vector3 &p_b, const Vector3 &p_c) const {
-		// Lengths of sides a, b and c.
-		float la = (p_b - p_a).length();
-		float lb = (p_c - p_b).length();
-		float lc = (p_c - p_a).length();
-
-		// Get longest side into lc.
-		if (lb < la) {
-			SWAP(la, lb);
-		}
-		if (lc < lb) {
-			SWAP(lb, lc);
-		}
-
-		// Prevent divide by zero.
-		if (lc > 0.001f) {
-			// If the summed length of the smaller two
-			// sides is close to the length of the longest side,
-			// the points are colinear, and the triangle is near degenerate.
-			float ld = ((la + lb) - lc) / lc;
-
-			// ld will be close to zero for colinear tris.
-			return ld < 0.001f;
-		}
-
-		// Don't create planes from tiny triangles,
-		// they won't be accurate.
-		return true;
-	}
 
 };
 }  // namespace lain

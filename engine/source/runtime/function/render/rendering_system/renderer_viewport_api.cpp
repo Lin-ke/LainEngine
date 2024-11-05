@@ -255,6 +255,15 @@ RID RendererViewport::viewport_get_texture(RID p_viewport) const {
 
   return RSG::texture_storage->render_target_get_texture(viewport->render_target);
 }
+void lain::RendererViewport::viewport_set_prev_camera_data(RID p_viewport, const RendererSceneRender::CameraData* p_camera_data) {
+		Viewport *viewport = viewport_owner.get_or_null(p_viewport);
+	ERR_FAIL_NULL(viewport);
+	uint64_t frame = RSG::rasterizer->get_frame_number();
+	if (viewport->prev_camera_data_frame != frame) {
+		viewport->prev_camera_data = *p_camera_data;
+		viewport->prev_camera_data_frame = frame;
+	}
+}
 void RendererViewport::viewport_attach_camera(RID p_viewport, RID p_camera) {
   Viewport* viewport = viewport_owner.get_or_null(p_viewport);
   ERR_FAIL_NULL(viewport);

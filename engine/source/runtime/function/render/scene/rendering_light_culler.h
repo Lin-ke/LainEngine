@@ -123,6 +123,41 @@ struct Data {
 		// used to turn on and off debugging features.
 		int debug_count = -1;
 	} data;
+
+	
+	// Avoid adding extra culling planes derived from near colinear triangles.
+	// The normals derived from these will be inaccurate, and can lead to false
+	// culling of objects that should be within the light volume.
+	L_INLINE bool _is_colinear_tri(const Vector3 &p_a, const Vector3 &p_b, const Vector3 &p_c) const {
+		// Lengths of sides a, b and c.
+		float la = (p_b - p_a).length();
+		float lb = (p_c - p_b).length();
+		float lc = (p_c - p_a).length();
+
+		// Get longest side into lc.
+		if (lb < la) {
+			SWAP(la, lb);
+		}
+		if (lc < lb) {
+			SWAP(lb, lc);
+		}
+
+		// Prevent divide by zero.
+		if (lc > 0.001f) {
+			// If the summed length of the smaller two
+			// sides is close to the length of the longest side,
+			// the points are colinear, and the triangle is near degenerate.
+			float ld = ((la + lb) - lc) / lc;
+
+			// ld will be close to zero for colinear tris.
+			return ld < 0.001f;
+		}
+
+		// Don't create planes from tiny triangles,
+		// they won't be accurate.
+		return true;
+	}
+
 };
 }  // namespace lain
 #endif

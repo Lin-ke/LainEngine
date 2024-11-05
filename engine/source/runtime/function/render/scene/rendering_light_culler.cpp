@@ -42,22 +42,7 @@ bool lain::RenderingLightCuller::prepare_camera(const Transform3D& p_cam_transfo
   return true;
 }
 
-void lain::RenderingLightCuller::prepare_directional_light(const RendererSceneCull::Instance* p_instance, int32_t p_directional_light_id) {
-
-  //data.directional_light = p_instance;
-  // Something is probably going wrong, we shouldn't have this many directional lights...
-  ERR_FAIL_COND(p_directional_light_id > 1024);
-  DEV_ASSERT(p_directional_light_id >= 0);
-
-  // First make sure we have enough directional lights to hold this one.
-  if (p_directional_light_id >= (int32_t)data.directional_cull_planes.size()) {
-    data.directional_cull_planes.resize(p_directional_light_id + 1);
-  }
-
-  _prepare_light(*p_instance, p_directional_light_id, RS::LIGHT_DIRECTIONAL);
-}
-
-bool lain::RenderingLightCuller::cull_directional_light(const RendererSceneCull::InstanceBounds& p_bound, int32_t p_directional_light_id) {
+bool RenderingLightCuller::cull_directional_light(const RendererSceneCull::InstanceBounds &p_bound, int32_t p_directional_light_id) {
 	if (!data.is_active() || !is_caster_culling_active()) {
 		return true;
 	}
@@ -84,6 +69,93 @@ bool lain::RenderingLightCuller::cull_directional_light(const RendererSceneCull:
 
 	return true;
 }
+
+void RenderingLightCuller::cull_regular_light(PagedArray<RendererSceneCull::Instance *> &r_instance_shadow_cull_result) {
+	if (!data.is_active() || !is_caster_culling_active()) {
+		return;
+	}
+
+	// If the light is out of range, no need to check anything, just return 0 casters.
+	// Ideally an out of range light should not even be drawn AT ALL (no shadow map, no PCF etc).
+	if (data.out_of_range) {
+		return;
+	}
+
+	// Shorter local alias.
+	PagedArray<RendererSceneCull::Instance *> &list = r_instance_shadow_cull_result;
+
+#ifdef LIGHT_CULLER_DEBUG_LOGGING
+	uint32_t count_before = r_instance_shadow_cull_result.size();
+#endif
+
+	// Go through all the casters in the list (the list will hopefully shrink as we go).
+	for (int n = 0; n < (int)list.size(); n++) {
+		// World space aabb.
+		const AABB &bb = list[n]->transformed_aabb;
+
+#ifdef LIGHT_CULLER_DEBUG_LOGGING
+		if (is_logging()) {
+			print_line("bb : " + String(bb));
+		}
+#endif
+
+		real_t r_min, r_max;
+		bool show = true;
+
+		for (int p = 0; p < data.regular_cull_planes.num_cull_planes; p++) {
+			// As we only need r_min, could this be optimized?
+			bb.project_range_in_plane(data.regular_cull_planes.cull_planes[p], r_min, r_max);
+
+#ifdef LIGHT_CULLER_DEBUG_LOGGING
+			if (is_logging()) {
+				print_line("\tplane " + itos(p) + " : " + String(data.regular_cull_planes.cull_planes[p]) + " r_min " + String(Variant(r_min)) + " r_max " + String(Variant(r_max)));
+			}
+#endif
+
+			if (r_min > 0.0f) {
+				show = false;
+				break;
+			}
+		}
+
+		// Remove.
+		if (!show) {
+			list.remove_at_unordered(n); // 这个remove是把最后的位置填到移除的位置
+
+			// Repeat this element next iteration of the loop as it has been removed and replaced by the last.
+			n--;
+
+#ifdef LIGHT_CULLER_DEBUG_REGULAR_LIGHT
+			data.regular_rejected_count++;
+#endif
+		}
+	}
+
+#ifdef LIGHT_CULLER_DEBUG_LOGGING
+	uint32_t removed = r_instance_shadow_cull_result.size() - count_before;
+	if (removed) {
+		if (((data.debug_count) % 60) == 0) {
+			print_line("[" + itos(data.debug_count) + "] linear cull before " + itos(count_before) + " after " + itos(r_instance_shadow_cull_result.size()));
+		}
+	}
+#endif
+}
+
+void lain::RenderingLightCuller::prepare_directional_light(const RendererSceneCull::Instance* p_instance, int32_t p_directional_light_id) {
+
+  //data.directional_light = p_instance;
+  // Something is probably going wrong, we shouldn't have this many directional lights...
+  ERR_FAIL_COND(p_directional_light_id > 1024);
+  DEV_ASSERT(p_directional_light_id >= 0);
+
+  // First make sure we have enough directional lights to hold this one.
+  if (p_directional_light_id >= (int32_t)data.directional_cull_planes.size()) {
+    data.directional_cull_planes.resize(p_directional_light_id + 1);
+  }
+
+  _prepare_light(*p_instance, p_directional_light_id, RS::LIGHT_DIRECTIONAL);
+}
+
 
 bool lain::RenderingLightCuller::_prepare_light(const RendererSceneCull::Instance& p_instance, int32_t p_directional_light_id, RS::LightType p_light_type) {
   if (!data.is_active()) {

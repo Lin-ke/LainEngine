@@ -100,6 +100,12 @@ int MeshStorage::mesh_get_blend_shape_count(RID p_mesh) const {
 	return mesh->blend_shape_count;
 }
 
+void MeshStorage::mesh_set_blend_shape_mode(RID p_mesh, RS::BlendShapeMode p_mode){
+	Mesh *mesh = mesh_owner.get_or_null(p_mesh);
+	ERR_FAIL_NULL(mesh);
+
+	mesh->blend_shape_mode = p_mode;
+}
 
 void MeshStorage::mesh_add_surface(RID p_mesh, const RS::SurfaceData &p_surface) {
 	Mesh *mesh = mesh_owner.get_or_null(p_mesh);

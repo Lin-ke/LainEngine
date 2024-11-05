@@ -39,6 +39,10 @@ class RendererViewport {
     RS::ViewportScreenSpaceAA screen_space_aa = RS::VIEWPORT_SCREEN_SPACE_AA_DISABLED;
     RS::ViewportUpdateMode update_mode = RS::VIEWPORT_UPDATE_WHEN_VISIBLE;
 
+    // camera data
+		uint64_t prev_camera_data_frame = 0;
+    RendererSceneRender::CameraData prev_camera_data;
+
     bool use_debanding = false;  // 使用快速后处理滤镜使条带不明显
     float fsr_sharpness = 0.0;  // 确定使用 FSR 放大模式时放大图像的清晰度。每出现一个整数，清晰度就会减半。值从 0.0（最锐利）到 2.0。高于 2.0 的值不会产生明显的差异。
 

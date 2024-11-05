@@ -9,6 +9,7 @@
 #include "time_enums.h"
 #define ForwardRenderingMethodName "forward"
 #define CompatiblilityRenderingMethodName "gl_compatiblitity"
+#define MobileRenderingMethodName "mobile"
 #define VulkanDriver "vulkan"
 #define OpenGLDriver "opengl"
 // abstruct of the OS
@@ -88,10 +89,11 @@ public:
 
 	void EnsureUserDataDir();
 	String GetCurrentRenderingDriverName() const { return _current_rendering_driver_name; }
-	bool is_gl_rd() const {return _current_rendering_driver_name.begins_with("opengl"); }
-	bool is_vulkan_rd() const {return _current_rendering_driver_name.begins_with("vulkan"); }
-	bool is_gl_rdm() const {return _current_rendering_method == CompatiblilityRenderingMethodName; }
-	bool is_forward_rdm() const {return _current_rendering_method == ForwardRenderingMethodName; }
+	L_INLINE bool is_gl_rd() const {return _current_rendering_driver_name.begins_with("opengl"); }
+	L_INLINE bool is_vulkan_rd() const {return _current_rendering_driver_name.begins_with("vulkan"); }
+	L_INLINE bool is_mobile_rdm() const {return _current_rendering_method == MobileRenderingMethodName;}
+	L_INLINE bool is_gl_rdm() const {return _current_rendering_method == CompatiblilityRenderingMethodName; }
+	L_INLINE bool is_forward_rdm() const {return _current_rendering_method == ForwardRenderingMethodName; }
 	void set_current_rendering_driver_name(const String &p_driver_name) { _current_rendering_driver_name = p_driver_name; }
 	void set_current_rendering_method(const String &p_name) { _current_rendering_method = p_name; }
 	enum RenderThreadMode {

@@ -40,9 +40,28 @@ void RendererCompositorRD::initialize() {
 //   blit.sampler = RD::get_singleton()->sampler_create(RD::SamplerState());
 }
 lain::RendererCompositorRD::RendererCompositorRD() {
-  material_storage = new (RendererRD::MaterialStorage);
-  texture_storage = new (RendererRD::TextureStorage);
-  mesh_storage = new (RendererRD::MeshStorage);
-  light_storage = new (RendererRD::LightStorage);
+	singleton = this;
+	utilities = memnew(RendererRD::Utilities);
+	texture_storage = memnew(RendererRD::TextureStorage);
+	material_storage = memnew(RendererRD::MaterialStorage);
+	mesh_storage = memnew(RendererRD::MeshStorage);
+	light_storage = memnew(RendererRD::LightStorage);
+	// particles_storage = memnew(RendererRD::ParticlesStorage);
+	// fog = memnew(RendererRD::Fog);
+	// canvas = memnew(RendererCanvasRenderRD());
+	uint64_t textures_per_stage = RD::get_singleton()->limit_get(RD::LIMIT_MAX_TEXTURES_PER_SHADER_STAGE);
+  if(OS::GetSingleton()->is_mobile_rdm() || textures_per_stage < 48){
+      if(OS::GetSingleton()->is_forward_rdm()){
+			WARN_PRINT_ONCE("Platform supports less than 48 textures per stage which is less than required by the Clustered renderer. Defaulting to Mobile renderer.");
+      }
+
+  }
+  else if(OS::GetSingleton()->is_forward_rdm()){
+      scene = memnew(RendererSceneRenderImplementation::RenderForwardClustered());
+  } else{
+    
+  }
+
+	scene->init();
 
 }

@@ -348,6 +348,25 @@ class RenderingSystem : public Object {
   /// *************** ///
   /// ***VIEWPORT API*** ///
   /// *************** ///
+	// sampler使用的
+		enum CanvasItemTextureFilter {
+		CANVAS_ITEM_TEXTURE_FILTER_DEFAULT, // Uses canvas item setting for draw command, uses global setting for canvas item.
+		CANVAS_ITEM_TEXTURE_FILTER_NEAREST,
+		CANVAS_ITEM_TEXTURE_FILTER_LINEAR,
+		CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS,
+		CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS,
+		CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC,
+		CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC,
+		CANVAS_ITEM_TEXTURE_FILTER_MAX
+	};
+
+	enum CanvasItemTextureRepeat {
+		CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT, // Uses canvas item setting for draw command, uses global setting for canvas item.
+		CANVAS_ITEM_TEXTURE_REPEAT_DISABLED,
+		CANVAS_ITEM_TEXTURE_REPEAT_ENABLED,
+		CANVAS_ITEM_TEXTURE_REPEAT_MIRROR,
+		CANVAS_ITEM_TEXTURE_REPEAT_MAX,
+	};
 	virtual RID viewport_create() = 0;
 
 	enum ViewportScaling3DMode {
