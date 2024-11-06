@@ -2,6 +2,7 @@
 #define LIGHT_STORAGE_RD_H
 #include "function/render/rendering_system/light_storage_api.h"
 #include "function/render/rendering_system/utilities.h"
+#include "function/render/rendering_system/rendering_system_globals.h"
 namespace lain::RendererRD {
 class LightStorage : public RendererLightStorage {
   static LightStorage* singleton;
@@ -332,6 +333,9 @@ class LightStorage : public RendererLightStorage {
 	RID get_cubemap(int p_size);
   // size 为 p_size 的第p_pass个
 	RID get_cubemap_fb(int p_size, int p_pass);
+
+
+  bool reflection_probe_is_interior(RID p) const {return false;}
 private:
 	void _light_initialize(RID p_rid, RS::LightType p_type);
   void _shadow_atlas_invalidate_shadow(ShadowAtlas::Quadrant::Shadow *p_shadow, RID p_atlas, ShadowAtlas *p_shadow_atlas, uint32_t p_quadrant, uint32_t p_shadow_idx);

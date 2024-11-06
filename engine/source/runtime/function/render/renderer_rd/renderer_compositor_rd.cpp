@@ -1,6 +1,8 @@
 #include "renderer_compositor_rd.h"
+#include "scene_shader_forward_clustered.h"
 #include "storage/material_storage.h"
 #include "storage/mesh_storage.h"
+#include "render_forward_clustered.h"
 using namespace lain;
 void RendererCompositorRD::initialize() {
 //   // Initialize blit

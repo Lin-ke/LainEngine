@@ -1,7 +1,7 @@
 #ifndef RenderBufferCustomDataRD_H
 #define RenderBufferCustomDataRD_H
 #include "core/object/refcounted.h"
-namespace lain::RendererRD {
+namespace lain {
   class RenderSceneBuffersRD;
   class RenderBufferCustomDataRD : public RefCounted {
     LCLASS(RenderBufferCustomDataRD, RefCounted);

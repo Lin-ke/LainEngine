@@ -2,7 +2,7 @@
 #define RENDERER_SCENE_RENDER_H
 #include "core/templates/paged_array.h"
 #include "function/render/rendering_system/environment_storage.h"
-#include "function/render/rendering_system/render_scene_buffers_api.h"
+#include "function/render/scene/render_scene_buffers_api.h"
 #include "renderer_geometry_instance_api.h"
 #include "function/render/rendering_system/rendering_method_api.h"
 namespace lain {
@@ -35,8 +35,21 @@ class RendererSceneRender {
 
   bool is_environment(RID p_env) const;
 
-  RS::EnvironmentBG environment_get_background(RID p_env) const;
-  int environment_get_canvas_max_layer(RID p_env) const;
+	RS::EnvironmentBG environment_get_background(RID p_env) const;
+	RID environment_get_sky(RID p_env) const;
+	float environment_get_sky_custom_fov(RID p_env) const;
+	Basis environment_get_sky_orientation(RID p_env) const;
+	Color environment_get_bg_color(RID p_env) const;
+	float environment_get_bg_energy_multiplier(RID p_env) const;
+	float environment_get_bg_intensity(RID p_env) const;
+	int environment_get_canvas_max_layer(RID p_env) const;
+	RS::EnvironmentAmbientSource environment_get_ambient_source(RID p_env) const;
+	Color environment_get_ambient_light(RID p_env) const;
+	float environment_get_ambient_light_energy(RID p_env) const;
+	float environment_get_ambient_sky_contribution(RID p_env) const;
+	RS::EnvironmentReflectionSource environment_get_reflection_source(RID p_env) const;
+
+
 
   /* COMPOSITOR API*/
   RID compositor_allocate();

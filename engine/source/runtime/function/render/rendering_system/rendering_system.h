@@ -716,6 +716,23 @@ public:
 		ENV_SDFGI_Y_SCALE_100_PERCENT,
 	};
 
+	/*CAMERA EFFECT*/
+	/*CAMERA EFFECT*/
+	/*CAMERA EFFECT*/
+
+	enum DOFBlurQuality {
+		DOF_BLUR_QUALITY_VERY_LOW,
+		DOF_BLUR_QUALITY_LOW,
+		DOF_BLUR_QUALITY_MEDIUM,
+		DOF_BLUR_QUALITY_HIGH,
+	};
+
+	enum DOFBokehShape {
+		DOF_BOKEH_BOX,
+		DOF_BOKEH_HEXAGON,
+		DOF_BOKEH_CIRCLE
+	};
+
   virtual void free(RID p_rid) = 0;
 
 };

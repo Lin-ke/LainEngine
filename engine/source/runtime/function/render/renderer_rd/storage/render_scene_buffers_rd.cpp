@@ -1,7 +1,6 @@
 #include "render_scene_buffers_rd.h"
 #include "texture_storage.h"
 #include "render_buffer_custom_data_rd.h"
-using namespace lain::RendererRD;
 using namespace lain;
 
 void RenderSceneBuffersRD::configure(const RenderSceneBuffersConfiguration *p_config) {
@@ -106,7 +105,7 @@ void RenderSceneBuffersRD::configure(const RenderSceneBuffersConfiguration *p_co
 	}
 }
 
-void lain::RendererRD::RenderSceneBuffersRD::update_samplers() {}
+void RenderSceneBuffersRD::update_samplers() {}
 void RenderSceneBuffersRD::cleanup() {
 	// Free our data buffers (but don't destroy them)
 	for (KeyValue<StringName, Ref<RenderBufferCustomDataRD>> &E : data_buffers) {
@@ -136,7 +135,7 @@ void RenderSceneBuffersRD::free_named_texture(NamedTexture &p_named_texture) {
 	p_named_texture.slices.clear(); // slices should be freed automatically as dependents...
 }
 
-RID lain::RendererRD::RenderSceneBuffersRD::create_texture(const StringName& p_context, const StringName& p_texture_name, const RD::DataFormat p_data_format,
+RID RenderSceneBuffersRD::create_texture(const StringName& p_context, const StringName& p_texture_name, const RD::DataFormat p_data_format,
                                                            const uint32_t p_usage_bits, const RD::TextureSamples p_texture_samples, const Size2i p_size,
                                                            const uint32_t p_layers, const uint32_t p_mipmaps, bool p_unique) {
   // Keep some useful data, we use default values when these are 0.

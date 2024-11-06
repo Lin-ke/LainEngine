@@ -1,9 +1,9 @@
 #ifndef RENDERER_VIEWPORT_API_H
 #define RENDERER_VIEWPORT_API_H
-#include "render_scene_buffers_api.h"
 #include "rendering_system.h"
 #include "rendering_method_api.h"
 #include "../scene/renderer_scene_renderer_api.h"
+#include "../scene/render_scene_buffers_api.h"
 namespace lain {
 class RendererViewport {
  public:

@@ -1,7 +1,7 @@
 #ifndef RENDERING_METHOD_API_H
 #define RENDERING_METHOD_API_H
 #include "rendering_system.h"
-#include "render_scene_buffers_api.h"
+#include "function/render/scene/render_scene_buffers_api.h"
 namespace lain{
 class RenderingMethod {
   public:

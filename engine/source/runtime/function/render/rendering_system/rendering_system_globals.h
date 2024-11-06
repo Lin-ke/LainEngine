@@ -27,7 +27,7 @@ class RenderingServerGlobals {
   static RendererParticlesStorage* particles_storage;
   static RendererGI* gi;
   static RendererFog* fog;
-  // static RendererCameraAttributes* camera_attributes;
+  static RendererCameraAttributes* camera_attributes;
   // static RendererCanvasRender* canvas_render;
   static RendererTextureStorage* texture_storage;
   static RendererCompositor* rasterizer;

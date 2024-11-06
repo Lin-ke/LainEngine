@@ -1,7 +1,7 @@
 #ifndef RENDER_SCENE_BUFFERS_H
 #define RENDER_SCENE_BUFFERS_H
 #include "core/object/refcounted.h"
-#include "rendering_system.h"
+#include "function/render/rendering_system/rendering_system.h"
 namespace lain {
   // 类似java写法，有一个Configuration类，用于配置
 class RenderSceneBuffersConfiguration : public RefCounted {

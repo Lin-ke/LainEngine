@@ -2,10 +2,9 @@
 #include "storage/light_storage.h"
 #include "storage/texture_storage.h"
 #include "storage/render_scene_buffers_rd.h"
+#include "storage/render_scene_data_rd.h"
 using namespace lain::RendererRD;
 using namespace lain;
-
-
 
 uint64_t RendererSceneRenderRD::get_scene_pass() {
   return 0;
@@ -26,6 +25,9 @@ void RendererSceneRenderRD::render_scene(const Ref<RenderSceneBuffers>& p_render
   ERR_FAIL_COND(p_render_buffers.is_null());
   Ref<RenderSceneBuffersRD> rb = p_render_buffers;
   ERR_FAIL_COND(rb.is_null());
+
+  	// setup scene data
+	RenderSceneDataRD scene_data;
 }
 
 void RendererSceneRenderRD::update() {

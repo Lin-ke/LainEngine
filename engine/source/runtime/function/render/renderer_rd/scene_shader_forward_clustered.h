@@ -3,6 +3,7 @@
 #include "renderer_scene_render_rd.h"
 #include "pipeline_cache_rd.h"
 #include "function/shader/shader_compiler.h"
+#include "shaders/scene_forward_clustered.glsl.gen.h"
 // 在这里include shader 类 会导致 shader内容变化之后 重新编译
 namespace lain::RendererSceneRenderImplementation
 {

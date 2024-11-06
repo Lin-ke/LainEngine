@@ -174,6 +174,59 @@ class MaterialStorage : public RendererMaterialStorage {
   virtual void material_update_dependency(RID p_material, DependencyTracker* p_instance) override;
 	void material_set_data_request_function(ShaderType p_shader_type, MaterialDataRequestFunction p_function);
 	MaterialDataRequestFunction material_get_data_request_function(ShaderType p_shader_type);
+
+  // helpers
+
+  static _FORCE_INLINE_ void store_camera(const Projection &p_mtx, float *p_array) {
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				p_array[i * 4 + j] = p_mtx.columns[i][j];
+			}
+		}
+	}
+
+	static _FORCE_INLINE_ void store_soft_shadow_kernel(const float *p_kernel, float *p_array) {
+		for (int i = 0; i < 128; i++) {
+			p_array[i] = p_kernel[i];
+		}
+	}
+  	static _FORCE_INLINE_ void store_transform(const Transform3D &p_mtx, float *p_array) {
+		p_array[0] = p_mtx.basis.rows[0][0];
+		p_array[1] = p_mtx.basis.rows[1][0];
+		p_array[2] = p_mtx.basis.rows[2][0];
+		p_array[3] = 0;
+		p_array[4] = p_mtx.basis.rows[0][1];
+		p_array[5] = p_mtx.basis.rows[1][1];
+		p_array[6] = p_mtx.basis.rows[2][1];
+		p_array[7] = 0;
+		p_array[8] = p_mtx.basis.rows[0][2];
+		p_array[9] = p_mtx.basis.rows[1][2];
+		p_array[10] = p_mtx.basis.rows[2][2];
+		p_array[11] = 0;
+		p_array[12] = p_mtx.origin.x;
+		p_array[13] = p_mtx.origin.y;
+		p_array[14] = p_mtx.origin.z;
+		p_array[15] = 1;
+	}
+
+  
+	static _FORCE_INLINE_ void store_transform_3x3(const Basis &p_mtx, float *p_array) {
+		p_array[0] = p_mtx.rows[0][0];
+		p_array[1] = p_mtx.rows[1][0];
+		p_array[2] = p_mtx.rows[2][0];
+		p_array[3] = 0;
+		p_array[4] = p_mtx.rows[0][1];
+		p_array[5] = p_mtx.rows[1][1];
+		p_array[6] = p_mtx.rows[2][1];
+		p_array[7] = 0;
+		p_array[8] = p_mtx.rows[0][2];
+		p_array[9] = p_mtx.rows[1][2];
+		p_array[10] = p_mtx.rows[2][2];
+		p_array[11] = 0;
+	}
+
+
+
   private:
 	SelfList<Material>::List material_update_list;
   void _material_queue_update(Material *material, bool p_uniform, bool p_texture);

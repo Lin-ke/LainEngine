@@ -1,6 +1,6 @@
 #include "function/render/scene/renderer_scene_renderer_api.h"
 #include "storage/material_storage.h"
-namespace lain::RendererRD {
+namespace lain {
 // Implementaion 3D scene rendering using Rendering Device
 class RendererSceneRenderRD : public RendererSceneRender {
   static RendererSceneRenderRD* singleton;
@@ -22,4 +22,4 @@ class RendererSceneRenderRD : public RendererSceneRender {
 
   virtual void update() override;
 };
-}  // namespace lain::RendererRD
+}  // namespace lain

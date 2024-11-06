@@ -93,14 +93,22 @@ target("GenShader")
             local err_name = "./setup/shader_generate.log" 
             os.rm(err_name)
             glsl_files = os.files("$(projectdir)/**.glsl")
+            -- 去掉后缀为inc
+            for i=#glsl_files, 1, -1 do
+                    if string.find(glsl_files[i], ".inc") then
+                        table.remove(glsl_files, i)
+                    end
+            end
             err_file = io.open(err_name, "w")
             try{
                 function ()
                     print(glsl_files)
-                    gbd.build_rd_headers(glsl_files)   
+                    gbd.build_rd_headers({}, glsl_files, {})   
                 end,
                 catch {
                     function (v) 
+                        print("error:", v)
+                        
                         err_file:write(v)
                     end
                 },

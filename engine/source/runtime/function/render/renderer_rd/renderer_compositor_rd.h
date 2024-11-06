@@ -17,7 +17,7 @@ class RendererCompositorRD : public RendererCompositor {
   RendererRD::TextureStorage* texture_storage = nullptr;
   // light
   RendererRD::LightStorage* light_storage = nullptr;
-	RendererRD::RendererSceneRenderRD *scene = nullptr;
+	RendererSceneRenderRD *scene = nullptr;
   RendererRD::Utilities* utilities = nullptr;
 
   static RendererCompositorRD* singleton;

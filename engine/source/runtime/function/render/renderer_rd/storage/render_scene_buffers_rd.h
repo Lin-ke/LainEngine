@@ -19,9 +19,9 @@
 
 #define RB_TEX_BACK_COLOR SNAME("back_color")
 #define RB_TEX_BACK_DEPTH SNAME("back_depth")
-#include "function/render/rendering_system/render_scene_buffers_api.h"
+#include "function/render/scene/render_scene_buffers_api.h"
 #include "material_storage.h"
-namespace lain::RendererRD {
+namespace lain {
   class RenderBufferCustomDataRD;
 class RenderSceneBuffersRD : public RenderSceneBuffers {
   LCLASS(RenderSceneBuffersRD, RenderSceneBuffers);
@@ -149,5 +149,5 @@ class RenderSceneBuffersRD : public RenderSceneBuffers {
   void cleanup();
   void update_sizes(NamedTexture &);
 };
-};  // namespace lain::RendererRD
+};  // namespace lain
 #endif  // !RENDER_SCENE_BUFFERS_RD_H
