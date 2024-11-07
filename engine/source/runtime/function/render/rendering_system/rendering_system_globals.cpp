@@ -9,6 +9,7 @@ RendererParticlesStorage* RSG::particles_storage = nullptr;
 RendererGI* RSG::gi = nullptr;
 RendererFog* RSG::fog = nullptr;
 RendererTextureStorage* RSG::texture_storage = nullptr;
+RendererCameraAttributes* RSG::camera_attributes = nullptr;
 RendererCompositor* RSG::rasterizer = nullptr;
 RendererViewport* RSG::viewport = nullptr;
 RenderingMethod* RSG::scene = nullptr;

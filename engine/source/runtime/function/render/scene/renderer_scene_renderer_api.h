@@ -7,11 +7,27 @@
 #include "function/render/rendering_system/rendering_method_api.h"
 namespace lain {
 class RendererSceneRender {
+  // Scene Renderer 主要控制什么呢：
+  // 1. 场景的渲染，开放render_scene API，其实现依赖 _rd 的 render_scene 以及在Implementation命名空间里的函数
+  // 2. Enviroment 的管理 （包括 Fog， Tone Map， Sky， 屏幕空间效果，...)
+  // 3. GeometryInstance 的创建和释放
+  // 4. SDFGI的更新相关
+  // 5. COMPOSITOR 的管理
  private:
   RendererEnvironmentStorage environment_storage;
   // RendererCompositorStorage compositor_storage;
 
  public:
+ 
+	/* Geometry Instance */
+
+	virtual RenderGeometryInstance *geometry_instance_create(RID p_base) = 0;
+	virtual void geometry_instance_free(RenderGeometryInstance *p_geometry_instance) = 0;
+	virtual uint32_t geometry_instance_get_pair_mask() = 0;
+
+
+	virtual bool free(RID p_rid) = 0;
+
   enum {
     MAX_DIRECTIONAL_LIGHTS = 8,  // 8有向光，层级4级别
     MAX_DIRECTIONAL_LIGHT_CASCADES = 4,
@@ -101,6 +117,42 @@ class RendererSceneRender {
                             const RenderShadowData* p_render_shadows, int p_render_shadow_count, const RenderSDFGIData* p_render_sdfgi_regions,
                             int p_render_sdfgi_region_count, const RenderSDFGIUpdateData* p_sdfgi_update_data = nullptr,
                             RenderingMethod::RenderInfo* r_render_info = nullptr) = 0;
+  // 这几个API最后在 render_forward_clustered.h中实现
+	// SSAO
+	void environment_set_ssao(RID p_env, bool p_enable, float p_radius, float p_intensity, float p_power, float p_detail, float p_horizon, float p_sharpness, float p_light_affect, float p_ao_channel_affect);
+	bool environment_get_ssao_enabled(RID p_env) const;
+	float environment_get_ssao_radius(RID p_env) const;
+	float environment_get_ssao_intensity(RID p_env) const;
+	float environment_get_ssao_power(RID p_env) const;
+	float environment_get_ssao_detail(RID p_env) const;
+	float environment_get_ssao_horizon(RID p_env) const;
+	float environment_get_ssao_sharpness(RID p_env) const;
+	float environment_get_ssao_direct_light_affect(RID p_env) const;
+	float environment_get_ssao_ao_channel_affect(RID p_env) const;
+
+	virtual void environment_set_ssao_quality(RS::EnvironmentSSAOQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) = 0;
+
+	// SSIL
+	void environment_set_ssil(RID p_env, bool p_enable, float p_radius, float p_intensity, float p_sharpness, float p_normal_rejection);
+	bool environment_get_ssil_enabled(RID p_env) const;
+	float environment_get_ssil_radius(RID p_env) const;
+	float environment_get_ssil_intensity(RID p_env) const;
+	float environment_get_ssil_sharpness(RID p_env) const;
+	float environment_get_ssil_normal_rejection(RID p_env) const;
+
+	virtual void environment_set_ssil_quality(RS::EnvironmentSSILQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) = 0;
+	// SSR
+	void environment_set_ssr(RID p_env, bool p_enable, int p_max_steps, float p_fade_int, float p_fade_out, float p_depth_tolerance);
+	bool environment_get_ssr_enabled(RID p_env) const;
+	int environment_get_ssr_max_steps(RID p_env) const;
+	float environment_get_ssr_fade_in(RID p_env) const;
+	float environment_get_ssr_fade_out(RID p_env) const;
+	float environment_get_ssr_depth_tolerance(RID p_env) const;
+
+	virtual void environment_set_ssr_roughness_quality(RS::EnvironmentSSRRoughnessQuality p_quality) = 0;
+
+  virtual void sub_surface_scattering_set_quality(RS::SubSurfaceScatteringQuality p_quality) = 0;
+	virtual void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) = 0;
 };
 }  // namespace lain
 #endif

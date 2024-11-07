@@ -240,6 +240,11 @@ class LightStorage : public RendererLightStorage {
   virtual uint64_t light_get_version(RID p_light) const override;
   virtual uint32_t light_get_cull_mask(RID p_light) const override;
 
+  	_FORCE_INLINE_ int directional_shadow_get_size() {
+		return directional_shadow.size;
+	}
+
+
   /* LIGHT INSTANCE API */
 
   virtual RID light_instance_create(RID p_light) override;
@@ -319,7 +324,6 @@ class LightStorage : public RendererLightStorage {
 
   virtual RID shadow_atlas_create() override;
 	virtual void shadow_atlas_free(RID p_atlas) override;
-
 	virtual void shadow_atlas_set_size(RID p_atlas, int p_size, bool p_16_bits = true) override;
 	virtual void shadow_atlas_set_quadrant_subdivision(RID p_atlas, int p_quadrant, int p_subdivision) override;
 	virtual bool shadow_atlas_update_light(RID p_atlas, RID p_light_instance, float p_coverage, uint64_t p_light_version) override;
@@ -327,6 +331,11 @@ class LightStorage : public RendererLightStorage {
  	virtual void directional_shadow_atlas_set_size(int p_size, bool p_16_bits = true) override;
 	virtual int get_directional_light_shadow_size(RID p_light_instance) override;
 	virtual void set_directional_shadow_count(int p_count) override;
+  _FORCE_INLINE_ int shadow_atlas_get_size(RID p_atlas) {
+		ShadowAtlas *atlas = shadow_atlas_owner.get_or_null(p_atlas);
+		ERR_FAIL_NULL_V(atlas, 0);
+		return atlas->size;
+	}
 
   	/* SHADOW CUBEMAPS */
 

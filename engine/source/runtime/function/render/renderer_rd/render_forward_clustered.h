@@ -5,7 +5,10 @@
 #include "core/templates/paged_allocator.h"
 #include "scene_shader_forward_clustered.h"
 #include "storage/render_buffer_custom_data_rd.h"
+#include "storage/render_data_rd.h"
+#include "function/render/renderer_rd/shaders/best_fit_normal.glsl.gen.h"
 namespace lain::RendererSceneRenderImplementation{
+	// _render_scene
   class RenderForwardClustered : public RendererSceneRenderRD {
 	friend class SceneShaderForwardClustered;
 
@@ -48,64 +51,64 @@ namespace lain::RendererSceneRenderImplementation{
 
 	/* Framebuffer */
 
-	class RenderBufferDataForwardClustered : public RenderBufferCustomDataRD {
-		LCLASS(RenderBufferDataForwardClustered, RenderBufferCustomDataRD)
+	// class RenderBufferDataForwardClustered : public RenderBufferCustomDataRD {
+	// 	LCLASS(RenderBufferDataForwardClustered, RenderBufferCustomDataRD)
 
-	private:
-		RenderSceneBuffersRD *render_buffers = nullptr;
-		RendererRD::FSR2Context *fsr2_context = nullptr;
+	// private:
+	// 	RenderSceneBuffersRD *render_buffers = nullptr;
+	// 	RendererRD::FSR2Context *fsr2_context = nullptr;
 
-	public:
-		ClusterBuilderRD *cluster_builder = nullptr;
+	// public:
+	// 	ClusterBuilderRD *cluster_builder = nullptr;
 
-		struct SSEffectsData {
-			Projection last_frame_projections[RendererSceneRender::MAX_RENDER_VIEWS];
-			Transform3D last_frame_transform;
+	// 	struct SSEffectsData {
+	// 		Projection last_frame_projections[RendererSceneRender::MAX_RENDER_VIEWS];
+	// 		Transform3D last_frame_transform;
 
-			RendererRD::SSEffects::SSILRenderBuffers ssil;
-			RendererRD::SSEffects::SSAORenderBuffers ssao;
-			RendererRD::SSEffects::SSRRenderBuffers ssr;
-		} ss_effects_data;
+	// 		RendererRD::SSEffects::SSILRenderBuffers ssil;
+	// 		RendererRD::SSEffects::SSAORenderBuffers ssao;
+	// 		RendererRD::SSEffects::SSRRenderBuffers ssr;
+	// 	} ss_effects_data;
 
-		enum DepthFrameBufferType {
-			DEPTH_FB,
-			DEPTH_FB_ROUGHNESS,
-			DEPTH_FB_ROUGHNESS_VOXELGI
-		};
+	// 	enum DepthFrameBufferType {
+	// 		DEPTH_FB,
+	// 		DEPTH_FB_ROUGHNESS,
+	// 		DEPTH_FB_ROUGHNESS_VOXELGI
+	// 	};
 
-		RID render_sdfgi_uniform_set;
+	// 	RID render_sdfgi_uniform_set;
 
-		void ensure_specular();
-		bool has_specular() const { return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR); }
-		RID get_specular() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR); }
-		RID get_specular(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR, p_layer, 0); }
-		RID get_specular_msaa(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR_MSAA, p_layer, 0); }
+	// 	void ensure_specular();
+	// 	bool has_specular() const { return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR); }
+	// 	RID get_specular() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR); }
+	// 	RID get_specular(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR, p_layer, 0); }
+	// 	RID get_specular_msaa(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR_MSAA, p_layer, 0); }
 
-		void ensure_normal_roughness_texture();
-		bool has_normal_roughness() const { return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS); }
-		RID get_normal_roughness() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS); }
-		RID get_normal_roughness(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS, p_layer, 0); }
-		RID get_normal_roughness_msaa() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS_MSAA); }
-		RID get_normal_roughness_msaa(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS_MSAA, p_layer, 0); }
+	// 	void ensure_normal_roughness_texture();
+	// 	bool has_normal_roughness() const { return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS); }
+	// 	RID get_normal_roughness() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS); }
+	// 	RID get_normal_roughness(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS, p_layer, 0); }
+	// 	RID get_normal_roughness_msaa() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS_MSAA); }
+	// 	RID get_normal_roughness_msaa(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS_MSAA, p_layer, 0); }
 
-		void ensure_voxelgi();
-		bool has_voxelgi() const { return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI); }
-		RID get_voxelgi() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI); }
-		RID get_voxelgi(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI, p_layer, 0); }
-		RID get_voxelgi_msaa(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI_MSAA, p_layer, 0); }
+	// 	void ensure_voxelgi();
+	// 	bool has_voxelgi() const { return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI); }
+	// 	RID get_voxelgi() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI); }
+	// 	RID get_voxelgi(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI, p_layer, 0); }
+	// 	RID get_voxelgi_msaa(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI_MSAA, p_layer, 0); }
 
-		void ensure_fsr2(RendererRD::FSR2Effect *p_effect);
-		RendererRD::FSR2Context *get_fsr2_context() const { return fsr2_context; }
+	// 	void ensure_fsr2(RendererRD::FSR2Effect *p_effect);
+	// 	RendererRD::FSR2Context *get_fsr2_context() const { return fsr2_context; }
 
-		RID get_color_only_fb();
-		RID get_color_pass_fb(uint32_t p_color_pass_flags);
-		RID get_depth_fb(DepthFrameBufferType p_type = DEPTH_FB);
-		RID get_specular_only_fb();
-		RID get_velocity_only_fb();
+	// 	RID get_color_only_fb();
+	// 	RID get_color_pass_fb(uint32_t p_color_pass_flags);
+	// 	RID get_depth_fb(DepthFrameBufferType p_type = DEPTH_FB);
+	// 	RID get_specular_only_fb();
+	// 	RID get_velocity_only_fb();
 
-		virtual void configure(RenderSceneBuffersRD *p_render_buffers) override;
-		virtual void free_data() override;
-	};
+	// 	virtual void configure(RenderSceneBuffersRD *p_render_buffers) override;
+	// 	virtual void free_data() override;
+	// };
 
 	virtual void setup_render_buffer_data(Ref<RenderSceneBuffersRD> p_render_buffers) override;
 
@@ -437,12 +440,12 @@ namespace lain::RendererSceneRenderImplementation{
 		virtual void set_use_lightmap(RID p_lightmap_instance, const Rect2 &p_lightmap_uv_scale, int p_lightmap_slice_index) override;
 		virtual void set_lightmap_capture(const Color *p_sh9) override;
 
-		virtual void pair_light_instances(const RID *p_light_instances, uint32_t p_light_instance_count) override {}
-		virtual void pair_reflection_probe_instances(const RID *p_reflection_probe_instances, uint32_t p_reflection_probe_instance_count) override {}
-		virtual void pair_decal_instances(const RID *p_decal_instances, uint32_t p_decal_instance_count) override {}
-		virtual void pair_voxel_gi_instances(const RID *p_voxel_gi_instances, uint32_t p_voxel_gi_instance_count) override;
+		// virtual void pair_light_instances(const RID *p_light_instances, uint32_t p_light_instance_count) override {}
+		// virtual void pair_reflection_probe_instances(const RID *p_reflection_probe_instances, uint32_t p_reflection_probe_instance_count) override {}
+		// virtual void pair_decal_instances(const RID *p_decal_instances, uint32_t p_decal_instance_count) override {}
+		// virtual void pair_voxel_gi_instances(const RID *p_voxel_gi_instances, uint32_t p_voxel_gi_instance_count) override;
 
-		virtual void set_softshadow_projector_pairing(bool p_softshadow, bool p_projector) override;
+		// virtual void set_softshadow_projector_pairing(bool p_softshadow, bool p_projector) override;
 	};
 
 	static void _geometry_instance_dependency_changed(Dependency::DependencyChangedNotification p_notification, DependencyTracker *p_tracker);
@@ -522,20 +525,20 @@ namespace lain::RendererSceneRenderImplementation{
 
 	virtual void _update_shader_quality_settings() override;
 
-	/* Effects */
+	// /* Effects */
 
-	RendererRD::Resolve *resolve_effects = nullptr;
-	RendererRD::TAA *taa = nullptr;
-	RendererRD::FSR2Effect *fsr2_effect = nullptr;
-	RendererRD::SSEffects *ss_effects = nullptr;
+	// RendererRD::Resolve *resolve_effects = nullptr;
+	// RendererRD::TAA *taa = nullptr;
+	// RendererRD::FSR2Effect *fsr2_effect = nullptr;
+	// RendererRD::SSEffects *ss_effects = nullptr;
 
-	/* Cluster builder */
+	// /* Cluster builder */
 
-	ClusterBuilderSharedDataRD cluster_builder_shared;
-	ClusterBuilderRD *current_cluster_builder = nullptr;
+	// ClusterBuilderSharedDataRD cluster_builder_shared;
+	// ClusterBuilderRD *current_cluster_builder = nullptr;
 
-	/* SDFGI */
-	void _update_sdfgi(RenderDataRD *p_render_data);
+	// /* SDFGI */
+	// void _update_sdfgi(RenderDataRD *p_render_data);
 
 	/* Volumetric fog */
 	RID shadow_sampler;
@@ -587,23 +590,23 @@ protected:
 public:
 	static RenderForwardClustered *get_singleton() { return singleton; }
 
-	ClusterBuilderSharedDataRD *get_cluster_builder_shared() { return &cluster_builder_shared; }
-	RendererRD::SSEffects *get_ss_effects() { return ss_effects; }
+	// ClusterBuilderSharedDataRD *get_cluster_builder_shared() { return &cluster_builder_shared; }
+	// RendererRD::SSEffects *get_ss_effects() { return ss_effects; }
 
-	/* callback from updating our lighting UBOs, used to populate cluster builder */
-	virtual void setup_added_reflection_probe(const Transform3D &p_transform, const Vector3 &p_half_size) override;
-	virtual void setup_added_light(const RS::LightType p_type, const Transform3D &p_transform, float p_radius, float p_spot_aperture) override;
-	virtual void setup_added_decal(const Transform3D &p_transform, const Vector3 &p_half_size) override;
+	// /* callback from updating our lighting UBOs, used to populate cluster builder */
+	// virtual void setup_added_reflection_probe(const Transform3D &p_transform, const Vector3 &p_half_size) override;
+	// virtual void setup_added_light(const RS::LightType p_type, const Transform3D &p_transform, float p_radius, float p_spot_aperture) override;
+	// virtual void setup_added_decal(const Transform3D &p_transform, const Vector3 &p_half_size) override;
 
-	virtual void base_uniforms_changed() override;
+	// virtual void base_uniforms_changed() override;
 
-	/* SDFGI UPDATE */
+	// /* SDFGI UPDATE */
 
-	virtual void sdfgi_update(const Ref<RenderSceneBuffers> &p_render_buffers, RID p_environment, const Vector3 &p_world_position) override;
-	virtual int sdfgi_get_pending_region_count(const Ref<RenderSceneBuffers> &p_render_buffers) const override;
-	virtual AABB sdfgi_get_pending_region_bounds(const Ref<RenderSceneBuffers> &p_render_buffers, int p_region) const override;
-	virtual uint32_t sdfgi_get_pending_region_cascade(const Ref<RenderSceneBuffers> &p_render_buffers, int p_region) const override;
-	RID sdfgi_get_ubo() const { return gi.sdfgi_ubo; }
+	// virtual void sdfgi_update(const Ref<RenderSceneBuffers> &p_render_buffers, RID p_environment, const Vector3 &p_world_position) override;
+	// virtual int sdfgi_get_pending_region_count(const Ref<RenderSceneBuffers> &p_render_buffers) const override;
+	// virtual AABB sdfgi_get_pending_region_bounds(const Ref<RenderSceneBuffers> &p_render_buffers, int p_region) const override;
+	// virtual uint32_t sdfgi_get_pending_region_cascade(const Ref<RenderSceneBuffers> &p_render_buffers, int p_region) const override;
+	// RID sdfgi_get_ubo() const { return gi.sdfgi_ubo; }
 
 	/* GEOMETRY INSTANCE */
 

@@ -184,7 +184,7 @@ class MaterialStorage : public RendererMaterialStorage {
 			}
 		}
 	}
-
+  // 软阴影用的滤波的核 @todo 找到shader的位置
 	static _FORCE_INLINE_ void store_soft_shadow_kernel(const float *p_kernel, float *p_array) {
 		for (int i = 0; i < 128; i++) {
 			p_array[i] = p_kernel[i];

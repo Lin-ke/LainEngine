@@ -148,6 +148,20 @@ class RenderSceneBuffersRD : public RenderSceneBuffers {
 	void update_samplers();
   void cleanup();
   void update_sizes(NamedTexture &);
+
+	// Getters
+
+		_FORCE_INLINE_ RID get_render_target() const { return render_target; }
+	_FORCE_INLINE_ uint32_t get_view_count() const { return view_count; }
+	_FORCE_INLINE_ Size2i get_internal_size() const { return internal_size; }
+	_FORCE_INLINE_ Size2i get_target_size() const { return target_size; }
+	_FORCE_INLINE_ RS::ViewportScaling3DMode get_scaling_3d_mode() const { return scaling_3d_mode; }
+	_FORCE_INLINE_ float get_fsr_sharpness() const { return fsr_sharpness; }
+	_FORCE_INLINE_ RS::ViewportMSAA get_msaa_3d() const { return msaa_3d; }
+	_FORCE_INLINE_ RD::TextureSamples get_texture_samples() const { return texture_samples; }
+	_FORCE_INLINE_ RS::ViewportScreenSpaceAA get_screen_space_aa() const { return screen_space_aa; }
+	_FORCE_INLINE_ bool get_use_taa() const { return use_taa; }
+	_FORCE_INLINE_ bool get_use_debanding() const { return use_debanding; }
 };
 };  // namespace lain
 #endif  // !RENDER_SCENE_BUFFERS_RD_H

@@ -11,6 +11,7 @@
 #include "renderer_viewport_api.h"
 #include "rendering_method_api.h"
 #include "texture_storage_api.h"
+#include "camera_attributes_storage.h"
 #include "utilities.h"
 
 namespace lain {
