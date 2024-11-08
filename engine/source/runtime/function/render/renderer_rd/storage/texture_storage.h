@@ -154,6 +154,7 @@ bool owns_texture(RID p_rid);
   struct RenderTarget {
     Size2i size;
     uint32_t view_count;
+    // RenderingDevice 的 texture
     RID color;  // 如果use hdr 是DATA_FORMAT_R16G16B16A16_SFLOAT的
     Vector<RID> color_slices;
     RID color_multisample;  // Needed when 2D MSAA is enabled.
@@ -266,7 +267,7 @@ bool owns_texture(RID p_rid);
   RID render_target_get_override_color(RID p_render_target) const;
   RID render_target_get_override_depth(RID p_render_target) const;
   virtual RID render_target_get_override_velocity(RID p_render_target) const override;
-
+  
   //  rt->overridden.depth
 
   virtual void render_target_set_transparent(RID p_render_target, bool p_is_transparent) override;
@@ -294,6 +295,9 @@ bool owns_texture(RID p_rid);
   virtual Color render_target_get_clear_request_color(RID p_render_target) override;
   virtual void render_target_disable_clear_request(RID p_render_target) override;
   virtual void render_target_do_clear_request(RID p_render_target) override;
+
+	RID render_target_get_rd_texture(RID p_render_target);
+
 };
 }  // namespace lain::RendererRD
 #endif

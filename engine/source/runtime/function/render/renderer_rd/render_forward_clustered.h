@@ -6,6 +6,7 @@
 #include "scene_shader_forward_clustered.h"
 #include "storage/render_buffer_custom_data_rd.h"
 #include "storage/render_data_rd.h"
+#include "renderer_scene_render_rd.h"
 #include "function/render/renderer_rd/shaders/best_fit_normal.glsl.gen.h"
 namespace lain::RendererSceneRenderImplementation{
 	// _render_scene

@@ -21,10 +21,18 @@
 #define RB_TEX_BACK_DEPTH SNAME("back_depth")
 #include "function/render/scene/render_scene_buffers_api.h"
 #include "material_storage.h"
+#include "render_buffer_custom_data_rd.h"
 namespace lain {
-  class RenderBufferCustomDataRD;
 class RenderSceneBuffersRD : public RenderSceneBuffers {
   LCLASS(RenderSceneBuffersRD, RenderSceneBuffers);
+  public:
+	// info from our renderer
+	void set_can_be_storage(const bool p_can_be_storage) { can_be_storage = p_can_be_storage; }
+	void set_max_cluster_elements(const uint32_t p_max_elements) { max_cluster_elements = p_max_elements; }
+	uint32_t get_max_cluster_elements() { return max_cluster_elements; }
+	void set_base_data_format(const RD::DataFormat p_base_data_format) { base_data_format = p_base_data_format; }
+	RD::DataFormat get_base_data_format() const { return base_data_format; }
+	// void set_vrs(RendererRD::VRS *p_vrs) { vrs = p_vrs; }
 
  private:
   bool can_be_storage = true;

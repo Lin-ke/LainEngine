@@ -1,20 +1,32 @@
+#ifndef RENDERER_SCENE_RENDER_RD_H
+#define RENDERER_SCENE_RENDER_RD_H
 #include "function/render/scene/renderer_scene_renderer_api.h"
 #include "storage/material_storage.h"
 #include "storage/render_data_rd.h"
 #include "storage/render_scene_buffers_rd.h"
+#include "storage/forward_id.h"
+#include "environment/renderer_sky.h"
 namespace lain {
 class RendererSceneRenderRD : public RendererSceneRender {
   static RendererSceneRenderRD* singleton;
+
+protected:
+	RendererRD::ForwardIDStorage *forward_id_storage = nullptr;
 	double time = 0.0;
 	double time_step = 0.0;
+	bool use_physical_light_units = false;
+
  public:
   static RendererSceneRenderRD* get_singleton() { return singleton; }
+  virtual RendererRD::ForwardIDStorage *create_forward_id_storage() { return memnew(RendererRD::ForwardIDStorage); };
+
   RendererSceneRenderRD();
   ~RendererSceneRenderRD();
   void cull_scene();
   uint64_t get_scene_pass();
   // 这个函数处理渲染数据，真正渲染在_render_scene 的实现中。
   // -> render_forward_clustered.h
+  // 提供实现的渲染API
   virtual void render_scene(const Ref<RenderSceneBuffers>& p_render_buffers, const CameraData* p_camera_data, const CameraData* p_prev_camera_data,
                             const PagedArray<RenderGeometryInstance*>& p_instances, const PagedArray<RID>& p_lights, const PagedArray<RID>& p_reflection_probes,
                             const PagedArray<RID>& p_voxel_gi_instances, const PagedArray<RID>& p_decals, const PagedArray<RID>& p_lightmaps,
@@ -24,7 +36,12 @@ class RendererSceneRenderRD : public RendererSceneRender {
                             int p_render_sdfgi_region_count, const RenderSDFGIUpdateData* p_sdfgi_update_data = nullptr,
                             RenderingMethod::RenderInfo* r_render_info = nullptr) override;
 
+	virtual Ref<RenderSceneBuffers> render_buffers_create() override;
+	virtual bool _render_buffers_can_be_storage() { return true;}
+  virtual RD::DataFormat _render_buffers_get_color_format() const {return RD::DATA_FORMAT_R16G16B16_SFLOAT;}
+  virtual void set_scene_pass(uint64_t p_pass) override { scene_pass = p_pass; }
   virtual void update() override;
+  	void init();
   // 后端特定的渲染API
 	virtual void setup_render_buffer_data(Ref<RenderSceneBuffersRD> p_render_buffers) = 0;
 	virtual void _render_scene(RenderDataRD *p_render_data, const Color &p_default_color) = 0;
@@ -51,6 +68,12 @@ class RendererSceneRenderRD : public RendererSceneRender {
 
   float screen_space_roughness_limiter_get_limit() const { return screen_space_roughness_limiter_limit; }
 
+/* Light data */
+
+	uint64_t scene_pass = 0;
+
+	uint32_t max_cluster_elements = 512;
+
 	RS::ViewportDebugDraw debug_draw = RS::VIEWPORT_DEBUG_DRAW_DISABLED;
 	_FORCE_INLINE_ RS::ViewportDebugDraw get_debug_draw_mode() const {
 		return debug_draw;
@@ -72,9 +95,12 @@ class RendererSceneRenderRD : public RendererSceneRender {
 	_FORCE_INLINE_ float *soft_shadow_kernel_get() {
 		return soft_shadow_kernel;
 	}
-  
+
 	RendererRD::SkyRD sky;
 	RendererRD::SkyRD *get_sky() { return &sky; }
-
+  void set_time(double p_time, double p_frame_step) { time = p_time;
+  time_step = p_frame_step; }
 };
 }  // namespace lain
+
+#endif

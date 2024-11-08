@@ -9,6 +9,8 @@
 #include "renderer_scene_render_rd.h"
 #include "utilities_rd.h"
 
+#include "shaders/blit.glsl.gen.h"
+
 namespace lain {
 class RendererCompositorRD : public RendererCompositor {
  protected:
@@ -25,6 +27,41 @@ class RendererCompositorRD : public RendererCompositor {
 	double time = 0.0;
 	double delta = 0.0;
 	static uint64_t frame;
+	HashMap<RID, RID> render_target_descriptors; // rd_texture -> uniform set
+
+	enum BlitMode {
+		BLIT_MODE_NORMAL,
+		BLIT_MODE_USE_LAYER,
+		BLIT_MODE_LENS,
+		BLIT_MODE_NORMAL_ALPHA,
+		BLIT_MODE_MAX
+	};
+
+	struct BlitPushConstant {
+		float src_rect[4];
+		float dst_rect[4];
+
+		float eye_center[2];
+		float k1;
+		float k2;
+
+		float upscale;
+		float aspect_ratio;
+		uint32_t layer;
+		uint32_t convert_to_srgb;
+	};
+
+	struct Blit {
+		BlitPushConstant push_constant;
+		BlitShaderRD shader;
+		RID shader_version;
+		RID pipelines[BLIT_MODE_MAX];
+		RID index_buffer;
+		RID array;
+		RID sampler;
+	} blit;
+
+
  public:
   virtual RendererMaterialStorage* get_material_storage() override { return material_storage; };
   virtual  RendererMeshStorage* get_mesh_storage() override { return mesh_storage; }
@@ -34,7 +71,7 @@ class RendererCompositorRD : public RendererCompositor {
   virtual RendererUtilities *get_utilities() override { return utilities; }
   static RendererCompositorRD* get_singleton() { return singleton; }
 
-  void set_boot_image(const Ref<Image>& p_image, const Color& p_color, bool p_scale, bool p_use_filter);
+  // void set_boot_image(const Ref<Image>& p_image, const Color& p_color, bool p_scale, bool p_use_filter);
 
   void initialize();
   void begin_frame(double frame_step);

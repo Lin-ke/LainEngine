@@ -149,7 +149,46 @@ void RendererSceneRenderRD::render_scene(const Ref<RenderSceneBuffers>& p_render
 
 }
 
+Ref<RenderSceneBuffers> lain::RendererSceneRenderRD::render_buffers_create() {
+	Ref<RenderSceneBuffersRD> rb;
+	rb.instantiate();
+
+	rb->set_can_be_storage(_render_buffers_can_be_storage());
+	rb->set_max_cluster_elements(max_cluster_elements);
+	rb->set_base_data_format(_render_buffers_get_color_format());
+	// if (vrs) {
+	// 	rb->set_vrs(vrs);
+	// }
+
+	setup_render_buffer_data(rb);
+
+	return rb;
+}
+
 void RendererSceneRenderRD::update() {
   // update dirty sky
   // @todo
+}
+
+
+
+void lain::RendererSceneRenderRD::init() {
+  max_cluster_elements = GLOBAL_GET("rendering/limits/cluster_builder/max_clustered_elements");
+  max_cluster_elements = CLAMP(max_cluster_elements, 1, 1024);
+	RendererRD::LightStorage::get_singleton()->set_max_cluster_elements(max_cluster_elements);
+/* Forward ID */
+	forward_id_storage = create_forward_id_storage();
+  { // shader init
+  /* SKY SHADER */
+	sky.init();
+  // gi.init();
+  // set max decals
+  // fog.init() 
+
+  }
+  // 在rendering_system::init() 中 已经注册过了
+  RSG::camera_attributes->camera_attributes_set_dof_blur_bokeh_shape(RS::DOFBokehShape(int(GLOBAL_GET("rendering/camera/depth_of_field/depth_of_field_bokeh_shape"))));
+	RSG::camera_attributes->camera_attributes_set_dof_blur_quality(RS::DOFBlurQuality(int(GLOBAL_GET("rendering/camera/depth_of_field/depth_of_field_bokeh_quality"))), GLOBAL_GET("rendering/camera/depth_of_field/depth_of_field_use_jitter"));
+	use_physical_light_units = GLOBAL_GET("rendering/lights_and_shadows/use_physical_light_units");
+	
 }

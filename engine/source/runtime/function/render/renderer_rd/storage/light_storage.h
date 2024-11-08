@@ -6,6 +6,7 @@
 namespace lain::RendererRD {
 class LightStorage : public RendererLightStorage {
   static LightStorage* singleton;
+	uint32_t max_cluster_elements = 512;
 
  public:
   LightStorage();
@@ -345,6 +346,15 @@ class LightStorage : public RendererLightStorage {
 
 
   bool reflection_probe_is_interior(RID p) const {return false;}
+
+  // settings
+  	void set_max_cluster_elements(const uint32_t p_max_cluster_elements) {
+		max_cluster_elements = p_max_cluster_elements;
+		// set_max_reflection_probes(p_max_cluster_elements);
+		// set_max_lights(p_max_cluster_elements);
+	}
+	uint32_t get_max_cluster_elements() const { return max_cluster_elements; }
+
 private:
 	void _light_initialize(RID p_rid, RS::LightType p_type);
   void _shadow_atlas_invalidate_shadow(ShadowAtlas::Quadrant::Shadow *p_shadow, RID p_atlas, ShadowAtlas *p_shadow_atlas, uint32_t p_quadrant, uint32_t p_shadow_idx);
