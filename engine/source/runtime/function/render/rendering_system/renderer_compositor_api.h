@@ -26,7 +26,7 @@ struct BlitToScreen {
 
 		float upscale = 1.0;
 		float aspect_ratio = 1.0;
-	} lens_distortion;
+	} lens_distortion; // see blit.glsl
 };
 class RendererCompositor {
 private:

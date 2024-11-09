@@ -61,7 +61,8 @@ void lain::RendererCompositorRD::blit_render_targets_to_screen(WindowSystem::Win
 
 	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin_for_screen(p_screen);
 	ERR_FAIL_COND(draw_list == RD::INVALID_ID);
-
+	// 绘制多个 render target
+	Size2 screen_size(RD::get_singleton()->screen_get_width(p_screen), RD::get_singleton()->screen_get_height(p_screen));
 	for (int i = 0; i < p_amount; i++) {
 		RID rd_texture = texture_storage->render_target_get_rd_texture(p_render_targets[i].render_target);
 		ERR_CONTINUE(rd_texture.is_null());
@@ -69,7 +70,7 @@ void lain::RendererCompositorRD::blit_render_targets_to_screen(WindowSystem::Win
 		if (!render_target_descriptors.has(rd_texture) || !RD::get_singleton()->uniform_set_is_valid(render_target_descriptors[rd_texture])) {
 			Vector<RD::Uniform> uniforms;
 			RD::Uniform u;
-			u.uniform_type = RD::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
+			u.uniform_type = RD::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE; // 需要两个
 			u.binding = 0;
 			u.append_id(blit.sampler);
 			u.append_id(rd_texture);
@@ -79,7 +80,6 @@ void lain::RendererCompositorRD::blit_render_targets_to_screen(WindowSystem::Win
 			render_target_descriptors[rd_texture] = uniform_set;
 		}
 
-		Size2 screen_size(RD::get_singleton()->screen_get_width(p_screen), RD::get_singleton()->screen_get_height(p_screen));
 		BlitMode mode = p_render_targets[i].lens_distortion.apply ? BLIT_MODE_LENS : (p_render_targets[i].multi_view.use_layer ? BLIT_MODE_USE_LAYER : BLIT_MODE_NORMAL);
 		RD::get_singleton()->draw_list_bind_render_pipeline(draw_list, blit.pipelines[mode]);
 		RD::get_singleton()->draw_list_bind_index_array(draw_list, blit.array);
@@ -87,12 +87,12 @@ void lain::RendererCompositorRD::blit_render_targets_to_screen(WindowSystem::Win
 
 		blit.push_constant.src_rect[0] = p_render_targets[i].src_rect.position.x;
 		blit.push_constant.src_rect[1] = p_render_targets[i].src_rect.position.y;
-		blit.push_constant.src_rect[2] = p_render_targets[i].src_rect.size.width;
-		blit.push_constant.src_rect[3] = p_render_targets[i].src_rect.size.height;
-		blit.push_constant.dst_rect[0] = p_render_targets[i].dst_rect.position.x / screen_size.width;
-		blit.push_constant.dst_rect[1] = p_render_targets[i].dst_rect.position.y / screen_size.height;
-		blit.push_constant.dst_rect[2] = p_render_targets[i].dst_rect.size.width / screen_size.width;
-		blit.push_constant.dst_rect[3] = p_render_targets[i].dst_rect.size.height / screen_size.height;
+		blit.push_constant.src_rect[2] = p_render_targets[i].src_rect.size.width(); // z 和 w 分别是 width 和 height
+		blit.push_constant.src_rect[3] = p_render_targets[i].src_rect.size.height();
+		blit.push_constant.dst_rect[0] = p_render_targets[i].dst_rect.position.x / screen_size.width();
+		blit.push_constant.dst_rect[1] = p_render_targets[i].dst_rect.position.y / screen_size.height();
+		blit.push_constant.dst_rect[2] = p_render_targets[i].dst_rect.size.width() / screen_size.width(); // z 和 w 分别是 比例
+		blit.push_constant.dst_rect[3] = p_render_targets[i].dst_rect.size.height() / screen_size.height();
 		blit.push_constant.layer = p_render_targets[i].multi_view.layer;
 		blit.push_constant.eye_center[0] = p_render_targets[i].lens_distortion.eye_center.x;
 		blit.push_constant.eye_center[1] = p_render_targets[i].lens_distortion.eye_center.y;
@@ -107,7 +107,6 @@ void lain::RendererCompositorRD::blit_render_targets_to_screen(WindowSystem::Win
 	}
 
 	RD::get_singleton()->draw_list_end();
-}
 }
 lain::RendererCompositorRD::RendererCompositorRD() {
   singleton = this;

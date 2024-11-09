@@ -33,6 +33,11 @@ build/
 *.lib
 *.dll
 
+
+
+# gen shader files
+*.lglsl
+gen.h
 # Precompiled Headers
 *.gch
 *.pch
