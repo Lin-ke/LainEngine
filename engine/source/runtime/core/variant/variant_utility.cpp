@@ -846,7 +846,7 @@ Variant VariantUtilityFunctions::type_convert(const Variant &p_variant, const Va
 		case Variant::Type::QUATERNION:
 			return p_variant.operator Quaternion();
 		case Variant::Type::AABB:
-			return p_variant.operator lain::AABB();
+			return p_variant.operator ::lain::AABB();
 		case Variant::Type::BASIS:
 			return p_variant.operator Basis();
 		case Variant::Type::TRANSFORM3D:
@@ -1228,6 +1228,7 @@ static _FORCE_INLINE_ void validated_call_helperpr(R (*p_func)(P...), Variant *r
 // R和 P都必须 特化 template <typename> PtrToArg
 // 一般类型的特化在 method_ptrcall.h中， enum的特化在 binder_common中，提供了 VARIANT_ENUM_CAST 宏
 // 特化的形式是< type1, type2,...., 0, 1)
+// @todo 必须加入DEBUG_METHODS_ENABLED才有 VARIANT_ENUM_CAST 宏，这是我的问题吗？
 template <typename R, typename... P, size_t... Is>
 static _FORCE_INLINE_ void ptr_call_helperpr(R (*p_func)(P...), void *ret, const void **p_args, IndexSequence<Is...>) {
 	PtrToArg<R>::encode(p_func(PtrToArg<P>::convert(p_args[Is])...), ret);

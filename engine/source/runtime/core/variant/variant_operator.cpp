@@ -355,8 +355,8 @@ void Variant::_register_variant_operators() {
 	register_op<OperatorEvaluatorMul<Transform3D, Transform3D, double>>(Variant::OP_MULTIPLY, Variant::TRANSFORM3D, Variant::FLOAT);
 	register_op<OperatorEvaluatorXForm<Vector3, Transform3D, Vector3>>(Variant::OP_MULTIPLY, Variant::TRANSFORM3D, Variant::VECTOR3);
 	register_op<OperatorEvaluatorXFormInv<Vector3, Vector3, Transform3D>>(Variant::OP_MULTIPLY, Variant::VECTOR3, Variant::TRANSFORM3D);
-	register_op<OperatorEvaluatorXForm<lain::AABB, Transform3D, lain::AABB>>(Variant::OP_MULTIPLY, Variant::TRANSFORM3D, Variant::AABB);
-	register_op<OperatorEvaluatorXFormInv<lain::AABB, lain::AABB, Transform3D>>(Variant::OP_MULTIPLY, Variant::AABB, Variant::TRANSFORM3D);
+	register_op<OperatorEvaluatorXForm<::lain::AABB, Transform3D, ::lain::AABB>>(Variant::OP_MULTIPLY, Variant::TRANSFORM3D, Variant::AABB);
+	register_op<OperatorEvaluatorXFormInv<::lain::AABB, ::lain::AABB, Transform3D>>(Variant::OP_MULTIPLY, Variant::AABB, Variant::TRANSFORM3D);
 	register_op<OperatorEvaluatorXForm<Plane, Transform3D, Plane>>(Variant::OP_MULTIPLY, Variant::TRANSFORM3D, Variant::PLANE);
 	register_op<OperatorEvaluatorXFormInv<Plane, Plane, Transform3D>>(Variant::OP_MULTIPLY, Variant::PLANE, Variant::TRANSFORM3D);
 	register_op<OperatorEvaluatorXForm<Vector<Vector3>, Transform3D, Vector<Vector3>>>(Variant::OP_MULTIPLY, Variant::TRANSFORM3D, Variant::PACKED_VECTOR3_ARRAY);
@@ -459,7 +459,7 @@ void Variant::_register_variant_operators() {
 	register_string_modulo_op(Transform2D, Variant::TRANSFORM2D);
 	register_string_modulo_op(Plane, Variant::PLANE);
 	register_string_modulo_op(Quaternion, Variant::QUATERNION);
-	register_string_modulo_op(lain::AABB, Variant::AABB);
+	register_string_modulo_op(::lain::AABB, Variant::AABB);
 	register_string_modulo_op(Basis, Variant::BASIS);
 	register_string_modulo_op(Transform3D, Variant::TRANSFORM3D);
 	register_string_modulo_op(Projection, Variant::PROJECTION);
@@ -538,14 +538,14 @@ void Variant::_register_variant_operators() {
 	register_op<OperatorEvaluatorEqual<Vector4i, Vector4i>>(Variant::OP_EQUAL, Variant::VECTOR4I, Variant::VECTOR4I);
 	register_op<OperatorEvaluatorEqual<Plane, Plane>>(Variant::OP_EQUAL, Variant::PLANE, Variant::PLANE);
 	register_op<OperatorEvaluatorEqual<Quaternion, Quaternion>>(Variant::OP_EQUAL, Variant::QUATERNION, Variant::QUATERNION);
-	register_op<OperatorEvaluatorEqual<lain::AABB, lain::AABB>>(Variant::OP_EQUAL, Variant::AABB, Variant::AABB);
+	register_op<OperatorEvaluatorEqual<::lain::AABB, ::lain::AABB>>(Variant::OP_EQUAL, Variant::AABB, Variant::AABB);
 	register_op<OperatorEvaluatorEqual<Basis, Basis>>(Variant::OP_EQUAL, Variant::BASIS, Variant::BASIS);
 	register_op<OperatorEvaluatorEqual<Transform3D, Transform3D>>(Variant::OP_EQUAL, Variant::TRANSFORM3D, Variant::TRANSFORM3D);
 	register_op<OperatorEvaluatorEqual<Projection, Projection>>(Variant::OP_EQUAL, Variant::PROJECTION, Variant::PROJECTION);
 	register_op<OperatorEvaluatorEqual<Color, Color>>(Variant::OP_EQUAL, Variant::COLOR, Variant::COLOR);
 
 	register_op<OperatorEvaluatorEqual<GObjectPath, GObjectPath>>(Variant::OP_EQUAL, Variant::GOBJECT_PATH, Variant::GOBJECT_PATH);
-	register_op<OperatorEvaluatorEqual<lain::RID, lain::RID>>(Variant::OP_EQUAL, Variant::RID, Variant::RID);
+	register_op<OperatorEvaluatorEqual<::lain::RID, ::lain::RID>>(Variant::OP_EQUAL, Variant::RID, Variant::RID);
 
 	register_op<OperatorEvaluatorEqualObject>(Variant::OP_EQUAL, Variant::OBJECT, Variant::OBJECT);
 	register_op<OperatorEvaluatorEqualObjectNil>(Variant::OP_EQUAL, Variant::OBJECT, Variant::NIL);
@@ -660,14 +660,14 @@ void Variant::_register_variant_operators() {
 	register_op<OperatorEvaluatorNotEqual<Transform2D, Transform2D>>(Variant::OP_NOT_EQUAL, Variant::TRANSFORM2D, Variant::TRANSFORM2D);
 	register_op<OperatorEvaluatorNotEqual<Plane, Plane>>(Variant::OP_NOT_EQUAL, Variant::PLANE, Variant::PLANE);
 	register_op<OperatorEvaluatorNotEqual<Quaternion, Quaternion>>(Variant::OP_NOT_EQUAL, Variant::QUATERNION, Variant::QUATERNION);
-	register_op<OperatorEvaluatorNotEqual<lain::AABB, lain::AABB>>(Variant::OP_NOT_EQUAL, Variant::AABB, Variant::AABB);
+	register_op<OperatorEvaluatorNotEqual<::lain::AABB, ::lain::AABB>>(Variant::OP_NOT_EQUAL, Variant::AABB, Variant::AABB);
 	register_op<OperatorEvaluatorNotEqual<Basis, Basis>>(Variant::OP_NOT_EQUAL, Variant::BASIS, Variant::BASIS);
 	register_op<OperatorEvaluatorNotEqual<Transform3D, Transform3D>>(Variant::OP_NOT_EQUAL, Variant::TRANSFORM3D, Variant::TRANSFORM3D);
 	register_op<OperatorEvaluatorNotEqual<Projection, Projection>>(Variant::OP_NOT_EQUAL, Variant::PROJECTION, Variant::PROJECTION);
 	register_op<OperatorEvaluatorNotEqual<Color, Color>>(Variant::OP_NOT_EQUAL, Variant::COLOR, Variant::COLOR);
 
 	register_op<OperatorEvaluatorNotEqual<GObjectPath, GObjectPath>>(Variant::OP_NOT_EQUAL, Variant::GOBJECT_PATH, Variant::GOBJECT_PATH);
-	register_op<OperatorEvaluatorNotEqual<lain::RID, lain::RID>>(Variant::OP_NOT_EQUAL, Variant::RID, Variant::RID);
+	register_op<OperatorEvaluatorNotEqual<::lain::RID, ::lain::RID>>(Variant::OP_NOT_EQUAL, Variant::RID, Variant::RID);
 
 	register_op<OperatorEvaluatorNotEqualObject>(Variant::OP_NOT_EQUAL, Variant::OBJECT, Variant::OBJECT);
 	register_op<OperatorEvaluatorNotEqualObjectNil>(Variant::OP_NOT_EQUAL, Variant::OBJECT, Variant::NIL);
@@ -777,7 +777,7 @@ void Variant::_register_variant_operators() {
 	register_op<OperatorEvaluatorLess<Vector3i, Vector3i>>(Variant::OP_LESS, Variant::VECTOR3I, Variant::VECTOR3I);
 	register_op<OperatorEvaluatorLess<Vector4, Vector4>>(Variant::OP_LESS, Variant::VECTOR4, Variant::VECTOR4);
 	register_op<OperatorEvaluatorLess<Vector4i, Vector4i>>(Variant::OP_LESS, Variant::VECTOR4I, Variant::VECTOR4I);
-	register_op<OperatorEvaluatorLess<lain::RID, lain::RID>>(Variant::OP_LESS, Variant::RID, Variant::RID);
+	register_op<OperatorEvaluatorLess<::lain::RID, ::lain::RID>>(Variant::OP_LESS, Variant::RID, Variant::RID);
 	register_op<OperatorEvaluatorLess<Array, Array>>(Variant::OP_LESS, Variant::ARRAY, Variant::ARRAY);
 
 	register_op<OperatorEvaluatorLessEqual<int64_t, int64_t>>(Variant::OP_LESS_EQUAL, Variant::INT, Variant::INT);
@@ -792,7 +792,7 @@ void Variant::_register_variant_operators() {
 	register_op<OperatorEvaluatorLessEqual<Vector3i, Vector3i>>(Variant::OP_LESS_EQUAL, Variant::VECTOR3I, Variant::VECTOR3I);
 	register_op<OperatorEvaluatorLessEqual<Vector4, Vector4>>(Variant::OP_LESS_EQUAL, Variant::VECTOR4, Variant::VECTOR4);
 	register_op<OperatorEvaluatorLessEqual<Vector4i, Vector4i>>(Variant::OP_LESS_EQUAL, Variant::VECTOR4I, Variant::VECTOR4I);
-	register_op<OperatorEvaluatorLessEqual<lain::RID, lain::RID>>(Variant::OP_LESS_EQUAL, Variant::RID, Variant::RID);
+	register_op<OperatorEvaluatorLessEqual<::lain::RID, ::lain::RID>>(Variant::OP_LESS_EQUAL, Variant::RID, Variant::RID);
 	register_op<OperatorEvaluatorLessEqual<Array, Array>>(Variant::OP_LESS_EQUAL, Variant::ARRAY, Variant::ARRAY);
 
 	register_op<OperatorEvaluatorGreater<bool, bool>>(Variant::OP_GREATER, Variant::BOOL, Variant::BOOL);
@@ -808,7 +808,7 @@ void Variant::_register_variant_operators() {
 	register_op<OperatorEvaluatorGreater<Vector3i, Vector3i>>(Variant::OP_GREATER, Variant::VECTOR3I, Variant::VECTOR3I);
 	register_op<OperatorEvaluatorGreater<Vector4, Vector4>>(Variant::OP_GREATER, Variant::VECTOR4, Variant::VECTOR4);
 	register_op<OperatorEvaluatorGreater<Vector4i, Vector4i>>(Variant::OP_GREATER, Variant::VECTOR4I, Variant::VECTOR4I);
-	register_op<OperatorEvaluatorGreater<lain::RID, lain::RID>>(Variant::OP_GREATER, Variant::RID, Variant::RID);
+	register_op<OperatorEvaluatorGreater<::lain::RID, ::lain::RID>>(Variant::OP_GREATER, Variant::RID, Variant::RID);
 	register_op<OperatorEvaluatorGreater<Array, Array>>(Variant::OP_GREATER, Variant::ARRAY, Variant::ARRAY);
 
 	register_op<OperatorEvaluatorGreaterEqual<int64_t, int64_t>>(Variant::OP_GREATER_EQUAL, Variant::INT, Variant::INT);
@@ -823,7 +823,7 @@ void Variant::_register_variant_operators() {
 	register_op<OperatorEvaluatorGreaterEqual<Vector3i, Vector3i>>(Variant::OP_GREATER_EQUAL, Variant::VECTOR3I, Variant::VECTOR3I);
 	register_op<OperatorEvaluatorGreaterEqual<Vector4, Vector4>>(Variant::OP_GREATER_EQUAL, Variant::VECTOR4, Variant::VECTOR4);
 	register_op<OperatorEvaluatorGreaterEqual<Vector4i, Vector4i>>(Variant::OP_GREATER_EQUAL, Variant::VECTOR4I, Variant::VECTOR4I);
-	register_op<OperatorEvaluatorGreaterEqual<lain::RID, lain::RID>>(Variant::OP_GREATER_EQUAL, Variant::RID, Variant::RID);
+	register_op<OperatorEvaluatorGreaterEqual<::lain::RID, ::lain::RID>>(Variant::OP_GREATER_EQUAL, Variant::RID, Variant::RID);
 	register_op<OperatorEvaluatorGreaterEqual<Array, Array>>(Variant::OP_GREATER_EQUAL, Variant::ARRAY, Variant::ARRAY);
 
 	register_op<OperatorEvaluatorAlwaysFalse<Variant::OP_OR, Variant::NIL, Variant::NIL>>(Variant::OP_OR, Variant::NIL, Variant::NIL);
@@ -932,14 +932,14 @@ void Variant::_register_variant_operators() {
 	register_op<OperatorEvaluatorNot<Vector4i>>(Variant::OP_NOT, Variant::VECTOR4I, Variant::NIL);
 	register_op<OperatorEvaluatorNot<Plane>>(Variant::OP_NOT, Variant::PLANE, Variant::NIL);
 	register_op<OperatorEvaluatorNot<Quaternion>>(Variant::OP_NOT, Variant::QUATERNION, Variant::NIL);
-	register_op<OperatorEvaluatorNot<lain::AABB>>(Variant::OP_NOT, Variant::AABB, Variant::NIL);
+	register_op<OperatorEvaluatorNot<::lain::AABB>>(Variant::OP_NOT, Variant::AABB, Variant::NIL);
 	register_op<OperatorEvaluatorNot<Basis>>(Variant::OP_NOT, Variant::BASIS, Variant::NIL);
 	register_op<OperatorEvaluatorNot<Transform3D>>(Variant::OP_NOT, Variant::TRANSFORM3D, Variant::NIL);
 	register_op<OperatorEvaluatorNot<Projection>>(Variant::OP_NOT, Variant::PROJECTION, Variant::NIL);
 	register_op<OperatorEvaluatorNot<Color>>(Variant::OP_NOT, Variant::COLOR, Variant::NIL);
 	register_op<OperatorEvaluatorNot<StringName>>(Variant::OP_NOT, Variant::STRING_NAME, Variant::NIL);
 	register_op<OperatorEvaluatorNot<GObjectPath>>(Variant::OP_NOT, Variant::GOBJECT_PATH, Variant::NIL);
-	register_op<OperatorEvaluatorNot<lain::RID>>(Variant::OP_NOT, Variant::RID, Variant::NIL);
+	register_op<OperatorEvaluatorNot<::lain::RID>>(Variant::OP_NOT, Variant::RID, Variant::NIL);
 	register_op<OperatorEvaluatorNot<Callable>>(Variant::OP_NOT, Variant::CALLABLE, Variant::NIL);
 	register_op<OperatorEvaluatorNot<Signal>>(Variant::OP_NOT, Variant::SIGNAL, Variant::NIL);
 	register_op<OperatorEvaluatorNot<Dictionary>>(Variant::OP_NOT, Variant::DICTIONARY, Variant::NIL);
@@ -973,7 +973,7 @@ void Variant::_register_variant_operators() {
 	register_op<OperatorEvaluatorInDictionaryHas<Transform2D>>(Variant::OP_IN, Variant::TRANSFORM2D, Variant::DICTIONARY);
 	register_op<OperatorEvaluatorInDictionaryHas<Plane>>(Variant::OP_IN, Variant::PLANE, Variant::DICTIONARY);
 	register_op<OperatorEvaluatorInDictionaryHas<Quaternion>>(Variant::OP_IN, Variant::QUATERNION, Variant::DICTIONARY);
-	register_op<OperatorEvaluatorInDictionaryHas<lain::AABB>>(Variant::OP_IN, Variant::AABB, Variant::DICTIONARY);
+	register_op<OperatorEvaluatorInDictionaryHas<::lain::AABB>>(Variant::OP_IN, Variant::AABB, Variant::DICTIONARY);
 	register_op<OperatorEvaluatorInDictionaryHas<Basis>>(Variant::OP_IN, Variant::BASIS, Variant::DICTIONARY);
 	register_op<OperatorEvaluatorInDictionaryHas<Transform3D>>(Variant::OP_IN, Variant::TRANSFORM3D, Variant::DICTIONARY);
 	register_op<OperatorEvaluatorInDictionaryHas<Projection>>(Variant::OP_IN, Variant::PROJECTION, Variant::DICTIONARY);
@@ -1014,7 +1014,7 @@ void Variant::_register_variant_operators() {
 	register_op<OperatorEvaluatorInArrayFind<Transform2D, Array>>(Variant::OP_IN, Variant::TRANSFORM2D, Variant::ARRAY);
 	register_op<OperatorEvaluatorInArrayFind<Plane, Array>>(Variant::OP_IN, Variant::PLANE, Variant::ARRAY);
 	register_op<OperatorEvaluatorInArrayFind<Quaternion, Array>>(Variant::OP_IN, Variant::QUATERNION, Variant::ARRAY);
-	register_op<OperatorEvaluatorInArrayFind<lain::AABB, Array>>(Variant::OP_IN, Variant::AABB, Variant::ARRAY);
+	register_op<OperatorEvaluatorInArrayFind<::lain::AABB, Array>>(Variant::OP_IN, Variant::AABB, Variant::ARRAY);
 	register_op<OperatorEvaluatorInArrayFind<Basis, Array>>(Variant::OP_IN, Variant::BASIS, Variant::ARRAY);
 	register_op<OperatorEvaluatorInArrayFind<Transform3D, Array>>(Variant::OP_IN, Variant::TRANSFORM3D, Variant::ARRAY);
 	register_op<OperatorEvaluatorInArrayFind<Projection, Array>>(Variant::OP_IN, Variant::PROJECTION, Variant::ARRAY);

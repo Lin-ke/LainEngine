@@ -166,6 +166,7 @@ target("CompileShader")
         end
     )
 target("Core")
+    add_defines("DEBUG_METHODS_ENABLED")
     set_kind("static")
     set_languages("cxx17", "c99")
     add_headerfiles("engine/source/runtime/**.h") --- 
@@ -255,7 +256,7 @@ target("main")
     add_includedirs("engine/source/runtime", {public = true})
     add_deps("Core")
     -- functions
-    add_deps("Renderer", "Display", "Scene", "Shader", "lglslang") -- @todo 给lglslang 这一步以后做成自动的 add_deps 在 Module中的 xmake 项目
+    add_deps("Renderer", "Display", "Scene", "Shader", "lglslang") -- @todo 给lglslang 这一步以后做成自动的 add_deps �? Module中的 xmake 项目
     -- editor
     add_deps("Editor")
     -- modules?

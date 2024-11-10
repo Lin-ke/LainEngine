@@ -30,7 +30,9 @@
 #include "core/object/refcounted.h"
 #include "variant_construct.h"
 #include "core/object/object.h"
-namespace lain{
+
+using namespace lain;
+
 struct VariantConstructData {
 	void (*construct)(Variant &r_base, const Variant **p_args, Callable::CallError &r_error) = nullptr;
 	Variant::ValidatedConstructor validated_construct = nullptr;
@@ -145,9 +147,9 @@ void Variant::_register_variant_constructors() {
 	add_constructor<VariantConstructor<Quaternion, Vector3, Vector3>>(sarray("arc_from", "arc_to"));
 	add_constructor<VariantConstructor<Quaternion, double, double, double, double>>(sarray("x", "y", "z", "w"));
 
-	add_constructor<VariantConstructNoArgs<lain::AABB>>(sarray());
-	add_constructor<VariantConstructor<lain::AABB, lain::AABB>>(sarray("from"));
-	add_constructor<VariantConstructor<lain::AABB, Vector3, Vector3>>(sarray("position", "size"));
+	add_constructor<VariantConstructNoArgs<::lain::AABB>>(sarray());
+	add_constructor<VariantConstructor<::lain::AABB, ::lain::AABB>>(sarray("from"));
+	add_constructor<VariantConstructor<::lain::AABB, Vector3, Vector3>>(sarray("position", "size"));
 
 	add_constructor<VariantConstructNoArgs<Basis>>(sarray());
 	add_constructor<VariantConstructor<Basis, Basis>>(sarray("from"));
@@ -182,8 +184,8 @@ void Variant::_register_variant_constructors() {
 	add_constructor<VariantConstructor<GObjectPath, GObjectPath>>(sarray("from"));
 	add_constructor<VariantConstructor<GObjectPath, String>>(sarray("from"));
 
-	add_constructor<VariantConstructNoArgs<lain::RID>>(sarray());
-	add_constructor<VariantConstructor<lain::RID, lain::RID>>(sarray("from"));
+	add_constructor<VariantConstructNoArgs<::lain::RID>>(sarray());
+	add_constructor<VariantConstructor<::lain::RID, ::lain::RID>>(sarray("from"));
 
 	add_constructor<VariantConstructNoArgsObject>(sarray());
 	add_constructor<VariantConstructorObject>(sarray("from"));
@@ -371,5 +373,4 @@ void Variant::get_constructor_list(Type p_type, List<MethodInfo> *r_list) {
 		}
 		r_list->push_back(mi);
 	}
-}
 }

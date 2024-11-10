@@ -770,7 +770,7 @@ bool Variant::is_zero() const {
       return *reinterpret_cast<const Plane*>(_data._mem) == Plane();
     }
     case AABB: {
-      return *_data._aabb == lain::AABB();
+      return *_data._aabb == ::lain::AABB();
     }
     case QUATERNION: {
       return *reinterpret_cast<const Quaternion*>(_data._mem) == Quaternion();
@@ -986,8 +986,8 @@ void Variant::reference(const Variant& p_variant) {
       memnew_placement(_data._mem, Plane(*reinterpret_cast<const Plane*>(p_variant._data._mem)));
     } break;
     case AABB: {
-      _data._aabb = (lain::AABB*)Pools::_bucket_small.alloc();
-      memnew_placement(_data._aabb, lain::AABB(*p_variant._data._aabb));
+      _data._aabb = (::lain::AABB*)Pools::_bucket_small.alloc();
+      memnew_placement(_data._aabb, ::lain::AABB(*p_variant._data._aabb));
     } break;
     case QUATERNION: {
       memnew_placement(_data._mem, Quaternion(*reinterpret_cast<const Quaternion*>(p_variant._data._mem)));
@@ -1575,7 +1575,7 @@ String Variant::stringify(int recursion_count) const {
     case PLANE:
       return operator Plane();
     case AABB:
-      return operator lain::AABB();
+      return operator ::lain::AABB();
     case QUATERNION:
       return operator Quaternion();
     case BASIS:
@@ -1829,11 +1829,11 @@ Variant::operator Plane() const {
   }
 }
 
-Variant::operator lain::AABB() const {
+Variant::operator ::lain::AABB() const {
   if (type == AABB) {
     return *_data._aabb;
   } else {
-    return lain::AABB();
+    return ::lain::AABB();
   }
 }
 
@@ -1970,7 +1970,7 @@ Variant::operator ::RID() const {
   // 	} else {
   // 		return ::RID();
   // 	}
-  return lain::RID();
+  return ::lain::RID();
 }
 
 Variant::operator Object*() const {
@@ -2362,9 +2362,9 @@ Variant::Variant(const Plane& p_plane) : type(PLANE) {
   memnew_placement(_data._mem, Plane(p_plane));
 }
 
-Variant::Variant(const lain::AABB& p_aabb) : type(AABB) {
-  _data._aabb = (lain::AABB*)Pools::_bucket_small.alloc();
-  memnew_placement(_data._aabb, lain::AABB(p_aabb));
+Variant::Variant(const ::lain::AABB& p_aabb) : type(AABB) {
+  _data._aabb = (::lain::AABB*)Pools::_bucket_small.alloc();
+  memnew_placement(_data._aabb, ::lain::AABB(p_aabb));
 }
 
 Variant::Variant(const Basis& p_matrix) : type(BASIS) {
@@ -2399,8 +2399,8 @@ Variant::Variant(const GObjectPath& p_GOBJECT_PATH) : type(GOBJECT_PATH) {
   memnew_placement(_data._mem, GObjectPath(p_GOBJECT_PATH));
 }
 
-Variant::Variant(const lain::RID& p_rid) : type(RID) {
-  memnew_placement(_data._mem, lain::RID(p_rid));
+Variant::Variant(const ::lain::RID& p_rid) : type(RID) {
+  memnew_placement(_data._mem, ::lain::RID(p_rid));
 }
 
 Variant::Variant(const Object* p_object) : type(OBJECT) {
@@ -2481,7 +2481,7 @@ Variant::Variant(const PackedVector4Array& p_vector4_array) : type(PACKED_VECTOR
 }
 
 /* helpers */
-Variant::Variant(const Vector<lain::RID>& p_array) : type(ARRAY) {
+Variant::Variant(const Vector<::lain::RID>& p_array) : type(ARRAY) {
   Array* rid_array = memnew_placement(_data._mem, Array);
 
   rid_array->resize(p_array.size());
@@ -3169,8 +3169,8 @@ bool Variant::hash_compare(const Variant& p_variant, int recursion_count, bool s
     } break;
 
     case AABB: {
-      const lain::AABB* l = _data._aabb;
-      const lain::AABB* r = p_variant._data._aabb;
+      const ::lain::AABB* l = _data._aabb;
+      const ::lain::AABB* r = p_variant._data._aabb;
 
       return hash_compare_vector3(l->position, r->position) && hash_compare_vector3(l->size, r->size);
 

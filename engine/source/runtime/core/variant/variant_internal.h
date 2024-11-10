@@ -239,8 +239,8 @@ namespace lain {
 	_FORCE_INLINE_ static const Plane *get_plane(const Variant *v) { return reinterpret_cast<const Plane *>(v->_data._mem); }
 	_FORCE_INLINE_ static Quaternion *get_quaternion(Variant *v) { return reinterpret_cast<Quaternion *>(v->_data._mem); }
 	_FORCE_INLINE_ static const Quaternion *get_quaternion(const Variant *v) { return reinterpret_cast<const Quaternion *>(v->_data._mem); }
-	_FORCE_INLINE_ static lain::AABB *get_aabb(Variant *v) { return v->_data._aabb; }
-	_FORCE_INLINE_ static const lain::AABB *get_aabb(const Variant *v) { return v->_data._aabb; }
+	_FORCE_INLINE_ static ::lain::AABB *get_aabb(Variant *v) { return v->_data._aabb; }
+	_FORCE_INLINE_ static const ::lain::AABB *get_aabb(const Variant *v) { return v->_data._aabb; }
 	_FORCE_INLINE_ static Basis *get_basis(Variant *v) { return v->_data._basis; }
 	_FORCE_INLINE_ static const Basis *get_basis(const Variant *v) { return v->_data._basis; }
 	_FORCE_INLINE_ static Transform3D *get_transform(Variant *v) { return v->_data._transform3d; }
@@ -255,8 +255,8 @@ namespace lain {
 	_FORCE_INLINE_ static const StringName *get_string_name(const Variant *v) { return reinterpret_cast<const StringName *>(v->_data._mem); }
 	_FORCE_INLINE_ static GObjectPath *get_node_path(Variant *v) { return reinterpret_cast<GObjectPath *>(v->_data._mem); }
 	_FORCE_INLINE_ static const GObjectPath *get_node_path(const Variant *v) { return reinterpret_cast<const GObjectPath *>(v->_data._mem); }
-	_FORCE_INLINE_ static lain::RID *get_rid(Variant *v) { return reinterpret_cast<lain::RID *>(v->_data._mem); }
-	_FORCE_INLINE_ static const lain::RID *get_rid(const Variant *v) { return reinterpret_cast<const lain::RID *>(v->_data._mem); }
+	_FORCE_INLINE_ static ::lain::RID *get_rid(Variant *v) { return reinterpret_cast<::lain::RID *>(v->_data._mem); }
+	_FORCE_INLINE_ static const ::lain::RID *get_rid(const Variant *v) { return reinterpret_cast<const ::lain::RID *>(v->_data._mem); }
 	_FORCE_INLINE_ static Callable *get_callable(Variant *v) { return reinterpret_cast<Callable *>(v->_data._mem); }
 	_FORCE_INLINE_ static const Callable *get_callable(const Variant *v) { return reinterpret_cast<const Callable *>(v->_data._mem); }
 	_FORCE_INLINE_ static Signal *get_signal(Variant *v) { return reinterpret_cast<Signal *>(v->_data._mem); }
@@ -437,8 +437,8 @@ struct VariantInitializer<GObjectPath> {
 };
 
 template <>
-struct VariantInitializer<lain::RID> {
-	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<lain::RID>(v); }
+struct VariantInitializer<::lain::RID> {
+	static _FORCE_INLINE_ void init(Variant *v) { VariantInternal::init_generic<::lain::RID>(v); }
 };
 
 template <>
@@ -636,7 +636,7 @@ struct VariantDefaultInitializer<GObjectPath> {
 };
 
 template <>
-struct VariantDefaultInitializer<lain::RID> {
+struct VariantDefaultInitializer<::lain::RID> {
 	static _FORCE_INLINE_ void init(Variant *v) { *VariantInternal::get_rid(v) = RID(); }
 };
 
@@ -911,9 +911,9 @@ struct VariantGetInternalPtr<Quaternion> {
 };
 
 template <>
-struct VariantGetInternalPtr<lain::AABB> {
-	static lain::AABB *get_ptr(Variant *v) { return VariantInternal::get_aabb(v); }
-	static const lain::AABB *get_ptr(const Variant *v) { return VariantInternal::get_aabb(v); }
+struct VariantGetInternalPtr<::lain::AABB> {
+	static ::lain::AABB *get_ptr(Variant *v) { return VariantInternal::get_aabb(v); }
+	static const ::lain::AABB *get_ptr(const Variant *v) { return VariantInternal::get_aabb(v); }
 };
 
 template <>
@@ -943,9 +943,9 @@ struct VariantGetInternalPtr<GObjectPath> {
 };
 
 template <>
-struct VariantGetInternalPtr<lain::RID> {
-	static lain::RID *get_ptr(Variant *v) { return VariantInternal::get_rid(v); }
-	static const lain::RID *get_ptr(const Variant *v) { return VariantInternal::get_rid(v); }
+struct VariantGetInternalPtr<::lain::RID> {
+	static ::lain::RID *get_ptr(Variant *v) { return VariantInternal::get_rid(v); }
+	static const ::lain::RID *get_ptr(const Variant *v) { return VariantInternal::get_rid(v); }
 };
 
 template <>
@@ -1210,9 +1210,9 @@ struct VariantInternalAccessor<GObjectPath> {
 };
 
 template <>
-struct VariantInternalAccessor<lain::RID> {
-	static _FORCE_INLINE_ const lain::RID &get(const Variant *v) { return *VariantInternal::get_rid(v); }
-	static _FORCE_INLINE_ void set(Variant *v, const lain::RID &p_value) { *VariantInternal::get_rid(v) = p_value; }
+struct VariantInternalAccessor<::lain::RID> {
+	static _FORCE_INLINE_ const ::lain::RID &get(const Variant *v) { return *VariantInternal::get_rid(v); }
+	static _FORCE_INLINE_ void set(Variant *v, const ::lain::RID &p_value) { *VariantInternal::get_rid(v) = p_value; }
 };
 
 template <>

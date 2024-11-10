@@ -183,8 +183,8 @@ struct VariantCasterAndValidate<const T&> {
   VARIANT_ENUM_CAST(Vector4i::Axis);
   VARIANT_ENUM_CAST(Error);
   VARIANT_ENUM_CAST(Variant::Type);
-} // namespace lain
 
 
 
 #endif  // DEBUG_METHODS_ENABLED
+} // namespace lain

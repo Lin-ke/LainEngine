@@ -78,7 +78,7 @@ namespace lain {
       return;                                                                                          \
     }                                                                                                  \
     m_inherits::initialize_class();                                                                    \
-    BASENAMESPACE::ClassDB::_add_class<m_class>();                                                     \
+    ClassDB::_add_class<m_class>();                                                     \
     if (m_class::_get_bind_methods() != m_inherits::_get_bind_methods()) {                             \
       _bind_methods();                                                                                 \
     }                                                                                                  \

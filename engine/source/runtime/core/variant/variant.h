@@ -163,7 +163,7 @@ class Variant {
     int64_t _int;
     double _float;
     void* _ptr;  //generic pointer
-    lain::AABB* _aabb;
+    ::lain::AABB* _aabb;
     Basis* _basis;
     Transform3D* _transform3d;
     Transform2D* _transform2d;
@@ -190,7 +190,7 @@ class Variant {
       BucketSmall() {}
       ~BucketSmall() {}
       Transform2D _transform2d;
-      lain::AABB _aabb;
+      ::lain::AABB _aabb;
     };
     union BucketMedium {
       BucketMedium() {}
@@ -267,7 +267,7 @@ class Variant {
   Variant(const PackedColorArray& p_color_array);
   Variant(const PackedVector4Array& p_vector4_array);
 
-  Variant(const Vector<lain::RID>& p_array);  // helper
+  Variant(const Vector<::lain::RID>& p_array);  // helper
   Variant(const Vector<Plane>& p_array);      // helper
   Variant(const Vector<Face3>& p_face_array);
   Variant(const Vector<Variant>& p_array);
@@ -308,7 +308,7 @@ class Variant {
   Variant(const Vector4& p_vector4);
   Variant(const Vector4i& p_vector4i);
   Variant(const Plane& p_plane);
-  Variant(const lain::AABB& p_aabb);
+  Variant(const ::lain::AABB& p_aabb);
   Variant(const Quaternion& p_quat);
   Variant(const Basis& p_matrix);
   Variant(const Transform2D& p_transform);
@@ -316,7 +316,7 @@ class Variant {
   Variant(const Projection& p_projection);
   Variant(const Color& p_color);
   Variant(const GObjectPath& p_node_path);
-  Variant(const lain::RID& p_rid);
+  Variant(const ::lain::RID& p_rid);
   Variant(const Callable& p_callable);
   Variant(const Signal& p_signal);
   Variant(const IPAddress& p_address);
@@ -359,7 +359,7 @@ class Variant {
   operator Vector4() const;
   operator Vector4i() const;
   operator Plane() const;
-  operator lain::AABB() const;
+  operator ::lain::AABB() const;
   operator Quaternion() const;
   operator Basis() const;
   operator Transform3D() const;
@@ -368,7 +368,7 @@ class Variant {
 
   operator Color() const;
   operator GObjectPath() const;
-  operator lain::RID() const;
+  operator ::lain::RID() const;
 
   operator Object*() const;
 
@@ -389,7 +389,7 @@ class Variant {
   operator PackedVector4Array() const;
   operator PackedColorArray() const;
 
-  operator Vector<lain::RID>() const;
+  operator Vector<::lain::RID>() const;
   operator Vector<Plane>() const;
   operator Vector<Face3>() const;
   operator Vector<Variant>() const;

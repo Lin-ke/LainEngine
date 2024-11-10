@@ -82,7 +82,7 @@ class Serializer {
   }
 
   template <typename T>
-  static Json write(const lain::Vector<T>& instance) {
+  static Json write(const Vector<T>& instance) {
     Json::array array_json;
     for (int i = 0; i < instance.size(); i++) {
       array_json.push_back(write(instance[i]));

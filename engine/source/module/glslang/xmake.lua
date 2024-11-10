@@ -1,7 +1,8 @@
 target("thirdparty_glslang")
     set_kind("static")
     set_languages("cxx17")
-    add_includedirs("$(projectdir)/engine/thirdparty/glslang")
+    add_includedirs("$(projectdir)/engine/thirdparty/glslang", {public = true}) -- 如果不这样设置会导致后面的去访问vulkan-sdk的头文件
+    -- @todo 完全避免 env:VulkanSDK 的使用
     add_files(
         "$(projectdir)/engine/thirdparty/glslang/glslang/GenericCodeGen/CodeGen.cpp",
         "$(projectdir)/engine/thirdparty/glslang/glslang/GenericCodeGen/Link.cpp",

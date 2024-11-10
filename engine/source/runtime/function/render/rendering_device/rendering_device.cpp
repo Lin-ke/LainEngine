@@ -3186,6 +3186,12 @@ _THREAD_SAFE_METHOD_
 	return id;
 }
 
+bool RenderingDevice::uniform_set_is_valid(RID p_uniform_set)
+{
+  _THREAD_SAFE_METHOD_
+  return uniform_set_owner.owns(p_uniform_set);
+}
+
 void RenderingDevice::_texture_update_shared_fallback(RID p_texture_rid, Texture* p_texture, bool p_for_writing) {
   if (p_texture->shared_fallback == nullptr) {
     // This texture does not use any of the shared texture fallbacks.
