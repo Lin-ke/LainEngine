@@ -7,6 +7,24 @@
 using namespace lain::RendererRD;
 using namespace lain;
 
+lain::RendererSceneRenderRD::RendererSceneRenderRD() {
+  singleton = this;
+  // init is called in scene->init()
+}
+
+lain::RendererSceneRenderRD::~RendererSceneRenderRD() {
+  singleton = nullptr;
+  // memdelete 
+  memdelete_arr(directional_penumbra_shadow_kernel);
+	memdelete_arr(directional_soft_shadow_kernel);
+	memdelete_arr(penumbra_shadow_kernel);
+	memdelete_arr(soft_shadow_kernel);
+	RSG::light_storage->directional_shadow_atlas_set_size(0);
+	if (forward_id_storage) {
+		memdelete(forward_id_storage);
+	}
+}
+
 uint64_t RendererSceneRenderRD::get_scene_pass() {
   return 0;
 }

@@ -10,6 +10,7 @@ namespace lain::RendererRD{
   SkyRD();
   static SkyRD* get_singleton() { return p_singleton;}
 	float sky_get_baked_exposure(RID p_sky) const;
+	int roughness_layers;
 
   struct Sky{
 		float baked_exposure = 1.0;

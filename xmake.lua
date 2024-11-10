@@ -247,7 +247,7 @@ includes("engine/source/module/**/xmake.lua")
 
 
 
-target("main"
+target("main")
     set_languages("cxx17")
     set_kind("static")
     add_files("engine/source/runtime/main/**.cpp")

@@ -229,6 +229,7 @@ public:
 	void init(const String p_defines);
 	void set_default_specialization_constants(const Vector<RD::PipelineSpecializationConstant> &p_constants);
 	void enable_advanced_shader_group(bool p_needs_multiview = false);
+
 };
 
 }

@@ -102,6 +102,7 @@ public:
 	void clear();
 	PipelineCacheRD();
 	~PipelineCacheRD();
+	
 };
 
 }

@@ -15,7 +15,7 @@ protected:
 	double time = 0.0;
 	double time_step = 0.0;
 	bool use_physical_light_units = false;
-
+	RendererRD::SkyRD sky;
  public:
   static RendererSceneRenderRD* get_singleton() { return singleton; }
   virtual RendererRD::ForwardIDStorage *create_forward_id_storage() { return memnew(RendererRD::ForwardIDStorage); };
@@ -96,8 +96,12 @@ protected:
 		return soft_shadow_kernel;
 	}
 
-	RendererRD::SkyRD sky;
+	public:
 	RendererRD::SkyRD *get_sky() { return &sky; }
+	int get_roughness_layers() const{
+		return sky.roughness_layers;
+	}
+
   void set_time(double p_time, double p_frame_step) { time = p_time;
   time_step = p_frame_step; }
 };

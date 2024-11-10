@@ -569,3 +569,13 @@ void ShaderRD::_save_to_cache(Version *p_version, int p_group) {
 		f->store_buffer(p_version->variant_data[variant_id].ptr(), p_version->variant_data[variant_id].size());
 	}
 }
+
+bool lain::ShaderRD::version_is_valid(RID p_version) {
+  return version_owner.owns(p_version);
+}
+
+bool lain::ShaderRD::version_free(RID p_version) {
+  Version* version = version_owner.get_or_null(p_version);
+	ERR_FAIL_COND_V(!version, false);
+	_clear_version(version);
+}

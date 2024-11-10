@@ -506,6 +506,17 @@ void lain::RendererRD::LightStorage::_update_shadow_atlas(ShadowAtlas* shadow_at
 	}
 }
 
+lain::RendererRD::LightStorage::LightStorage() {
+  singleton = this;
+  TextureStorage *texture_storage = TextureStorage::get_singleton();
+
+	directional_shadow.size = GLOBAL_GET("rendering/lights_and_shadows/directional_shadow/size");
+	directional_shadow.use_16_bits = GLOBAL_GET("rendering/lights_and_shadows/directional_shadow/16_bits");
+
+	
+
+}
+
 RID LightStorage::directional_light_allocate() {
   return light_owner.allocate_rid();
 }
