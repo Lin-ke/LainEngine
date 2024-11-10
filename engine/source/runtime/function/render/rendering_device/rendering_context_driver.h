@@ -5,6 +5,7 @@
 
 #include "core/object/object.h"
 #include "function/display/window_system.h"
+#define NVIDIA_VENDOR_NAME "NVIDIA"
 namespace lain {
 class RenderingDeviceDriver;
 
@@ -72,6 +73,7 @@ public:
 	virtual void surface_destroy(SurfaceID p_surface) = 0;
 	virtual bool is_debug_utils_enabled() const = 0;
 };
+using RCD = RenderingContextDriver;
 }
 
 #endif // RENDERING_CONTEXT_DRIVER_H

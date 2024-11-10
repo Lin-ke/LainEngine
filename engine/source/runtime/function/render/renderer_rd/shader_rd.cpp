@@ -68,9 +68,38 @@ void lain::ShaderRD::_add_stage(const String& p_code, StageType p_stage_type) {
 		text = String();
 	}
 }
+ShaderRD::~ShaderRD() {
+	List<RID> remaining;
+	version_owner.get_owned_list(&remaining);
+	if (remaining.size()) {
+		ERR_PRINT(itos(remaining.size()) + " shaders of type " + name + " were never freed");
+		while (remaining.size()) {
+			version_free(remaining.front()->get());
+			remaining.pop_front();
+		}
+	}
+}
 
-void ShaderRD::setup(const String& p_vertex_code, const String& p_fragment_code, const String& p_compute_code, const String& p_name) {
-	name = p_name;
+
+ShaderRD::ShaderRD() {
+	// Do not feel forced to use this, in most cases it makes little to no difference.
+	bool use_32_threads = false;
+	if (RD::get_singleton()->get_device_vendor_name() == NVIDIA_VENDOR_NAME) {
+		use_32_threads = true;
+	}
+	String base_compute_define_text;
+	if (use_32_threads) {
+		base_compute_define_text = "\n#define NATIVE_LOCAL_GROUP_SIZE 32\n#define NATIVE_LOCAL_SIZE_2D_X 8\n#define NATIVE_LOCAL_SIZE_2D_Y 4\n";
+	} else {
+		base_compute_define_text = "\n#define NATIVE_LOCAL_GROUP_SIZE 64\n#define NATIVE_LOCAL_SIZE_2D_X 8\n#define NATIVE_LOCAL_SIZE_2D_Y 8\n";
+	}
+
+	base_compute_defines = base_compute_define_text.ascii();
+}
+
+void ShaderRD::setup(const String &p_vertex_code, const String &p_fragment_code, const String &p_compute_code, const String &p_name)
+{
+    name = p_name;
 
 	if (p_compute_code.is_empty()) {
 		_add_stage(p_compute_code, STAGE_TYPE_COMPUTE);
@@ -108,7 +137,6 @@ void ShaderRD::setup(const char *p_vertex_code, const char *p_fragment_code, con
 	setup(String(p_vertex_code), String(p_fragment_code), String(p_compute_code), String(p_name));
 }
 
-// 将变量编译到ubershader里，形成variant
 
 void ShaderRD::_compile_variant(uint32_t p_variant, const CompileData *p_data) {
 	uint32_t variant = group_to_variant_map[p_data->group][p_variant];
@@ -307,6 +335,7 @@ void ShaderRD::_compile_version(Version *p_version, int p_group) {
 	compile_data.group = p_group;
 
 #if 1
+	// 一次编译group里所有的变体
 	WorkerThreadPool::GroupID group_task = WorkerThreadPool::get_singleton()->add_template_group_task(this, &ShaderRD::_compile_variant, &compile_data, group_to_variant_map[p_group].size(), -1, true, SNAME("ShaderCompilation"));
 	WorkerThreadPool::get_singleton()->wait_for_group_task_completion(group_task);
 

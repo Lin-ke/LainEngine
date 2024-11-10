@@ -4977,8 +4977,21 @@ uint64_t RenderingDevice::get_driver_resource(DriverResource p_resource, RID p_r
 	return driver->get_resource_native_handle(p_resource, driver_id);
 }
 
-String lain::RenderingDevice::get_device_api_name() const {
-  return driver->get_api_name();
+String RenderingDevice::get_device_vendor_name() const
+{
+    switch( device.vendor){
+      case RCD::VENDOR_NVIDIA: return NVIDIA_VENDOR_NAME;
+      case RCD::VENDOR_AMD: return "AMD";
+      case RCD::VENDOR_INTEL: return "Intel";
+      case RCD::VENDOR_ARM: return "ARM";
+      case RCD::VENDOR_QUALCOMM: return "Qualcomm";
+      case RCD::VENDOR_APPLE: return "Apple";
+    }
+}
+
+String lain::RenderingDevice::get_device_api_name() const
+{
+    return driver->get_api_name();
 }
 
 bool lain::RenderingDevice::is_composite_alpha_supported() const {

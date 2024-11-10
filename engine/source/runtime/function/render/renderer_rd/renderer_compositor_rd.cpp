@@ -52,6 +52,30 @@ void lain::RendererCompositorRD::begin_frame(double frame_step) {
 	// canvas->set_time(time);
 	scene->set_time(time, frame_step);
 }
+
+void RendererCompositorRD::end_frame(bool p_swap_buffers) {
+	if (p_swap_buffers) {
+		RD::get_singleton()->swap_buffers();
+	}
+}
+
+void RendererCompositorRD::finalize() {
+	memdelete(scene);
+	// memdelete(canvas);
+	// memdelete(fog);
+	// memdelete(particles_storage);
+	memdelete(light_storage);
+	memdelete(mesh_storage);
+	memdelete(material_storage);
+	memdelete(texture_storage);
+	memdelete(utilities);
+
+	//only need to erase these, the rest are erased by cascade
+	blit.shader.version_free(blit.shader_version);
+	RD::get_singleton()->free(blit.index_buffer);
+	RD::get_singleton()->free(blit.sampler);
+}
+
 void lain::RendererCompositorRD::blit_render_targets_to_screen(WindowSystem::WindowID p_screen, const BlitToScreen* p_render_targets, int p_amount) {
 		Error err = RD::get_singleton()->screen_prepare_for_drawing(p_screen);
 	if (err != OK) {

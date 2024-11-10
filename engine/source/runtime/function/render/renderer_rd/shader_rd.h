@@ -10,12 +10,14 @@
 #include "function/render/rendering_system/rendering_system.h"
 
 // uber shader 所必须的，各种define
-// variant 是 shader 各个变体（variant）
+// variant 是 shader 各个变体（variant），其实就是一些defines（见build_variant_code） 
+// 每个shader源码对应的资源被称为一个version，version的每个变体被称为一个variant 
+// version 中的 uniforms等等信息 会 和 variant.text（也就是一些defines，替代 .glsl里的version_defines）一起加入，编译成为shader文件
 namespace lain{
 class ShaderRD {
 public:
 	struct VariantDefine {
-		int group = 0;
+		int group = 0; // variant-> group
 		CharString text;
 		bool default_enabled = true;
 		VariantDefine(){};
@@ -31,7 +33,7 @@ private:
 	CharString general_defines;
 	Vector<VariantDefine> variant_defines; // 该变体的定义区域
 	Vector<bool> variants_enabled;
-	HashMap<int, LocalVector<int>> group_to_variant_map;
+	HashMap<int, LocalVector<int>> group_to_variant_map; // 这一组里所有的变体（映射到index of variant_defines）
 	Vector<bool> group_enabled;
 
 	struct Version {
@@ -63,7 +65,7 @@ private:
 	void _initialize_version(Version *p_version);
 	void _clear_version(Version *p_version);
 	void _compile_version(Version *p_version, int p_group);
-	void _allocate_placeholders(Version *p_version, int p_group);
+	void _allocate_placeholders(Version *p_version, int p_group){}// @todo 
 
 	RID_Owner<Version> version_owner;
 
@@ -108,7 +110,9 @@ private:
 		STAGE_TYPE_COMPUTE,
 		STAGE_TYPE_MAX,
 	};
-	// 每种shader都是一些chunk的集合
+	// 每个Stage具有哪些chunk，之后编译时根据template把需要的信息拼起来
+
+	// 这在parse shader code时就知道了(add_stage函数)
 	StageTemplate stage_templates[STAGE_TYPE_MAX];
 
 	void _build_variant_code(StringBuilder &p_builder, uint32_t p_variant, const Version *p_version, const StageTemplate &p_template);
