@@ -215,7 +215,7 @@ class MeshStorage : public RendererMeshStorage {
   static MeshStorage* get_singleton() { return p_singleton; };
 	bool owns_mesh(RID p_rid) { return mesh_owner.owns(p_rid); };
 	bool owns_multimesh(RID p_rid) { return false; };
-  
+  bool free(RID p_rid);
   virtual RID mesh_allocate() override;
   virtual void mesh_initialize(RID p_rid) override;
   virtual void mesh_free(RID p_rid) override;

@@ -3,7 +3,80 @@
 #include "texture_storage.h"
 using namespace lain::RendererRD;
 using namespace lain;
+LightStorage* LightStorage::singleton = nullptr;
 
+LightStorage::~LightStorage(){
+  singleton = nullptr;
+  	if (directional_light_buffer.is_valid()) {
+		RD::get_singleton()->free(directional_light_buffer);
+		directional_light_buffer = RID();
+	}
+
+	if (omni_light_buffer.is_valid()) {
+		RD::get_singleton()->free(omni_light_buffer);
+		omni_light_buffer = RID();
+	}
+
+	if (spot_light_buffer.is_valid()) {
+		RD::get_singleton()->free(spot_light_buffer);
+		spot_light_buffer = RID();
+	}
+
+	if (directional_lights != nullptr) {
+		memdelete_arr(directional_lights);
+		directional_lights = nullptr;
+	}
+
+	if (omni_lights != nullptr) {
+		memdelete_arr(omni_lights);
+		omni_lights = nullptr;
+	}
+
+	if (spot_lights != nullptr) {
+		memdelete_arr(spot_lights);
+		spot_lights = nullptr;
+	}
+
+	if (omni_light_sort != nullptr) {
+		memdelete_arr(omni_light_sort);
+		omni_light_sort = nullptr;
+	}
+
+	if (spot_light_sort != nullptr) {
+		memdelete_arr(spot_light_sort);
+		spot_light_sort = nullptr;
+	}
+	for (const KeyValue<int, ShadowCubemap> &E : shadow_cubemaps) {
+		RD::get_singleton()->free(E.value.cubemap);
+	}
+}
+
+bool lain::RendererRD::LightStorage::owns_reflection_probe(RID p_rid) {
+  return false;
+}
+
+bool lain::RendererRD::LightStorage::owns_light(RID p_rid) {
+  return light_owner.owns(p_rid);
+}
+
+bool lain::RendererRD::LightStorage::owns_lightmap(RID p_rid) {
+  return false;
+}
+
+bool lain::RendererRD::LightStorage::free(RID p_rid) {
+  if(owns_light(p_rid)){
+    light_free(p_rid);
+    return true;
+  }
+  return false;
+}
+
+RS::LightDirectionalSkyMode LightStorage::light_directional_get_sky_mode(RID p_light) const {
+	const Light *light = light_owner.get_or_null(p_light);
+	ERR_FAIL_NULL_V(light, RS::LIGHT_DIRECTIONAL_SKY_MODE_LIGHT_AND_SKY);
+
+	return light->directional_sky_mode;
+}
 RID lain::RendererRD::LightStorage::shadow_atlas_create() {
   return shadow_atlas_owner.make_rid(ShadowAtlas());
 }

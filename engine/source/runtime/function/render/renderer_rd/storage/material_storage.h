@@ -12,6 +12,13 @@ class MaterialStorage : public RendererMaterialStorage {
   static MaterialStorage* p_singleton;
 
  public:
+	bool owns_shader(RID p_rid) {
+		return shader_owner.owns(p_rid);
+	}
+	bool owns_material(RID p_rid){
+		return material_owner.owns(p_rid);
+	}
+	bool free(RID); 
 	static MaterialStorage* get_singleton() { return p_singleton; }
   enum ShaderType { SHADER_TYPE_2D, SHADER_TYPE_3D, SHADER_TYPE_PARTICLES, SHADER_TYPE_SKY, SHADER_TYPE_FOG, SHADER_TYPE_MAX };
   MaterialStorage();
@@ -46,6 +53,7 @@ class MaterialStorage : public RendererMaterialStorage {
     HashMap<StringName, HashMap<int, RID>> default_texture_parameter;
     HashSet<Material*> owners; // 这个shader 管着这些材质
   };
+	Shader *get_shader(RID p_rid) { return shader_owner.get_or_null(p_rid); }
   
   mutable RID_Owner<Shader, true> shader_owner;
 	typedef ShaderData *(*ShaderDataRequestFunction)();
@@ -69,7 +77,7 @@ class MaterialStorage : public RendererMaterialStorage {
 	private:
 		friend class MaterialStorage;
 
-		RID self; // 与 Material.self 一致
+		RID self; // 与 Material.self 一致 (RID)
 		List<RID>::Element *global_buffer_E = nullptr;
 		List<RID>::Element *global_texture_E = nullptr;
 		uint64_t global_textures_pass = 0;
@@ -89,12 +97,12 @@ class MaterialStorage : public RendererMaterialStorage {
 		Shader *shader = nullptr;
 		//shortcut to shader data and type
 		ShaderType shader_type = SHADER_TYPE_MAX;
-		uint32_t shader_id = 0;
+		uint32_t shader_id = 0; // shader.get_local_index
 		bool uniform_dirty = false;
 		bool texture_dirty = false;
 		HashMap<StringName, Variant> params;
 		int32_t priority = 0;
-		RID next_pass;
+		RID next_pass; // ? next material
 		SelfList<Material> update_element; // 更新链表的结点
 
 		Dependency dependency;
@@ -103,10 +111,17 @@ class MaterialStorage : public RendererMaterialStorage {
 				update_element(this) {}
 	};
 	mutable RID_Owner<Material, true> material_owner;
-  	struct Samplers {
+	// 由于MaterialData 是一个接口类，利用下面的方式获得实际的函数（根据shaderdata*，返回materialdata*)(scene_shader_forward_clustered.cpp)
+	MaterialDataRequestFunction material_data_request_func[SHADER_TYPE_MAX];
+
+	void material_set_data_request_function(ShaderType p_shader_type, MaterialDataRequestFunction p_function);
+	MaterialDataRequestFunction material_get_data_request_function(ShaderType p_shader_type);
+
+
+		struct Samplers {
 		RID rids[RS::CANVAS_ITEM_TEXTURE_FILTER_MAX][RS::CANVAS_ITEM_TEXTURE_REPEAT_MAX];
 		float mipmap_bias = 0.0f;
-		bool use_nearest_mipmap_filter = false;
+		bool use_nearest_mipmap_filter = false; // global get
 		int anisotropic_filtering_level = 2;
 
 		_FORCE_INLINE_ RID get_sampler(RS::CanvasItemTextureFilter p_filter, RS::CanvasItemTextureRepeat p_repeat) const {
@@ -203,7 +218,7 @@ class MaterialStorage : public RendererMaterialStorage {
   virtual RID shader_allocate() override { return shader_owner.allocate_rid(); }
   virtual void shader_initialize(RID p_rid) override;
   virtual void shader_free(RID p_rid) override;
-
+	// 这里会直接删除对应material 的 data，会引起野指针的问题吗？
   virtual void shader_set_code(RID p_shader, const String& p_code) override;
   virtual void shader_set_path_hint(RID p_shader, const String& p_path) override;
   virtual String shader_get_code(RID p_shader) const override;
@@ -222,6 +237,7 @@ class MaterialStorage : public RendererMaterialStorage {
   virtual void material_free(RID p_rid) override;
 
   virtual void material_set_render_priority(RID p_material, int priority) override;
+	// 清理原来的data，设置新的data
   virtual void material_set_shader(RID p_shader_material, RID p_shader) override;
 
   virtual void material_set_param(RID p_material, const StringName& p_param, const Variant& p_value) override;
@@ -234,8 +250,21 @@ class MaterialStorage : public RendererMaterialStorage {
   virtual void material_get_instance_shader_parameters(RID p_material, List<InstanceShaderParam>* r_parameters) override;
 
   virtual void material_update_dependency(RID p_material, DependencyTracker* p_instance) override;
-	void material_set_data_request_function(ShaderType p_shader_type, MaterialDataRequestFunction p_function);
-	MaterialDataRequestFunction material_get_data_request_function(ShaderType p_shader_type);
+
+	/* Samplers */
+	Samplers default_samplers;
+
+	Samplers samplers_rd_allocate(float p_mipmap_bias = 0.0f) const;
+	void samplers_rd_free(Samplers &p_samplers) const;
+
+	_FORCE_INLINE_ RID sampler_rd_get_default(RS::CanvasItemTextureFilter p_filter, RS::CanvasItemTextureRepeat p_repeat) {
+		return default_samplers.get_sampler(p_filter, p_repeat);
+	}
+
+	_FORCE_INLINE_ const Samplers &samplers_rd_get_default() const {
+		return default_samplers;
+	}
+
 
   // helpers
 
@@ -287,6 +316,18 @@ class MaterialStorage : public RendererMaterialStorage {
 		p_array[11] = 0;
 	}
 
+	_FORCE_INLINE_ MaterialData *material_get_data(RID p_material, ShaderType p_shader_type) {
+		Material *material = material_owner.get_or_null(p_material);
+		if (!material || material->shader_type != p_shader_type) {
+			return nullptr;
+		} else {
+			return material->data;
+		}
+	}
+
+
+
+	void shader_set_data_request_function(ShaderType p_shader_type, ShaderDataRequestFunction p_function);
 
 
   private:

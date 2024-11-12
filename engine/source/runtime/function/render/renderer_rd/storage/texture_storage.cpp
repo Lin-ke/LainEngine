@@ -11,9 +11,35 @@ TextureStorage::~TextureStorage() {
   singleton = nullptr;
 }
 
+bool lain::RendererRD::TextureStorage::owns_decal(RID p_rid) {
+  return false;
+}
 
 bool lain::RendererRD::TextureStorage::owns_texture(RID p_rid) {
   return texture_owner.owns(p_rid); 
+}
+
+bool TextureStorage::free(RID p_rid) {
+	if (owns_texture(p_rid)) {
+		texture_free(p_rid);
+		return true;
+	} 
+  // else if (owns_canvas_texture(p_rid)) {
+	// 	canvas_texture_free(p_rid);
+	// 	return true;
+	// } else if (owns_decal(p_rid)) {
+	// 	decal_free(p_rid);
+	// 	return true;
+	// } else if (owns_decal_instance(p_rid)) {
+	// 	decal_instance_free(p_rid);
+	// 	return true;
+	// }
+   else if (owns_render_target(p_rid)) {
+		render_target_free(p_rid);
+		return true;
+	}
+
+	return false;
 }
 
 Ref<Image> TextureStorage::_validate_texture_format(const Ref<Image>& p_image, TextureToRDFormat& r_format) {

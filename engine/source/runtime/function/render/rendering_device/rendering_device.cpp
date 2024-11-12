@@ -2106,6 +2106,22 @@ RDD::RenderPassID RenderingDevice::_render_pass_create(const Vector<AttachmentFo
   return render_pass;
 }
 
+uint64_t lain::RenderingDevice::get_memory_usage(MemoryType p_type) const {
+  switch(p_type){
+    case MemoryType::MEMORY_TEXTURES:
+      return texture_memory;
+    case MemoryType::MEMORY_BUFFERS:
+      return buffer_memory;
+    case MemoryType::MEMORY_TOTAL:
+      return driver->get_total_memory_used();
+    default:{
+      DEV_ASSERT(false);
+      return 0;
+    }
+
+  }
+}
+
 RenderingDevice* lain::RenderingDevice::create_local_device() {
   RenderingDevice* rd = memnew(RenderingDevice);
   rd->initialize(context);
@@ -4348,6 +4364,205 @@ void RenderingDevice::_draw_list_insert_clear_region(DrawList* p_draw_list, Fram
   draw_graph.add_draw_list_clear_attachments(clear_attachments, rect);
 }
 
+
+Error RenderingDevice::buffer_copy(RID p_src_buffer, RID p_dst_buffer, uint32_t p_src_offset, uint32_t p_dst_offset, uint32_t p_size) {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V_MSG(draw_list, ERR_INVALID_PARAMETER,
+			"Copying buffers is forbidden during creation of a draw list");
+	ERR_FAIL_COND_V_MSG(compute_list, ERR_INVALID_PARAMETER,
+			"Copying buffers is forbidden during creation of a compute list");
+
+	Buffer *src_buffer = _get_buffer_from_owner(p_src_buffer);
+	if (!src_buffer) {
+		ERR_FAIL_V_MSG(ERR_INVALID_PARAMETER, "Source buffer argument is not a valid buffer of any type.");
+	}
+
+	Buffer *dst_buffer = _get_buffer_from_owner(p_dst_buffer);
+	if (!dst_buffer) {
+		ERR_FAIL_V_MSG(ERR_INVALID_PARAMETER, "Destination buffer argument is not a valid buffer of any type.");
+	}
+
+	// Validate the copy's dimensions for both buffers.
+	ERR_FAIL_COND_V_MSG((p_size + p_src_offset) > src_buffer->size, ERR_INVALID_PARAMETER, "Size is larger than the source buffer.");
+	ERR_FAIL_COND_V_MSG((p_size + p_dst_offset) > dst_buffer->size, ERR_INVALID_PARAMETER, "Size is larger than the destination buffer.");
+
+	// Perform the copy.
+	RDD::BufferCopyRegion region;
+	region.src_offset = p_src_offset;
+	region.dst_offset = p_dst_offset;
+	region.size = p_size;
+
+	if (_buffer_make_mutable(dst_buffer, p_dst_buffer)) {
+		// The destination buffer must be mutable to be used as a copy destination.
+		draw_graph.add_synchronization();
+	}
+
+	draw_graph.add_buffer_copy(src_buffer->driver_id, src_buffer->draw_tracker, dst_buffer->driver_id, dst_buffer->draw_tracker, region);
+
+	return OK;
+}
+
+
+RID RenderingDevice::texture_buffer_create(uint32_t p_size_elements, DataFormat p_format, const Vector<uint8_t> &p_data) {
+	_THREAD_SAFE_METHOD_
+
+	uint32_t element_size = get_format_vertex_size(p_format);
+	ERR_FAIL_COND_V_MSG(element_size == 0, RID(), "Format requested is not supported for texture buffers");
+	uint64_t size_bytes = uint64_t(element_size) * p_size_elements;
+
+	ERR_FAIL_COND_V(p_data.size() && (uint32_t)p_data.size() != size_bytes, RID());
+
+	Buffer texture_buffer;
+	texture_buffer.size = size_bytes;
+	BitField<RDD::BufferUsageBits> usage = (RDD::BUFFER_USAGE_TRANSFER_FROM_BIT | RDD::BUFFER_USAGE_TRANSFER_TO_BIT | RDD::BUFFER_USAGE_TEXEL_BIT);
+	texture_buffer.driver_id = driver->buffer_create(size_bytes, usage, RDD::MEMORY_ALLOCATION_TYPE_GPU);
+	ERR_FAIL_COND_V(!texture_buffer.driver_id, RID());
+
+	// Texture buffers are assumed to be immutable unless they don't have initial data.
+	if (p_data.is_empty()) {
+		texture_buffer.draw_tracker = RDG::resource_tracker_create();
+		texture_buffer.draw_tracker->buffer_driver_id = texture_buffer.driver_id;
+	}
+
+	bool ok = driver->buffer_set_texel_format(texture_buffer.driver_id, p_format);
+	if (!ok) {
+		driver->buffer_free(texture_buffer.driver_id);
+		ERR_FAIL_V(RID());
+	}
+
+	if (p_data.size()) {
+		_buffer_update(&texture_buffer, RID(), 0, p_data.ptr(), p_data.size());
+	}
+
+	buffer_memory += size_bytes;
+
+	RID id = texture_buffer_owner.make_rid(texture_buffer);
+#ifdef DEV_ENABLED
+	set_resource_name(id, "RID:" + itos(id.get_id()));
+#endif
+	return id;
+}
+
+RID RenderingDevice::storage_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t> &p_data, BitField<StorageBufferUsage> p_usage) {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V(p_data.size() && (uint32_t)p_data.size() != p_size_bytes, RID());
+
+	Buffer buffer;
+	buffer.size = p_size_bytes;
+	buffer.usage = (RDD::BUFFER_USAGE_TRANSFER_FROM_BIT | RDD::BUFFER_USAGE_TRANSFER_TO_BIT | RDD::BUFFER_USAGE_STORAGE_BIT);
+	if (p_usage.has_flag(STORAGE_BUFFER_USAGE_DISPATCH_INDIRECT)) {
+		buffer.usage.set_flag(RDD::BUFFER_USAGE_INDIRECT_BIT);
+	}
+	buffer.driver_id = driver->buffer_create(buffer.size, buffer.usage, RDD::MEMORY_ALLOCATION_TYPE_GPU);
+	ERR_FAIL_COND_V(!buffer.driver_id, RID());
+
+	// Storage buffers are assumed to be mutable.
+	buffer.draw_tracker = RDG::resource_tracker_create();
+	buffer.draw_tracker->buffer_driver_id = buffer.driver_id;
+
+	if (p_data.size()) {
+		_buffer_update(&buffer, RID(), 0, p_data.ptr(), p_data.size());
+	}
+
+	buffer_memory += buffer.size;
+
+	RID id = storage_buffer_owner.make_rid(buffer);
+#ifdef DEV_ENABLED
+	set_resource_name(id, "RID:" + itos(id.get_id()));
+#endif
+	return id;
+}
+
+
+RID RenderingDevice::index_buffer_create(uint32_t p_index_count, IndexBufferFormat p_format, const Vector<uint8_t> &p_data, bool p_use_restart_indices) {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V(p_index_count == 0, RID());
+
+	IndexBuffer index_buffer;
+	index_buffer.format = p_format;
+	index_buffer.supports_restart_indices = p_use_restart_indices;
+	index_buffer.index_count = p_index_count;
+	uint32_t size_bytes = p_index_count * ((p_format == INDEX_BUFFER_FORMAT_UINT16) ? 2 : 4);
+#ifdef DEBUG_ENABLED
+	if (p_data.size()) {
+		index_buffer.max_index = 0;
+		ERR_FAIL_COND_V_MSG((uint32_t)p_data.size() != size_bytes, RID(),
+				"Default index buffer initializer array size (" + itos(p_data.size()) + ") does not match format required size (" + itos(size_bytes) + ").");
+		const uint8_t *r = p_data.ptr();
+		if (p_format == INDEX_BUFFER_FORMAT_UINT16) {
+			const uint16_t *index16 = (const uint16_t *)r;
+			for (uint32_t i = 0; i < p_index_count; i++) {
+				if (p_use_restart_indices && index16[i] == 0xFFFF) {
+					continue; // Restart index, ignore.
+				}
+				index_buffer.max_index = MAX(index16[i], index_buffer.max_index);
+			}
+		} else {
+			const uint32_t *index32 = (const uint32_t *)r;
+			for (uint32_t i = 0; i < p_index_count; i++) {
+				if (p_use_restart_indices && index32[i] == 0xFFFFFFFF) {
+					continue; // Restart index, ignore.
+				}
+				index_buffer.max_index = MAX(index32[i], index_buffer.max_index);
+			}
+		}
+	} else {
+		index_buffer.max_index = 0xFFFFFFFF;
+	}
+#else
+	index_buffer.max_index = 0xFFFFFFFF;
+#endif
+	index_buffer.size = size_bytes;
+	index_buffer.usage = (RDD::BUFFER_USAGE_TRANSFER_FROM_BIT | RDD::BUFFER_USAGE_TRANSFER_TO_BIT | RDD::BUFFER_USAGE_INDEX_BIT);
+	index_buffer.driver_id = driver->buffer_create(index_buffer.size, index_buffer.usage, RDD::MEMORY_ALLOCATION_TYPE_GPU);
+	ERR_FAIL_COND_V(!index_buffer.driver_id, RID());
+
+	// Index buffers are assumed to be immutable unless they don't have initial data.
+	if (p_data.is_empty()) {
+		index_buffer.draw_tracker = RDG::resource_tracker_create();
+		index_buffer.draw_tracker->buffer_driver_id = index_buffer.driver_id;
+	}
+
+	if (p_data.size()) {
+		_buffer_update(&index_buffer, RID(), 0, p_data.ptr(), p_data.size());
+	}
+
+	buffer_memory += index_buffer.size;
+
+	RID id = index_buffer_owner.make_rid(index_buffer);
+#ifdef DEV_ENABLED
+	set_resource_name(id, "RID:" + itos(id.get_id()));
+#endif
+	return id;
+}
+
+RID RenderingDevice::index_array_create(RID p_index_buffer, uint32_t p_index_offset, uint32_t p_index_count) {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V(!index_buffer_owner.owns(p_index_buffer), RID());
+
+	IndexBuffer *index_buffer = index_buffer_owner.get_or_null(p_index_buffer);
+
+	ERR_FAIL_COND_V(p_index_count == 0, RID());
+	ERR_FAIL_COND_V(p_index_offset + p_index_count > index_buffer->index_count, RID());
+
+	IndexArray index_array;
+	index_array.max_index = index_buffer->max_index;
+	index_array.driver_id = index_buffer->driver_id;
+	index_array.draw_tracker = index_buffer->draw_tracker;
+	index_array.offset = p_index_offset;
+	index_array.indices = p_index_count;
+	index_array.format = index_buffer->format;
+	index_array.supports_restart_indices = index_buffer->supports_restart_indices;
+
+	RID id = index_array_owner.make_rid(index_array);
+	_add_dependency(id, p_index_buffer);
+	return id;
+}
+
 RenderingDevice::DrawListID RenderingDevice::draw_list_begin(RID p_framebuffer, ColorInitialAction p_initial_color_action, ColorFinalAction p_final_color_action,
                                                              InitialAction p_initial_depth_action, FinalAction p_final_depth_action, const Vector<Color>& p_clear_color_values,
                                                              float p_clear_depth, uint32_t p_clear_stencil, const Rect2& p_region) {
@@ -4880,10 +5095,66 @@ void RenderingDevice::draw_list_end() {
 
   draw_list_bound_textures.clear();
 }
+/* TIME */
+void lain::RenderingDevice::capture_timestamp(const String& p_name) {
+  	ERR_FAIL_COND_MSG(draw_list != nullptr && draw_list->state.draw_count > 0, "Capturing timestamps during draw list creation is not allowed. Offending timestamp was: " + p_name);
+	ERR_FAIL_COND_MSG(compute_list != nullptr && compute_list->state.dispatch_count > 0, "Capturing timestamps during compute list creation is not allowed. Offending timestamp was: " + p_name);
+	ERR_FAIL_COND_MSG(frames[frame].timestamp_count >= max_timestamp_query_elements, vformat("Tried capturing more timestamps than the configured maximum (%d). You can increase this limit in the project settings under 'Debug/Settings' called 'Max Timestamp Query Elements'.", max_timestamp_query_elements));
+
+	draw_graph.add_capture_timestamp(frames[frame].timestamp_pool, frames[frame].timestamp_count);
+
+	frames[frame].timestamp_names[frames[frame].timestamp_count] = p_name;
+	frames[frame].timestamp_cpu_values[frames[frame].timestamp_count] = OS::GetSingleton()->GetTicksUsec();
+	frames[frame].timestamp_count++;
+}
+
+uint32_t RenderingDevice::get_captured_timestamps_count() const {
+	return frames[frame].timestamp_result_count;
+}
+
+uint64_t RenderingDevice::get_captured_timestamps_frame() const {
+	return frames[frame].index;
+}
+
+uint64_t RenderingDevice::get_captured_timestamp_gpu_time(uint32_t p_index) const {
+	ERR_FAIL_UNSIGNED_INDEX_V(p_index, frames[frame].timestamp_result_count, 0);
+	return driver->timestamp_query_result_to_time(frames[frame].timestamp_result_values[p_index]);
+}
+
+uint64_t RenderingDevice::get_captured_timestamp_cpu_time(uint32_t p_index) const {
+	ERR_FAIL_UNSIGNED_INDEX_V(p_index, frames[frame].timestamp_result_count, 0);
+	return frames[frame].timestamp_cpu_result_values[p_index];
+}
+
+String RenderingDevice::get_captured_timestamp_name(uint32_t p_index) const {
+	ERR_FAIL_UNSIGNED_INDEX_V(p_index, frames[frame].timestamp_result_count, String());
+	return frames[frame].timestamp_result_names[p_index];
+}
 
 uint64_t lain::RenderingDevice::limit_get(Limit p_limit) const {
   return driver->limit_get(p_limit);
 }
+
+
+RID RenderingDevice::sampler_create(const SamplerState &p_state) {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_INDEX_V(p_state.repeat_u, SAMPLER_REPEAT_MODE_MAX, RID());
+	ERR_FAIL_INDEX_V(p_state.repeat_v, SAMPLER_REPEAT_MODE_MAX, RID());
+	ERR_FAIL_INDEX_V(p_state.repeat_w, SAMPLER_REPEAT_MODE_MAX, RID());
+	ERR_FAIL_INDEX_V(p_state.compare_op, COMPARE_OP_MAX, RID());
+	ERR_FAIL_INDEX_V(p_state.border_color, SAMPLER_BORDER_COLOR_MAX, RID());
+
+	RDD::SamplerID sampler = driver->sampler_create(p_state);
+	ERR_FAIL_COND_V(!sampler, RID());
+
+	RID id = sampler_owner.make_rid(sampler);
+#ifdef DEV_ENABLED
+	set_resource_name(id, "RID:" + itos(id.get_id()));
+#endif
+	return id;
+}
+
 
 void lain::RenderingDevice::swap_buffers() {
   _THREAD_SAFE_METHOD_
@@ -5178,6 +5449,13 @@ String RenderingDevice::get_device_vendor_name() const {
       return "Apple";
   }
 }
+
+String lain::RenderingDevice::get_device_name() const {
+  return device.name;
+}
+RD::DeviceType lain::RenderingDevice::get_device_type() const {
+  return DeviceType(device.type);
+};
 
 String lain::RenderingDevice::get_device_api_name() const {
   return driver->get_api_name();

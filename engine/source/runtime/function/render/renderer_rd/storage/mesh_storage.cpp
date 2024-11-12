@@ -5,8 +5,15 @@ using namespace lain::RendererRD;
 using namespace lain;
 
 MeshStorage* MeshStorage::p_singleton = nullptr;
+bool lain::RendererRD::MeshStorage::free(RID p_rid) {
+  if(mesh_owner.owns(p_rid)){
+		mesh_free(p_rid);	
+		return true;
+	}
+	return false;
+}
 RID lain::RendererRD::MeshStorage::mesh_allocate() {
-    return mesh_owner.allocate_rid();
+  return mesh_owner.allocate_rid();
 }
 
 void MeshStorage::mesh_initialize(RID p_rid) {
@@ -14,7 +21,23 @@ void MeshStorage::mesh_initialize(RID p_rid) {
 }
 
 void MeshStorage::mesh_free(RID p_rid) {
-    mesh_owner.free(p_rid);
+  mesh_clear(p_rid);
+	mesh_set_shadow_mesh(p_rid, RID());
+	Mesh *mesh = mesh_owner.get_or_null(p_rid);
+	ERR_FAIL_NULL(mesh);
+
+	mesh->dependency.deleted_notify(p_rid);
+	if (mesh->instances.size()) {
+		ERR_PRINT("deleting mesh with active instances");
+	}
+	if (mesh->shadow_owners.size()) {
+		for (Mesh *E : mesh->shadow_owners) {
+			Mesh *shadow_owner = E;
+			shadow_owner->shadow_mesh = RID();
+			shadow_owner->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MESH);
+		}
+	}
+	mesh_owner.free(p_rid);
 }
 
 void MeshStorage::mesh_clear(RID p_mesh) {

@@ -620,7 +620,7 @@ public:
 			Varying() {}
 		};
 
-		struct Uniform {
+		struct Uniform { // uniform具有多个scope
 			enum Hint {
 				HINT_NONE,
 				HINT_RANGE,
@@ -648,7 +648,7 @@ public:
 				SCOPE_GLOBAL,
 			};
 
-			int order = 0;
+			int order = 0; // 在 uniform offset 中的位置
 			int texture_order = 0;
 			int texture_binding = 0;
 			DataType type = TYPE_VOID;

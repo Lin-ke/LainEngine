@@ -13,6 +13,7 @@ class TextureStorage : public RendererTextureStorage {
   virtual ~TextureStorage();
   static TextureStorage* get_singleton() { return singleton; }
   bool owns_decal(RID p_rid);
+  bool free(RID p_rid);
 bool owns_texture(RID p_rid);
   /* Texture API */
   // 这里的Texture 是比较特殊的 render system 所使用的几种

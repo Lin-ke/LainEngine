@@ -105,7 +105,26 @@ void RenderSceneBuffersRD::configure(const RenderSceneBuffersConfiguration *p_co
 	}
 }
 
-void RenderSceneBuffersRD::update_samplers() {}
+void RenderSceneBuffersRD::update_samplers() {
+	float computed_mipmap_bias = texture_mipmap_bias;
+
+	if (use_taa || (scaling_3d_mode == RS::VIEWPORT_SCALING_3D_MODE_FSR2)) {
+		// Use negative mipmap LOD bias when TAA or FSR2 is enabled to compensate for loss of sharpness.
+		// This restores sharpness in still images to be roughly at the same level as without TAA,
+		// but moving scenes will still be blurrier.
+		computed_mipmap_bias -= 0.5;
+	}
+
+	if (screen_space_aa == RS::VIEWPORT_SCREEN_SPACE_AA_FXAA) {
+		// Use negative mipmap LOD bias when FXAA is enabled to compensate for loss of sharpness.
+		// If both TAA and FXAA are enabled, combine their negative LOD biases together.
+		computed_mipmap_bias -= 0.25;
+	}
+
+	RendererRD::MaterialStorage *material_storage = RendererRD::MaterialStorage::get_singleton();
+	material_storage->samplers_rd_free(samplers);
+	samplers = material_storage->samplers_rd_allocate(computed_mipmap_bias);
+}
 void RenderSceneBuffersRD::cleanup() {
 	// Free our data buffers (but don't destroy them)
 	for (KeyValue<StringName, Ref<RenderBufferCustomDataRD>> &E : data_buffers) {
@@ -202,3 +221,17 @@ void RenderSceneBuffersRD::update_sizes(NamedTexture &p_named_texture) {
 	}
 }
 
+void RenderSceneBuffersRD::set_fsr_sharpness(float p_fsr_sharpness) {
+	fsr_sharpness = p_fsr_sharpness;
+}
+
+void RenderSceneBuffersRD::set_texture_mipmap_bias(float p_texture_mipmap_bias) {
+	texture_mipmap_bias = p_texture_mipmap_bias;
+
+	update_samplers();
+}
+
+void lain::RenderSceneBuffersRD::set_use_debanding(bool p_use_debanding) {
+	use_debanding = p_use_debanding;
+
+}

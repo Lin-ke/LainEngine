@@ -8,8 +8,8 @@ class ParticlesStorage : public RendererParticlesStorage {
    ParticlesStorage();
     ~ParticlesStorage();
   static ParticlesStorage* get_singleton() {return singleton;}
-  bool owns_particles(RID p_rid);
-  bool owns_particles_collision(RID p_rid); // particle的碰撞形状
+  bool owns_particles(RID p_rid) {return false;}
+  bool owns_particles_collision(RID p_rid){return false;}// particle的碰撞形状
 
 };
 }

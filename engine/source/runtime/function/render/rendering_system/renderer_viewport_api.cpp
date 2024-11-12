@@ -941,6 +941,8 @@ void lain::RendererViewport::viewport_set_debug_draw(RID p_viewport, RS::Viewpor
 		num_viewports_with_motion_vectors += motion_vectors_after ? 1 : -1;
 	}
 }
-
+int RendererViewport::get_num_viewports_with_motion_vectors() const {
+	return num_viewports_with_motion_vectors;
+}
 #undef ASSERT_VP_NOT_NULL
 #undef ASSERT_VP_NOT_NULL_RET

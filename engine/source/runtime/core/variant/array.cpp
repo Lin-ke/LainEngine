@@ -357,4 +357,8 @@ Variant Array::get_typed_script() const {
 	return _p->typed.script;
 }
 
+void Array::clear() {
+	ERR_FAIL_COND_MSG(_p->read_only, "Array is in read-only state.");
+	_p->array.clear();
+}
 }  // namespace lain

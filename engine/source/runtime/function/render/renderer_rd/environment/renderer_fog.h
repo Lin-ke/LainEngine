@@ -10,7 +10,7 @@ namespace lain::RendererRD{
   ~Fog();
   Fog();
   static Fog* get_singleton() { return p_singleton;}
-  bool owns_fog_volume(RID p_rid);
+  bool owns_fog_volume(RID p_rid) {return false;}
 
   };
 }

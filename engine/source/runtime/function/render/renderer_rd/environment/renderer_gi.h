@@ -7,10 +7,10 @@ namespace lain::RendererRD{
  private:
   static GI* p_singleton;
   public:
-  ~GI();
-  GI();
+  ~GI(){}
+  GI(){}
   static GI* get_singleton() { return p_singleton;}
-  bool owns_voxel_gi(RID p_rid);
+  bool owns_voxel_gi(RID p_rid) {return false;}
 	int sdfgi_get_lightprobe_octahedron_size() const { return 1; }
   void init(){}
 

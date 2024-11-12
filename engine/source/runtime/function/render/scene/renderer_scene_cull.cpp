@@ -1753,7 +1753,7 @@ void lain::RendererSceneCull::_render_scene(const RendererSceneRender::CameraDat
   RID occluders_tex;
   const RendererSceneRender::CameraData* prev_camera_data = p_camera_data;
   if (p_viewport.is_valid()) {
-    occluders_tex = RSG::viewport->viewport_get_occluder_debug_texture(p_viewport);
+    // occluders_tex = RSG::viewport->viewport_get_occluder_debug_texture(p_viewport);
     prev_camera_data = RSG::viewport->viewport_get_prev_camera_data(p_viewport);
   }
 

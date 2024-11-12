@@ -692,6 +692,19 @@ struct StringLikeVariantComparator {
 struct VariantComparator {
   static _FORCE_INLINE_ bool compare(const Variant& p_lhs, const Variant& p_rhs) { return p_lhs.hash_compare(p_rhs); }
 };
+template <typename... VarArgs>
+Variant Callable::call(VarArgs... p_args) const {
+	Variant args[sizeof...(p_args) + 1] = { p_args..., 0 }; // +1 makes sure zero sized arrays are also supported.
+	const Variant *argptrs[sizeof...(p_args) + 1];
+	for (uint32_t i = 0; i < sizeof...(p_args); i++) {
+		argptrs[i] = &args[i];
+	}
+
+	Variant ret;
+	CallError ce;
+	callp(sizeof...(p_args) == 0 ? nullptr : (const Variant **)argptrs, sizeof...(p_args), ret, ce);
+	return ret;
+}
 
 
 };  // namespace lain

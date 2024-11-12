@@ -15,7 +15,7 @@ class LightStorage : public RendererLightStorage {
   bool owns_reflection_probe(RID p_rid);
   bool owns_light(RID p_rid);
   bool owns_lightmap(RID p_rid);
-
+  bool free(RID p_rid);
  private:
   /* LIGHT */
   struct Light {

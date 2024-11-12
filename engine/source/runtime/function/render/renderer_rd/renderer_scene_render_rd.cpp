@@ -7,6 +7,8 @@
 using namespace lain::RendererRD;
 using namespace lain;
 
+RendererSceneRenderRD* RendererSceneRenderRD::singleton  = nullptr;
+
 lain::RendererSceneRenderRD::RendererSceneRenderRD() {
   singleton = this;
   // init is called in scene->init()

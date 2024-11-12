@@ -75,7 +75,7 @@ public:
 
 	virtual void update_dirty_resources() override;
 	virtual void set_debug_generate_wireframes(bool p_generate) override {}
-
+	// 适配边角料
 	virtual bool has_os_feature(const String &p_feature) const override;
 
 	virtual void update_memory_info() override;

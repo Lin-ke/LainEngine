@@ -1085,17 +1085,17 @@ String String::to_snake_case() const {
 	return this->_camelcase_to_underscore().replace(" ", "_").strip_edges();
 }
 
-//String String::get_with_code_lines() const {
-//	const Vector<String> lines = split("\n");
-//	String ret;
-//	for (int i = 0; i < lines.size(); i++) {
-//		if (i > 0) {
-//			ret += "\n";
-//		}
-//		ret += vformat("%4d | %s", i + 1, lines[i]);
-//	}
-//	return ret;
-//}
+String String::get_with_code_lines() const {
+	const Vector<String> lines = split("\n");
+	String ret;
+	for (int i = 0; i < lines.size(); i++) {
+		if (i > 0) {
+			ret += "\n";
+		}
+		ret += vformat("%4d | %s", i + 1, lines[i]);
+	}
+	return ret;
+}
 
 int String::get_slice_count(String p_splitter) const {
 	if (is_empty()) {

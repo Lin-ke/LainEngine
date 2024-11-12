@@ -3,6 +3,11 @@
 using namespace lain;
 
 
+String ShaderRD::shader_cache_dir;
+bool ShaderRD::shader_cache_save_compressed = true;
+bool ShaderRD::shader_cache_save_compressed_zstd = true;
+bool ShaderRD::shader_cache_save_debug = true;
+bool ShaderRD::shader_cache_cleanup_on_start = true;
 
 void ShaderRD::_add_stage(const char *p_code, StageType p_stage_type) {
 	_add_stage(String(p_code), p_stage_type);
@@ -579,3 +584,4 @@ bool lain::ShaderRD::version_free(RID p_version) {
 	ERR_FAIL_COND_V(!version, false);
 	_clear_version(version);
 }
+

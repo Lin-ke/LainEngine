@@ -4,6 +4,10 @@
 #include "core/object/objectdb.h"
 #include "core/variant/variant.h"
 namespace lain {
+  
+  void Callable::call_deferredp(const Variant **p_arguments, int p_argcount) const {
+}
+
 uint32_t Callable::hash() const {
   if (is_custom()) {
     return custom->hash();

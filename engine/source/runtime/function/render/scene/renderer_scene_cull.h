@@ -437,7 +437,7 @@ class RendererSceneCull : public RenderingMethod {
 
     float transparency = 0.0;
     // dependency
-    DependencyTracker dependency_tracker;
+    DependencyTracker dependency_tracker; // 每个instance 携带了一个 dependency tracker， 在 update_dependency 中加入需要管理的 dependency
     Instance()
     :
 				scenario_item(this),

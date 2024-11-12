@@ -49,6 +49,9 @@ namespace lain {
 			}
 			return call_deferredp(sizeof...(p_args) == 0 ? nullptr : (const Variant**)argptrs, sizeof...(p_args));
 		}
+	template <typename... VarArgs>
+	Variant call(VarArgs... p_args) const;
+
 	// @todo read
 		Error rpcp(int p_id, const Variant** p_arguments, int p_argcount, CallError& r_call_error) const;
 
