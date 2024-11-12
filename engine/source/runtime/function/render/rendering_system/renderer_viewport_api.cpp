@@ -5,6 +5,9 @@
 #define ASSERT_VP_NOT_NULL                                     \
   Viewport* viewport = viewport_owner.get_or_null(p_viewport); \
   ERR_FAIL_NULL(viewport);
+#define ASSERT_VP_NOT_NULL_RET(p_ret)                          \
+	Viewport* viewport = viewport_owner.get_or_null(p_viewport); \
+	ERR_FAIL_NULL_V(viewport, p_ret);
 
 using namespace lain;
 RID RendererViewport::viewport_allocate() {
@@ -263,6 +266,11 @@ void lain::RendererViewport::viewport_set_prev_camera_data(RID p_viewport, const
 		viewport->prev_camera_data = *p_camera_data;
 		viewport->prev_camera_data_frame = frame;
 	}
+}
+const RendererSceneRender::CameraData* lain::RendererViewport::viewport_get_prev_camera_data(RID p_viewport) {
+	const Viewport *viewport = viewport_owner.get_or_null(p_viewport);
+	ERR_FAIL_NULL_V(viewport, nullptr);
+	return &viewport->prev_camera_data;
 }
 void RendererViewport::viewport_attach_camera(RID p_viewport, RID p_camera) {
   Viewport* viewport = viewport_owner.get_or_null(p_viewport);
@@ -913,4 +921,26 @@ void RendererViewport::viewport_set_render_direct_to_screen(RID p_viewport, bool
 	}
 }
 
+int lain::RendererViewport::viewport_get_render_info(RID p_viewport, RS::ViewportRenderInfoType p_type, RS::ViewportRenderInfo p_info) {
+	ERR_FAIL_INDEX_V(p_type, RS::VIEWPORT_RENDER_INFO_TYPE_MAX, -1);
+	ERR_FAIL_INDEX_V(p_info, RS::VIEWPORT_RENDER_INFO_MAX, -1);
+	ASSERT_VP_NOT_NULL_RET(0);
+	return viewport->render_info.info[p_type][p_info];
+}
+bool RendererViewport::_viewport_requires_motion_vectors(Viewport *p_viewport) {
+	return p_viewport->use_taa || p_viewport->scaling_3d_mode == RS::ViewportScaling3DMode::VIEWPORT_SCALING_3D_MODE_FSR2 || p_viewport->debug_draw == RS::ViewportDebugDraw::VIEWPORT_DEBUG_DRAW_MOTION_VECTORS;
+}
+void lain::RendererViewport::viewport_set_debug_draw(RID p_viewport, RS::ViewportDebugDraw p_draw) {
+	ASSERT_VP_NOT_NULL;
+
+	bool motion_vectors_before = _viewport_requires_motion_vectors(viewport);
+	viewport->debug_draw = p_draw;
+
+	bool motion_vectors_after = _viewport_requires_motion_vectors(viewport);
+	if (motion_vectors_before != motion_vectors_after) {
+		num_viewports_with_motion_vectors += motion_vectors_after ? 1 : -1;
+	}
+}
+
 #undef ASSERT_VP_NOT_NULL
+#undef ASSERT_VP_NOT_NULL_RET

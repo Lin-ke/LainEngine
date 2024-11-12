@@ -11,6 +11,8 @@ namespace lain::RendererRD{
   GI();
   static GI* get_singleton() { return p_singleton;}
   bool owns_voxel_gi(RID p_rid);
+	int sdfgi_get_lightprobe_octahedron_size() const { return 1; }
+  void init(){}
 
   };
 }

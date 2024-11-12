@@ -4,6 +4,7 @@
 #include "function/render/rendering_system/rendering_system_globals.h"
 #include "rendering_light_culler.h"
 using namespace lain;
+RendererSceneCull* RendererSceneCull::singleton = nullptr;
 RID lain::RendererSceneCull::camera_allocate() {
   return camera_owner.allocate_rid();
 }
@@ -1019,7 +1020,8 @@ void RendererSceneCull::_update_dirty_instance(Instance* p_instance) {
 
       geom->material_is_animated = is_animated;
       p_instance->instance_shader_uniforms = isparams;
-
+    // 这里处理 per instance shader uniforms
+    // 也是靠 global shader parameters 来实现的，这个神奇
       if (p_instance->instance_allocated_shader_uniforms != (p_instance->instance_shader_uniforms.size() > 0)) {
         p_instance->instance_allocated_shader_uniforms = (p_instance->instance_shader_uniforms.size() > 0);
         if (p_instance->instance_allocated_shader_uniforms) {
@@ -1071,6 +1073,81 @@ void RendererSceneCull::_update_dirty_instance(Instance* p_instance) {
   }
 }
 
+void RendererSceneCull::_update_instance_aabb(Instance *p_instance) {
+	AABB new_aabb;
+
+	ERR_FAIL_COND(p_instance->base_type != RS::INSTANCE_NONE && !p_instance->base.is_valid());
+
+	switch (p_instance->base_type) {
+		case RS::INSTANCE_NONE: {
+			// do nothing
+		} break;
+		case RS::INSTANCE_MESH: {
+			if (p_instance->custom_aabb) {
+				new_aabb = *p_instance->custom_aabb;
+			} else {
+				new_aabb = RSG::mesh_storage->mesh_get_aabb(p_instance->base, p_instance->skeleton);
+			}
+
+		} break;
+
+		case RS::INSTANCE_MULTIMESH: {
+			if (p_instance->custom_aabb) {
+				new_aabb = *p_instance->custom_aabb;
+			} else {
+				new_aabb = RSG::mesh_storage->multimesh_get_aabb(p_instance->base);
+			}
+
+		} break;
+		case RS::INSTANCE_PARTICLES: {
+			if (p_instance->custom_aabb) {
+				new_aabb = *p_instance->custom_aabb;
+			} else {
+				// new_aabb = RSG::particles_storage->particles_get_aabb(p_instance->base);
+			}
+
+		} break;
+		case RS::INSTANCE_PARTICLES_COLLISION: {
+			// new_aabb = RSG::particles_storage->particles_collision_get_aabb(p_instance->base);
+
+		} break;
+		case RS::INSTANCE_FOG_VOLUME: {
+			// new_aabb = RSG::fog->fog_volume_get_aabb(p_instance->base);
+		} break;
+		case RS::INSTANCE_VISIBLITY_NOTIFIER: {
+			new_aabb = RSG::utilities->visibility_notifier_get_aabb(p_instance->base);
+		} break;
+		case RS::INSTANCE_LIGHT: {
+			new_aabb = RSG::light_storage->light_get_aabb(p_instance->base);
+
+		} break;
+		case RS::INSTANCE_REFLECTION_PROBE: {
+			// new_aabb = RSG::light_storage->reflection_probe_get_aabb(p_instance->base);
+
+		} break;
+		case RS::INSTANCE_DECAL: {
+			// new_aabb = RSG::texture_storage->decal_get_aabb(p_instance->base);
+
+		} break;
+		case RS::INSTANCE_VOXEL_GI: {
+			// new_aabb = RSG::gi->voxel_gi_get_bounds(p_instance->base);
+
+		} break;
+		case RS::INSTANCE_LIGHTMAP: {
+			// new_aabb = RSG::light_storage->lightmap_get_aabb(p_instance->base);
+
+		} break;
+		default: {
+		}
+	}
+
+	if (p_instance->extra_margin) {
+		new_aabb.grow_by(p_instance->extra_margin);
+	}
+
+	p_instance->aabb = new_aabb;
+}
+
 // 根据 material 那边提供的shader 参数列表进行更新传入的isparam。
 void RendererSceneCull::_update_instance_shader_uniforms_from_material(HashMap<StringName, Instance::InstanceShaderParameter>& isparams,
                                                                        const HashMap<StringName, Instance::InstanceShaderParameter>& existing_isparams, RID p_material) {
@@ -1102,6 +1179,195 @@ void RendererSceneCull::_update_instance_shader_uniforms_from_material(HashMap<S
     isparams[name] = isp;
   }
 }
+void lain::RendererSceneCull::_unpair_instance(Instance* p_instance) {
+  	if (!p_instance->indexer_id.is_valid()) {
+		return; //nothing to do
+	}
+
+	while (p_instance->pairs.first()) {
+		InstancePair *pair = p_instance->pairs.first()->self();
+		Instance *other_instance = p_instance == pair->a ? pair->b : pair->a;
+		_instance_unpair(p_instance, other_instance);
+		pair_allocator.free(pair);
+	}
+  if (p_instance->indexer_id.is_valid()){ // 在bvh中删除
+    if( 1 << p_instance->base_type & RS::INSTANCE_GEOMETRY_MASK){
+      p_instance->scenario->indexers[Scenario::INDEXER_GEOMETRY].remove(p_instance->indexer_id);
+    } else {
+      p_instance->scenario->indexers[Scenario::INDEXER_VOLUMES].remove(p_instance->indexer_id);
+    }
+  }
+	
+
+	p_instance->indexer_id = DynamicBVH::ID();
+
+	//replace this by last
+	int32_t swap_with_index = p_instance->scenario->instance_data.size() - 1;
+	if (swap_with_index != p_instance->array_index) {// 不是最后一个
+		Instance *swapped_instance = p_instance->scenario->instance_data[swap_with_index].instance;
+		swapped_instance->array_index = p_instance->array_index; //swap
+		p_instance->scenario->instance_data[p_instance->array_index] = p_instance->scenario->instance_data[swap_with_index];
+		p_instance->scenario->instance_aabbs[p_instance->array_index] = p_instance->scenario->instance_aabbs[swap_with_index];
+
+		if (swapped_instance->visibility_index != -1) {
+			swapped_instance->scenario->instance_visibility[swapped_instance->visibility_index].array_index = swapped_instance->array_index;
+		}
+
+		for (Instance *E : swapped_instance->visibility_dependencies) {
+			Instance *dep_instance = E;
+			if (dep_instance != p_instance && dep_instance->array_index != -1) {
+				dep_instance->scenario->instance_data[dep_instance->array_index].vis_parent_array_index = swapped_instance->array_index;
+			}
+		}
+	}
+
+	// pop last
+	p_instance->scenario->instance_data.pop_back();
+	p_instance->scenario->instance_aabbs.pop_back();
+
+	//uninitialize
+	p_instance->array_index = -1;
+	if ((1 << p_instance->base_type) & RS::INSTANCE_GEOMETRY_MASK) {
+		// Clear these now because the InstanceData containing the dirty flags is gone
+		InstanceGeometryData *geom = static_cast<InstanceGeometryData *>(p_instance->base_data);
+		ERR_FAIL_NULL(geom->geometry_instance);
+
+		geom->geometry_instance->pair_light_instances(nullptr, 0);
+		geom->geometry_instance->pair_reflection_probe_instances(nullptr, 0);
+		geom->geometry_instance->pair_decal_instances(nullptr, 0);
+		geom->geometry_instance->pair_voxel_gi_instances(nullptr, 0);
+	}
+
+	for (Instance *E : p_instance->visibility_dependencies) {
+		Instance *dep_instance = E;
+		if (dep_instance->array_index != -1) {
+			dep_instance->scenario->instance_data[dep_instance->array_index].vis_parent_array_index = -1;
+			if ((1 << dep_instance->base_type) & RS::INSTANCE_GEOMETRY_MASK) {
+				dep_instance->scenario->instance_data[dep_instance->array_index].instance_geometry->set_parent_fade_alpha(1.0f);
+			}
+		}
+	}
+
+	_update_instance_visibility_dependencies(p_instance);
+}
+
+void RendererSceneCull::_instance_unpair(Instance *p_A, Instance *p_B) {
+	RendererSceneCull *self = (RendererSceneCull *)singleton;
+	Instance *A = p_A;
+	Instance *B = p_B;
+
+	//instance indices are designed so greater always contains lesser
+	if (A->base_type > B->base_type) {
+		SWAP(A, B); //lesser always first
+	}
+
+	if (B->base_type == RS::INSTANCE_LIGHT && ((1 << A->base_type) & RS::INSTANCE_GEOMETRY_MASK)) {
+		InstanceLightData *light = static_cast<InstanceLightData *>(B->base_data);
+		InstanceGeometryData *geom = static_cast<InstanceGeometryData *>(A->base_data);
+
+		geom->lights.erase(B);
+		light->geometries.erase(A);
+
+		if (geom->can_cast_shadows) {
+			light->make_shadow_dirty();
+		}
+
+		if (A->scenario && A->array_index >= 0) {
+			InstanceData &idata = A->scenario->instance_data[A->array_index];
+			idata.flags |= InstanceData::FLAG_GEOM_LIGHTING_DIRTY;
+		}
+
+		if (light->uses_projector) {
+#ifdef DEBUG_ENABLED
+			if (geom->projector_count == 0) {
+				ERR_PRINT("geom->projector_count==0 - BUG!");
+			}
+#endif
+			geom->projector_count--;
+			if (geom->projector_count == 0) {
+				InstanceData &idata = A->scenario->instance_data[A->array_index];
+				idata.flags |= InstanceData::FLAG_GEOM_PROJECTOR_SOFTSHADOW_DIRTY;
+			}
+		}
+
+		if (light->uses_softshadow) {
+#ifdef DEBUG_ENABLED
+			if (geom->softshadow_count == 0) {
+				ERR_PRINT("geom->softshadow_count==0 - BUG!");
+			}
+#endif
+			geom->softshadow_count--;
+			if (geom->softshadow_count == 0) {
+				InstanceData &idata = A->scenario->instance_data[A->array_index];
+				idata.flags |= InstanceData::FLAG_GEOM_PROJECTOR_SOFTSHADOW_DIRTY;
+			}
+		}
+
+	} 
+  // else if (self->geometry_instance_pair_mask & (1 << RS::INSTANCE_REFLECTION_PROBE) && B->base_type == RS::INSTANCE_REFLECTION_PROBE && ((1 << A->base_type) & RS::INSTANCE_GEOMETRY_MASK)) {
+	// 	InstanceReflectionProbeData *reflection_probe = static_cast<InstanceReflectionProbeData *>(B->base_data);
+	// 	InstanceGeometryData *geom = static_cast<InstanceGeometryData *>(A->base_data);
+
+	// 	geom->reflection_probes.erase(B);
+	// 	reflection_probe->geometries.erase(A);
+
+	// 	if (A->scenario && A->array_index >= 0) {
+	// 		InstanceData &idata = A->scenario->instance_data[A->array_index];
+	// 		idata.flags |= InstanceData::FLAG_GEOM_REFLECTION_DIRTY;
+	// 	}
+
+	// } else if (self->geometry_instance_pair_mask & (1 << RS::INSTANCE_DECAL) && B->base_type == RS::INSTANCE_DECAL && ((1 << A->base_type) & RS::INSTANCE_GEOMETRY_MASK)) {
+	// 	InstanceDecalData *decal = static_cast<InstanceDecalData *>(B->base_data);
+	// 	InstanceGeometryData *geom = static_cast<InstanceGeometryData *>(A->base_data);
+
+	// 	geom->decals.erase(B);
+	// 	decal->geometries.erase(A);
+
+	// 	if (A->scenario && A->array_index >= 0) {
+	// 		InstanceData &idata = A->scenario->instance_data[A->array_index];
+	// 		idata.flags |= InstanceData::FLAG_GEOM_DECAL_DIRTY;
+	// 	}
+
+	// } else if (B->base_type == RS::INSTANCE_LIGHTMAP && ((1 << A->base_type) & RS::INSTANCE_GEOMETRY_MASK)) {
+	// 	InstanceLightmapData *lightmap_data = static_cast<InstanceLightmapData *>(B->base_data);
+	// 	InstanceGeometryData *geom = static_cast<InstanceGeometryData *>(A->base_data);
+	// 	if (A->dynamic_gi) {
+	// 		geom->lightmap_captures.erase(B);
+
+	// 		if (geom->lightmap_captures.is_empty() && A->scenario && A->array_index >= 0) {
+	// 			InstanceData &idata = A->scenario->instance_data[A->array_index];
+	// 			idata.flags &= ~uint32_t(InstanceData::FLAG_LIGHTMAP_CAPTURE);
+	// 		}
+
+	// 		lightmap_data->geometries.erase(A);
+	// 		((RendererSceneCull *)self)->_instance_queue_update(A, false, false); //need to update capture
+	// 	}
+
+	// } else if (self->geometry_instance_pair_mask & (1 << RS::INSTANCE_VOXEL_GI) && B->base_type == RS::INSTANCE_VOXEL_GI && ((1 << A->base_type) & RS::INSTANCE_GEOMETRY_MASK)) {
+	// 	InstanceVoxelGIData *voxel_gi = static_cast<InstanceVoxelGIData *>(B->base_data);
+	// 	InstanceGeometryData *geom = static_cast<InstanceGeometryData *>(A->base_data);
+
+	// 	geom->voxel_gi_instances.erase(B);
+	// 	if (A->dynamic_gi) {
+	// 		voxel_gi->dynamic_geometries.erase(A);
+	// 	} else {
+	// 		voxel_gi->geometries.erase(A);
+	// 	}
+
+	// 	if (A->scenario && A->array_index >= 0) {
+	// 		InstanceData &idata = A->scenario->instance_data[A->array_index];
+	// 		idata.flags |= InstanceData::FLAG_GEOM_VOXEL_GI_DIRTY;
+	// 	}
+
+	// } else if (B->base_type == RS::INSTANCE_VOXEL_GI && A->base_type == RS::INSTANCE_LIGHT) {
+	// 	InstanceVoxelGIData *voxel_gi = static_cast<InstanceVoxelGIData *>(B->base_data);
+	// 	voxel_gi->lights.erase(A);
+	// } else if (B->base_type == RS::INSTANCE_PARTICLES_COLLISION && A->base_type == RS::INSTANCE_PARTICLES) {
+	// 	InstanceParticlesCollisionData *collision = static_cast<InstanceParticlesCollisionData *>(B->base_data);
+	// 	RSG::particles_storage->particles_remove_collision(A->base, collision->instance);
+	// }
+}
+
 /* HALTON SEQUENCE */
 
 #ifndef _3D_DISABLED
@@ -1922,7 +2188,7 @@ void RendererSceneCull::_scene_cull(CullData& cull_data, InstanceCullResult& cul
             // 	cull_data.cull->lock.unlock();
             // 	RSG::particles_storage->particles_set_view_axis(idata.base_rid, -cull_data.cam_transform.basis.get_column(2).normalized(), cull_data.cam_transform.basis.get_column(1).normalized());
             // 	//particles visible? request redraw
-            // 	RenderingServerDefault::redraw_request();
+            // 	RSDefault::redraw_request();
             // }
           }
           if (idata.vis_parent_array_index != -1) {
@@ -1935,6 +2201,7 @@ void RendererSceneCull::_scene_cull(CullData& cull_data, InstanceCullResult& cul
             idata.instance_geometry->set_parent_fade_alpha(fade);
           }
         }
+        // used in traditional forward, unnecessary on clustered
         // if (geometry_instance_pair_mask & (1 << RS::INSTANCE_LIGHT) && (idata.flags & InstanceData::FLAG_GEOM_LIGHTING_DIRTY)) {
         // 		InstanceGeometryData *geom = static_cast<InstanceGeometryData *>(idata.instance->base_data);
         // 		uint32_t idx = 0;

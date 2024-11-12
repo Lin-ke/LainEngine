@@ -6,6 +6,7 @@
 #include "storage/render_scene_buffers_rd.h"
 #include "storage/forward_id.h"
 #include "environment/renderer_sky.h"
+#include "environment/renderer_gi.h"
 namespace lain {
 class RendererSceneRenderRD : public RendererSceneRender {
   static RendererSceneRenderRD* singleton;
@@ -16,6 +17,8 @@ protected:
 	double time_step = 0.0;
 	bool use_physical_light_units = false;
 	RendererRD::SkyRD sky;
+	RendererRD::GI gi;
+	
  public:
   static RendererSceneRenderRD* get_singleton() { return singleton; }
   virtual RendererRD::ForwardIDStorage *create_forward_id_storage() { return memnew(RendererRD::ForwardIDStorage); };
@@ -100,6 +103,9 @@ protected:
 	RendererRD::SkyRD *get_sky() { return &sky; }
 	int get_roughness_layers() const{
 		return sky.roughness_layers;
+	}
+	bool is_using_radiance_cubemap_array(){
+		return sky.sky_use_cubemap_array;
 	}
 
   void set_time(double p_time, double p_frame_step) { time = p_time;

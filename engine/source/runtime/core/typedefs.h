@@ -279,7 +279,9 @@ struct BuildIndexSequence<0, Is...> : IndexSequence<Is...> {};
 #define MAX_RECURSION 100
 
 #ifdef DEBUG_ENABLED
+#ifndef  DEBUG_METHODS_ENABLED
 #define DEBUG_METHODS_ENABLED
+#endif //  DEBUG_METHODS_ENABLED
 #endif
 
 // Macro GD_IS_DEFINED() allows to check if a macro is defined. It needs to be defined to anything (say 1) to work.

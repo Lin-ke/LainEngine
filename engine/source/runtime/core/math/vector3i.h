@@ -19,6 +19,7 @@ STRUCT(_NO_DISCARD_ Vector3i, Fields) {
 
   REFLECTION_BODY(Vector3i);
   typedef int32_t i32;
+  static const int AXIS_COUNT = 3;
 
  public:
   int32_t x{0};

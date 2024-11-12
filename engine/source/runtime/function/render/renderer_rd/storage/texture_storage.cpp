@@ -1,6 +1,8 @@
 #include "texture_storage.h"
+#include "function/render/rendering_device/rendering_device.h"
 using namespace lain::RendererRD;
 using namespace lain;
+TextureStorage* TextureStorage::singleton = nullptr;
 TextureStorage::TextureStorage() {
   singleton = this;
 }
@@ -1918,3 +1920,42 @@ RID lain::RendererRD::TextureStorage::render_target_get_rd_texture(RID p_render_
 		return rt->color;
 	}
 }
+
+void lain::RendererRD::TextureStorage::render_target_request_clear(RID p_render_target, const Color& p_clear_color) {
+  RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
+	ERR_FAIL_NULL(rt);
+	rt->clear_requested = true;
+	rt->clear_color = p_clear_color;
+}
+
+bool lain::RendererRD::TextureStorage::render_target_is_clear_requested(RID p_render_target) {
+  RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
+	ERR_FAIL_NULL_V(rt, false);
+  return rt->clear_requested;
+}
+
+Color lain::RendererRD::TextureStorage::render_target_get_clear_request_color(RID p_render_target)
+{
+  RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
+	ERR_FAIL_NULL_V(rt,Color());
+  return rt->clear_color;
+}
+void TextureStorage::render_target_disable_clear_request(RID p_render_target) {
+	RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
+	ERR_FAIL_NULL(rt);
+	rt->clear_requested = false;
+}
+void TextureStorage::render_target_do_clear_request(RID p_render_target) {
+	RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
+	ERR_FAIL_NULL(rt);
+	if (!rt->clear_requested) {
+		return;
+	}
+	Vector<Color> clear_colors;
+	clear_colors.push_back(rt->use_hdr ? rt->clear_color.srgb_to_linear() : rt->clear_color); // 注意：如果使用hdr，需要转换到线性空间，为什么？ @?
+	RD::get_singleton()->draw_list_begin(rt->get_framebuffer(), RD::ColorInitialAction(), RD::ColorFinalAction(), RD::INITIAL_ACTION_LOAD, RD::FINAL_ACTION_DISCARD, clear_colors);
+	RD::get_singleton()->draw_list_end();
+	rt->clear_requested = false;
+	rt->msaa_needs_resolve = false;
+}
+

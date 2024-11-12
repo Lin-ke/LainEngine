@@ -184,7 +184,7 @@ class LightStorage : public RendererLightStorage {
 
   struct ShadowCubemap {
     RID cubemap; // 指向对应的那个纹理
-    RID side_fb[6];
+    RID side_fb[6]; // slice
   };
   HashMap<int, ShadowCubemap> shadow_cubemaps; // size 到 cubemap的映射
  

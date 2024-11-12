@@ -4,6 +4,8 @@
 #include "storage/mesh_storage.h"
 #include "render_forward_clustered.h"
 using namespace lain;
+RendererCompositorRD* RendererCompositorRD::singleton = nullptr;
+uint64_t RendererCompositorRD::frame = 1;
 void RendererCompositorRD::initialize() {
 //   // Initialize blit
 //   Vector<String> blit_modes;

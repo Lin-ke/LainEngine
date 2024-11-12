@@ -194,6 +194,7 @@
 #include  "C:/LainEngine/engine/source/runtime/function/render/rendering_device/rendering_graph.h"
 #include  "C:/LainEngine/engine/source/runtime/function/render/rendering_device/texture.h"
 #include  "C:/LainEngine/engine/source/runtime/function/render/rendering_system/camera_attributes_storage.h"
+#include  "C:/LainEngine/engine/source/runtime/function/render/rendering_system/compositor_storage.h"
 #include  "C:/LainEngine/engine/source/runtime/function/render/rendering_system/environment_storage.h"
 #include  "C:/LainEngine/engine/source/runtime/function/render/rendering_system/light_storage_api.h"
 #include  "C:/LainEngine/engine/source/runtime/function/render/rendering_system/material_storage_api.h"

@@ -63,6 +63,8 @@ class RendererViewport {
 
 		int last_pass = -1; // 记录此pass时是否visible （当=draw_viewports_pass意味着此vp可见）
 		float mesh_lod_threshold = 1.0;
+		RS::ViewportDebugDraw debug_draw = RS::VIEWPORT_DEBUG_DRAW_DISABLED; // debug draw
+
     // statistics
 		bool measure_render_time = true;
     uint64_t time_cpu_begin = 0;
@@ -76,6 +78,7 @@ class RendererViewport {
   Vector<Viewport*> active_viewports;
   Vector<Viewport*> sorted_active_viewports;
 	bool sorted_active_viewports_dirty = false; // true则需要重新排序
+	int num_viewports_with_motion_vectors = 0;
 
 
   HashMap<String, RID> timestamp_vp_map;  // 时间戳到viewport的映射 (为什么不是相反的)
@@ -194,6 +197,7 @@ class RendererViewport {
   void _configure_3d_render_buffers(Viewport* p_viewport);
 	void _draw_viewport(Viewport *p_viewport);
   void _draw_3d(Viewport* p_viewport);
+  bool _viewport_requires_motion_vectors(Viewport* p_viewport);
 	int occlusion_rays_per_thread = 512;
 
 };

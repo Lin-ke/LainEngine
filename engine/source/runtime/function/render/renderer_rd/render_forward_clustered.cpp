@@ -1,8 +1,8 @@
 #include "render_forward_clustered.h"
 
-
-
-lain::RendererSceneRenderImplementation::RenderForwardClustered::RenderForwardClustered() {
+using namespace lain::RendererSceneRenderImplementation;
+RenderForwardClustered* RenderForwardClustered::singleton = nullptr;
+RenderForwardClustered::RenderForwardClustered() {
 	singleton = this;
 
 

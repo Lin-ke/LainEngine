@@ -12,6 +12,7 @@ class MaterialStorage : public RendererMaterialStorage {
   static MaterialStorage* p_singleton;
 
  public:
+	static MaterialStorage* get_singleton() { return p_singleton; }
   enum ShaderType { SHADER_TYPE_2D, SHADER_TYPE_3D, SHADER_TYPE_PARTICLES, SHADER_TYPE_SKY, SHADER_TYPE_FOG, SHADER_TYPE_MAX };
   MaterialStorage();
   ~MaterialStorage() override;
@@ -19,7 +20,7 @@ class MaterialStorage : public RendererMaterialStorage {
   // 这里很复杂，@？ 如何与shader的反射相结合
   struct ShaderData {
     String path;
-    HashMap<StringName, shader::ShaderLanguage::ShaderNode::Uniform> uniforms;
+    HashMap<StringName, shader::ShaderLanguage::ShaderNode::Uniform> uniforms; // 这些在setcode 的时候编译好
     HashMap<StringName, HashMap<int, RID>> default_texture_params;
 
     virtual void set_path_hint(const String& p_hint);
@@ -52,7 +53,6 @@ class MaterialStorage : public RendererMaterialStorage {
   
 	struct MaterialData {
 		Vector<RendererRD::TextureStorage::RenderTarget *> render_target_cache;
-    // 我觉得这里没有想到多shader语言的问题，应该提供接口
 		void update_uniform_buffer(const HashMap<StringName, shader::ShaderLanguage::ShaderNode::Uniform> &p_uniforms, const uint32_t *p_uniform_offsets, const HashMap<StringName, Variant> &p_parameters, uint8_t *p_buffer, uint32_t p_buffer_size, bool p_use_linear_color);
 		void update_textures(const HashMap<StringName, Variant> &p_parameters, const HashMap<StringName, HashMap<int, RID>> &p_default_textures, const Vector<shader::ShaderCompiler::GeneratedCode::Texture> &p_texture_uniforms, RID *p_textures, bool p_use_linear_color, bool p_3d_material);
 		void set_as_used();
@@ -102,7 +102,7 @@ class MaterialStorage : public RendererMaterialStorage {
 		Material() :
 				update_element(this) {}
 	};
-
+	mutable RID_Owner<Material, true> material_owner;
   	struct Samplers {
 		RID rids[RS::CANVAS_ITEM_TEXTURE_FILTER_MAX][RS::CANVAS_ITEM_TEXTURE_REPEAT_MAX];
 		float mipmap_bias = 0.0f;
@@ -117,7 +117,69 @@ class MaterialStorage : public RendererMaterialStorage {
 		bool is_valid() const;
 		bool is_null() const;
 	};
+	/* GLOBAL SHADER UNIFORM API */
 
+	struct GlobalShaderUniforms {
+		enum {
+			BUFFER_DIRTY_REGION_SIZE = 1024
+		};
+		struct Variable {
+			HashSet<RID> texture_materials; // materials using this
+
+			RS::GlobalShaderParameterType type;
+			Variant value;
+			Variant override;
+			int32_t buffer_index; //for vectors
+			int32_t buffer_elements; //for vectors
+		};
+
+		HashMap<StringName, Variable> variables;
+
+		struct Value {
+			float x;
+			float y;
+			float z;
+			float w;
+		};
+
+		struct ValueInt {
+			int32_t x;
+			int32_t y;
+			int32_t z;
+			int32_t w;
+		};
+
+		struct ValueUInt {
+			uint32_t x;
+			uint32_t y;
+			uint32_t z;
+			uint32_t w;
+		};
+
+		struct ValueUsage {
+			uint32_t elements = 0;
+		};
+
+		List<RID> materials_using_buffer;
+		List<RID> materials_using_texture;
+
+		RID buffer;
+		Value *buffer_values = nullptr;
+		ValueUsage *buffer_usage = nullptr; //  elements记录了有几个
+		bool *buffer_dirty_regions = nullptr;
+		uint32_t buffer_dirty_region_count = 0;
+
+		uint32_t buffer_size;
+
+		bool must_update_texture_materials = false;
+		bool must_update_buffer_materials = false;
+
+		HashMap<RID, int32_t> instance_buffer_pos;
+	} global_shader_uniforms;
+	// 找到一个可容纳p_elements的buffer
+	int32_t _global_shader_uniform_allocate(uint32_t p_elements);
+	void _global_shader_uniform_store_in_buffer(int32_t p_index, RS::GlobalShaderParameterType p_type, const Variant &p_value);
+	void _global_shader_uniform_mark_buffer_dirty(int32_t p_index, int32_t p_elements);
  public:
   /* GLOBAL SHADER UNIFORM API */
   // 为所有的着色器设置全局参数 @todo

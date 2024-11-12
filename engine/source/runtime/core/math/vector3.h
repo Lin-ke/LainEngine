@@ -18,6 +18,7 @@ struct _NO_DISCARD_ Vector3 {
   real_t x;
   real_t y;
   real_t z;
+  static const int AXIS_COUNT = 3;
 
   real_t distance_squared_to(const Vector3& p_to) const { return (p_to - *this).length_squared(); }
 

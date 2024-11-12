@@ -2,6 +2,8 @@
 #define RENDERER_SCENE_RENDER_H
 #include "core/templates/paged_array.h"
 #include "function/render/rendering_system/environment_storage.h"
+#include "function/render/rendering_system/compositor_storage.h"
+
 #include "function/render/scene/render_scene_buffers_api.h"
 #include "renderer_geometry_instance_api.h"
 #include "function/render/rendering_system/rendering_method_api.h"
@@ -13,9 +15,10 @@ class RendererSceneRender {
   // 3. GeometryInstance 的创建和释放
   // 4. SDFGI的更新相关
   // 5. COMPOSITOR 的管理
+  // 依赖注入
  private:
   RendererEnvironmentStorage environment_storage;
-  // RendererCompositorStorage compositor_storage;
+  RendererCompositorStorage compositor_storage; 
 
  public:
  

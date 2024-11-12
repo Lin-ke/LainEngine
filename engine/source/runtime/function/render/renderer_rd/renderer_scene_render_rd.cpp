@@ -199,7 +199,7 @@ void lain::RendererSceneRenderRD::init() {
   { // shader init
   /* SKY SHADER */
 	sky.init();
-  // gi.init();
+  gi.init();
   // set max decals
   // fog.init() 
 

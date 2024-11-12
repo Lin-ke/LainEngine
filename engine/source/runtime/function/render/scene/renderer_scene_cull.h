@@ -352,6 +352,18 @@ class RendererSceneCull : public RenderingMethod {
   /* INSTANCING API */
   /* INSTANCING API */
   /* INSTANCING API */
+  struct Instance;
+	struct InstancePair {
+		Instance *a = nullptr;
+		Instance *b = nullptr;
+		SelfList<InstancePair> list_a;
+		SelfList<InstancePair> list_b;
+		InstancePair() :
+				list_a(this), list_b(this) {}
+	};
+	PagedAllocator<InstancePair> pair_allocator;
+
+
   struct InstanceBaseData;
   struct Instance {
     RS::InstanceType base_type = RS::INSTANCE_NONE;
@@ -387,7 +399,7 @@ class RendererSceneCull : public RenderingMethod {
     };
 
     RID self;  // 标识自己的RID
-    DynamicBVH::ID indexer_id;
+    DynamicBVH::ID indexer_id; // BVH
     Scenario* scenario;                // 属于的场景
     SelfList<Instance> scenario_item;  // 将这个add到场景的instances SelfList中
     bool update_aabb = false;
@@ -395,6 +407,8 @@ class RendererSceneCull : public RenderingMethod {
     SelfList<Instance> update_item;  // 被初始化成this，用于将自己插入到 update_list中
 
     ObjectID object_id;
+		SelfList<InstancePair>::List pairs; // 记录与其他instance的pair， 例如 light->geometry和geometry->light
+    // 需要在unpair的时候从这些list中删除， 此外还要再BVH中删除
 
     HashMap<StringName, InstanceShaderParameter> instance_shader_uniforms;
     bool instance_allocated_shader_uniforms = false;
@@ -402,7 +416,7 @@ class RendererSceneCull : public RenderingMethod {
 
     // visibility
     int32_t visibility_index = -1;  // 在visibility array中的index
-    int32_t array_index = -1;       // 在场景instance_data 的index
+    int32_t array_index = -1;       // 在场景(scene)instance_data, instance_aabb 的index
     bool visible;
     Instance* visibility_parent = nullptr;
     HashSet<Instance*> visibility_dependencies;  // 依赖它的
@@ -415,6 +429,7 @@ class RendererSceneCull : public RenderingMethod {
 
     // @todo DAG能否抽象一个模板类
     // 提供一个 DAG<Instance>::Node, 有root, 还有depth
+
 
     // sort
     float sorting_offset = 0.0;
@@ -449,6 +464,8 @@ class RendererSceneCull : public RenderingMethod {
   struct InstanceGeometryData : public InstanceBaseData {
     RenderGeometryInstance* geometry_instance = nullptr; 
     bool can_cast_shadows = false;
+    		uint32_t projector_count = 0;
+		uint32_t softshadow_count = 0;
     HashSet<Instance*> lights;  // 照射该instance的灯光
     bool material_is_animated = false;
   };
@@ -456,6 +473,10 @@ class RendererSceneCull : public RenderingMethod {
   struct InstanceLightData : public InstanceBaseData {
 
     RID instance;
+		HashSet<Instance *> geometries; // 光所照射的geometry
+    		bool uses_projector = false;
+		bool uses_softshadow = false;
+
     // Instead of a single dirty flag, we maintain a count
     // so that we can detect lights that are being made dirty
     // each frame, and switch on tighter caster culling.
@@ -648,7 +669,7 @@ class RendererSceneCull : public RenderingMethod {
 	void _scene_cull(CullData &cull_data, InstanceCullResult &cull_result, uint64_t p_from, uint64_t p_to);
   bool _visibility_parent_check(const CullData &p_cull_data, const InstanceData &p_instance_data);
 	bool _light_instance_update_shadow(Instance *p_instance, const Transform3D p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, bool p_cam_vaspect, RID p_shadow_atlas, Scenario *p_scenario, float p_scren_mesh_lod_threshold, uint32_t p_visible_layers = 0xFFFFFF);
-
+  void _instance_unpair(Instance* , Instance*);
 };
 }  // namespace lain
 #endif

@@ -70,6 +70,22 @@ RS::EnvironmentReflectionSource RendererSceneRender::environment_get_reflection_
 	return environment_storage.environment_get_reflection_source(p_env);
 }
 
+RID lain::RendererSceneRender::compositor_allocate() {
+	return compositor_storage.compositor_allocate();
+
+}
+
+void lain::RendererSceneRender::compositor_initialize(RID p_rid) {
+  compositor_storage.compositor_initialize(p_rid);
+}
+
+void lain::RendererSceneRender::compositor_free(RID p_rid) {
+  compositor_storage.compositor_free(p_rid);
+}
+
+bool lain::RendererSceneRender::is_compositor(RID p_compositor) const {
+  return compositor_storage.is_compositor(p_compositor);
+}
 
 void lain::RendererSceneRender::CameraData::set_camera(const Transform3D p_transform, const Projection p_projection, bool p_is_orthogonal, bool p_vaspect,
                                                        const Vector2& p_taa_jitter, uint32_t p_visible_layers) {

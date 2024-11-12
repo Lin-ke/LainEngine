@@ -6,7 +6,7 @@ namespace lain{
 class RenderingMethod {
   public:
 	
-	struct RenderInfo {
+	struct RenderInfo { //@?
 		int info[RS::VIEWPORT_RENDER_INFO_TYPE_MAX][RS::VIEWPORT_RENDER_INFO_MAX] = {};
 	};
 

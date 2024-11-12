@@ -15,6 +15,8 @@ STRUCT(_NO_DISCARD_ Vector2, Fields) {
     AXIS_X,
     AXIS_Y,
   };
+  static const int AXIS_COUNT = 2;
+
 
  public:
   real_t x{0.f}, y{0.f};

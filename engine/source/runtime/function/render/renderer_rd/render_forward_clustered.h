@@ -441,12 +441,12 @@ namespace lain::RendererSceneRenderImplementation{
 		virtual void set_use_lightmap(RID p_lightmap_instance, const Rect2 &p_lightmap_uv_scale, int p_lightmap_slice_index) override;
 		virtual void set_lightmap_capture(const Color *p_sh9) override;
 
-		// virtual void pair_light_instances(const RID *p_light_instances, uint32_t p_light_instance_count) override {}
-		// virtual void pair_reflection_probe_instances(const RID *p_reflection_probe_instances, uint32_t p_reflection_probe_instance_count) override {}
-		// virtual void pair_decal_instances(const RID *p_decal_instances, uint32_t p_decal_instance_count) override {}
-		// virtual void pair_voxel_gi_instances(const RID *p_voxel_gi_instances, uint32_t p_voxel_gi_instance_count) override;
+		virtual void pair_light_instances(const RID *p_light_instances, uint32_t p_light_instance_count) override {}
+		virtual void pair_reflection_probe_instances(const RID *p_reflection_probe_instances, uint32_t p_reflection_probe_instance_count) override {}
+		virtual void pair_decal_instances(const RID *p_decal_instances, uint32_t p_decal_instance_count) override {}
+		virtual void pair_voxel_gi_instances(const RID *p_voxel_gi_instances, uint32_t p_voxel_gi_instance_count) override;
 
-		// virtual void set_softshadow_projector_pairing(bool p_softshadow, bool p_projector) override;
+		virtual void set_softshadow_projector_pairing(bool p_softshadow, bool p_projector) override;
 	};
 
 	static void _geometry_instance_dependency_changed(Dependency::DependencyChangedNotification p_notification, DependencyTracker *p_tracker);
