@@ -101,3 +101,34 @@ void lain::RendererSceneRender::CameraData::set_camera(const Transform3D p_trans
   view_projection[0] = p_projection;
   taa_jitter = p_taa_jitter;
 }
+
+
+/* Compositor effect API */
+
+RID RendererSceneRender::compositor_effect_allocate() {
+	return compositor_storage.compositor_effect_allocate();
+}
+
+void RendererSceneRender::compositor_effect_initialize(RID p_rid) {
+	compositor_storage.compositor_effect_initialize(p_rid);
+}
+
+void RendererSceneRender::compositor_effect_free(RID p_rid) {
+	compositor_storage.compositor_effect_free(p_rid);
+}
+
+bool RendererSceneRender::is_compositor_effect(RID p_effect) const {
+	return compositor_storage.is_compositor_effect(p_effect);
+}
+
+void RendererSceneRender::compositor_effect_set_enabled(RID p_effect, bool p_enabled) {
+	compositor_storage.compositor_effect_set_enabled(p_effect, p_enabled);
+}
+
+void RendererSceneRender::compositor_effect_set_callback(RID p_effect, RS::CompositorEffectCallbackType p_callback_type, const Callable &p_callback) {
+	compositor_storage.compositor_effect_set_callback(p_effect, p_callback_type, p_callback);
+}
+
+void RendererSceneRender::compositor_effect_set_flag(RID p_effect, RS::CompositorEffectFlags p_flag, bool p_set) {
+	compositor_storage.compositor_effect_set_flag(p_effect, p_flag, p_set);
+}

@@ -1,6 +1,7 @@
 #ifndef RENDERER_FOG_RD_H
 #define RENDERER_FOG_RD_H
 #include "function/render/rendering_system/renderer_fog_api.h"
+#define RB_SCOPE_FOG SNAME("Fog")
 
 namespace lain::RendererRD{
   class Fog : public RendererFog {

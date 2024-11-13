@@ -212,3 +212,52 @@ void lain::RendererSceneRenderRD::init() {
 	use_physical_light_units = GLOBAL_GET("rendering/lights_and_shadows/use_physical_light_units");
 	
 }
+
+bool RendererSceneRenderRD::free(RID p_rid) {
+	if (is_environment(p_rid)) {
+		environment_free(p_rid);
+	} else if (is_compositor(p_rid)) {
+		compositor_free(p_rid);
+	} else if (is_compositor_effect(p_rid)) {
+		compositor_effect_free(p_rid);
+	} else if (RSG::camera_attributes->owns_camera_attributes(p_rid)) {
+		RSG::camera_attributes->camera_attributes_free(p_rid);
+	} 
+  // else if (gi.voxel_gi_instance_owns(p_rid)) {
+		// gi.voxel_gi_instance_free(p_rid);
+	// } 
+  // else if (sky.sky_owner.owns(p_rid)) {
+	// 	sky.update_dirty_skys();
+	// 	sky.free_sky(p_rid);
+	// } else if (RendererRD::Fog::get_singleton()->owns_fog_volume_instance(p_rid)) {
+	// 	RendererRD::Fog::get_singleton()->fog_instance_free(p_rid);
+	// } 
+  else {
+		return false;
+	}
+
+	return true;
+}
+
+bool RendererSceneRenderRD::_compositor_effects_has_flag(const RenderDataRD *p_render_data, RS::CompositorEffectFlags p_flag, RS::CompositorEffectCallbackType p_callback_type) {
+	RendererCompositorStorage *comp_storage = RendererCompositorStorage::get_singleton();
+
+	if (p_render_data->compositor.is_null()) {
+		return false;
+	}
+
+	if (p_render_data->reflection_probe.is_valid()) {
+		return false;
+	}
+
+	ERR_FAIL_COND_V(!comp_storage->is_compositor(p_render_data->compositor), false);
+	Vector<RID> re_rids = comp_storage->compositor_get_compositor_effects(p_render_data->compositor, p_callback_type, true);
+
+	for (RID rid : re_rids) {
+		if (comp_storage->compositor_effect_get_flag(rid, p_flag)) {
+			return true;
+		}
+	}
+
+	return false;
+}

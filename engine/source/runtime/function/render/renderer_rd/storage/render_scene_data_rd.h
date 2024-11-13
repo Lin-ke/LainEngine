@@ -8,7 +8,8 @@ namespace lain {
 class RenderSceneDataRD : public RenderSceneData {
   LCLASS(RenderSceneDataRD, RenderSceneData);
 	RID uniform_buffer; // loaded into this uniform buffer (supplied externally)
-  
+  // 都会用的ubo
+  // scene_data.glsl
 	// This struct is loaded into Set 1 - Binding 0, populated at start of rendering a frame, must match with shader code
   struct UBO {
     float projection_matrix[16];

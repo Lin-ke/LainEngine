@@ -12,6 +12,8 @@
 #include "function/display/window_system.h"
 #include "function/render/rendering_system/rendering_system_default.h"
 #include "module/register_module_types.h"
+
+#include "timer_sync.h"
 //  initialization part
 namespace lain {
 
@@ -29,7 +31,10 @@ String rendering_method = ForwardRenderingMethodName;
 // Main loop vairables
 uint64_t Main::last_ticks = 0;
 uint32_t Main::frames = 0;
+uint32_t Main::frame = 0;
+
 int Main::iterating = 0;
+
 // --- main window
 static WindowSystem::WindowMode window_mode = WindowSystem::WINDOW_MODE_WINDOWED;
 static WindowSystem::VSyncMode window_vsync_mode = WindowSystem::VSYNC_ENABLED;
@@ -43,6 +48,10 @@ static bool init_always_on_top = false;
 static bool init_use_custom_pos = false;
 static bool init_use_custom_screen = false;
 static Vector2 init_custom_pos;
+
+
+// everything the main loop needs to know about frame timings
+static MainTimerSync main_timer_sync;
 
 /// <summary>
 /// Main initialization.
@@ -179,18 +188,39 @@ Error Main::Initialize(int argc, char* argv[]) {
 /// <returns></returns>
 ///
 bool Main::Loop() {
-  // gettime
-  ui64 time = OS::GetSingleton()->GetTimeUsec();
-  // update engine
-  ui64 delta_time_usec = time - last_ticks;
-  last_ticks = time;
-  // start time
-  Engine::GetSingleton()->set_frame_ticks(time);
+	iterating++;
+  // get-set time and last ticks
+  ui64 ticks = OS::GetSingleton()->GetTimeUsec();
+  Engine::GetSingleton()->set_frame_ticks(ticks);
+	const uint64_t ticks_elapsed = ticks - last_ticks;
+  last_ticks = ticks;
+  frame += ticks_elapsed;
 
-  // do all the ticks
+  // update engine
+	const double time_scale = Engine::GetSingleton()->get_time_scale();
+  const int physics_ticks_per_second = Engine::GetSingleton()->get_physics_ticks_per_second();
+	const double physics_step = 1.0 / physics_ticks_per_second;
+  // 记录时间
+  uint64_t physics_process_ticks = 0;
+	uint64_t process_ticks = 0;
+	uint64_t navigation_process_ticks = 0;
+
+  MainFrameTime advance = main_timer_sync.advance(physics_step, physics_ticks_per_second);
+	double process_step = advance.process_step;
+	double scaled_step = process_step * time_scale;
+
+  ui64 delta_time_usec = ticks - last_ticks;
+	uint64_t process_begin = OS::GetSingleton()->GetTicksUsec();
+ 	RS::get_singleton()->sync(); //sync if still drawing from previous frames.
+
   if (window_system->CanAnyWindowDraw() && render_system->is_render_loop_enabled()) {
-    // rendering
+				RenderingSystem::get_singleton()->draw(true, scaled_step); // flush visual commands
+				Engine::GetSingleton()->increment_frames_drawn();
   }
+	process_ticks = OS::GetSingleton()->GetTicksUsec() - process_begin;
+  uint64_t frame_time =  OS::GetSingleton()->GetTicksUsec() - ticks;
+
+	frames++;
 
   // sever's sending message
   // render server sending to windows

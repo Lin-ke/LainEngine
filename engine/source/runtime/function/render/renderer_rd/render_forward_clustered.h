@@ -8,6 +8,15 @@
 #include "storage/render_data_rd.h"
 #include "renderer_scene_render_rd.h"
 #include "function/render/renderer_rd/shaders/best_fit_normal.glsl.gen.h"
+#include "function/render/renderer_rd/renderer_scene_render_rd.h"
+#define RB_SCOPE_FORWARD_CLUSTERED SNAME("forward_clustered")
+
+#define RB_TEX_SPECULAR SNAME("specular")
+#define RB_TEX_SPECULAR_MSAA SNAME("specular_msaa")
+#define RB_TEX_NORMAL_ROUGHNESS SNAME("normal_roughness")
+#define RB_TEX_NORMAL_ROUGHNESS_MSAA SNAME("normal_roughness_msaa")
+#define RB_TEX_VOXEL_GI SNAME("voxel_gi")
+#define RB_TEX_VOXEL_GI_MSAA SNAME("voxel_gi_msaa")
 namespace lain::RendererSceneRenderImplementation{
 	// _render_scene
   class RenderForwardClustered : public RendererSceneRenderRD {
@@ -52,64 +61,16 @@ namespace lain::RendererSceneRenderImplementation{
 
 	/* Framebuffer */
 
-	// class RenderBufferDataForwardClustered : public RenderBufferCustomDataRD {
-	// 	LCLASS(RenderBufferDataForwardClustered, RenderBufferCustomDataRD)
+	class RenderBufferDataForwardClustered : public RenderBufferCustomDataRD {
+		LCLASS(RenderBufferDataForwardClustered, RenderBufferCustomDataRD)
+		RenderSceneBuffersRD *render_buffers = nullptr;
+		virtual void configure(RenderSceneBuffersRD *p_render_buffers) override;
+		virtual void free_data() override;
+		RID get_normal_roughness() const { 
+			return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS); 
+		 }
+	};
 
-	// private:
-	// 	RenderSceneBuffersRD *render_buffers = nullptr;
-	// 	RendererRD::FSR2Context *fsr2_context = nullptr;
-
-	// public:
-	// 	ClusterBuilderRD *cluster_builder = nullptr;
-
-	// 	struct SSEffectsData {
-	// 		Projection last_frame_projections[RendererSceneRender::MAX_RENDER_VIEWS];
-	// 		Transform3D last_frame_transform;
-
-	// 		RendererRD::SSEffects::SSILRenderBuffers ssil;
-	// 		RendererRD::SSEffects::SSAORenderBuffers ssao;
-	// 		RendererRD::SSEffects::SSRRenderBuffers ssr;
-	// 	} ss_effects_data;
-
-	// 	enum DepthFrameBufferType {
-	// 		DEPTH_FB,
-	// 		DEPTH_FB_ROUGHNESS,
-	// 		DEPTH_FB_ROUGHNESS_VOXELGI
-	// 	};
-
-	// 	RID render_sdfgi_uniform_set;
-
-	// 	void ensure_specular();
-	// 	bool has_specular() const { return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR); }
-	// 	RID get_specular() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR); }
-	// 	RID get_specular(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR, p_layer, 0); }
-	// 	RID get_specular_msaa(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR_MSAA, p_layer, 0); }
-
-	// 	void ensure_normal_roughness_texture();
-	// 	bool has_normal_roughness() const { return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS); }
-	// 	RID get_normal_roughness() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS); }
-	// 	RID get_normal_roughness(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS, p_layer, 0); }
-	// 	RID get_normal_roughness_msaa() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS_MSAA); }
-	// 	RID get_normal_roughness_msaa(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS_MSAA, p_layer, 0); }
-
-	// 	void ensure_voxelgi();
-	// 	bool has_voxelgi() const { return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI); }
-	// 	RID get_voxelgi() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI); }
-	// 	RID get_voxelgi(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI, p_layer, 0); }
-	// 	RID get_voxelgi_msaa(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI_MSAA, p_layer, 0); }
-
-	// 	void ensure_fsr2(RendererRD::FSR2Effect *p_effect);
-	// 	RendererRD::FSR2Context *get_fsr2_context() const { return fsr2_context; }
-
-	// 	RID get_color_only_fb();
-	// 	RID get_color_pass_fb(uint32_t p_color_pass_flags);
-	// 	RID get_depth_fb(DepthFrameBufferType p_type = DEPTH_FB);
-	// 	RID get_specular_only_fb();
-	// 	RID get_velocity_only_fb();
-
-	// 	virtual void configure(RenderSceneBuffersRD *p_render_buffers) override;
-	// 	virtual void free_data() override;
-	// };
 
 	virtual void setup_render_buffer_data(Ref<RenderSceneBuffersRD> p_render_buffers) override;
 
@@ -571,22 +532,22 @@ protected:
 	virtual RID _render_buffers_get_normal_texture(Ref<RenderSceneBuffersRD> p_render_buffers) override;
 	virtual RID _render_buffers_get_velocity_texture(Ref<RenderSceneBuffersRD> p_render_buffers) override;
 
-	virtual void environment_set_ssao_quality(RS::EnvironmentSSAOQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) override;
-	virtual void environment_set_ssil_quality(RS::EnvironmentSSILQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) override;
-	virtual void environment_set_ssr_roughness_quality(RS::EnvironmentSSRRoughnessQuality p_quality) override;
+	// virtual void environment_set_ssao_quality(RS::EnvironmentSSAOQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) override;
+	// virtual void environment_set_ssil_quality(RS::EnvironmentSSILQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) override;
+	// virtual void environment_set_ssr_roughness_quality(RS::EnvironmentSSRRoughnessQuality p_quality) override;
 
-	virtual void sub_surface_scattering_set_quality(RS::SubSurfaceScatteringQuality p_quality) override;
-	virtual void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) override;
+	// virtual void sub_surface_scattering_set_quality(RS::SubSurfaceScatteringQuality p_quality) override;
+	// virtual void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) override;
 
 	/* Rendering */
 
 	virtual void _render_scene(RenderDataRD *p_render_data, const Color &p_default_bg_color) override;
 	// virtual void _render_buffers_debug_draw(const RenderDataRD *p_render_data) override;
 
-	virtual void _render_material(const Transform3D &p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region, float p_exposure_normalization) override;
-	virtual void _render_uv2(const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region) override;
-	virtual void _render_sdfgi(Ref<RenderSceneBuffersRD> p_render_buffers, const Vector3i &p_from, const Vector3i &p_size, const AABB &p_bounds, const PagedArray<RenderGeometryInstance *> &p_instances, const RID &p_albedo_texture, const RID &p_emission_texture, const RID &p_emission_aniso_texture, const RID &p_geom_facing_texture, float p_exposure_normalization) override;
-	virtual void _render_particle_collider_heightfield(RID p_fb, const Transform3D &p_cam_transform, const Projection &p_cam_projection, const PagedArray<RenderGeometryInstance *> &p_instances) override;
+	// virtual void _render_material(const Transform3D &p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region, float p_exposure_normalization) override;
+	// virtual void _render_uv2(const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region) override;
+	// virtual void _render_sdfgi(Ref<RenderSceneBuffersRD> p_render_buffers, const Vector3i &p_from, const Vector3i &p_size, const AABB &p_bounds, const PagedArray<RenderGeometryInstance *> &p_instances, const RID &p_albedo_texture, const RID &p_emission_texture, const RID &p_emission_aniso_texture, const RID &p_geom_facing_texture, float p_exposure_normalization) override;
+	// virtual void _render_particle_collider_heightfield(RID p_fb, const Transform3D &p_cam_transform, const Projection &p_cam_projection, const PagedArray<RenderGeometryInstance *> &p_instances) override;
 
 public:
 	static RenderForwardClustered *get_singleton() { return singleton; }
@@ -599,7 +560,7 @@ public:
 	// virtual void setup_added_light(const RS::LightType p_type, const Transform3D &p_transform, float p_radius, float p_spot_aperture) override;
 	// virtual void setup_added_decal(const Transform3D &p_transform, const Vector3 &p_half_size) override;
 
-	// virtual void base_uniforms_changed() override;
+	virtual void base_uniforms_changed() override;
 
 	// /* SDFGI UPDATE */
 

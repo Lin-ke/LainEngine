@@ -43,23 +43,31 @@ class Engine {
   
   // 这个设置在 RendererCompositor里，但是会导致shader Parser 依赖renderer
   bool m_xr_enabled = false;
+  float m_time_scale = 1.0;
+
+// 与时间和同步相关的参数
+	double physics_jitter_fix = 0.5;
+  int ips = 60;
 
  public:
   ENGINE_GET(get_gpu_index, m_gpu_idx);
   ENGINE_GET(is_validation_layers_enabled, m_use_validation_layers);
   ENGINE_GET(is_abort_on_gpu_errors_enabled, m_abort_on_gpu_errors);
   ENGINE_GET(get_frame_ticks, m_frame_ticks);
+  ENGINE_GET(get_time_scale, m_time_scale);
   ENGINE_GET(is_generate_spirv_debug_info_enabled, m_generate_spirv_debug_info);
   ENGINE_GET(get_frame_fps, m_frame_fps);
   ENGINE_GET(get_fps, m_fps);
+  ENGINE_GET(get_physics_jitter_fix, physics_jitter_fix);
   ENGINE_GET(is_editor_hint, m_editor_hint);
   ENGINE_GET(get_frames_drawn, m_frames_drawn);
   ENGINE_SET(set_editor_hint, bool, m_editor_hint);
   ENGINE_SET(set_frame_ticks, ui64, m_frame_ticks);
   ENGINE_GET(is_xr_enabled, m_xr_enabled);
+  ENGINE_GET(get_physics_ticks_per_second, ips);
   Engine::Engine() { singleton = this; }
   L_INLINE static Engine* Engine::GetSingleton() { return singleton; }
-
+  L_INLINE void increment_frames_drawn() { m_frames_drawn++; }
   bool notify_frame_server_synced() {
     m_frame_server_synced = true;
     return m_server_syncs > SERVER_SYNC_FRAME_COUNT_WARNING;

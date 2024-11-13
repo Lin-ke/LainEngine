@@ -154,9 +154,53 @@ void RenderSceneBuffersRD::free_named_texture(NamedTexture &p_named_texture) {
 	p_named_texture.slices.clear(); // slices should be freed automatically as dependents...
 }
 
-RID RenderSceneBuffersRD::create_texture(const StringName& p_context, const StringName& p_texture_name, const RD::DataFormat p_data_format,
-                                                           const uint32_t p_usage_bits, const RD::TextureSamples p_texture_samples, const Size2i p_size,
-                                                           const uint32_t p_layers, const uint32_t p_mipmaps, bool p_unique) {
+
+void RenderSceneBuffersRD::clear_context(const StringName &p_context) {
+	Vector<NTKey> to_free; // free these
+
+	// Find all entries for our context, we don't want to free them yet or our loop fails.
+	for (KeyValue<NTKey, NamedTexture> &E : named_textures) {
+		if (E.key.context == p_context) {
+			to_free.push_back(E.key);
+		}
+	}
+
+	// Now free these and remove them from our textures
+	for (NTKey &key : to_free) {
+		free_named_texture(named_textures[key]);
+		named_textures.erase(key);
+	}
+}
+
+RID RenderSceneBuffersRD::get_velocity_buffer(bool p_get_msaa) {
+	if (p_get_msaa) {
+		if (!has_texture(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY_MSAA)) {
+			return RID();
+		} else {
+			return get_texture(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY_MSAA);
+		}
+	} else {
+		RendererRD::TextureStorage *texture_storage = RendererRD::TextureStorage::get_singleton();
+		RID velocity = texture_storage->render_target_get_override_velocity(render_target);
+		if (velocity.is_valid()) {
+			return velocity;
+		} else if (!has_texture(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY)) {
+			return RID();
+		} else {
+			return get_texture(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY);
+		}
+	}
+}
+
+bool RenderSceneBuffersRD::has_texture(const StringName &p_context, const StringName &p_texture_name) const {
+	NTKey key(p_context, p_texture_name);
+
+	return named_textures.has(key);
+}
+
+
+RID RenderSceneBuffersRD::create_texture(const StringName& p_context, const StringName& p_texture_name, const RD::DataFormat p_data_format, const uint32_t p_usage_bits,
+                                         const RD::TextureSamples p_texture_samples, const Size2i p_size, const uint32_t p_layers, const uint32_t p_mipmaps, bool p_unique) {
   // Keep some useful data, we use default values when these are 0.
 	Size2i size = p_size == Size2i(0, 0) ? internal_size : p_size;
 	uint32_t layers = p_layers == 0 ? view_count : p_layers;
@@ -180,7 +224,6 @@ RID RenderSceneBuffersRD::create_texture(const StringName& p_context, const Stri
 	return create_texture_from_format(p_context, p_texture_name, tf, RD::TextureView(), p_unique);
 }
 
-
 RID RenderSceneBuffersRD::create_texture_from_format(const StringName &p_context, const StringName &p_texture_name, const RD::TextureFormat &p_texture_format, RD::TextureView p_view, bool p_unique) {
 	// TODO p_unique, if p_unique is true, this is a texture that can be shared. This will be implemented later as an optimization.
 
@@ -197,15 +240,18 @@ RID RenderSceneBuffersRD::create_texture_from_format(const StringName &p_context
 	named_texture.is_unique = p_unique;
 	named_texture.texture = RD::get_singleton()->texture_create(p_texture_format, p_view);
 
-	Array arr;
-	arr.push_back(p_context);
-	arr.push_back(p_texture_name);
   RD::get_singleton()->set_resource_name(named_texture.texture, String("RenderBuffer "+String(p_context)+"/"+String(p_texture_name)));
 	update_sizes(named_texture);
 
 	// The rest is lazy created..
 
 	return named_texture.texture;
+}
+
+RID lain::RenderSceneBuffersRD::get_texture(const StringName& p_context, const StringName& p_texture_name) const {
+	NTKey key(p_context, p_texture_name);
+	ERR_FAIL_COND_V(!named_textures.has(key), RID());
+	return named_textures[key].texture;
 }
 
 void RenderSceneBuffersRD::update_sizes(NamedTexture &p_named_texture) {

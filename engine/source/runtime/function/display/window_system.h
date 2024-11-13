@@ -167,6 +167,7 @@ namespace lain
         int get_keyboard_focus_screen() const;
         int get_primary_screen() const;
         int window_get_current_screen(WindowID) const;
+        VSyncMode window_get_vsync_mode(WindowID p_window) const;
 
     private:
         
@@ -386,6 +387,8 @@ namespace lain
 
         WindowCreateInfo() {}
     };
+
+
 
 } // namespace lain
 

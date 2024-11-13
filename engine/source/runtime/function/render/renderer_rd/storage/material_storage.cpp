@@ -608,15 +608,15 @@ MaterialStorage::Samplers MaterialStorage::samplers_rd_allocate(float p_mipmap_b
   return samplers;
 }
 
-void MaterialStorage::samplers_rd_free(Samplers &p_samplers) const {
-	for (int i = 1; i < RS::CANVAS_ITEM_TEXTURE_FILTER_MAX; i++) {
-		for (int j = 1; j < RS::CANVAS_ITEM_TEXTURE_REPEAT_MAX; j++) {
-			if (p_samplers.rids[i][j].is_valid()) {
-				RD::get_singleton()->free(p_samplers.rids[i][j]);
-				p_samplers.rids[i][j] = RID();
-			}
-		}
-	}
+void MaterialStorage::samplers_rd_free(Samplers& p_samplers) const {
+  for (int i = 1; i < RS::CANVAS_ITEM_TEXTURE_FILTER_MAX; i++) {
+    for (int j = 1; j < RS::CANVAS_ITEM_TEXTURE_REPEAT_MAX; j++) {
+      if (p_samplers.rids[i][j].is_valid()) {
+        RD::get_singleton()->free(p_samplers.rids[i][j]);
+        p_samplers.rids[i][j] = RID();
+      }
+    }
+  }
 }
 
 int32_t lain::RendererRD::MaterialStorage::_global_shader_uniform_allocate(uint32_t p_elements) {
@@ -653,7 +653,6 @@ int32_t lain::RendererRD::MaterialStorage::global_shader_parameters_instance_all
   global_shader_uniforms.buffer_usage[pos].elements = shader::ShaderLanguage::MAX_INSTANCE_UNIFORM_INDICES;
   return pos;
 }
-
 
 void MaterialStorage::global_shader_parameters_instance_free(RID p_instance) {
   ERR_FAIL_COND(!global_shader_uniforms.instance_buffer_pos.has(p_instance));
@@ -773,15 +772,14 @@ void MaterialStorage::get_shader_parameter_list(RID p_shader, List<PropertyInfo>
   }
 }
 
-Variant MaterialStorage::shader_get_parameter_default(RID p_shader, const StringName &p_param) const {
-	Shader *shader = shader_owner.get_or_null(p_shader);
-	ERR_FAIL_NULL_V(shader, Variant());
-	if (shader->data) {
-		return shader->data->get_default_parameter(p_param);
-	}
-	return Variant();
+Variant MaterialStorage::shader_get_parameter_default(RID p_shader, const StringName& p_param) const {
+  Shader* shader = shader_owner.get_or_null(p_shader);
+  ERR_FAIL_NULL_V(shader, Variant());
+  if (shader->data) {
+    return shader->data->get_default_parameter(p_param);
+  }
+  return Variant();
 }
-
 
 void MaterialStorage::shader_set_default_texture_parameter(RID p_shader, const StringName& p_name, RID p_texture, int p_index) {
   Shader* shader = shader_owner.get_or_null(p_shader);
@@ -940,15 +938,147 @@ Variant MaterialStorage::material_get_param(RID p_material, const StringName& p_
 }
 
 bool MaterialStorage::free(RID p_rid) {
-	if (owns_shader(p_rid)) {
-		shader_free(p_rid);
-		return true;
-	} else if (owns_material(p_rid)) {
-		material_free(p_rid);
-		return true;
-	}
+  if (owns_shader(p_rid)) {
+    shader_free(p_rid);
+    return true;
+  } else if (owns_material(p_rid)) {
+    material_free(p_rid);
+    return true;
+  }
 
-	return false;
+  return false;
+}
+MaterialStorage::MaterialData::~MaterialData() {
+  MaterialStorage* material_storage = MaterialStorage::get_singleton();
+
+  if (global_buffer_E) {
+    //unregister global buffers
+    material_storage->global_shader_uniforms.materials_using_buffer.erase(global_buffer_E);
+  }
+
+  if (global_texture_E) {
+    //unregister global textures
+
+    for (const KeyValue<StringName, uint64_t>& E : used_global_textures) {
+      GlobalShaderUniforms::Variable* v = material_storage->global_shader_uniforms.variables.getptr(E.key);
+      if (v) {
+        v->texture_materials.erase(self);
+      }
+    }
+    //unregister material from those using global textures
+    material_storage->global_shader_uniforms.materials_using_texture.erase(global_texture_E);
+  }
+
+  for (int i = 0; i < 2; i++) {
+    if (uniform_buffer[i].is_valid()) {
+      RD::get_singleton()->free(uniform_buffer[i]);
+    }
+  }
+}
+bool lain::RendererRD::MaterialStorage::MaterialData::update_parameters_uniform_set(
+    const HashMap<StringName, Variant>& p_parameters, bool p_uniform_dirty, bool p_textures_dirty,
+    const HashMap<StringName, shader::ShaderLanguage::ShaderNode::Uniform>& p_uniforms, const uint32_t* p_uniform_offsets,
+    const Vector<shader::ShaderCompiler::GeneratedCode::Texture>& p_texture_uniforms, const HashMap<StringName, HashMap<int, RID>>& p_default_texture_params,
+    uint32_t p_ubo_size, RID& r_uniform_set, RID p_shader, uint32_t p_shader_uniform_set, bool p_use_linear_color, bool p_3d_material) {
+  if ((uint32_t)ubo_data[p_use_linear_color].size() != p_ubo_size) {
+    p_uniform_dirty = true;
+    if (uniform_buffer[p_use_linear_color].is_valid()) {
+      RD::get_singleton()->free(uniform_buffer[p_use_linear_color]);
+      uniform_buffer[p_use_linear_color] = RID();
+    }
+
+    ubo_data[p_use_linear_color].resize(p_ubo_size);
+    if (ubo_data[p_use_linear_color].size()) {
+      uniform_buffer[p_use_linear_color] = RD::get_singleton()->uniform_buffer_create(ubo_data[p_use_linear_color].size());
+      memset(ubo_data[p_use_linear_color].ptrw(), 0, ubo_data[p_use_linear_color].size());  //clear
+    }
+
+    //clear previous uniform set
+    if (r_uniform_set.is_valid() && RD::get_singleton()->uniform_set_is_valid(r_uniform_set)) {
+      RD::get_singleton()->uniform_set_set_invalidation_callback(r_uniform_set, nullptr, nullptr);
+      RD::get_singleton()->free(r_uniform_set);
+      r_uniform_set = RID();
+    }
+  }
+
+  //check whether buffer changed
+  if (p_uniform_dirty && ubo_data[p_use_linear_color].size()) {
+    update_uniform_buffer(p_uniforms, p_uniform_offsets, p_parameters, ubo_data[p_use_linear_color].ptrw(), ubo_data[p_use_linear_color].size(), p_use_linear_color);
+    RD::get_singleton()->buffer_update(uniform_buffer[p_use_linear_color], 0, ubo_data[p_use_linear_color].size(), ubo_data[p_use_linear_color].ptrw());
+  }
+
+  uint32_t tex_uniform_count = 0U;
+  for (int i = 0; i < p_texture_uniforms.size(); i++) {
+    tex_uniform_count += uint32_t(p_texture_uniforms[i].array_size > 0 ? p_texture_uniforms[i].array_size : 1);
+  }
+
+  if ((uint32_t)texture_cache.size() != tex_uniform_count || p_textures_dirty) {
+    texture_cache.resize(tex_uniform_count);
+    render_target_cache.clear();
+    p_textures_dirty = true;
+
+    //clear previous uniform set
+    if (r_uniform_set.is_valid() && RD::get_singleton()->uniform_set_is_valid(r_uniform_set)) {
+      RD::get_singleton()->uniform_set_set_invalidation_callback(r_uniform_set, nullptr, nullptr);
+      RD::get_singleton()->free(r_uniform_set);
+      r_uniform_set = RID();
+    }
+  }
+
+  if (p_textures_dirty && tex_uniform_count) {
+    update_textures(p_parameters, p_default_texture_params, p_texture_uniforms, texture_cache.ptrw(), p_use_linear_color, p_3d_material);
+  }
+
+  if (p_ubo_size == 0 && (p_texture_uniforms.size() == 0)) {
+    // This material does not require an uniform set, so don't create it.
+    return false;
+  }
+
+  if (!p_textures_dirty && r_uniform_set.is_valid() && RD::get_singleton()->uniform_set_is_valid(r_uniform_set)) {
+    //no reason to update uniform set, only UBO (or nothing) was needed to update
+    return false;
+  }
+
+  Vector<RD::Uniform> uniforms;
+
+  {
+    if (p_ubo_size) {
+      RD::Uniform u;
+      u.uniform_type = RD::UNIFORM_TYPE_UNIFORM_BUFFER;
+      u.binding = 0;
+      u.append_id(uniform_buffer[p_use_linear_color]);
+      uniforms.push_back(u);
+    }
+
+    const RID* textures = texture_cache.ptrw();
+    for (int i = 0, k = 0; i < p_texture_uniforms.size(); i++) {
+      const int array_size = p_texture_uniforms[i].array_size;
+
+      RD::Uniform u;
+      u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+      u.binding = 1 + k;
+      if (array_size > 0) {
+        for (int j = 0; j < array_size; j++) {
+          u.append_id(textures[k++]);
+        }
+      } else {
+        u.append_id(textures[k++]);
+      }
+      uniforms.push_back(u);
+    }
+  }
+
+  r_uniform_set = RD::get_singleton()->uniform_set_create(uniforms, p_shader, p_shader_uniform_set);
+
+  // RD::get_singleton()->uniform_set_set_invalidation_callback(uniform_set, MaterialStorage::_material_uniform_set_erased, &self);
+
+  return true;
+}
+void MaterialStorage::MaterialData::free_parameters_uniform_set(RID p_uniform_set) {
+  if (p_uniform_set.is_valid() && RD::get_singleton()->uniform_set_is_valid(p_uniform_set)) {
+    RD::get_singleton()->uniform_set_set_invalidation_callback(p_uniform_set, nullptr, nullptr);
+    RD::get_singleton()->free(p_uniform_set);
+  }
 }
 
 void lain::RendererRD::MaterialStorage::shader_set_code(RID p_shader, const String& p_code) {
@@ -1184,10 +1314,9 @@ void MaterialStorage::material_get_instance_shader_parameters(RID p_material, Li
 }
 
 void MaterialStorage::shader_set_data_request_function(ShaderType p_shader_type, ShaderDataRequestFunction p_function) {
-	ERR_FAIL_INDEX(p_shader_type, SHADER_TYPE_MAX);
-	shader_data_request_func[p_shader_type] = p_function;
+  ERR_FAIL_INDEX(p_shader_type, SHADER_TYPE_MAX);
+  shader_data_request_func[p_shader_type] = p_function;
 }
-
 
 //加入队列
 void MaterialStorage::_material_queue_update(Material* material, bool p_uniform, bool p_texture) {
@@ -1322,6 +1451,239 @@ void lain::RendererRD::MaterialStorage::MaterialData::update_uniform_buffer(cons
     } else {
       material_storage->global_shader_uniforms.materials_using_buffer.erase(global_buffer_E);
       global_buffer_E = nullptr;
+    }
+  }
+}
+// @todo read
+void MaterialStorage::MaterialData::update_textures(const HashMap<StringName, Variant>& p_parameters, const HashMap<StringName, HashMap<int, RID>>& p_default_textures,
+                                                    const Vector<shader::ShaderCompiler::GeneratedCode::Texture>& p_texture_uniforms, RID* p_textures, bool p_use_linear_color,
+                                                    bool p_3d_material) {
+  TextureStorage* texture_storage = TextureStorage::get_singleton();
+  MaterialStorage* material_storage = MaterialStorage::get_singleton();
+
+#ifdef TOOLS_ENABLED
+  TextureStorage::Texture* roughness_detect_texture = nullptr;
+  RS::TextureDetectRoughnessChannel roughness_channel = RS::TEXTURE_DETECT_ROUGHNESS_R;
+  TextureStorage::Texture* normal_detect_texture = nullptr;
+#endif
+
+  bool uses_global_textures = false;
+  global_textures_pass++;
+
+  for (int i = 0, k = 0; i < p_texture_uniforms.size(); i++) {
+    const StringName& uniform_name = p_texture_uniforms[i].name;
+    int uniform_array_size = p_texture_uniforms[i].array_size;
+
+    Vector<RID> textures;
+
+    if (p_texture_uniforms[i].hint == shader::ShaderLanguage::ShaderNode::Uniform::HINT_SCREEN_TEXTURE ||
+        p_texture_uniforms[i].hint == shader::ShaderLanguage::ShaderNode::Uniform::HINT_NORMAL_ROUGHNESS_TEXTURE ||
+        p_texture_uniforms[i].hint == shader::ShaderLanguage::ShaderNode::Uniform::HINT_DEPTH_TEXTURE) {
+      continue;
+    }
+
+    if (p_texture_uniforms[i].global) {
+      uses_global_textures = true;
+
+      GlobalShaderUniforms::Variable* v = material_storage->global_shader_uniforms.variables.getptr(uniform_name);
+      if (v) {
+        if (v->buffer_index >= 0) {
+          WARN_PRINT("Shader uses global parameter texture '" + String(uniform_name) + "', but it changed type and is no longer a texture!.");
+
+        } else {
+          HashMap<StringName, uint64_t>::Iterator E = used_global_textures.find(uniform_name);
+          if (!E) {
+            E = used_global_textures.insert(uniform_name, global_textures_pass);
+            v->texture_materials.insert(self);
+          } else {
+            E->value = global_textures_pass;
+          }
+
+          textures.push_back(v->override.get_type() != Variant::NIL ? v->override : v->value);
+        }
+
+      } else {
+        WARN_PRINT("Shader uses global parameter texture '" + String(uniform_name) + "', but it was removed at some point. Material will not display correctly.");
+      }
+    } else {
+      HashMap<StringName, Variant>::ConstIterator V = p_parameters.find(uniform_name);
+      if (V) {
+        if (V->value.is_array()) {
+          Array array = (Array)V->value;
+          if (uniform_array_size > 0) {
+            int size = MIN(uniform_array_size, array.size());
+            for (int j = 0; j < size; j++) {
+              textures.push_back(array[j]);
+            }
+          } else {
+            if (array.size() > 0) {
+              textures.push_back(array[0]);
+            }
+          }
+        } else {
+          textures.push_back(V->value);
+        }
+      }
+
+      if (uniform_array_size > 0) {
+        if (textures.size() < uniform_array_size) {
+          HashMap<StringName, HashMap<int, RID>>::ConstIterator W = p_default_textures.find(uniform_name);
+          for (int j = textures.size(); j < uniform_array_size; j++) {
+            if (W && W->value.has(j)) {
+              textures.push_back(W->value[j]);
+            } else {
+              textures.push_back(RID());
+            }
+          }
+        }
+      } else if (textures.is_empty()) {
+        HashMap<StringName, HashMap<int, RID>>::ConstIterator W = p_default_textures.find(uniform_name);
+        if (W && W->value.has(0)) {
+          textures.push_back(W->value[0]);
+        }
+      }
+    }
+
+    RID rd_texture;
+
+    if (textures.is_empty()) {
+      //check default usage
+      switch (p_texture_uniforms[i].type) {
+        case shader::ShaderLanguage::TYPE_ISAMPLER2D:
+        case shader::ShaderLanguage::TYPE_USAMPLER2D:
+        case shader::ShaderLanguage::TYPE_SAMPLER2D: {
+          switch (p_texture_uniforms[i].hint) {
+            case shader::ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
+              rd_texture = texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_BLACK);
+            } break;
+            case shader::ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_TRANSPARENT: {
+              rd_texture = texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_TRANSPARENT);
+            } break;
+            case shader::ShaderLanguage::ShaderNode::Uniform::HINT_ANISOTROPY: {
+              rd_texture = texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_ANISO);
+            } break;
+            case shader::ShaderLanguage::ShaderNode::Uniform::HINT_NORMAL: {
+              rd_texture = texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_NORMAL);
+            } break;
+            case shader::ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_NORMAL: {
+              rd_texture = texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_NORMAL);
+            } break;
+            default: {
+              rd_texture = texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_WHITE);
+            } break;
+          }
+        } break;
+
+        case shader::ShaderLanguage::TYPE_SAMPLERCUBE: {
+          switch (p_texture_uniforms[i].hint) {
+            case shader::ShaderLanguage::ShaderNode::Uniform::HINT_DEFAULT_BLACK: {
+              rd_texture = texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_CUBEMAP_BLACK);
+            } break;
+            default: {
+              rd_texture = texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_CUBEMAP_WHITE);
+            } break;
+          }
+        } break;
+        case shader::ShaderLanguage::TYPE_SAMPLERCUBEARRAY: {
+          rd_texture = texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_BLACK);
+        } break;
+
+        case shader::ShaderLanguage::TYPE_ISAMPLER3D:
+        case shader::ShaderLanguage::TYPE_USAMPLER3D:
+        case shader::ShaderLanguage::TYPE_SAMPLER3D: {
+          rd_texture = texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_3D_WHITE);
+        } break;
+
+        case shader::ShaderLanguage::TYPE_ISAMPLER2DARRAY:
+        case shader::ShaderLanguage::TYPE_USAMPLER2DARRAY:
+        case shader::ShaderLanguage::TYPE_SAMPLER2DARRAY: {
+          rd_texture = texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE);
+        } break;
+
+        default: {
+        }
+      }
+#ifdef TOOLS_ENABLED
+      if (roughness_detect_texture && normal_detect_texture && !normal_detect_texture->path.is_empty()) {
+        roughness_detect_texture->detect_roughness_callback(roughness_detect_texture->detect_roughness_callback_ud, normal_detect_texture->path, roughness_channel);
+      }
+#endif
+      if (uniform_array_size > 0) {
+        for (int j = 0; j < uniform_array_size; j++) {
+          p_textures[k++] = rd_texture;
+        }
+      } else {
+        p_textures[k++] = rd_texture;
+      }
+    } else {
+      bool srgb = p_use_linear_color && p_texture_uniforms[i].use_color;
+
+      for (int j = 0; j < textures.size(); j++) {
+        TextureStorage::Texture* tex = TextureStorage::get_singleton()->get_texture(textures[j]);
+
+        if (tex) {
+          rd_texture = (srgb && tex->rd_texture_srgb.is_valid()) ? tex->rd_texture_srgb : tex->rd_texture;
+#ifdef TOOLS_ENABLED
+          if (tex->detect_3d_callback && p_3d_material) {
+            tex->detect_3d_callback(tex->detect_3d_callback_ud);
+          }
+          if (tex->detect_normal_callback && (p_texture_uniforms[i].hint == shader::ShaderLanguage::ShaderNode::Uniform::HINT_NORMAL ||
+                                              p_texture_uniforms[i].hint == shader::ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_NORMAL)) {
+            if (p_texture_uniforms[i].hint == shader::ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_NORMAL) {
+              normal_detect_texture = tex;
+            }
+            tex->detect_normal_callback(tex->detect_normal_callback_ud);
+          }
+          if (tex->detect_roughness_callback && (p_texture_uniforms[i].hint >= shader::ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_R ||
+                                                 p_texture_uniforms[i].hint <= shader::ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_GRAY)) {
+            //find the normal texture
+            roughness_detect_texture = tex;
+            roughness_channel = RS::TextureDetectRoughnessChannel(p_texture_uniforms[i].hint - shader::ShaderLanguage::ShaderNode::Uniform::HINT_ROUGHNESS_R);
+          }
+#endif  // TOOLS_ENABLED
+          if (tex->render_target) {
+            tex->render_target->was_used = true;
+            render_target_cache.push_back(tex->render_target);
+          }
+        }
+        if (rd_texture.is_null()) {
+          rd_texture = texture_storage->texture_rd_get_default(TextureStorage::DEFAULT_RD_TEXTURE_WHITE);
+        }
+#ifdef TOOLS_ENABLED
+        if (roughness_detect_texture && normal_detect_texture && !normal_detect_texture->path.is_empty()) {
+          roughness_detect_texture->detect_roughness_callback(roughness_detect_texture->detect_roughness_callback_ud, normal_detect_texture->path, roughness_channel);
+        }
+#endif
+        p_textures[k++] = rd_texture;
+      }
+    }
+  }
+  {
+    //for textures no longer used, unregister them
+    List<StringName> to_delete;
+    for (KeyValue<StringName, uint64_t>& E : used_global_textures) {
+      if (E.value != global_textures_pass) {
+        to_delete.push_back(E.key);
+
+        GlobalShaderUniforms::Variable* v = material_storage->global_shader_uniforms.variables.getptr(E.key);
+        if (v) {
+          v->texture_materials.erase(self);
+        }
+      }
+    }
+
+    while (to_delete.front()) {
+      used_global_textures.erase(to_delete.front()->get());
+      to_delete.pop_front();
+    }
+    //handle registering/unregistering global textures
+    if (uses_global_textures != (global_texture_E != nullptr)) {
+      if (uses_global_textures) {
+        global_texture_E = material_storage->global_shader_uniforms.materials_using_texture.push_back(self);
+      } else {
+        material_storage->global_shader_uniforms.materials_using_texture.erase(global_texture_E);
+        global_texture_E = nullptr;
+      }
     }
   }
 }

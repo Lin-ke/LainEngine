@@ -431,6 +431,7 @@ void ShaderRD::_initialize_cache() {
 	}
 }
 
+// 在具体shader的 init() 中调用
 void ShaderRD::initialize(const Vector<String> &p_variant_defines, const String &p_general_defines) {
 	ERR_FAIL_COND(variant_defines.size());
 	ERR_FAIL_COND(p_variant_defines.is_empty());
@@ -452,6 +453,50 @@ void ShaderRD::initialize(const Vector<String> &p_variant_defines, const String 
 		_initialize_cache();
 	}
 }
+
+
+
+// Same as above, but allows specifying shader compilation groups.
+void ShaderRD::initialize(const Vector<VariantDefine> &p_variant_defines, const String &p_general_defines) {
+	ERR_FAIL_COND(variant_defines.size());
+	ERR_FAIL_COND(p_variant_defines.is_empty());
+
+	general_defines = p_general_defines.utf8();
+
+	int max_group_id = 0;
+
+	for (int i = 0; i < p_variant_defines.size(); i++) {
+		// Fill variant array.
+		variant_defines.push_back(p_variant_defines[i]);
+		variants_enabled.push_back(true);
+
+		// Map variant array index to group id, so we can iterate over groups later.
+		if (!group_to_variant_map.has(p_variant_defines[i].group)) {
+			group_to_variant_map.insert(p_variant_defines[i].group, LocalVector<int>{});
+		}
+		group_to_variant_map[p_variant_defines[i].group].push_back(i);
+
+		// Track max size.
+		if (p_variant_defines[i].group > max_group_id) {
+			max_group_id = p_variant_defines[i].group;
+		}
+	}
+
+	// Set all to groups to false, then enable those that should be default.
+	group_enabled.resize_zeroed(max_group_id + 1);
+	bool *enabled_ptr = group_enabled.ptrw();
+	for (int i = 0; i < p_variant_defines.size(); i++) {
+		if (p_variant_defines[i].default_enabled) {
+			enabled_ptr[p_variant_defines[i].group] = true;
+		}
+	}
+
+	if (!shader_cache_dir.is_empty()) {
+		group_sha256.resize(max_group_id + 1);
+		_initialize_cache();
+	}
+}
+
 
 // version to string to sha1 
 String ShaderRD::_version_get_sha1(Version *p_version) const {
@@ -585,3 +630,115 @@ bool lain::ShaderRD::version_free(RID p_version) {
 	_clear_version(version);
 }
 
+RS::ShaderNativeSourceCode ShaderRD::version_get_native_source_code(RID p_version) {
+	Version *version = version_owner.get_or_null(p_version);
+	RS::ShaderNativeSourceCode source_code;
+	ERR_FAIL_NULL_V(version, source_code);
+
+	source_code.versions.resize(variant_defines.size());
+
+	for (int i = 0; i < source_code.versions.size(); i++) {
+		if (!is_compute) {
+			//vertex stage
+
+			StringBuilder builder;
+			_build_variant_code(builder, i, version, stage_templates[STAGE_TYPE_VERTEX]);
+
+			RS::ShaderNativeSourceCode::Version::Stage stage;
+			stage.name = "vertex";
+			stage.code = builder.as_string();
+
+			source_code.versions.write[i].stages.push_back(stage);
+		}
+
+		if (!is_compute) {
+			//fragment stage
+
+			StringBuilder builder;
+			_build_variant_code(builder, i, version, stage_templates[STAGE_TYPE_FRAGMENT]);
+
+			RS::ShaderNativeSourceCode::Version::Stage stage;
+			stage.name = "fragment";
+			stage.code = builder.as_string();
+
+			source_code.versions.write[i].stages.push_back(stage);
+		}
+
+		if (is_compute) {
+			//compute stage
+
+			StringBuilder builder;
+			_build_variant_code(builder, i, version, stage_templates[STAGE_TYPE_COMPUTE]);
+
+			RS::ShaderNativeSourceCode::Version::Stage stage;
+			stage.name = "compute";
+			stage.code = builder.as_string();
+
+			source_code.versions.write[i].stages.push_back(stage);
+		}
+	}
+
+	return source_code;
+}
+
+bool ShaderRD::is_variant_enabled(int p_variant) const {
+	ERR_FAIL_INDEX_V(p_variant, variants_enabled.size(), false);
+	return variants_enabled[p_variant];
+}
+void ShaderRD::set_variant_enabled(int p_variant, bool p_enabled) {
+	ERR_FAIL_COND(version_owner.get_rid_count() > 0); //versions exist
+	ERR_FAIL_INDEX(p_variant, variants_enabled.size());
+	variants_enabled.write[p_variant] = p_enabled;
+}
+
+void ShaderRD::version_set_code(RID p_version, const HashMap<String, String> &p_code, const String &p_uniforms, const String &p_vertex_globals, const String &p_fragment_globals, const Vector<String> &p_custom_defines) {
+	ERR_FAIL_COND(is_compute);
+
+	Version *version = version_owner.get_or_null(p_version);
+	ERR_FAIL_NULL(version);
+	version->vertex_globals = p_vertex_globals.utf8();
+	version->fragment_globals = p_fragment_globals.utf8();
+	version->uniforms = p_uniforms.utf8();
+	version->code_sections.clear();
+	for (const KeyValue<String, String> &E : p_code) {
+		version->code_sections[StringName(E.key.to_upper())] = E.value.utf8();
+	}
+
+	version->custom_defines.clear();
+	for (int i = 0; i < p_custom_defines.size(); i++) {
+		version->custom_defines.push_back(p_custom_defines[i].utf8());
+	}
+
+	version->dirty = true;
+	if (version->initialize_needed) {
+		_initialize_version(version);
+		for (int i = 0; i < group_enabled.size(); i++) {
+			if (!group_enabled[i]) {
+				_allocate_placeholders(version, i);
+				continue;
+			}
+			_compile_version(version, i);
+		}
+		version->initialize_needed = false;
+	}
+}
+
+
+void ShaderRD::enable_group(int p_group) {
+  ERR_FAIL_INDEX(p_group, group_enabled.size());
+
+  if (group_enabled[p_group]) {
+    // Group already enabled, do nothing.
+    return;
+  }
+
+  group_enabled.write[p_group] = true;
+
+  // Compile all versions again to include the new group.
+  List<RID> all_versions;
+  version_owner.get_owned_list(&all_versions);
+  for (const RID& E : all_versions) {
+    Version* version = version_owner.get_or_null(E);
+    _compile_version(version, p_group);
+  }
+}

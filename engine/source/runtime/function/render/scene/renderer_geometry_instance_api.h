@@ -9,6 +9,7 @@ namespace lain {
 class RenderGeometryInstance {
 	public:
 	virtual ~RenderGeometryInstance() {}
+	// 需要子类型实现mark dirty 方法 （其他方法均在 base 中有默认实现。）
 	virtual void _mark_dirty() = 0;
   virtual void set_skeleton(RID p_skeleton) = 0;
 	virtual void set_material_override(RID p_override) = 0;

@@ -23,7 +23,7 @@ class RendererSceneRender {
  public:
  
 	/* Geometry Instance */
-
+  // geometry instance通过 forward_clustered 等 
 	virtual RenderGeometryInstance *geometry_instance_create(RID p_base) = 0;
 	virtual void geometry_instance_free(RenderGeometryInstance *p_geometry_instance) = 0;
 	virtual uint32_t geometry_instance_get_pair_mask() = 0;
@@ -76,6 +76,18 @@ class RendererSceneRender {
   void compositor_free(RID p_rid);
 
   bool is_compositor(RID p_compositor) const;
+
+  	/* COMPOSITOR EFFECT API */
+
+	RID compositor_effect_allocate();
+	void compositor_effect_initialize(RID p_rid);
+	void compositor_effect_free(RID p_rid);
+
+	bool is_compositor_effect(RID p_compositor) const;
+	void compositor_effect_set_enabled(RID p_compositor, bool p_enabled);
+	void compositor_effect_set_callback(RID p_compositor, RS::CompositorEffectCallbackType p_callback_type, const Callable &p_callback);
+	void compositor_effect_set_flag(RID p_compositor, RS::CompositorEffectFlags p_flag, bool p_set);
+  
 
   // 虚接口
   virtual Ref<RenderSceneBuffers> render_buffers_create() = 0;
@@ -133,7 +145,7 @@ class RendererSceneRender {
 	float environment_get_ssao_direct_light_affect(RID p_env) const;
 	float environment_get_ssao_ao_channel_affect(RID p_env) const;
 
-	virtual void environment_set_ssao_quality(RS::EnvironmentSSAOQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) = 0;
+	// virtual void environment_set_ssao_quality(RS::EnvironmentSSAOQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) = 0;
 
 	// SSIL
 	void environment_set_ssil(RID p_env, bool p_enable, float p_radius, float p_intensity, float p_sharpness, float p_normal_rejection);
@@ -143,7 +155,7 @@ class RendererSceneRender {
 	float environment_get_ssil_sharpness(RID p_env) const;
 	float environment_get_ssil_normal_rejection(RID p_env) const;
 
-	virtual void environment_set_ssil_quality(RS::EnvironmentSSILQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) = 0;
+	// virtual void environment_set_ssil_quality(RS::EnvironmentSSILQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) = 0;
 	// SSR
 	void environment_set_ssr(RID p_env, bool p_enable, int p_max_steps, float p_fade_int, float p_fade_out, float p_depth_tolerance);
 	bool environment_get_ssr_enabled(RID p_env) const;
@@ -152,10 +164,10 @@ class RendererSceneRender {
 	float environment_get_ssr_fade_out(RID p_env) const;
 	float environment_get_ssr_depth_tolerance(RID p_env) const;
 
-	virtual void environment_set_ssr_roughness_quality(RS::EnvironmentSSRRoughnessQuality p_quality) = 0;
+	// virtual void environment_set_ssr_roughness_quality(RS::EnvironmentSSRRoughnessQuality p_quality) = 0;
 
-  virtual void sub_surface_scattering_set_quality(RS::SubSurfaceScatteringQuality p_quality) = 0;
-	virtual void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) = 0;
+  // virtual void sub_surface_scattering_set_quality(RS::SubSurfaceScatteringQuality p_quality) = 0;
+	// virtual void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) = 0;
 };
 }  // namespace lain
 #endif

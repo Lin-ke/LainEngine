@@ -23,6 +23,7 @@ private:
 	String _current_rendering_driver_name;
 	String _current_rendering_method;
 	static OS *p_singleton;
+	bool _delta_smoothing_enabled = false;
 
 public:
 
@@ -94,6 +95,7 @@ public:
 	L_INLINE bool is_mobile_rdm() const {return _current_rendering_method == MobileRenderingMethodName;}
 	L_INLINE bool is_gl_rdm() const {return _current_rendering_method == CompatiblilityRenderingMethodName; }
 	L_INLINE bool is_forward_rdm() const {return _current_rendering_method == ForwardRenderingMethodName; }
+	L_INLINE bool is_delta_smoothing_enabled() const { return _delta_smoothing_enabled; }
 	void set_current_rendering_driver_name(const String &p_driver_name) { _current_rendering_driver_name = p_driver_name; }
 	void set_current_rendering_method(const String &p_name) { _current_rendering_method = p_name; }
 	enum RenderThreadMode {

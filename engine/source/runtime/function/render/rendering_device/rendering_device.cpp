@@ -3389,12 +3389,48 @@ RID lain::RenderingDevice::uniform_set_create(const Vector<Uniform>& p_uniforms,
 
   return id;
 }
+/*Uniform */
 
+RID RenderingDevice::uniform_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t> &p_data) {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V(p_data.size() && (uint32_t)p_data.size() != p_size_bytes, RID());
+
+	Buffer buffer;
+	buffer.size = p_size_bytes;
+	buffer.usage = (RDD::BUFFER_USAGE_TRANSFER_TO_BIT | RDD::BUFFER_USAGE_UNIFORM_BIT);
+	buffer.driver_id = driver->buffer_create(buffer.size, buffer.usage, RDD::MEMORY_ALLOCATION_TYPE_GPU);
+	ERR_FAIL_COND_V(!buffer.driver_id, RID());
+
+	// Uniform buffers are assumed to be immutable unless they don't have initial data.
+	if (p_data.is_empty()) {
+		buffer.draw_tracker = RDG::resource_tracker_create();
+		buffer.draw_tracker->buffer_driver_id = buffer.driver_id;
+	}
+
+	if (p_data.size()) {
+		_buffer_update(&buffer, RID(), 0, p_data.ptr(), p_data.size());
+	}
+
+	buffer_memory += buffer.size;
+
+	RID id = uniform_buffer_owner.make_rid(buffer);
+#ifdef DEV_ENABLED
+	set_resource_name(id, "RID:" + itos(id.get_id()));
+#endif
+	return id;
+}
 bool RenderingDevice::uniform_set_is_valid(RID p_uniform_set) {
   _THREAD_SAFE_METHOD_
   return uniform_set_owner.owns(p_uniform_set);
 }
 
+void RenderingDevice::uniform_set_set_invalidation_callback(RID p_uniform_set, InvalidationCallback p_callback, void *p_userdata) {
+	UniformSet *us = uniform_set_owner.get_or_null(p_uniform_set);
+	ERR_FAIL_NULL(us);
+	us->invalidated_callback = p_callback;
+	us->invalidated_callback_userdata = p_userdata;
+}
 void RenderingDevice::_texture_update_shared_fallback(RID p_texture_rid, Texture* p_texture, bool p_for_writing) {
   if (p_texture->shared_fallback == nullptr) {
     // This texture does not use any of the shared texture fallbacks.
@@ -5464,3 +5500,4 @@ String lain::RenderingDevice::get_device_api_name() const {
 bool lain::RenderingDevice::is_composite_alpha_supported() const {
   return false;
 }
+

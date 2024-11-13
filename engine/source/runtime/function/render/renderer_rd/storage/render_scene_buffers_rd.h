@@ -25,14 +25,15 @@
 namespace lain {
 class RenderSceneBuffersRD : public RenderSceneBuffers {
   LCLASS(RenderSceneBuffersRD, RenderSceneBuffers);
-  public:
-	// info from our renderer
-	void set_can_be_storage(const bool p_can_be_storage) { can_be_storage = p_can_be_storage; }
-	void set_max_cluster_elements(const uint32_t p_max_elements) { max_cluster_elements = p_max_elements; }
-	uint32_t get_max_cluster_elements() { return max_cluster_elements; }
-	void set_base_data_format(const RD::DataFormat p_base_data_format) { base_data_format = p_base_data_format; }
-	RD::DataFormat get_base_data_format() const { return base_data_format; }
-	// void set_vrs(RendererRD::VRS *p_vrs) { vrs = p_vrs; }
+
+ public:
+  // info from our renderer
+  void set_can_be_storage(const bool p_can_be_storage) { can_be_storage = p_can_be_storage; }
+  void set_max_cluster_elements(const uint32_t p_max_elements) { max_cluster_elements = p_max_elements; }
+  uint32_t get_max_cluster_elements() { return max_cluster_elements; }
+  void set_base_data_format(const RD::DataFormat p_base_data_format) { base_data_format = p_base_data_format; }
+  RD::DataFormat get_base_data_format() const { return base_data_format; }
+  // void set_vrs(RendererRD::VRS *p_vrs) { vrs = p_vrs; }
 
  private:
   bool can_be_storage = true;
@@ -58,77 +59,78 @@ class RenderSceneBuffersRD : public RenderSceneBuffers {
   bool use_taa = false;
   bool use_debanding = false;
   RD::TextureSamples texture_samples = RD::TEXTURE_SAMPLES_1;
-  public:
+
+ public:
   virtual void configure(const RenderSceneBuffersConfiguration* p_config) override;
   virtual void set_fsr_sharpness(float p_fsr_sharpness) override;
   virtual void set_texture_mipmap_bias(float p_texture_mipmap_bias) override;
   virtual void set_use_debanding(bool p_use_debanding) override;
 
   // Named Textures
-	struct NTKey {
-		StringName context;
-		StringName buffer_name;
+  struct NTKey {
+    StringName context;
+    StringName buffer_name;
 
-		bool operator==(const NTKey &p_val) const {
-			return (context == p_val.context) && (buffer_name == p_val.buffer_name);
-		}
+    bool operator==(const NTKey& p_val) const { return (context == p_val.context) && (buffer_name == p_val.buffer_name); }
 
-		static uint32_t hash(const NTKey &p_val) {
-			uint32_t h = p_val.context.hash();
-			h = hash_murmur3_one_32(p_val.buffer_name.hash(), h);
-			return hash_fmix32(h);
-		}
+    static uint32_t hash(const NTKey& p_val) {
+      uint32_t h = p_val.context.hash();
+      h = hash_murmur3_one_32(p_val.buffer_name.hash(), h);
+      return hash_fmix32(h);
+    }
 
-		NTKey() {}
-		NTKey(const StringName &p_context, const StringName &p_texture_name) {
-			context = p_context;
-			buffer_name = p_texture_name;
-		}
-	};
-  	struct NTSliceKey {
-		uint32_t layer;
-		uint32_t layers;
-		uint32_t mipmap;
-		uint32_t mipmaps;
-		RD::TextureView texture_view;
+    NTKey() {}
+    NTKey(const StringName& p_context, const StringName& p_texture_name) {
+      context = p_context;
+      buffer_name = p_texture_name;
+    }
+  };
+  struct NTSliceKey {
+    uint32_t layer;
+    uint32_t layers;
+    uint32_t mipmap;
+    uint32_t mipmaps;
+    RD::TextureView texture_view;
 
-		bool operator==(const NTSliceKey &p_val) const {
-			return (layer == p_val.layer) && (layers == p_val.layers) && (mipmap == p_val.mipmap) && (mipmaps == p_val.mipmaps) && (texture_view == p_val.texture_view);
-		}
+    bool operator==(const NTSliceKey& p_val) const {
+      return (layer == p_val.layer) && (layers == p_val.layers) && (mipmap == p_val.mipmap) && (mipmaps == p_val.mipmaps) && (texture_view == p_val.texture_view);
+    }
 
-		static uint32_t hash(const NTSliceKey &p_val) {
-			uint32_t h = hash_murmur3_one_32(p_val.layer);
-			h = hash_murmur3_one_32(p_val.layers, h);
-			h = hash_murmur3_one_32(p_val.mipmap, h);
-			h = hash_murmur3_one_32(p_val.mipmaps, h);
-			h = hash_murmur3_one_32(p_val.texture_view.format_override);
-			h = hash_murmur3_one_32(p_val.texture_view.swizzle_r, h);
-			h = hash_murmur3_one_32(p_val.texture_view.swizzle_g, h);
-			h = hash_murmur3_one_32(p_val.texture_view.swizzle_b, h);
-			h = hash_murmur3_one_32(p_val.texture_view.swizzle_a, h);
-			return hash_fmix32(h);
-		}
+    static uint32_t hash(const NTSliceKey& p_val) {
+      uint32_t h = hash_murmur3_one_32(p_val.layer);
+      h = hash_murmur3_one_32(p_val.layers, h);
+      h = hash_murmur3_one_32(p_val.mipmap, h);
+      h = hash_murmur3_one_32(p_val.mipmaps, h);
+      h = hash_murmur3_one_32(p_val.texture_view.format_override);
+      h = hash_murmur3_one_32(p_val.texture_view.swizzle_r, h);
+      h = hash_murmur3_one_32(p_val.texture_view.swizzle_g, h);
+      h = hash_murmur3_one_32(p_val.texture_view.swizzle_b, h);
+      h = hash_murmur3_one_32(p_val.texture_view.swizzle_a, h);
+      return hash_fmix32(h);
+    }
 
-		NTSliceKey() {}
-		NTSliceKey(uint32_t p_layer, uint32_t p_layers, uint32_t p_mipmap, uint32_t p_mipmaps, RD::TextureView p_texture_view) {
-			layer = p_layer;
-			layers = p_layers;
-			mipmap = p_mipmap;
-			mipmaps = p_mipmaps;
-			texture_view = p_texture_view;
-		}
-	};
+    NTSliceKey() {}
+    NTSliceKey(uint32_t p_layer, uint32_t p_layers, uint32_t p_mipmap, uint32_t p_mipmaps, RD::TextureView p_texture_view) {
+      layer = p_layer;
+      layers = p_layers;
+      mipmap = p_mipmap;
+      mipmaps = p_mipmaps;
+      texture_view = p_texture_view;
+    }
+  };
   struct NamedTexture {
-		// Cache the data used to create our texture
-		RD::TextureFormat format;
-		bool is_unique; // If marked as unique, we return it into our pool
+    // Cache the data used to create our texture
+    RD::TextureFormat format;
+    bool is_unique;  // If marked as unique, we return it into our pool
 
-		// Our texture objects, slices are lazy (i.e. only created when requested).
-		RID texture;
-		mutable HashMap<NTSliceKey, RID, NTSliceKey> slices;
-		Vector<Size2i> sizes; // 记录每个mipmap的size （就是逐渐的/2)
-	};
-
+    // Our texture objects, slices are lazy (i.e. only created when requested).
+    RID texture;
+    mutable HashMap<NTSliceKey, RID, NTSliceKey> slices;
+    Vector<Size2i> sizes;  // 记录每个mipmap的size （就是逐渐的/2)
+  };
+	// velocity 是 render target管理，和custom data无关
+	// 如果false 会优先检查是否有override的velocity
+	RID get_velocity_buffer(bool p_get_msaa);
 
   bool has_texture(const StringName& p_context, const StringName& p_texture_name) const;
   RID create_texture(const StringName& p_context, const StringName& p_texture_name, const RD::DataFormat p_data_format, const uint32_t p_usage_bits,
@@ -147,29 +149,43 @@ class RenderSceneBuffersRD : public RenderSceneBuffers {
   void free_named_texture(NamedTexture& p_texture);
   void clear_context(const StringName& p_context);
 
-	mutable HashMap<NTKey, NamedTexture, NTKey> named_textures;
-	mutable HashMap<StringName, Ref<RenderBufferCustomDataRD>> data_buffers;
-  
-	// Samplers.
-	RendererRD::MaterialStorage::Samplers samplers;
+  mutable HashMap<NTKey, NamedTexture, NTKey> named_textures;
+  mutable HashMap<StringName, Ref<RenderBufferCustomDataRD>> data_buffers;  // custom rb data
 
-	void update_samplers();
+  // Samplers.
+  RendererRD::MaterialStorage::Samplers samplers;
+
+  void update_samplers();
   void cleanup();
-  void update_sizes(NamedTexture &);
+  void update_sizes(NamedTexture&);
 
-	// Getters
+  // Getters
 
-		_FORCE_INLINE_ RID get_render_target() const { return render_target; }
-	_FORCE_INLINE_ uint32_t get_view_count() const { return view_count; }
-	_FORCE_INLINE_ Size2i get_internal_size() const { return internal_size; }
-	_FORCE_INLINE_ Size2i get_target_size() const { return target_size; }
-	_FORCE_INLINE_ RS::ViewportScaling3DMode get_scaling_3d_mode() const { return scaling_3d_mode; }
-	_FORCE_INLINE_ float get_fsr_sharpness() const { return fsr_sharpness; }
-	_FORCE_INLINE_ RS::ViewportMSAA get_msaa_3d() const { return msaa_3d; }
-	_FORCE_INLINE_ RD::TextureSamples get_texture_samples() const { return texture_samples; }
-	_FORCE_INLINE_ RS::ViewportScreenSpaceAA get_screen_space_aa() const { return screen_space_aa; }
-	_FORCE_INLINE_ bool get_use_taa() const { return use_taa; }
-	_FORCE_INLINE_ bool get_use_debanding() const { return use_debanding; }
+  _FORCE_INLINE_ RID get_render_target() const { return render_target; }
+  _FORCE_INLINE_ uint32_t get_view_count() const { return view_count; }
+  _FORCE_INLINE_ Size2i get_internal_size() const { return internal_size; }
+  _FORCE_INLINE_ Size2i get_target_size() const { return target_size; }
+  _FORCE_INLINE_ RS::ViewportScaling3DMode get_scaling_3d_mode() const { return scaling_3d_mode; }
+  _FORCE_INLINE_ float get_fsr_sharpness() const { return fsr_sharpness; }
+  _FORCE_INLINE_ RS::ViewportMSAA get_msaa_3d() const { return msaa_3d; }
+  _FORCE_INLINE_ RD::TextureSamples get_texture_samples() const { return texture_samples; }
+  _FORCE_INLINE_ RS::ViewportScreenSpaceAA get_screen_space_aa() const { return screen_space_aa; }
+  _FORCE_INLINE_ bool get_use_taa() const { return use_taa; }
+  _FORCE_INLINE_ bool get_use_debanding() const { return use_debanding; }
+
+  L_INLINE void set_custom_data(const StringName& p_name, Ref<RenderBufferCustomDataRD> p_data) {
+    if (p_data.is_valid()) {
+      data_buffers[p_name] = p_data;
+    } else if (has_custom_data(p_name)) {
+      data_buffers.erase(p_name);
+    }
+  }
+  L_INLINE bool has_custom_data(const StringName& p_name) const { return data_buffers.has(p_name); }
+  L_INLINE Ref<RenderBufferCustomDataRD> get_custom_data(const StringName& p_name) const {
+    ERR_FAIL_COND_V(!data_buffers.has(p_name), Ref<RenderBufferCustomDataRD>());
+    Ref<RenderBufferCustomDataRD> ret = data_buffers[p_name];
+    return ret;
+  }
 };
 };  // namespace lain
 #endif  // !RENDER_SCENE_BUFFERS_RD_H

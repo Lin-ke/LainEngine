@@ -44,7 +44,9 @@ protected:
   virtual RD::DataFormat _render_buffers_get_color_format() const {return RD::DATA_FORMAT_R16G16B16_SFLOAT;}
   virtual void set_scene_pass(uint64_t p_pass) override { scene_pass = p_pass; }
   virtual void update() override;
-  	void init();
+
+	void init(); // 调用一些init，填充从projectsettings 中获取的一些参数
+	virtual bool free(RID p_rid) override;
   // 后端特定的渲染API
 	virtual void setup_render_buffer_data(Ref<RenderSceneBuffersRD> p_render_buffers) = 0;
 	virtual void _render_scene(RenderDataRD *p_render_data, const Color &p_default_color) = 0;
@@ -52,10 +54,11 @@ protected:
 	virtual RID _render_buffers_get_normal_texture(Ref<RenderSceneBuffersRD> p_render_buffers) = 0;
 	virtual RID _render_buffers_get_velocity_texture(Ref<RenderSceneBuffersRD> p_render_buffers) = 0;
 	// virtual void _render_buffers_debug_draw(const RenderDataRD *p_render_data);
-	virtual void _render_material(const Transform3D &p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region, float p_exposure_normalization) = 0;
-	virtual void _render_uv2(const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region) = 0;
-	virtual void _render_sdfgi(Ref<RenderSceneBuffersRD> p_render_buffers, const Vector3i &p_from, const Vector3i &p_size, const AABB &p_bounds, const PagedArray<RenderGeometryInstance *> &p_instances, const RID &p_albedo_texture, const RID &p_emission_texture, const RID &p_emission_aniso_texture, const RID &p_geom_facing_texture, float p_exposure_normalization) = 0;
-	virtual void _render_particle_collider_heightfield(RID p_fb, const Transform3D &p_cam_transform, const Projection &p_cam_projection, const PagedArray<RenderGeometryInstance *> &p_instances) = 0;
+	// virtual void _render_material(const Transform3D &p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region, float p_exposure_normalization) = 0;
+	// virtual void _render_uv2(const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region) = 0;
+	// virtual void _render_sdfgi(Ref<RenderSceneBuffersRD> p_render_buffers, const Vector3i &p_from, const Vector3i &p_size, const AABB &p_bounds, const PagedArray<RenderGeometryInstance *> &p_instances, const RID &p_albedo_texture, const RID &p_emission_texture, const RID &p_emission_aniso_texture, const RID &p_geom_facing_texture, float p_exposure_normalization) = 0;
+	// virtual void _render_particle_collider_heightfield(RID p_fb, const Transform3D &p_cam_transform, const Projection &p_cam_projection, const PagedArray<RenderGeometryInstance *> &p_instances) = 0;
+	virtual void base_uniforms_changed() = 0;
 
 
   /* RENDER BUFFERS */
@@ -82,22 +85,6 @@ protected:
 		return debug_draw;
 	}
 
-  float *directional_penumbra_shadow_kernel = nullptr;
-	float *directional_soft_shadow_kernel = nullptr;
-	float *penumbra_shadow_kernel = nullptr;
-	float *soft_shadow_kernel = nullptr;
-  _FORCE_INLINE_ float *directional_penumbra_shadow_kernel_get() {
-		return directional_penumbra_shadow_kernel;
-	}
-	_FORCE_INLINE_ float *directional_soft_shadow_kernel_get() {
-		return directional_soft_shadow_kernel;
-	}
-	_FORCE_INLINE_ float *penumbra_shadow_kernel_get() {
-		return penumbra_shadow_kernel;
-	}
-	_FORCE_INLINE_ float *soft_shadow_kernel_get() {
-		return soft_shadow_kernel;
-	}
 
 	public:
 	RendererRD::SkyRD *get_sky() { return &sky; }
@@ -110,6 +97,74 @@ protected:
 
   void set_time(double p_time, double p_frame_step) { time = p_time;
   time_step = p_frame_step; }
+	bool _compositor_effects_has_flag(const RenderDataRD *p_render_data, RS::CompositorEffectFlags p_flag, RS::CompositorEffectCallbackType p_callback_type = RS::COMPOSITOR_EFFECT_CALLBACK_TYPE_ANY);
+
+	// * getters *
+	private:
+			/* Shadow atlas */
+	RS::ShadowQuality shadows_quality = RS::SHADOW_QUALITY_MAX; //So it always updates when first set
+	RS::ShadowQuality directional_shadow_quality = RS::SHADOW_QUALITY_MAX;
+	float shadows_quality_radius = 1.0;
+	float directional_shadow_quality_radius = 1.0;
+
+	float *directional_penumbra_shadow_kernel = nullptr;
+	float *directional_soft_shadow_kernel = nullptr;
+	float *penumbra_shadow_kernel = nullptr;
+	float *soft_shadow_kernel = nullptr;
+	int directional_penumbra_shadow_samples = 0;
+	int directional_soft_shadow_samples = 0;
+	int penumbra_shadow_samples = 0;
+	int soft_shadow_samples = 0;
+	RS::DecalFilter decals_filter = RS::DECAL_FILTER_LINEAR_MIPMAPS;
+	RS::LightProjectorFilter light_projectors_filter = RS::LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS;
+	public:
+
+	_FORCE_INLINE_ RS::ShadowQuality shadows_quality_get() const {
+		return shadows_quality;
+	}
+	_FORCE_INLINE_ RS::ShadowQuality directional_shadow_quality_get() const {
+		return directional_shadow_quality;
+	}
+	_FORCE_INLINE_ float shadows_quality_radius_get() const {
+		return shadows_quality_radius;
+	}
+	_FORCE_INLINE_ float directional_shadow_quality_radius_get() const {
+		return directional_shadow_quality_radius;
+	}
+
+	_FORCE_INLINE_ float *directional_penumbra_shadow_kernel_get() {
+		return directional_penumbra_shadow_kernel;
+	}
+	_FORCE_INLINE_ float *directional_soft_shadow_kernel_get() {
+		return directional_soft_shadow_kernel;
+	}
+	_FORCE_INLINE_ float *penumbra_shadow_kernel_get() {
+		return penumbra_shadow_kernel;
+	}
+	_FORCE_INLINE_ float *soft_shadow_kernel_get() {
+		return soft_shadow_kernel;
+	}
+
+	_FORCE_INLINE_ int directional_penumbra_shadow_samples_get() const {
+		return directional_penumbra_shadow_samples;
+	}
+	_FORCE_INLINE_ int directional_soft_shadow_samples_get() const {
+		return directional_soft_shadow_samples;
+	}
+	_FORCE_INLINE_ int penumbra_shadow_samples_get() const {
+		return penumbra_shadow_samples;
+	}
+	_FORCE_INLINE_ int soft_shadow_samples_get() const {
+		return soft_shadow_samples;
+	}
+
+	_FORCE_INLINE_ RS::LightProjectorFilter light_projectors_get_filter() const {
+		return light_projectors_filter;
+	}
+	_FORCE_INLINE_ RS::DecalFilter decals_get_filter() const {
+		return decals_filter;
+	}
+
 };
 }  // namespace lain
 

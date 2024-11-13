@@ -538,7 +538,7 @@ void SceneShaderForwardClustered::init(const String p_defines) {
 
 			shader_versions.push_back(ShaderRD::VariantDefine(group, version, false));
 		}
-
+	
 		shader.initialize(shader_versions, p_defines);
 
 		if (RendererCompositorRD::get_singleton()->is_xr_enabled()) {

@@ -430,6 +430,14 @@ int WindowSystem::window_get_current_screen(WindowID p_window) const {
 	EnumDisplayMonitors(nullptr, nullptr, _MonitorEnumProcScreen, (LPARAM)&data);
 	return data.screen;
 }
+WindowSystem::VSyncMode WindowSystem::window_get_vsync_mode(WindowID p_window) const
+{
+	_THREAD_SAFE_METHOD_
+	if (rendering_context) {
+		return rendering_context->window_get_vsync_mode(p_window);
+	}
+	return VSYNC_DISABLED;
+}
 int WindowSystem::_get_screen_index(int p_screen) const {
 	switch (p_screen) {
 		case SCREEN_WITH_MOUSE_FOCUS: {
@@ -489,5 +497,7 @@ Size2i WindowSystem::window_get_size(WindowSystem::WindowID p_window) const {
 	}
 	return Size2();
 }
+
+
 
 } // namespace lain

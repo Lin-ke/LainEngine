@@ -7,7 +7,9 @@ namespace lain {
 class Main {
 	// static
 	static uint64_t last_ticks;
-	static uint32_t frames;
+	static uint32_t frames; // count
+	static uint32_t frame; // time
+
 	static int iterating;
 
 public:

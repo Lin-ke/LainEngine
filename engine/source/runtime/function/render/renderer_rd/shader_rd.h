@@ -10,9 +10,11 @@
 #include "function/render/rendering_system/rendering_system.h"
 
 // uber shader 所必须的，各种define
-// variant 是 shader 各个变体（variant），其实就是一些defines（见build_variant_code） 
-// 每个shader源码对应的资源被称为一个version，version的每个变体被称为一个variant 
-// version 中的 uniforms等等信息 会 和 variant.text（也就是一些defines，替代 .glsl里的version_defines）一起加入，编译成为shader文件
+// variant 是 shader 各个变体（variant），其实就是一些defines（见build_variant_code）
+// variant 分属于不同的group （见group_to_variant_map\variantdefine->group），而每个version均
+// 包含了所有的variant，其 variant_data 当然与variant_define大小一样
+// 每次compile version的时候会 同时 compile所有的 variant
+// version 中的 uniforms等等信息 会 和 variant.text（也就是一些defines，替代 .glsl里的version_defines）一起加入，编译成为shader文件，存储在 verision中
 namespace lain{
 class ShaderRD {
 public:
