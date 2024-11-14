@@ -69,6 +69,16 @@ namespace lain::RendererSceneRenderImplementation{
 		RID get_normal_roughness() const { 
 			return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS); 
 		 }
+		RID get_color_only_fb();
+		RID get_velocity_only_fb();
+		enum DepthFrameBufferType {
+			DEPTH_FB,
+			DEPTH_FB_ROUGHNESS,
+			DEPTH_FB_ROUGHNESS_VOXELGI
+		};
+
+		RID get_depth_fb(DepthFrameBufferType type  = DEPTH_FB);
+		RID get_color_pass_fb(uint32_t p_color_pass_flag);
 	};
 
 

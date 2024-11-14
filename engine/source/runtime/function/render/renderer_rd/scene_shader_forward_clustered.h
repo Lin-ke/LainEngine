@@ -14,7 +14,7 @@ private:
 public:
 	enum ShaderGroup {
 		SHADER_GROUP_BASE, // Always compiled at the beginning.
-		SHADER_GROUP_ADVANCED,
+		SHADER_GROUP_ADVANCED, // advance 组会在 例如 calculate motion vector 时开启 (见 _render_scene)
 		SHADER_GROUP_MULTIVIEW,
 		SHADER_GROUP_ADVANCED_MULTIVIEW,
 	};

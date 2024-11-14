@@ -193,6 +193,11 @@ class LightStorage : public RendererLightStorage {
  public:
   // APIS
 
+  
+  RID get_omni_light_buffer() { return omni_light_buffer; }
+	RID get_spot_light_buffer() { return spot_light_buffer; }
+	RID get_directional_light_buffer() { return directional_light_buffer; }
+
   virtual RID directional_light_allocate() override;
   virtual void directional_light_initialize(RID p_rid) override;
 
@@ -354,7 +359,9 @@ class LightStorage : public RendererLightStorage {
 		// set_max_lights(p_max_cluster_elements);
 	}
 	uint32_t get_max_cluster_elements() const { return max_cluster_elements; }
-
+  _FORCE_INLINE_ uint64_t lightmap_array_get_version() const {
+		return 0;
+	}
 private:
 	void _light_initialize(RID p_rid, RS::LightType p_type);
   void _shadow_atlas_invalidate_shadow(ShadowAtlas::Quadrant::Shadow *p_shadow, RID p_atlas, ShadowAtlas *p_shadow_atlas, uint32_t p_quadrant, uint32_t p_shadow_idx);
@@ -364,6 +371,8 @@ private:
   bool _shadow_atlas_find_omni_shadows(ShadowAtlas *shadow_atlas, int *p_in_quadrants, int p_quadrant_count, int p_current_subdiv, uint64_t p_tick, int &r_quadrant, int &r_shadow);
   // 新建texture
   void _update_shadow_atlas(ShadowAtlas* p_shadow_atlas);
+
+
   // 
   ShadowCubemap *_get_shadow_cubemap(int p_size);
 

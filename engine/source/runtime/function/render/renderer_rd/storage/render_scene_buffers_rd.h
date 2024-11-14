@@ -33,7 +33,6 @@ class RenderSceneBuffersRD : public RenderSceneBuffers {
   uint32_t get_max_cluster_elements() { return max_cluster_elements; }
   void set_base_data_format(const RD::DataFormat p_base_data_format) { base_data_format = p_base_data_format; }
   RD::DataFormat get_base_data_format() const { return base_data_format; }
-  // void set_vrs(RendererRD::VRS *p_vrs) { vrs = p_vrs; }
 
  private:
   bool can_be_storage = true;
@@ -186,6 +185,62 @@ class RenderSceneBuffersRD : public RenderSceneBuffers {
     Ref<RenderBufferCustomDataRD> ret = data_buffers[p_name];
     return ret;
   }
+  
+	// For our internal textures we provide some easy access methods.
+
+	_FORCE_INLINE_ bool has_internal_texture() const {
+		return has_texture(RB_SCOPE_BUFFERS, RB_TEX_COLOR);
+	}
+	_FORCE_INLINE_ RID get_internal_texture() const {
+		return get_texture(RB_SCOPE_BUFFERS, RB_TEX_COLOR);
+	}
+	_FORCE_INLINE_ RID get_internal_texture(const uint32_t p_layer) {
+		return get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_COLOR, p_layer, 0);
+	}
+	_FORCE_INLINE_ RID get_internal_texture_reactive(const uint32_t p_layer) {
+		RD::TextureView alpha_only_view;
+		alpha_only_view.swizzle_r = RD::TEXTURE_SWIZZLE_A;
+		alpha_only_view.swizzle_g = RD::TEXTURE_SWIZZLE_A;
+		alpha_only_view.swizzle_b = RD::TEXTURE_SWIZZLE_A;
+		alpha_only_view.swizzle_a = RD::TEXTURE_SWIZZLE_A;
+		return get_texture_slice_view(RB_SCOPE_BUFFERS, RB_TEX_COLOR, p_layer, 0, 1, 1, alpha_only_view);
+	}
+	_FORCE_INLINE_ RID get_color_msaa() const {
+		return get_texture(RB_SCOPE_BUFFERS, RB_TEX_COLOR_MSAA);
+	}
+	_FORCE_INLINE_ RID get_color_msaa(uint32_t p_layer) {
+		return get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_COLOR_MSAA, p_layer, 0);
+	}
+
+	bool has_depth_texture();
+	RID get_depth_texture();
+	RID get_depth_texture(const uint32_t p_layer);
+
+	RID get_depth_msaa() const {
+		return get_texture(RB_SCOPE_BUFFERS, RB_TEX_DEPTH_MSAA);
+	}
+	RID get_depth_msaa(uint32_t p_layer) {
+		return get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_DEPTH_MSAA, p_layer, 0);
+	}
+  
+	// Samplers adjusted with the mipmap bias that is best fit for the configuration of these render buffers.
+
+	_FORCE_INLINE_ RendererRD::MaterialStorage::Samplers get_samplers() const {
+		return samplers;
+	}
+
+	// back buffer (color)
+	RID get_back_buffer_texture() const {
+		// Prefer returning the dedicated backbuffer color texture if it was created. Return the reused blur texture otherwise.
+		if (has_texture(RB_SCOPE_BUFFERS, RB_TEX_BACK_COLOR)) {
+			return get_texture(RB_SCOPE_BUFFERS, RB_TEX_BACK_COLOR);
+		} else if (has_texture(RB_SCOPE_BUFFERS, RB_TEX_BLUR_0)) {
+			return get_texture(RB_SCOPE_BUFFERS, RB_TEX_BLUR_0);
+		} else {
+			return RID();
+		}
+	}
+
 };
 };  // namespace lain
 #endif  // !RENDER_SCENE_BUFFERS_RD_H

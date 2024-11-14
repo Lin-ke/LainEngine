@@ -619,6 +619,10 @@ void MaterialStorage::samplers_rd_free(Samplers& p_samplers) const {
   }
 }
 
+RID lain::RendererRD::MaterialStorage::global_shader_uniforms_get_storage_buffer() {
+  return global_shader_uniforms.buffer;
+}
+
 int32_t lain::RendererRD::MaterialStorage::_global_shader_uniform_allocate(uint32_t p_elements) {
   int32_t idx = 0;
   while (idx + p_elements <= global_shader_uniforms.buffer_size) {

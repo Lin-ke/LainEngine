@@ -192,6 +192,9 @@ class MaterialStorage : public RendererMaterialStorage {
 		HashMap<RID, int32_t> instance_buffer_pos;
 	} global_shader_uniforms;
 	// 找到一个可容纳p_elements的buffer
+	public:
+	RID global_shader_uniforms_get_storage_buffer();
+	private:
 	int32_t _global_shader_uniform_allocate(uint32_t p_elements);
 	void _global_shader_uniform_store_in_buffer(int32_t p_index, RS::GlobalShaderParameterType p_type, const Variant &p_value);
 	void _global_shader_uniform_mark_buffer_dirty(int32_t p_index, int32_t p_elements);
