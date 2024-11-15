@@ -62,6 +62,7 @@ protected:
 
 
   /* RENDER BUFFERS */
+	virtual float _render_buffers_get_luminance_multiplier(){return 1.0f;}
 
   /* GI */
   bool screen_space_roughness_limiter = false;

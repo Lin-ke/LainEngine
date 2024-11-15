@@ -478,6 +478,14 @@ class MeshStorage : public RendererMeshStorage {
 		Mesh::Surface *surface = reinterpret_cast<Mesh::Surface *>(p_surface);
 		return surface->primitive;
 	}
+	_FORCE_INLINE_ AABB mesh_surface_get_aabb(void *p_surface) {
+		Mesh::Surface *s = reinterpret_cast<Mesh::Surface *>(p_surface);
+		return s->aabb;
+	}
+		_FORCE_INLINE_ Vector4 mesh_surface_get_uv_scale(void *p_surface) {
+		Mesh::Surface *s = reinterpret_cast<Mesh::Surface *>(p_surface);
+		return s->uv_scale;
+	}
 
 };
 }  // namespace lain::RendererRD

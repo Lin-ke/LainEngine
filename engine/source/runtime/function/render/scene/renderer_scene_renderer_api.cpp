@@ -17,6 +17,9 @@ bool lain::RendererSceneRender::is_environment(RID p_env) const {
   return environment_storage.is_environment(p_env);
 }
 
+bool lain::RendererSceneRender::environment_get_fog_enabled(RID p_env) const {
+  return false;
+}
 
 RS::EnvironmentBG RendererSceneRender::environment_get_background(RID p_env) const {
 	return environment_storage.environment_get_background(p_env);

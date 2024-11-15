@@ -53,7 +53,7 @@ class RendererSceneRender {
   void environment_free(RID p_rid);
 
   bool is_environment(RID p_env) const;
-
+  bool environment_get_fog_enabled(RID p_env) const;
 	RS::EnvironmentBG environment_get_background(RID p_env) const;
 	RID environment_get_sky(RID p_env) const;
 	float environment_get_sky_custom_fov(RID p_env) const;
