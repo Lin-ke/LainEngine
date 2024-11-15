@@ -1036,7 +1036,7 @@ void lain::RendererSceneRenderImplementation::RenderForwardClustered::_fill_rend
 			if (inst->use_aabb_center) {
 				center = inst->transformed_aabb.get_support(-near_plane.normal);
 			}
-			inst->depth = near_plane.distance_to(center) - inst->sorting_offset;
+			inst->depth = near_plane.distance_to(center) - inst->sorting_offset; // 大概的一个depth？
 		} else {
 			if (inst->use_aabb_center) {
 				center = inst->transformed_aabb.position + (inst->transformed_aabb.size * 0.5);
