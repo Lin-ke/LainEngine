@@ -208,7 +208,6 @@ class MeshStorage : public RendererMeshStorage {
 
 	mutable RID_Owner<Skeleton, true> skeleton_owner;
 
-
  public:
   MeshStorage() { p_singleton = this; }
   ~MeshStorage() {}
@@ -231,7 +230,7 @@ class MeshStorage : public RendererMeshStorage {
   virtual void mesh_surface_update_skin_region(RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t> &p_data) override;
   virtual void mesh_surface_set_material(RID p_mesh, int p_surface, RID p_material) override;
   virtual RID mesh_surface_get_material(RID p_mesh, int p_surface) const override;
-  virtual RS::SurfaceData mesh_get_surface(RID p_mesh, int p_surface) const override;
+  virtual RS::SurfaceData mesh_get_surfacedata(RID p_mesh, int p_surface) const override;
   virtual int mesh_get_surface_count(RID p_mesh) const override;
   virtual void mesh_set_custom_aabb(RID p_mesh, const AABB &p_aabb) override;
   virtual AABB mesh_get_custom_aabb(RID p_mesh) const override;
@@ -344,6 +343,10 @@ class MeshStorage : public RendererMeshStorage {
 	// virtual void skeleton_set_base_transform_2d(RID p_skeleton, const Transform2D &p_base_transform) override;
 
 	// virtual void skeleton_update_dependency(RID p_base, DependencyTracker *p_instance) override;
+	L_INLINE bool skeleton_is_valid(RID p_skeleton) const {
+		// return skeleton_owner.owns(p_skeleton);
+		return false;
+		}
 	private:
 	void _mesh_instance_add_surface(MeshInstance *mi, Mesh *mesh, uint32_t p_surface);
 	void _mesh_instance_add_surface_buffer(MeshInstance *mi, Mesh *mesh, MeshInstance::Surface *s, uint32_t p_surface, uint32_t p_buffer_index);
@@ -385,6 +388,97 @@ class MeshStorage : public RendererMeshStorage {
 		return s->index_count ? s->index_count : s->vertex_count;
 	}
   
+	_FORCE_INLINE_ const RID *mesh_get_surface_count_and_materials(RID p_mesh, uint32_t &r_surface_count) {
+		Mesh *mesh = mesh_owner.get_or_null(p_mesh);
+		ERR_FAIL_NULL_V(mesh, nullptr);
+		r_surface_count = mesh->surface_count;
+		if (r_surface_count == 0) {
+			return nullptr;
+		}
+		if (mesh->material_cache.is_empty()) {
+			mesh->material_cache.resize(mesh->surface_count);
+			for (uint32_t i = 0; i < r_surface_count; i++) {
+				mesh->material_cache.write[i] = mesh->surfaces[i]->material;
+			}
+		}
+
+		return mesh->material_cache.ptr();
+	}
+
+		_FORCE_INLINE_ uint32_t multimesh_get_instances_to_draw(RID p_multimesh) const {
+		MultiMesh *multimesh = multimesh_owner.get_or_null(p_multimesh);
+		if (multimesh->visible_instances >= 0) {
+			return multimesh->visible_instances;
+		}
+		return multimesh->instances;
+	}
+		_FORCE_INLINE_ RS::MultimeshTransformFormat multimesh_get_transform_format(RID p_multimesh) const {
+		MultiMesh *multimesh = multimesh_owner.get_or_null(p_multimesh);
+		return multimesh->xform_format;
+	}
+
+	_FORCE_INLINE_ bool multimesh_uses_colors(RID p_multimesh) const {
+		MultiMesh *multimesh = multimesh_owner.get_or_null(p_multimesh);
+		return multimesh->uses_colors;
+	}
+
+	_FORCE_INLINE_ bool multimesh_uses_custom_data(RID p_multimesh) const {
+		MultiMesh *multimesh = multimesh_owner.get_or_null(p_multimesh);
+		return multimesh->uses_custom_data;
+	}
+
+	_FORCE_INLINE_ uint32_t multimesh_get_instances_to_draw(RID p_multimesh) const {
+		MultiMesh *multimesh = multimesh_owner.get_or_null(p_multimesh);
+		if (multimesh->visible_instances >= 0) {
+			return multimesh->visible_instances;
+		}
+		return multimesh->instances;
+	}
+		_FORCE_INLINE_ RID multimesh_get_3d_uniform_set(RID p_multimesh, RID p_shader, uint32_t p_set) const {
+		MultiMesh *multimesh = multimesh_owner.get_or_null(p_multimesh);
+		if (multimesh == nullptr) {
+			return RID();
+		}
+		if (!multimesh->uniform_set_3d.is_valid()) {
+			if (!multimesh->buffer.is_valid()) {
+				return RID();
+			}
+			Vector<RD::Uniform> uniforms;
+			RD::Uniform u;
+			u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+			u.binding = 0;
+			u.append_id(multimesh->buffer);
+			uniforms.push_back(u);
+			multimesh->uniform_set_3d = RD::get_singleton()->uniform_set_create(uniforms, p_shader, p_set);
+		}
+
+		return multimesh->uniform_set_3d;
+	}
+
+	
+	_FORCE_INLINE_ uint64_t mesh_surface_get_format(void *p_surface) {
+		Mesh::Surface *s = reinterpret_cast<Mesh::Surface *>(p_surface);
+		return s->format;
+	}
+	_FORCE_INLINE_ RID mesh_get_shadow_mesh(RID p_mesh) {
+		Mesh *mesh = mesh_owner.get_or_null(p_mesh);
+		ERR_FAIL_NULL_V(mesh, RID());
+
+		return mesh->shadow_mesh;
+	}
+
+	_FORCE_INLINE_ void *mesh_get_surface(RID p_mesh, uint32_t p_surface_index) {
+		Mesh *mesh = mesh_owner.get_or_null(p_mesh);
+		ERR_FAIL_NULL_V(mesh, nullptr);
+		ERR_FAIL_UNSIGNED_INDEX_V(p_surface_index, mesh->surface_count, nullptr);
+
+		return mesh->surfaces[p_surface_index];
+	}
+	_FORCE_INLINE_ RS::PrimitiveType mesh_surface_get_primitive(void *p_surface) {
+		Mesh::Surface *surface = reinterpret_cast<Mesh::Surface *>(p_surface);
+		return surface->primitive;
+	}
+
 };
 }  // namespace lain::RendererRD
 #endif

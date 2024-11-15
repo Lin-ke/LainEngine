@@ -647,6 +647,355 @@ RID RenderForwardClustered::RenderBufferDataForwardClustered::get_color_only_fb(
 	}
 }
 
+_FORCE_INLINE_ static uint32_t _indices_to_primitives(RS::PrimitiveType p_primitive, uint32_t p_indices) {
+	static const uint32_t divisor[RS::PRIMITIVE_MAX] = { 1, 2, 1, 3, 1 };
+	static const uint32_t subtractor[RS::PRIMITIVE_MAX] = { 0, 0, 1, 0, 1 };
+	return (p_indices - subtractor[p_primitive]) / divisor[p_primitive];
+}
+
+// 根据信息填 GeometryInstanceSurfaceDataCache，在 geoinstance里面的那个
+void RenderForwardClustered::_geometry_instance_add_surface_with_material(GeometryInstanceForwardClustered *ginstance, uint32_t p_surface, SceneShaderForwardClustered::MaterialData *p_material, uint32_t p_material_id, uint32_t p_shader_id, RID p_mesh) {
+	RendererRD::MeshStorage *mesh_storage = RendererRD::MeshStorage::get_singleton();
+
+	bool has_read_screen_alpha = p_material->shader_data->uses_screen_texture || p_material->shader_data->uses_depth_texture || p_material->shader_data->uses_normal_texture;
+	bool has_base_alpha = (p_material->shader_data->uses_alpha && (!p_material->shader_data->uses_alpha_clip || p_material->shader_data->uses_alpha_antialiasing)) || has_read_screen_alpha;
+	bool has_blend_alpha = p_material->shader_data->uses_blend_alpha;
+	bool has_alpha = has_base_alpha || has_blend_alpha;
+
+	uint32_t flags = 0;
+
+	if (p_material->shader_data->uses_sss) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_SUBSURFACE_SCATTERING;
+	}
+
+	if (p_material->shader_data->uses_screen_texture) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_SCREEN_TEXTURE;
+	}
+
+	if (p_material->shader_data->uses_depth_texture) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_DEPTH_TEXTURE;
+	}
+
+	if (p_material->shader_data->uses_normal_texture) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_NORMAL_TEXTURE;
+	}
+
+	if (ginstance->data->cast_double_sided_shadows) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_DOUBLE_SIDED_SHADOWS;
+	}
+
+	if (has_alpha || has_read_screen_alpha || p_material->shader_data->depth_draw == SceneShaderForwardClustered::ShaderData::DEPTH_DRAW_DISABLED || p_material->shader_data->depth_test == SceneShaderForwardClustered::ShaderData::DEPTH_TEST_DISABLED) {
+		//material is only meant for alpha pass
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_PASS_ALPHA;
+		if ((p_material->shader_data->uses_depth_prepass_alpha || p_material->shader_data->uses_alpha_antialiasing) && !(p_material->shader_data->depth_draw == SceneShaderForwardClustered::ShaderData::DEPTH_DRAW_DISABLED || p_material->shader_data->depth_test == SceneShaderForwardClustered::ShaderData::DEPTH_TEST_DISABLED)) {
+			flags |= GeometryInstanceSurfaceDataCache::FLAG_PASS_DEPTH;
+			flags |= GeometryInstanceSurfaceDataCache::FLAG_PASS_SHADOW;
+		}
+	} else {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_PASS_OPAQUE;
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_PASS_DEPTH;
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_PASS_SHADOW;
+	}
+
+	if (p_material->shader_data->uses_particle_trails) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_PARTICLE_TRAILS;
+	}
+
+	if (p_material->shader_data->is_animated()) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_MOTION_VECTOR;
+	}
+
+	SceneShaderForwardClustered::MaterialData *material_shadow = nullptr;
+	void *surface_shadow = nullptr;
+	if (!p_material->shader_data->uses_particle_trails && !p_material->shader_data->writes_modelview_or_projection && !p_material->shader_data->uses_vertex && !p_material->shader_data->uses_position && !p_material->shader_data->uses_discard && !p_material->shader_data->uses_depth_prepass_alpha && !p_material->shader_data->uses_alpha_clip && !p_material->shader_data->uses_alpha_antialiasing && p_material->shader_data->cull_mode == SceneShaderForwardClustered::ShaderData::CULL_BACK && !p_material->shader_data->uses_point_size && !p_material->shader_data->uses_world_coordinates) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_SHARED_SHADOW_MATERIAL;
+		material_shadow = static_cast<SceneShaderForwardClustered::MaterialData *>(RendererRD::MaterialStorage::get_singleton()->material_get_data(scene_shader.default_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
+
+		RID shadow_mesh = mesh_storage->mesh_get_shadow_mesh(p_mesh);
+
+		if (shadow_mesh.is_valid()) {
+			surface_shadow = mesh_storage->mesh_get_surface(shadow_mesh, p_surface);
+		}
+
+	} else {
+		material_shadow = p_material;
+	}
+
+	GeometryInstanceSurfaceDataCache *sdcache = geometry_instance_surface_alloc.alloc();
+
+	sdcache->flags = flags;
+
+	sdcache->shader = p_material->shader_data;
+	sdcache->material = p_material;
+	sdcache->material_uniform_set = p_material->uniform_set;
+	sdcache->surface = mesh_storage->mesh_get_surface(p_mesh, p_surface);
+	sdcache->primitive = mesh_storage->mesh_surface_get_primitive(sdcache->surface);
+	sdcache->surface_index = p_surface;
+
+	if (ginstance->data->dirty_dependencies) {
+		RSG::utilities->base_update_dependency(p_mesh, &ginstance->data->dependency_tracker);
+	}
+
+	//shadow
+	sdcache->shader_shadow = material_shadow->shader_data;
+	sdcache->material_uniform_set_shadow = material_shadow->uniform_set;
+
+	sdcache->surface_shadow = surface_shadow ? surface_shadow : sdcache->surface;
+
+	sdcache->owner = ginstance;
+
+	sdcache->next = ginstance->surface_caches;
+	ginstance->surface_caches = sdcache;
+
+	//sortkey
+
+	sdcache->sort.sort_key1 = 0;
+	sdcache->sort.sort_key2 = 0;
+
+	sdcache->sort.surface_index = p_surface;
+	sdcache->sort.material_id_low = p_material_id & 0xFFFF;
+	sdcache->sort.material_id_hi = p_material_id >> 16;
+	sdcache->sort.shader_id = p_shader_id;
+	sdcache->sort.geometry_id = p_mesh.get_local_index(); //only meshes can repeat anyway
+	sdcache->sort.uses_forward_gi = ginstance->can_sdfgi;
+	sdcache->sort.priority = p_material->priority;
+	sdcache->sort.uses_projector = ginstance->using_projectors;
+	sdcache->sort.uses_softshadow = ginstance->using_softshadows;
+
+	uint64_t format = RendererRD::MeshStorage::get_singleton()->mesh_surface_get_format(sdcache->surface);
+	if (p_material->shader_data->uses_tangent && !(format & RS::ARRAY_FORMAT_TANGENT)) {
+		String shader_path = p_material->shader_data->path.is_empty() ? "" : "(" + p_material->shader_data->path + ")";
+		String mesh_path = mesh_storage->mesh_get_path(p_mesh).is_empty() ? "" : "(" + mesh_storage->mesh_get_path(p_mesh) + ")";
+		WARN_PRINT_ED(vformat("Attempting to use a shader %s that requires tangents with a mesh %s that doesn't contain tangents. Ensure that meshes are imported with the 'ensure_tangents' option. If creating your own meshes, add an `ARRAY_TANGENT` array (when using ArrayMesh) or call `generate_tangents()` (when using SurfaceTool).", shader_path, mesh_path));
+	}
+}
+// 如果有next material 则填next material的GeometryInstanceSurfaceDataCache
+void RenderForwardClustered::_geometry_instance_add_surface_with_material_chain(GeometryInstanceForwardClustered *ginstance, uint32_t p_surface, SceneShaderForwardClustered::MaterialData *p_material, RID p_mat_src, RID p_mesh) {
+	SceneShaderForwardClustered::MaterialData *material = p_material;
+	RendererRD::MaterialStorage *material_storage = RendererRD::MaterialStorage::get_singleton();
+
+	_geometry_instance_add_surface_with_material(ginstance, p_surface, material, p_mat_src.get_local_index(), material_storage->material_get_shader_id(p_mat_src), p_mesh);
+
+	while (material->next_pass.is_valid()) {
+		RID next_pass = material->next_pass;
+		material = static_cast<SceneShaderForwardClustered::MaterialData *>(material_storage->material_get_data(next_pass, RendererRD::MaterialStorage::SHADER_TYPE_3D));
+		if (!material || !material->shader_data->valid) {
+			break;
+		}
+		if (ginstance->data->dirty_dependencies) {
+			material_storage->material_update_dependency(next_pass, &ginstance->data->dependency_tracker);
+		}
+		_geometry_instance_add_surface_with_material(ginstance, p_surface, material, next_pass.get_local_index(), material_storage->material_get_shader_id(next_pass), p_mesh);
+	}
+}
+// override 直接替代了传入的p_material
+// overlay 则 在执行完原来的基础上又执行一次（两者都会执行）
+void RenderForwardClustered::_geometry_instance_add_surface(GeometryInstanceForwardClustered *ginstance, uint32_t p_surface, RID p_material, RID p_mesh) {
+	RendererRD::MaterialStorage *material_storage = RendererRD::MaterialStorage::get_singleton();
+	RID m_src;
+
+	m_src = ginstance->data->material_override.is_valid() ? ginstance->data->material_override : p_material;
+
+	SceneShaderForwardClustered::MaterialData *material = nullptr;
+
+	if (m_src.is_valid()) {
+		material = static_cast<SceneShaderForwardClustered::MaterialData *>(material_storage->material_get_data(m_src, RendererRD::MaterialStorage::SHADER_TYPE_3D));
+		if (!material || !material->shader_data->valid) {
+			material = nullptr;
+		}
+	}
+
+	if (material) {
+		if (ginstance->data->dirty_dependencies) {
+			material_storage->material_update_dependency(m_src, &ginstance->data->dependency_tracker);
+		}
+	} else {
+		material = static_cast<SceneShaderForwardClustered::MaterialData *>(material_storage->material_get_data(scene_shader.default_material, RendererRD::MaterialStorage::SHADER_TYPE_3D));
+		m_src = scene_shader.default_material;
+	}
+
+	ERR_FAIL_NULL(material);
+
+	_geometry_instance_add_surface_with_material_chain(ginstance, p_surface, material, m_src, p_mesh);
+
+	if (ginstance->data->material_overlay.is_valid()) {
+		m_src = ginstance->data->material_overlay;
+
+		material = static_cast<SceneShaderForwardClustered::MaterialData *>(material_storage->material_get_data(m_src, RendererRD::MaterialStorage::SHADER_TYPE_3D));
+		if (material && material->shader_data->valid) {
+			if (ginstance->data->dirty_dependencies) {
+				material_storage->material_update_dependency(m_src, &ginstance->data->dependency_tracker);
+			}
+
+			_geometry_instance_add_surface_with_material_chain(ginstance, p_surface, material, m_src, p_mesh);
+		}
+	}
+}
+
+void RenderForwardClustered::_geometry_instance_update(RenderGeometryInstance *p_geometry_instance) {
+	RendererRD::MeshStorage *mesh_storage = RendererRD::MeshStorage::get_singleton();
+	// RendererRD::ParticlesStorage *particles_storage = RendererRD::ParticlesStorage::get_singleton();
+	GeometryInstanceForwardClustered *ginstance = static_cast<GeometryInstanceForwardClustered *>(p_geometry_instance);
+
+	if (ginstance->data->dirty_dependencies) {
+		ginstance->data->dependency_tracker.update_begin();
+	}
+
+	//add geometry for drawing
+	switch (ginstance->data->base_type) {
+		case RS::INSTANCE_MESH: {
+			const RID *materials = nullptr;
+			uint32_t surface_count;
+			RID mesh = ginstance->data->base;
+
+			materials = mesh_storage->mesh_get_surface_count_and_materials(mesh, surface_count);
+			if (materials) {
+				//if no materials, no surfaces.
+				const RID *inst_materials = ginstance->data->surface_materials.ptr();
+				uint32_t surf_mat_count = ginstance->data->surface_materials.size();
+
+				for (uint32_t j = 0; j < surface_count; j++) {
+					RID material = (j < surf_mat_count && inst_materials[j].is_valid()) ? inst_materials[j] : materials[j];
+					_geometry_instance_add_surface(ginstance, j, material, mesh);
+				}
+			}
+
+			ginstance->instance_count = 1;
+
+		} break;
+
+		case RS::INSTANCE_MULTIMESH: {
+			RID mesh = mesh_storage->multimesh_get_mesh(ginstance->data->base);
+			if (mesh.is_valid()) {
+				const RID *materials = nullptr;
+				uint32_t surface_count;
+
+				materials = mesh_storage->mesh_get_surface_count_and_materials(mesh, surface_count);
+				if (materials) {
+					for (uint32_t j = 0; j < surface_count; j++) {
+						_geometry_instance_add_surface(ginstance, j, materials[j], mesh);
+					}
+				}
+
+				ginstance->instance_count = mesh_storage->multimesh_get_instances_to_draw(ginstance->data->base);
+			}
+
+		} break;
+#if 0
+		case RS::INSTANCE_IMMEDIATE: {
+			RasterizerStorageGLES3::Immediate *immediate = storage->immediate_owner.get_or_null(inst->base);
+			ERR_CONTINUE(!immediate);
+
+			_add_geometry(immediate, inst, nullptr, -1, p_depth_pass, p_shadow_pass);
+
+		} break;
+#endif
+		// case RS::INSTANCE_PARTICLES: {
+		// 	int draw_passes = particles_storage->particles_get_draw_passes(ginstance->data->base);
+
+		// 	for (int j = 0; j < draw_passes; j++) {
+		// 		RID mesh = particles_storage->particles_get_draw_pass_mesh(ginstance->data->base, j);
+		// 		if (!mesh.is_valid()) {
+		// 			continue;
+		// 		}
+
+		// 		const RID *materials = nullptr;
+		// 		uint32_t surface_count;
+
+		// 		materials = mesh_storage->mesh_get_surface_count_and_materials(mesh, surface_count);
+		// 		if (materials) {
+		// 			for (uint32_t k = 0; k < surface_count; k++) {
+		// 				_geometry_instance_add_surface(ginstance, k, materials[k], mesh);
+		// 			}
+		// 		}
+		// 	}
+
+		// 	ginstance->instance_count = particles_storage->particles_get_amount(ginstance->data->base, ginstance->trail_steps);
+
+		// } break;
+
+		default: {
+		}
+	}
+
+	//Fill push constant
+
+	ginstance->base_flags = 0;
+
+	bool store_transform = true;
+
+	if (ginstance->data->base_type == RS::INSTANCE_MULTIMESH) {
+		ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH;
+		if (mesh_storage->multimesh_get_transform_format(ginstance->data->base) == RS::MULTIMESH_TRANSFORM_2D) {
+			ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_FORMAT_2D;
+		}
+		if (mesh_storage->multimesh_uses_colors(ginstance->data->base)) {
+			ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_HAS_COLOR;
+		}
+		if (mesh_storage->multimesh_uses_custom_data(ginstance->data->base)) {
+			ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_HAS_CUSTOM_DATA;
+		}
+
+		ginstance->transforms_uniform_set = mesh_storage->multimesh_get_3d_uniform_set(ginstance->data->base, scene_shader.default_shader_rd, TRANSFORMS_UNIFORM_SET);
+
+	} 
+  // else if (ginstance->data->base_type == RS::INSTANCE_PARTICLES) {
+	// 	ginstance->base_flags |= INSTANCE_DATA_FLAG_PARTICLES;
+	// 	ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH;
+
+	// 	ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_HAS_COLOR;
+	// 	ginstance->base_flags |= INSTANCE_DATA_FLAG_MULTIMESH_HAS_CUSTOM_DATA;
+
+	// 	//for particles, stride is the trail size
+	// 	ginstance->base_flags |= (ginstance->trail_steps << INSTANCE_DATA_FLAGS_PARTICLE_TRAIL_SHIFT);
+
+	// 	if (!particles_storage->particles_is_using_local_coords(ginstance->data->base)) {
+	// 		store_transform = false;
+	// 	}
+	// 	ginstance->transforms_uniform_set = particles_storage->particles_get_instance_buffer_uniform_set(ginstance->data->base, scene_shader.default_shader_rd, TRANSFORMS_UNIFORM_SET);
+
+	// 	if (particles_storage->particles_get_frame_counter(ginstance->data->base) == 0) {
+	// 		// Particles haven't been cleared or updated, update once now to ensure they are ready to render.
+	// 		particles_storage->update_particles();
+	// 	}
+
+	// 	if (ginstance->data->dirty_dependencies) {
+	// 		particles_storage->particles_update_dependency(ginstance->data->base, &ginstance->data->dependency_tracker);
+	// 	}
+	// } 
+  else if (ginstance->data->base_type == RS::INSTANCE_MESH) {
+		// if (mesh_storage->skeleton_is_valid(ginstance->data->skeleton)) {
+		// 	ginstance->transforms_uniform_set = mesh_storage->skeleton_get_3d_uniform_set(ginstance->data->skeleton, scene_shader.default_shader_rd, TRANSFORMS_UNIFORM_SET);
+		// 	if (ginstance->data->dirty_dependencies) {
+		// 		mesh_storage->skeleton_update_dependency(ginstance->data->skeleton, &ginstance->data->dependency_tracker);
+		// 	}
+		// } else {
+		// }
+			ginstance->transforms_uniform_set = RID();
+	}
+
+	ginstance->store_transform_cache = store_transform;
+	ginstance->can_sdfgi = false;
+
+	// if (!RendererRD::LightStorage::get_singleton()->lightmap_instance_is_valid(ginstance->lightmap_instance)) {
+	// 	if (ginstance->voxel_gi_instances[0].is_null() && (ginstance->data->use_baked_light || ginstance->data->use_dynamic_gi)) {
+	// 		ginstance->can_sdfgi = true;
+	// 	}
+	// }
+
+	if (ginstance->data->dirty_dependencies) {
+		ginstance->data->dependency_tracker.update_end();
+		ginstance->data->dirty_dependencies = false;
+	}
+
+	ginstance->dirty_list_element.remove_from_list();
+}
+void RenderForwardClustered::_update_dirty_geometry_instances() {
+  while (geometry_instance_dirty_list.first()) {
+    _geometry_instance_update(geometry_instance_dirty_list.first()->self());
+  }
+}
+
 void lain::RendererSceneRenderImplementation::RenderForwardClustered::_fill_render_list(RenderListType p_render_list, const RenderDataRD* p_render_data, PassMode p_pass_mode,
                                                                                         bool p_using_sdfgi, bool p_using_opaque_gi, bool p_using_motion_pass, bool p_append) {
                                                                                           RendererRD::MeshStorage *mesh_storage = RendererRD::MeshStorage::get_singleton();

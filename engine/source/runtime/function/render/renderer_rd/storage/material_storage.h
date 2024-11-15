@@ -328,6 +328,10 @@ class MaterialStorage : public RendererMaterialStorage {
 		}
 	}
 
+	_FORCE_INLINE_ uint32_t material_get_shader_id(RID p_material) {
+		Material *material = material_owner.get_or_null(p_material);
+		return material->shader_id;
+	}
 
 
 	void shader_set_data_request_function(ShaderType p_shader_type, ShaderDataRequestFunction p_function);

@@ -85,7 +85,8 @@ public:
 
 		RID skeleton;
 		Vector<RID> surface_materials;
-		RID material_override;
+		RID material_override; // override 直接替代了传入的p_material
+// overlay 则 在执行完原来的基础上又执行一次
 		RID material_overlay;
 		AABB aabb;
 
