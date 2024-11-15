@@ -1,5 +1,6 @@
 #include "copy_effects.h"
 #include "function/render/renderer_rd/storage/material_storage.h"
+#include "function/render/renderer_rd/uniform_set_cache_rd.h"
 using namespace lain;
 using namespace lain::RendererRD;
 void CopyEffects::copy_to_rect(RID p_source_rd_texture, RID p_dest_texture, const Rect2i &p_rect, bool p_flip_y, bool p_force_luminance, bool p_all_source, bool p_8_bit_dst, bool p_alpha_to_one) {

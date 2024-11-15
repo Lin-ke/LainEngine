@@ -427,13 +427,6 @@ class MeshStorage : public RendererMeshStorage {
 		return multimesh->uses_custom_data;
 	}
 
-	_FORCE_INLINE_ uint32_t multimesh_get_instances_to_draw(RID p_multimesh) const {
-		MultiMesh *multimesh = multimesh_owner.get_or_null(p_multimesh);
-		if (multimesh->visible_instances >= 0) {
-			return multimesh->visible_instances;
-		}
-		return multimesh->instances;
-	}
 		_FORCE_INLINE_ RID multimesh_get_3d_uniform_set(RID p_multimesh, RID p_shader, uint32_t p_set) const {
 		MultiMesh *multimesh = multimesh_owner.get_or_null(p_multimesh);
 		if (multimesh == nullptr) {
