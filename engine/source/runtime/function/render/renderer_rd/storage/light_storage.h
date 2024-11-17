@@ -249,6 +249,9 @@ class LightStorage : public RendererLightStorage {
   	_FORCE_INLINE_ int directional_shadow_get_size() {
 		return directional_shadow.size;
 	}
+  L_INLINE RID directional_shadow_get_texture(){
+    return directional_shadow.depth;
+  }
 
 
   /* LIGHT INSTANCE API */
@@ -342,6 +345,11 @@ class LightStorage : public RendererLightStorage {
 		ERR_FAIL_NULL_V(atlas, 0);
 		return atlas->size;
 	}
+  L_INLINE RID shadow_atlas_get_texture(RID p_shadow_atlas){
+    ShadowAtlas *atlas = shadow_atlas_owner.get_or_null(p_shadow_atlas);
+    ERR_FAIL_NULL_V(atlas, RID());
+    return atlas->depth;
+  }
 
   	/* SHADOW CUBEMAPS */
 
