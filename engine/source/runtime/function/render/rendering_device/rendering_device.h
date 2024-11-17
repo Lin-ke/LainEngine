@@ -323,6 +323,11 @@ class RenderingDevice : public RenderingDeviceCommons {
     bool operator==(const ColorInitialAction& p_key) const {
       return load_attach == p_key.load_attach && clear_attach == p_key.clear_attach && discard_attach == p_key.discard_attach;
     }
+    static ColorInitialAction create_load(uint32_t p_attach = 0xffffffff) {
+      ColorInitialAction cia;
+      cia.load_attach = p_attach;
+      return cia;
+    }
   };
   enum FinalAction { FINAL_ACTION_STORE, FINAL_ACTION_DISCARD, FINAL_ACTION_MAX };
   struct ColorFinalAction {
@@ -338,6 +343,7 @@ class RenderingDevice : public RenderingDeviceCommons {
       return false;
     }
     bool operator==(const ColorFinalAction& p_key) const { return store_attach == p_key.store_attach && discard_attach == p_key.discard_attach; }
+    
   };  // 最多32个attachment
   /*********************/
   /**** RenderPass ****/

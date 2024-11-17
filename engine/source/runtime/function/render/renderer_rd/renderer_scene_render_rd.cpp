@@ -204,7 +204,9 @@ void lain::RendererSceneRenderRD::init() {
   gi.init();
   // set max decals
   // fog.init() 
+		bool can_use_storage = _render_buffers_can_be_storage();
 
+		copy_effects = memnew(RendererRD::CopyEffects(!can_use_storage));
   }
   // 在rendering_system::init() 中 已经注册过了
   RSG::camera_attributes->camera_attributes_set_dof_blur_bokeh_shape(RS::DOFBokehShape(int(GLOBAL_GET("rendering/camera/depth_of_field/depth_of_field_bokeh_shape"))));

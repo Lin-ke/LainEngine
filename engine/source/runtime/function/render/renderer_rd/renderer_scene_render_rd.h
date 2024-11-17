@@ -7,6 +7,7 @@
 #include "storage/forward_id.h"
 #include "environment/renderer_sky.h"
 #include "environment/renderer_gi.h"
+#include "effects/copy_effects.h"
 namespace lain {
 class RendererSceneRenderRD : public RendererSceneRender {
   static RendererSceneRenderRD* singleton;
@@ -18,6 +19,7 @@ protected:
 	bool use_physical_light_units = false;
 	RendererRD::SkyRD sky;
 	RendererRD::GI gi;
+	RendererRD::CopyEffects* copy_effects; 
 	
  public:
   static RendererSceneRenderRD* get_singleton() { return singleton; }

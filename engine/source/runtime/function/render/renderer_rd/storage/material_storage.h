@@ -10,6 +10,11 @@ namespace lain::RendererRD {
 class MaterialStorage : public RendererMaterialStorage {
  private:
   static MaterialStorage* p_singleton;
+	
+	/* Buffers */
+	RID quad_index_buffer;
+	RID quad_index_array;
+	
 
  public:
 	bool owns_shader(RID p_rid) {
@@ -336,6 +341,7 @@ class MaterialStorage : public RendererMaterialStorage {
 
 	void shader_set_data_request_function(ShaderType p_shader_type, ShaderDataRequestFunction p_function);
 
+	RID get_quad_index_array() { return quad_index_array; }
 
   private:
 	SelfList<Material>::List material_update_list;
