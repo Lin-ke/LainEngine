@@ -419,6 +419,7 @@ namespace lain {
 		};
 		// 在common里的，renderingdevice和 rendering device driver都要用
 		// 一般都是多个顶点分量，如 位置，法线，纹理
+		// 在RS::ArrayType 里有所有顶点分量的可能
 		struct VertexAttribute {
 			uint32_t location = 0; // Shader location.
 			uint32_t offset = 0;

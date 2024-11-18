@@ -1,10 +1,32 @@
 #ifndef MESH_STORAGE_IMPL_H
 #define MESH_STORAGE_IMPL_H
 #include "function/render/rendering_system/mesh_storage_api.h"
+#include "function/render/rendering_system/rendering_system_globals.h"
 namespace lain::RendererRD {
 class MeshStorage : public RendererMeshStorage {
   static MeshStorage* p_singleton;
 	RID default_rd_storage_buffer;
+		enum DefaultRDBuffer {
+		DEFAULT_RD_BUFFER_VERTEX,
+		DEFAULT_RD_BUFFER_NORMAL,
+		DEFAULT_RD_BUFFER_TANGENT,
+		DEFAULT_RD_BUFFER_COLOR,
+		DEFAULT_RD_BUFFER_TEX_UV,
+		DEFAULT_RD_BUFFER_TEX_UV2,
+		DEFAULT_RD_BUFFER_CUSTOM0,
+		DEFAULT_RD_BUFFER_CUSTOM1,
+		DEFAULT_RD_BUFFER_CUSTOM2,
+		DEFAULT_RD_BUFFER_CUSTOM3,
+		DEFAULT_RD_BUFFER_BONES,
+		DEFAULT_RD_BUFFER_WEIGHTS,
+		DEFAULT_RD_BUFFER_MAX,
+	};
+	RID mesh_default_rd_buffers[DEFAULT_RD_BUFFER_MAX];
+	enum AttributeLocation {
+		ATTRIBUTE_LOCATION_PREV_VERTEX = 12,
+		ATTRIBUTE_LOCATION_PREV_NORMAL = 13,
+		ATTRIBUTE_LOCATION_PREV_TANGENT = 14
+	};
   struct MeshInstance;
 	// Mesh 由 surface 组成
 	// surface 包含 各种数据， Material ，以及LOD (index buffer)
@@ -12,7 +34,7 @@ class MeshStorage : public RendererMeshStorage {
   struct Mesh {
     struct Surface {
 			RS::PrimitiveType primitive = RS::PRIMITIVE_POINTS;
-			uint64_t format = 0;
+			uint64_t format = 0; // RS::ArrayFormat 前是 RS::ArrayType， 
 
 			RID vertex_buffer;
 			RID attribute_buffer;
@@ -27,7 +49,7 @@ class MeshStorage : public RendererMeshStorage {
 			// There are never that many geometry/material
 			// combinations, so a simple array is the most
 			// cache-efficient structure.
-
+			// 每个version 根据 input_mask 不同而不同（指shader 的 layout location=1 这些）
 			struct Version {
 				uint64_t input_mask = 0;
 				uint32_t current_buffer = 0;
@@ -38,7 +60,7 @@ class MeshStorage : public RendererMeshStorage {
 			};
 
 			SpinLock version_lock; //needed to access versions
-			Version *versions = nullptr; //allocated on demand
+			Version *versions = nullptr; //allocated on demand 
 			uint32_t version_count = 0;
 
 			RID index_buffer;
@@ -479,6 +501,89 @@ class MeshStorage : public RendererMeshStorage {
 		Mesh::Surface *s = reinterpret_cast<Mesh::Surface *>(p_surface);
 		return s->uv_scale;
 	}
+	/* Get Input Arrays*/
+	void _mesh_surface_generate_version_for_input_mask(Mesh::Surface::Version &v, Mesh::Surface *s, uint64_t p_input_mask, bool p_input_motion_vectors, MeshInstance::Surface *mis = nullptr, uint32_t p_current_buffer = 0, uint32_t p_previous_buffer = 0);
+
+
+	_FORCE_INLINE_ void mesh_instance_surface_get_vertex_arrays_and_format(RID p_mesh_instance, uint64_t p_surface_index, uint64_t p_input_mask, bool p_input_motion_vectors, RID &r_vertex_array_rd, RD::VertexFormatID &r_vertex_format) {
+		MeshInstance *mi = mesh_instance_owner.get_or_null(p_mesh_instance);
+		ERR_FAIL_NULL(mi);
+		Mesh *mesh = mi->mesh;
+		ERR_FAIL_UNSIGNED_INDEX(p_surface_index, mesh->surface_count);
+
+		MeshInstance::Surface *mis = &mi->surfaces[p_surface_index];
+		Mesh::Surface *s = mesh->surfaces[p_surface_index];
+		uint32_t current_buffer = mis->current_buffer;
+
+		// Using the previous buffer is only allowed if the surface was updated this frame and motion vectors are required.
+		uint32_t previous_buffer = p_input_motion_vectors && (RSG::rasterizer->get_frame_number() == mis->last_change) ? mis->previous_buffer : current_buffer;
+
+		s->version_lock.lock();
+
+		//there will never be more than, at much, 3 or 4 versions, so iterating is the fastest way
+
+		for (uint32_t i = 0; i < mis->version_count; i++) {
+			if (mis->versions[i].input_mask != p_input_mask || mis->versions[i].input_motion_vectors != p_input_motion_vectors) {
+				// Find the version that matches the inputs required.
+				continue;
+			}
+
+			if (mis->versions[i].current_buffer != current_buffer || mis->versions[i].previous_buffer != previous_buffer) {
+				// Find the version that corresponds to the correct buffers that should be used.
+				continue;
+			}
+
+			//we have this version, hooray
+			r_vertex_format = mis->versions[i].vertex_format;
+			r_vertex_array_rd = mis->versions[i].vertex_array;
+			s->version_lock.unlock();
+			return;
+		}
+
+		uint32_t version = mis->version_count;
+		mis->version_count++;
+		mis->versions = (Mesh::Surface::Version *)memrealloc(mis->versions, sizeof(Mesh::Surface::Version) * mis->version_count);
+
+		_mesh_surface_generate_version_for_input_mask(mis->versions[version], s, p_input_mask, p_input_motion_vectors, mis, current_buffer, previous_buffer);
+
+		r_vertex_format = mis->versions[version].vertex_format;
+		r_vertex_array_rd = mis->versions[version].vertex_array;
+
+		s->version_lock.unlock();
+	}
+
+	_FORCE_INLINE_ void mesh_surface_get_vertex_arrays_and_format(void *p_surface, uint64_t p_input_mask, bool p_input_motion_vectors, RID &r_vertex_array_rd, RD::VertexFormatID &r_vertex_format) {
+		Mesh::Surface *s = reinterpret_cast<Mesh::Surface *>(p_surface);
+
+		s->version_lock.lock();
+
+		//there will never be more than, at much, 3 or 4 versions, so iterating is the fastest way
+
+		for (uint32_t i = 0; i < s->version_count; i++) {
+			if (s->versions[i].input_mask != p_input_mask || s->versions[i].input_motion_vectors != p_input_motion_vectors) {
+				// Find the version that matches the inputs required.
+				continue;
+			}
+
+			//we have this version, hooray
+			r_vertex_format = s->versions[i].vertex_format;
+			r_vertex_array_rd = s->versions[i].vertex_array;
+			s->version_lock.unlock();
+			return;
+		}
+
+		uint32_t version = s->version_count;
+		s->version_count++;
+		s->versions = (Mesh::Surface::Version *)memrealloc(s->versions, sizeof(Mesh::Surface::Version) * s->version_count);
+
+		_mesh_surface_generate_version_for_input_mask(s->versions[version], s, p_input_mask, p_input_motion_vectors);
+
+		r_vertex_format = s->versions[version].vertex_format;
+		r_vertex_array_rd = s->versions[version].vertex_array;
+
+		s->version_lock.unlock();
+	}
+
 
 };
 }  // namespace lain::RendererRD

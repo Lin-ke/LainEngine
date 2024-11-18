@@ -9,40 +9,38 @@ class TextureStorage : public RendererTextureStorage {
   static TextureStorage* singleton;
 
  public:
- 	enum DefaultRDTexture {
-		DEFAULT_RD_TEXTURE_WHITE,
-		DEFAULT_RD_TEXTURE_BLACK,
-		DEFAULT_RD_TEXTURE_TRANSPARENT,
-		DEFAULT_RD_TEXTURE_NORMAL,
-		DEFAULT_RD_TEXTURE_ANISO,
-		DEFAULT_RD_TEXTURE_DEPTH,
-		DEFAULT_RD_TEXTURE_MULTIMESH_BUFFER,
-		DEFAULT_RD_TEXTURE_CUBEMAP_BLACK,
-		DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_BLACK,
-		DEFAULT_RD_TEXTURE_CUBEMAP_WHITE,
-		DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_WHITE,
-		DEFAULT_RD_TEXTURE_3D_WHITE,
-		DEFAULT_RD_TEXTURE_3D_BLACK,
-		DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE,
-		DEFAULT_RD_TEXTURE_2D_ARRAY_BLACK,
-		DEFAULT_RD_TEXTURE_2D_ARRAY_NORMAL,
-		DEFAULT_RD_TEXTURE_2D_ARRAY_DEPTH,
-		DEFAULT_RD_TEXTURE_2D_UINT,
-		DEFAULT_RD_TEXTURE_VRS,
-		DEFAULT_RD_TEXTURE_MAX
-	};
-	RID default_rd_textures[DEFAULT_RD_TEXTURE_MAX];
+  enum DefaultRDTexture {
+    DEFAULT_RD_TEXTURE_WHITE,
+    DEFAULT_RD_TEXTURE_BLACK,
+    DEFAULT_RD_TEXTURE_TRANSPARENT,
+    DEFAULT_RD_TEXTURE_NORMAL,
+    DEFAULT_RD_TEXTURE_ANISO,
+    DEFAULT_RD_TEXTURE_DEPTH,
+    DEFAULT_RD_TEXTURE_MULTIMESH_BUFFER,
+    DEFAULT_RD_TEXTURE_CUBEMAP_BLACK,
+    DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_BLACK,
+    DEFAULT_RD_TEXTURE_CUBEMAP_WHITE,
+    DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_WHITE,
+    DEFAULT_RD_TEXTURE_3D_WHITE,
+    DEFAULT_RD_TEXTURE_3D_BLACK,
+    DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE,
+    DEFAULT_RD_TEXTURE_2D_ARRAY_BLACK,
+    DEFAULT_RD_TEXTURE_2D_ARRAY_NORMAL,
+    DEFAULT_RD_TEXTURE_2D_ARRAY_DEPTH,
+    DEFAULT_RD_TEXTURE_2D_UINT,
+    DEFAULT_RD_TEXTURE_VRS,
+    DEFAULT_RD_TEXTURE_MAX
+  };
+  RID default_rd_textures[DEFAULT_RD_TEXTURE_MAX];
 
-  	_FORCE_INLINE_ RID texture_rd_get_default(DefaultRDTexture p_texture) {
-		return default_rd_textures[p_texture];
-	}
+  _FORCE_INLINE_ RID texture_rd_get_default(DefaultRDTexture p_texture) { return default_rd_textures[p_texture]; }
 
   TextureStorage();
   virtual ~TextureStorage();
   static TextureStorage* get_singleton() { return singleton; }
   bool owns_decal(RID p_rid);
   bool free(RID p_rid);
-bool owns_texture(RID p_rid);
+  bool owns_texture(RID p_rid);
   /* Texture API */
   // 这里的Texture 是比较特殊的 render system 所使用的几种
 
@@ -120,7 +118,7 @@ bool owns_texture(RID p_rid);
       swizzle_a = RD::TEXTURE_SWIZZLE_A;
     }
   };
-  // 从RDformat 获得 
+  // 从RDformat 获得
   struct TextureFromRDFormat {
     Image::Format image_format;
     RD::DataFormat rd_format;
@@ -201,9 +199,9 @@ bool owns_texture(RID p_rid);
 
     bool sdf_enabled = false;
 
-    RID backbuffer;  //used for effects
-    RID backbuffer_fb; // mipmap 0 的 形成 的 framebuffer
-    RID backbuffer_mipmap0; // backbuffer的slice
+    RID backbuffer;          //used for effects
+    RID backbuffer_fb;       // mipmap 0 的 形成 的 framebuffer
+    RID backbuffer_mipmap0;  // backbuffer的slice
 
     Vector<RID> backbuffer_mipmaps;
 
@@ -275,9 +273,8 @@ bool owns_texture(RID p_rid);
   void _clear_render_target(RenderTarget* rt);
   // 删除现在的texture，调用clear，并创建新的texture，color etc.
   void _update_render_target(RenderTarget* rt);
-  // 
-	void _create_render_target_backbuffer(RenderTarget *rt);
-
+  //
+  void _create_render_target_backbuffer(RenderTarget* rt);
 
  public:
   /* RENDER TARGET API */
@@ -296,7 +293,7 @@ bool owns_texture(RID p_rid);
   RID render_target_get_override_color(RID p_render_target) const;
   RID render_target_get_override_depth(RID p_render_target) const;
   virtual RID render_target_get_override_velocity(RID p_render_target) const override;
-  
+
   //  rt->overridden.depth
 
   virtual void render_target_set_transparent(RID p_render_target, bool p_is_transparent) override;
@@ -312,7 +309,7 @@ bool owns_texture(RID p_rid);
   virtual void render_target_do_msaa_resolve(RID p_render_target) override;
   virtual void render_target_set_use_hdr(RID p_render_target, bool p_use_hdr) override;
   virtual bool render_target_is_using_hdr(RID p_render_target) const override;
-	RID render_target_get_override_depth_slice(RID p_render_target, const uint32_t p_layer) const;
+  RID render_target_get_override_depth_slice(RID p_render_target, const uint32_t p_layer) const;
 
   void render_target_copy_to_back_buffer(RID p_render_target, const Rect2i& p_region, bool p_gen_mipmaps);
   void render_target_clear_back_buffer(RID p_render_target, const Rect2i& p_region, const Color& p_color);
@@ -325,8 +322,46 @@ bool owns_texture(RID p_rid);
   virtual void render_target_disable_clear_request(RID p_render_target) override;
   virtual void render_target_do_clear_request(RID p_render_target) override;
 
-	RID render_target_get_rd_texture(RID p_render_target);
+  RID render_target_get_rd_texture(RID p_render_target);
 
+  struct DecalAtlas {
+    struct Texture {
+      int panorama_to_dp_users;
+      int users;
+      Rect2 uv_rect;
+    };
+
+    struct SortItem {
+      RID texture;
+      Size2i pixel_size;
+      Size2i size;
+      Point2i pos;
+
+      bool operator<(const SortItem& p_item) const {
+        //sort larger to smaller
+        if (size.height() == p_item.size.height()) {
+          return size.width() > p_item.size.width();
+        } else {
+          return size.height() > p_item.size.height();
+        }
+      }
+    };
+
+    HashMap<RID, Texture> textures;
+    bool dirty = true;
+    int mipmaps = 5;
+
+    RID texture;
+    RID texture_srgb;
+    struct MipMap {
+      RID fb;
+      RID texture;
+      Size2i size;
+    };
+    Vector<MipMap> texture_mipmaps;
+
+    Size2i size;
+  } decal_atlas;
 };
 }  // namespace lain::RendererRD
 #endif

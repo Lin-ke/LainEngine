@@ -2271,6 +2271,14 @@ RID RenderingDevice::shader_create_from_bytecode(const Vector<uint8_t>& p_shader
   return id;
 }
 
+uint64_t RenderingDevice::shader_get_vertex_input_attribute_mask(RID p_shader) {
+	_THREAD_SAFE_METHOD_
+
+	const Shader *shader = shader_owner.get_or_null(p_shader);
+	ERR_FAIL_NULL_V(shader, 0);
+	return shader->vertex_input_mask;
+}
+
 /// Shader compile
 Vector<uint8_t> RenderingDevice::shader_compile_spirv_from_source(ShaderStage p_stage, const String& p_source_code, ShaderLanguage p_language, String* r_error,
                                                                   bool p_allow_cache) {

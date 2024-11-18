@@ -328,6 +328,28 @@ class RenderingDevice : public RenderingDeviceCommons {
       cia.load_attach = p_attach;
       return cia;
     }
+    ColorInitialAction() {}
+    ColorInitialAction(InitialAction p_ia){
+      switch (p_ia) {
+        case INITIAL_ACTION_LOAD:{
+          load_attach = 0xffffffff;
+          clear_attach = 0; 
+          discard_attach = 0;
+          break;
+        }
+        case INITIAL_ACTION_CLEAR:
+          {clear_attach = 0xffffffff;
+          load_attach = 0;
+          discard_attach = 0;
+          break;}
+        case INITIAL_ACTION_DISCARD:
+          { load_attach = 0; clear_attach = 0;
+            discard_attach = 0xffffffff;
+          break;}
+        default:
+          break;
+      }
+    }
   };
   enum FinalAction { FINAL_ACTION_STORE, FINAL_ACTION_DISCARD, FINAL_ACTION_MAX };
   struct ColorFinalAction {
@@ -343,7 +365,21 @@ class RenderingDevice : public RenderingDeviceCommons {
       return false;
     }
     bool operator==(const ColorFinalAction& p_key) const { return store_attach == p_key.store_attach && discard_attach == p_key.discard_attach; }
-    
+    ColorFinalAction() {}
+    ColorFinalAction(FinalAction p_fa){
+      switch (p_fa) {
+        case FINAL_ACTION_STORE:
+          store_attach = 0xffffffff;
+          discard_attach = 0;
+          break;
+        case FINAL_ACTION_DISCARD:
+          store_attach = 0;
+          discard_attach = 0xffffffff;
+          break;
+        default:
+          break;
+      }
+    }
   };  // 最多32个attachment
   /*********************/
   /**** RenderPass ****/
@@ -1226,6 +1262,9 @@ class RenderingDevice : public RenderingDeviceCommons {
   ~RenderingDevice() {}
   void finalize();  // 主要清理dependency graph
   void free(RID p_id);
+  
+
+
 };
 typedef RenderingDevice RD;
 
