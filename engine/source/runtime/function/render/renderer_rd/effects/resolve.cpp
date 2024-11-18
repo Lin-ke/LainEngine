@@ -29,11 +29,11 @@
 /**************************************************************************/
 
 #include "resolve.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
-#include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
+#include "function/render/renderer_rd/renderer_compositor_rd.h"
+#include "function/render/renderer_rd/storage/material_storage.h"
+#include "function/render/renderer_rd/uniform_set_cache_rd.h"
 
-using namespace RendererRD;
+using namespace lain::RendererRD;
 
 Resolve::Resolve() {
 	Vector<String> resolve_modes;

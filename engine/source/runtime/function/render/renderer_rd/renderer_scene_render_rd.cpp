@@ -185,6 +185,34 @@ Ref<RenderSceneBuffers> lain::RendererSceneRenderRD::render_buffers_create() {
 	return rb;
 }
 
+
+void RendererSceneRenderRD::_process_compositor_effects(RS::CompositorEffectCallbackType p_callback_type, const RenderDataRD *p_render_data) {
+	RendererCompositorStorage *comp_storage = RendererCompositorStorage::get_singleton();
+
+	if (p_render_data->compositor.is_null()) {
+		return;
+	}
+
+	if (p_render_data->reflection_probe.is_valid()) {
+		return;
+	}
+
+	ERR_FAIL_COND(!comp_storage->is_compositor(p_render_data->compositor));
+
+	Vector<RID> re_rids = comp_storage->compositor_get_compositor_effects(p_render_data->compositor, p_callback_type, true);
+
+	for (RID rid : re_rids) {
+		Array arr;
+		Callable callback = comp_storage->compositor_effect_get_callback(rid);
+
+		arr.push_back(p_callback_type);
+		arr.push_back(p_render_data);
+
+		callback.callv(arr);
+	}
+}
+
+
 void RendererSceneRenderRD::update() {
   // update dirty sky
   // @todo

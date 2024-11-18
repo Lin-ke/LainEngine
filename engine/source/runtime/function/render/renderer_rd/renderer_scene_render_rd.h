@@ -8,6 +8,7 @@
 #include "environment/renderer_sky.h"
 #include "environment/renderer_gi.h"
 #include "effects/copy_effects.h"
+#include "effects/resolve.h"
 namespace lain {
 class RendererSceneRenderRD : public RendererSceneRender {
   static RendererSceneRenderRD* singleton;
@@ -20,6 +21,7 @@ protected:
 	RendererRD::SkyRD sky;
 	RendererRD::GI gi;
 	RendererRD::CopyEffects* copy_effects; 
+	RendererRD::Resolve* resolve_effects;
 	
  public:
   static RendererSceneRenderRD* get_singleton() { return singleton; }
@@ -44,6 +46,10 @@ protected:
 	virtual Ref<RenderSceneBuffers> render_buffers_create() override;
 	virtual bool _render_buffers_can_be_storage() { return true;}
   virtual RD::DataFormat _render_buffers_get_color_format() const {return RD::DATA_FORMAT_R16G16B16_SFLOAT;}
+  /* 提供 compositor 的渲染相关*/
+void _process_compositor_effects(RS::CompositorEffectCallbackType p_callback_type, const RenderDataRD *p_render_data);
+
+
   virtual void set_scene_pass(uint64_t p_pass) override { scene_pass = p_pass; }
   virtual void update() override;
 

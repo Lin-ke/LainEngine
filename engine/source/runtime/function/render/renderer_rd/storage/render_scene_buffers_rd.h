@@ -241,6 +241,7 @@ class RenderSceneBuffersRD : public RenderSceneBuffers {
 		}
 	}
 
+
 };
 };  // namespace lain
 #endif  // !RENDER_SCENE_BUFFERS_RD_H

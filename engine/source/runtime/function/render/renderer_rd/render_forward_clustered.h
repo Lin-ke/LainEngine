@@ -11,12 +11,15 @@
 #include "function/render/renderer_rd/renderer_scene_render_rd.h"
 #define RB_SCOPE_FORWARD_CLUSTERED SNAME("forward_clustered")
 
+#define RB_SCOPE_FORWARD_CLUSTERED SNAME("forward_clustered")
+
 #define RB_TEX_SPECULAR SNAME("specular")
 #define RB_TEX_SPECULAR_MSAA SNAME("specular_msaa")
-#define RB_TEX_NORMAL_ROUGHNESS SNAME("normal_roughness")
-#define RB_TEX_NORMAL_ROUGHNESS_MSAA SNAME("normal_roughness_msaa")
+#define RB_TEX_ROUGHNESS SNAME("normal_roughnesss")
+#define RB_TEX_ROUGHNESS_MSAA SNAME("normal_roughnesss_msaa")
 #define RB_TEX_VOXEL_GI SNAME("voxel_gi")
 #define RB_TEX_VOXEL_GI_MSAA SNAME("voxel_gi_msaa")
+
 namespace lain::RendererSceneRenderImplementation{
 	// _render_scene
   class RenderForwardClustered : public RendererSceneRenderRD {
@@ -66,9 +69,6 @@ namespace lain::RendererSceneRenderImplementation{
 		RenderSceneBuffersRD *render_buffers = nullptr;
 		virtual void configure(RenderSceneBuffersRD *p_render_buffers) override;
 		virtual void free_data() override;
-		RID get_normal_roughness() const { 
-			return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_NORMAL_ROUGHNESS); 
-		 }
 		RID get_color_only_fb();
 		RID get_velocity_only_fb();
 		enum DepthFrameBufferType {
@@ -76,9 +76,40 @@ namespace lain::RendererSceneRenderImplementation{
 			DEPTH_FB_ROUGHNESS,
 			DEPTH_FB_ROUGHNESS_VOXELGI
 		};
+		void ensure_specular();
+		bool has_specular() const { return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR); }
+		RID get_specular() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR); }
+		RID get_specular(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR, p_layer, 0); }
+		RID get_specular_msaa(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_SPECULAR_MSAA, p_layer, 0); }
+
 
 		RID get_depth_fb(DepthFrameBufferType type  = DEPTH_FB);
 		RID get_color_pass_fb(uint32_t p_color_pass_flag);
+		void ensure_normal_roughness_texture();
+		bool has_normal_roughness() const { return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_ROUGHNESS); }
+		RID get_normal_roughness() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_ROUGHNESS); }
+		RID get_normal_roughness(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_ROUGHNESS, p_layer, 0); }
+		RID get_normal_roughness_msaa() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_ROUGHNESS_MSAA); }
+		RID get_normal_roughness_msaa(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_ROUGHNESS_MSAA, p_layer, 0); }
+
+		void ensure_voxelgi();
+		bool has_voxelgi() const { return render_buffers->has_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI); }
+		RID get_voxelgi() const { return render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI); }
+		RID get_voxelgi(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI, p_layer, 0); }
+		RID get_voxelgi_msaa(uint32_t p_layer) { return render_buffers->get_texture_slice(RB_SCOPE_FORWARD_CLUSTERED, RB_TEX_VOXEL_GI_MSAA, p_layer, 0); }
+
+		// void ensure_fsr2(RendererRD::FSR2Effect *p_effect);
+		// RendererRD::FSR2Context *get_fsr2_context() const { return fsr2_context; }
+
+		RID get_color_only_fb();
+		RID get_color_pass_fb(uint32_t p_color_pass_flags);
+		RID get_depth_fb(DepthFrameBufferType p_type = DEPTH_FB);
+		RID get_specular_only_fb();
+		RID get_velocity_only_fb();
+
+		virtual void configure(RenderSceneBuffersRD *p_render_buffers) override;
+		virtual void free_data() override;
+
 	};
 
 
@@ -593,6 +624,12 @@ public:
 
 	RenderForwardClustered();
 	~RenderForwardClustered();
+
+	
+	LocalVector<RD::DrawListID> thread_draw_lists;
+	void _render_list_thread_function(uint32_t p_thread, RenderListParameters *p_params);
+	void _render_list_with_threads(RenderListParameters *p_params, RID p_framebuffer, RD::InitialAction p_initial_color_action, RD::FinalAction p_final_color_action, RD::InitialAction p_initial_depth_action, RD::FinalAction p_final_depth_action, const Vector<Color> &p_clear_color_values = Vector<Color>(), float p_clear_depth = 1.0, uint32_t p_clear_stencil = 0, const Rect2 &p_region = Rect2(), const Vector<RID> &p_storage_textures = Vector<RID>());
+
 };
 } // namespace RendererSceneRenderImplementation
 
