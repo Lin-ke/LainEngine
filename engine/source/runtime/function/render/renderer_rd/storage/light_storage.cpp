@@ -77,8 +77,10 @@ RS::LightDirectionalSkyMode LightStorage::light_directional_get_sky_mode(RID p_l
 
 	return light->directional_sky_mode;
 }
-RID lain::RendererRD::LightStorage::shadow_atlas_create() {
-  return shadow_atlas_owner.make_rid(ShadowAtlas());
+
+RID lain::RendererRD::LightStorage::shadow_atlas_create()
+{
+    return shadow_atlas_owner.make_rid(ShadowAtlas());
 }
 void LightStorage::shadow_atlas_free(RID p_atlas) {
   shadow_atlas_set_size(p_atlas, 0);
@@ -823,6 +825,11 @@ RS::LightDirectionalShadowMode LightStorage::light_directional_get_shadow_mode(R
   return light->directional_shadow_mode;
 }
 
+Rect2i lain::RendererRD::LightStorage::get_directional_shadow_rect()
+{
+   	return _get_directional_shadow_rect(directional_shadow.size, directional_shadow.light_count, directional_shadow.current_light);
+}
+
 uint32_t LightStorage::light_get_max_sdfgi_cascade(RID p_light) {
   const Light* light = light_owner.get_or_null(p_light);
   ERR_FAIL_NULL_V(light, 0);
@@ -1042,9 +1049,33 @@ LightStorage::ShadowCubemap *LightStorage::_get_shadow_cubemap(int p_size) {
 
 	return &shadow_cubemaps[p_size];
 }
+RD::DataFormat LightStorage::get_shadow_atlas_depth_format(bool p_16_bits) {
+	return p_16_bits ? RD::DATA_FORMAT_D16_UNORM : RD::DATA_FORMAT_D32_SFLOAT;
+}
+uint32_t lain::RendererRD::LightStorage::get_shadow_atlas_depth_usage_bits()
+{
+	return RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+}
 
-RID LightStorage::get_cubemap(int p_size) {
-	ShadowCubemap *cubemap = _get_shadow_cubemap(p_size);
+void lain::RendererRD::LightStorage::update_directional_shadow_atlas()
+{
+	if (directional_shadow.depth.is_null() && directional_shadow.size > 0) {
+		RD::TextureFormat tf;
+		tf.format = get_shadow_atlas_depth_format(directional_shadow.use_16_bits);
+		tf.width = directional_shadow.size;
+		tf.height = directional_shadow.size;
+		tf.usage_bits = get_shadow_atlas_depth_usage_bits();
+
+		directional_shadow.depth = RD::get_singleton()->texture_create(tf, RD::TextureView());
+		Vector<RID> fb_tex;
+		fb_tex.push_back(directional_shadow.depth);
+		directional_shadow.fb = RD::get_singleton()->framebuffer_create(fb_tex);
+	}
+}
+
+RID LightStorage::get_cubemap(int p_size)
+{
+    ShadowCubemap *cubemap = _get_shadow_cubemap(p_size);
 
 	return cubemap->cubemap;
 }

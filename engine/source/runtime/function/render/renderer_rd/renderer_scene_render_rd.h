@@ -71,6 +71,8 @@ void _process_compositor_effects(RS::CompositorEffectCallbackType p_callback_typ
 
   /* RENDER BUFFERS */
 	virtual float _render_buffers_get_luminance_multiplier(){return 1.0f;}
+	// 跟获得特定纹理相关的
+	RID render_buffers_get_default_voxel_gi_buffer();
 
   /* GI */
   bool screen_space_roughness_limiter = false;

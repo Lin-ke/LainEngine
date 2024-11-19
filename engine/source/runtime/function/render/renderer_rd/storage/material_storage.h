@@ -323,6 +323,20 @@ class MaterialStorage : public RendererMaterialStorage {
 		p_array[10] = p_mtx.rows[2][2];
 		p_array[11] = 0;
 	}
+		static _FORCE_INLINE_ void store_transform_transposed_3x4(const Transform3D &p_mtx, float *p_array) {
+		p_array[0] = p_mtx.basis.rows[0][0];
+		p_array[1] = p_mtx.basis.rows[0][1];
+		p_array[2] = p_mtx.basis.rows[0][2];
+		p_array[3] = p_mtx.origin.x;
+		p_array[4] = p_mtx.basis.rows[1][0];
+		p_array[5] = p_mtx.basis.rows[1][1];
+		p_array[6] = p_mtx.basis.rows[1][2];
+		p_array[7] = p_mtx.origin.y;
+		p_array[8] = p_mtx.basis.rows[2][0];
+		p_array[9] = p_mtx.basis.rows[2][1];
+		p_array[10] = p_mtx.basis.rows[2][2];
+		p_array[11] = p_mtx.origin.z;
+	}
 
 	_FORCE_INLINE_ MaterialData *material_get_data(RID p_material, ShaderType p_shader_type) {
 		Material *material = material_owner.get_or_null(p_material);

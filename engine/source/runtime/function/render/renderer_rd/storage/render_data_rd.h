@@ -52,10 +52,10 @@ class RenderDataRD : public RenderData {
   /* Shadow data */
   const RendererSceneRender::RenderShadowData* render_shadows = nullptr;
   int render_shadow_count = 0;
-
-  LocalVector<int> cube_shadows;
-  LocalVector<int> shadows;
-  LocalVector<int> directional_shadows;
+// 对应的灯光在p_render_data->render_shadows的instance
+  LocalVector<int> cube_shadows; // omni
+  LocalVector<int> shadows; // omni, sport
+  LocalVector<int> directional_shadows; // directional 
 
   /* GI info */
   const RendererSceneRender::RenderSDFGIData* render_sdfgi_regions = nullptr;

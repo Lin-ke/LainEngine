@@ -1600,7 +1600,7 @@ void lain::RendererSceneCull::_render_scene(const RendererSceneRender::CameraDat
   }
   /*Render Shadows*/
   if (p_using_shadows) {
-    // Directional Shadows
+    // Directional Shadows 处理 directional light
     for (uint32_t i = 0; i < cull.shadow_count; i++) {
       for (uint32_t j = 0; j < cull.shadows[i].cascade_count; j++) {
         const Cull::Shadow::Cascade& c = cull.shadows[i].cascades[j];
@@ -1616,7 +1616,7 @@ void lain::RendererSceneCull::_render_scene(const RendererSceneRender::CameraDat
         max_shadows_used++;
       }
     }
-    // Positional Shadows 方向光的阴影
+    // Positional Shadows 有位置的光的阴影 处理 omni light 和 spot light
     for (uint32_t i = 0; i < (uint32_t)scene_cull_result.lights.size(); i++) {
       Instance* ins = scene_cull_result.lights[i];
       if (!p_shadow_atlas.is_valid()) {

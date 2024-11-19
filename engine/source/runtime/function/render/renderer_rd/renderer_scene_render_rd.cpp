@@ -229,7 +229,7 @@ void lain::RendererSceneRenderRD::init() {
   { // shader init
   /* SKY SHADER */
 	sky.init();
-  gi.init();
+  gi.init(); // make defalut texture
   // set max decals
   // fog.init() 
 		bool can_use_storage = _render_buffers_can_be_storage();
@@ -267,6 +267,11 @@ bool RendererSceneRenderRD::free(RID p_rid) {
 	}
 
 	return true;
+}
+
+RID lain::RendererSceneRenderRD::render_buffers_get_default_voxel_gi_buffer()
+{
+    return gi.default_voxel_gi_buffer;
 }
 
 bool RendererSceneRenderRD::_compositor_effects_has_flag(const RenderDataRD *p_render_data, RS::CompositorEffectFlags p_flag, RS::CompositorEffectCallbackType p_callback_type) {
