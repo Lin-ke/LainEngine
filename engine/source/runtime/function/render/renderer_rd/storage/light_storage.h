@@ -280,6 +280,7 @@ namespace lain::RendererRD
     virtual void light_instance_mark_visible(RID p_light_instance) override;
     virtual bool light_instance_is_shadow_visible_at_position(RID p_light, const Vector3 &p_position) const override;
 
+    
     // 一些get——set方法
     bool owns_light_instance(RID p_rid) { return light_instance_owner.owns(p_rid); }
     L_INLINE uint64_t light_instance_get_shadow_pass(RID p_light_instance)
@@ -483,13 +484,33 @@ namespace lain::RendererRD
     {
       max_cluster_elements = p_max_cluster_elements;
       // set_max_reflection_probes(p_max_cluster_elements);
-      // set_max_lights(p_max_cluster_elements);
+      set_max_lights(p_max_cluster_elements);
     }
     uint32_t get_max_cluster_elements() const { return max_cluster_elements; }
     _FORCE_INLINE_ uint64_t lightmap_array_get_version() const
     {
       return 0;
     }
+
+    	/* LIGHT DATA */
+
+	void free_light_data();
+	void set_max_lights(const uint32_t p_max_lights);
+	RID get_omni_light_buffer() { return omni_light_buffer; }
+	RID get_spot_light_buffer() { return spot_light_buffer; }
+	RID get_directional_light_buffer() { return directional_light_buffer; }
+	uint32_t get_max_directional_lights() { return max_directional_lights; }
+	bool has_directional_shadows(const uint32_t p_directional_light_count) {
+		for (uint32_t i = 0; i < p_directional_light_count; i++) {
+			if (directional_lights[i].shadow_opacity > 0.001) {
+				return true;
+			}
+		}
+		return false;
+	}
+	void update_light_buffers(RenderDataRD *p_render_data, const PagedArray<RID> &p_lights, const Transform3D &p_camera_transform, RID p_shadow_atlas, bool p_using_shadows, uint32_t &r_directional_light_count, uint32_t &r_positional_light_count, bool &r_directional_light_soft_shadows);
+
+
 
   private:
     void _light_initialize(RID p_rid, RS::LightType p_type);

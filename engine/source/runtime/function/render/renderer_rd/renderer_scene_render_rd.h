@@ -32,6 +32,7 @@ protected:
   void cull_scene();
   uint64_t get_scene_pass();
   // 这个函数处理渲染数据，真正渲染在_render_scene 的实现中。
+	// 主要填充了 RenderDataRD RenderSceneDataRD
   // -> render_forward_clustered.h
   // 提供实现的渲染API
   virtual void render_scene(const Ref<RenderSceneBuffers>& p_render_buffers, const CameraData* p_camera_data, const CameraData* p_prev_camera_data,

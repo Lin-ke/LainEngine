@@ -9,6 +9,7 @@
 #include "renderer_scene_render_rd.h"
 #include "function/render/renderer_rd/shaders/best_fit_normal.glsl.gen.h"
 #include "function/render/renderer_rd/renderer_scene_render_rd.h"
+#include "cluster_builder_rd.h"
 #define RB_SCOPE_FORWARD_CLUSTERED SNAME("forward_clustered")
 
 #define RB_SCOPE_FORWARD_CLUSTERED SNAME("forward_clustered")
@@ -537,10 +538,10 @@ namespace lain::RendererSceneRenderImplementation{
 	// RendererRD::FSR2Effect *fsr2_effect = nullptr;
 	// RendererRD::SSEffects *ss_effects = nullptr;
 
-	// /* Cluster builder */
+	/* Cluster builder */
 
 	// ClusterBuilderSharedDataRD cluster_builder_shared;
-	// ClusterBuilderRD *current_cluster_builder = nullptr;
+	ClusterBuilderRD *current_cluster_builder = nullptr;
 
 	// /* SDFGI */
 	// void _update_sdfgi(RenderDataRD *p_render_data);

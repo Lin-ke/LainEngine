@@ -1505,7 +1505,7 @@ void lain::RendererSceneCull::_render_scene(const RendererSceneRender::CameraDat
 
   Vector<RID> directional_lights;
   // directional lights
-  {
+  { // 方向光不裁剪
     cull.shadow_count = 0;
 
     Vector<Instance*> lights_with_shadow;
