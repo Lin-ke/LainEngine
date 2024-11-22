@@ -223,14 +223,15 @@ class RendererSceneCull : public RenderingMethod {
   LocalVector<Vector2> camera_jitter_array;
 
   struct Cull {
-    struct Shadow {
+    struct Shadow { // 方向光阴影
       RID light_instance;
       struct Cascade {
-        Frustum frustum;
+        Frustum frustum; // 正好装下相机视锥体
 
-        Projection projection;
-        Transform3D transform;
-        real_t zfar;
+        Projection projection; // 正交相机，包括了frustum里的范围，因为是方向光所以是正交的
+        Transform3D transform; // 原点在frustum最上方，fov 90
+
+        real_t zfar; // z的长度
         real_t split;
         real_t shadow_texel_size;
         real_t bias_scale;

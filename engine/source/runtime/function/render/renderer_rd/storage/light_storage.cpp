@@ -391,6 +391,8 @@ void LightStorage::update_light_buffers(RenderDataRD *p_render_data, const Paged
 	ForwardIDStorage *forward_id_storage = ForwardIDStorage::get_singleton();
 	RendererRD::TextureStorage *texture_storage = RendererRD::TextureStorage::get_singleton();
 
+
+	// Basis * coord  in basis = new coord in I => Basis^-1 coord in I = coord in basis // 注意I需要是正交的 
 	Transform3D inverse_transform = p_camera_transform.affine_inverse();
 
 	r_directional_light_count = 0;
@@ -711,14 +713,14 @@ void LightStorage::update_light_buffers(RenderDataRD *p_render_data, const Paged
 
 			if (type == RS::LIGHT_SPOT) {
 				light_data.projector_rect[0] = rect.position.x;
-				light_data.projector_rect[1] = rect.position.y + rect.size.height; //flip because shadow is flipped
-				light_data.projector_rect[2] = rect.size.width;
-				light_data.projector_rect[3] = -rect.size.height;
+				light_data.projector_rect[1] = rect.position.y + rect.size.height(); //flip because shadow is flipped
+				light_data.projector_rect[2] = rect.size.width();
+				light_data.projector_rect[3] = -rect.size.height();
 			} else {
 				light_data.projector_rect[0] = rect.position.x;
 				light_data.projector_rect[1] = rect.position.y;
-				light_data.projector_rect[2] = rect.size.width;
-				light_data.projector_rect[3] = rect.size.height * 0.5; //used by dp, so needs to be half
+				light_data.projector_rect[2] = rect.size.width();
+				light_data.projector_rect[3] = rect.size.height() * 0.5; //used by dp, so needs to be half
 			}
 		} else {
 			light_data.projector_rect[0] = 0;
@@ -762,8 +764,8 @@ void LightStorage::update_light_buffers(RenderDataRD *p_render_data, const Paged
 
 			light_data.atlas_rect[0] = rect.position.x;
 			light_data.atlas_rect[1] = rect.position.y;
-			light_data.atlas_rect[2] = rect.size.width;
-			light_data.atlas_rect[3] = rect.size.height;
+			light_data.atlas_rect[2] = rect.size.width();
+			light_data.atlas_rect[3] = rect.size.height();
 
 			light_data.soft_shadow_scale = light->param[RS::LIGHT_PARAM_SHADOW_BLUR];
 
@@ -781,8 +783,8 @@ void LightStorage::update_light_buffers(RenderDataRD *p_render_data, const Paged
 					light_data.soft_shadow_scale *= RendererSceneRenderRD::get_singleton()->shadows_quality_radius_get(); // Only use quality radius for PCF
 				}
 
-				light_data.direction[0] = omni_offset.x * float(rect.size.width);
-				light_data.direction[1] = omni_offset.y * float(rect.size.height);
+				light_data.direction[0] = omni_offset.x * float(rect.size.width());
+				light_data.direction[1] = omni_offset.y * float(rect.size.height());
 			} else if (type == RS::LIGHT_SPOT) {
 				Transform3D modelview = (inverse_transform * light_transform).inverse();
 				Projection bias;
@@ -798,7 +800,7 @@ void LightStorage::update_light_buffers(RenderDataRD *p_render_data, const Paged
 					// Only enable PCSS-like soft shadows if blurring is enabled.
 					// Otherwise, performance would decrease with no visual difference.
 					float half_np = cm.get_z_near() * Math::tan(Math::deg_to_rad(spot_angle));
-					light_data.soft_shadow_size = (size * 0.5 / radius) / (half_np / cm.get_z_near()) * rect.size.width;
+					light_data.soft_shadow_size = (size * 0.5 / radius) / (half_np / cm.get_z_near()) * rect.size.width();
 				} else {
 					light_data.soft_shadow_size = 0.0;
 					light_data.soft_shadow_scale *= RendererSceneRenderRD::get_singleton()->shadows_quality_radius_get(); // Only use quality radius for PCF

@@ -68,10 +68,6 @@ namespace lain::RendererSceneRenderImplementation{
 	class RenderBufferDataForwardClustered : public RenderBufferCustomDataRD {
 		LCLASS(RenderBufferDataForwardClustered, RenderBufferCustomDataRD)
 		RenderSceneBuffersRD *render_buffers = nullptr;
-		virtual void configure(RenderSceneBuffersRD *p_render_buffers) override;
-		virtual void free_data() override;
-		RID get_color_only_fb();
-		RID get_velocity_only_fb();
 		enum DepthFrameBufferType {
 			DEPTH_FB,
 			DEPTH_FB_ROUGHNESS,
@@ -601,7 +597,7 @@ public:
 
 	// /* callback from updating our lighting UBOs, used to populate cluster builder */
 	// virtual void setup_added_reflection_probe(const Transform3D &p_transform, const Vector3 &p_half_size) override;
-	// virtual void setup_added_light(const RS::LightType p_type, const Transform3D &p_transform, float p_radius, float p_spot_aperture) override;
+	virtual void setup_added_light(const RS::LightType p_type, const Transform3D &p_transform, float p_radius, float p_spot_aperture) override;
 	// virtual void setup_added_decal(const Transform3D &p_transform, const Vector3 &p_half_size) override;
 
 	virtual void base_uniforms_changed() override;

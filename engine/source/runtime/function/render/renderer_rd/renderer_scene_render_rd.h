@@ -22,7 +22,7 @@ protected:
 	RendererRD::GI gi;
 	RendererRD::CopyEffects* copy_effects; 
 	RendererRD::Resolve* resolve_effects;
-	
+	bool use_physical_light_units = false;
  public:
   static RendererSceneRenderRD* get_singleton() { return singleton; }
   virtual RendererRD::ForwardIDStorage *create_forward_id_storage() { return memnew(RendererRD::ForwardIDStorage); };
@@ -68,6 +68,7 @@ void _process_compositor_effects(RS::CompositorEffectCallbackType p_callback_typ
 	// virtual void _render_sdfgi(Ref<RenderSceneBuffersRD> p_render_buffers, const Vector3i &p_from, const Vector3i &p_size, const AABB &p_bounds, const PagedArray<RenderGeometryInstance *> &p_instances, const RID &p_albedo_texture, const RID &p_emission_texture, const RID &p_emission_aniso_texture, const RID &p_geom_facing_texture, float p_exposure_normalization) = 0;
 	// virtual void _render_particle_collider_heightfield(RID p_fb, const Transform3D &p_cam_transform, const Projection &p_cam_projection, const PagedArray<RenderGeometryInstance *> &p_instances) = 0;
 	virtual void base_uniforms_changed() = 0;
+	virtual void setup_added_light(const RS::LightType p_type, const Transform3D &p_transform, float p_radius, float p_spot_aperture){};
 
 
   /* RENDER BUFFERS */
@@ -175,6 +176,10 @@ void _process_compositor_effects(RS::CompositorEffectCallbackType p_callback_typ
 	}
 	_FORCE_INLINE_ RS::DecalFilter decals_get_filter() const {
 		return decals_filter;
+	}
+
+	_FORCE_INLINE_ bool is_using_physical_light_units() {
+		return use_physical_light_units;
 	}
 
 };

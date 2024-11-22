@@ -482,6 +482,8 @@ bool Projection::get_endpoints(const Transform3D &p_transform, Vector3 *p_8point
 	return true;
 }
 
+// 变换可以理解为 以transform.basis 为基，以被变换的点为坐标，计算出的在I下的坐标。
+// 因此，该函数把 projection 对应的 frustum 变换到了 transform 下， 这一坐标仍然是在I下的。
 Vector<Plane> Projection::get_projection_planes(const Transform3D &p_transform) const {
 	/** Fast Plane Extraction from combined modelview/projection matrices.
 	 * References:

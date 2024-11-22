@@ -362,6 +362,15 @@ class TextureStorage : public RendererTextureStorage {
 
     Size2i size;
   } decal_atlas;
+  	_FORCE_INLINE_ Rect2 decal_atlas_get_texture_rect(RID p_texture) {
+		DecalAtlas::Texture *t = decal_atlas.textures.getptr(p_texture);
+		if (!t) {
+			return Rect2();
+		}
+
+		return t->uv_rect;
+	}
+  
 };
 }  // namespace lain::RendererRD
 #endif

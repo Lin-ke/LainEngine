@@ -1887,6 +1887,7 @@ _FORCE_INLINE_ int RendererSceneCull::_visibility_range_check(InstanceVisibility
     return 0;
   }
 }
+/// @brief 1. 方向光；填csm的信息
 
 void RendererSceneCull::_light_instance_setup_directional_shadow(int p_shadow_index, Instance* p_instance, const Transform3D p_cam_transform,
                                                                  const Projection& p_cam_projection, bool p_cam_orthogonal, bool p_cam_vaspect) {
@@ -1968,7 +1969,9 @@ void RendererSceneCull::_light_instance_setup_directional_shadow(int p_shadow_in
     // obtain the light frustum ranges (given endpoints)
 
     Transform3D transform = light_transform;  //discard scale and stabilize light
-
+    // csm包围盒的面的法向量应该和灯光的basis一致
+    // 接下来要求range；沿着灯光方向走range，因此就是endpoints点在灯光轴上的投影
+    // 点在轴上的投影是坐标
     Vector3 x_vec = transform.basis.get_column(Vector3::AXIS_X).normalized();
     Vector3 y_vec = transform.basis.get_column(Vector3::AXIS_Y).normalized();
     Vector3 z_vec = transform.basis.get_column(Vector3::AXIS_Z).normalized();
@@ -1980,6 +1983,7 @@ void RendererSceneCull::_light_instance_setup_directional_shadow(int p_shadow_in
 
     // FIXME: z_max_cam is defined, computed, but not used below when setting up
     // ortho_camera. Commented out for now to fix warnings but should be investigated.
+    // 这几个范围比实际的x_min等要大一些
     real_t x_min_cam = 0.f, x_max_cam = 0.f;
     real_t y_min_cam = 0.f, y_max_cam = 0.f;
     real_t z_min_cam = 0.f;
@@ -2085,7 +2089,7 @@ void RendererSceneCull::_light_instance_setup_directional_shadow(int p_shadow_in
 
     // a pre pass will need to be needed to determine the actual z-near to be used
 
-    z_max = z_vec.dot(center) + radius + pancake_size;
+    z_max = z_vec.dot(center) + radius + pancake_size; // z_max_cam
 
     {  // 可以看成一个正交相机
       Projection ortho_camera;
@@ -2293,7 +2297,7 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance, cons
           Vector<Plane> planes;
           planes.resize(6);
           // 这些是 omnilight光的范围
-          // 一个……平头截体?
+          // 一个……平头截体
           // 快速裁剪一次先
           planes.write[0] = light_transform.xform(Plane(Vector3(0, 0, z), radius));
           planes.write[1] = light_transform.xform(Plane(Vector3(1, 0, z).normalized(), radius));
@@ -2368,9 +2372,10 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance, cons
           static const Vector3 view_normals[6] = {Vector3(+1, 0, 0), Vector3(-1, 0, 0), Vector3(0, -1, 0), Vector3(0, +1, 0), Vector3(0, 0, +1), Vector3(0, 0, -1)};
           static const Vector3 view_up[6] = {Vector3(0, -1, 0), Vector3(0, -1, 0), Vector3(0, 0, -1), Vector3(0, 0, +1), Vector3(0, -1, 0), Vector3(0, -1, 0)};
 
-          // 这个变换是模型空间+变换到灯光空间中（轴由 view_normals[i] 和 view_up[i] 确定）
-          // 即 model view 变换
+          // -- looking at 是位于原点，向正上方（正前方等等）看，需要light_transform 加入旋转和位移
           Transform3D xform = light_transform * Transform3D().looking_at(view_normals[i], view_up[i]);
+          // 这是light的frustum，变换到light的系里
+          
           Vector<Plane> planes = cm.get_projection_planes(xform);
 
           instance_shadow_cull_result.clear();
@@ -2388,7 +2393,8 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance, cons
 
           CullConvex cull_convex;
           cull_convex.result = &instance_shadow_cull_result;
-
+          // 场景的BVH和光的视锥体进行裁剪
+          // 需要对每个光确定绘制的部分，所以也不能算有冗余的部分
           p_scenario->indexers[Scenario::INDEXER_GEOMETRY].convex_query(planes.ptr(), planes.size(), points.ptr(), points.size(), cull_convex);
 
           RendererSceneRender::RenderShadowData& shadow_data = render_shadow_data[max_shadows_used++];
@@ -2410,7 +2416,7 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance, cons
                 RSG::mesh_storage->mesh_instance_check_for_update(instance->mesh_instance);
               }
             }
-
+            // shadow 渲染 只有 geoinstance
             shadow_data.instances.push_back(static_cast<InstanceGeometryData*>(instance->base_data)->geometry_instance);
           }
 
@@ -2437,7 +2443,7 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance, cons
       real_t angle = RSG::light_storage->light_get_param(p_instance->base, RS::LIGHT_PARAM_SPOT_ANGLE);
 
       Projection cm;
-      cm.set_perspective(angle * 2.0, 1.0, 0.005f * radius, radius);
+      cm.set_perspective(angle * 2.0, 1.0, 0.005f * radius, radius); // 聚光也是一个视锥体，但是只有一个方向
 
       Vector<Plane> planes = cm.get_projection_planes(light_transform);
 
