@@ -1785,6 +1785,14 @@ RID RenderingDevice::framebuffer_create_empty(const Size2i& p_size, TextureSampl
 #endif
   return id;
 }
+RenderingDevice::FramebufferFormatID RenderingDevice::framebuffer_get_format(RID p_framebuffer) {
+	_THREAD_SAFE_METHOD_
+
+	Framebuffer *framebuffer = framebuffer_owner.get_or_null(p_framebuffer);
+	ERR_FAIL_NULL_V(framebuffer, INVALID_ID);
+
+	return framebuffer->format_id;
+}
 
 static RDD::AttachmentLoadOp initial_action_to_load_op(RenderingDevice::InitialAction p_action) {
   switch (p_action) {
@@ -5359,6 +5367,34 @@ RID RenderingDevice::vertex_array_create(uint32_t p_vertex_count, VertexFormatID
   }
 
   return id;
+}
+
+Error RenderingDevice::buffer_clear(RID p_buffer, uint32_t p_offset, uint32_t p_size) {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V_MSG((p_size % 4) != 0, ERR_INVALID_PARAMETER,
+			"Size must be a multiple of four");
+	ERR_FAIL_COND_V_MSG(draw_list, ERR_INVALID_PARAMETER,
+			"Updating buffers in is forbidden during creation of a draw list");
+	ERR_FAIL_COND_V_MSG(compute_list, ERR_INVALID_PARAMETER,
+			"Updating buffers is forbidden during creation of a compute list");
+
+	Buffer *buffer = _get_buffer_from_owner(p_buffer);
+	if (!buffer) {
+		ERR_FAIL_V_MSG(ERR_INVALID_PARAMETER, "Buffer argument is not a valid buffer of any type.");
+	}
+
+	ERR_FAIL_COND_V_MSG(p_offset + p_size > buffer->size, ERR_INVALID_PARAMETER,
+			"Attempted to write buffer (" + itos((p_offset + p_size) - buffer->size) + " bytes) past the end.");
+
+	if (_buffer_make_mutable(buffer, p_buffer)) {
+		// The destination buffer must be mutable to be used as a clear destination.
+		draw_graph.add_synchronization();
+	}
+
+	draw_graph.add_buffer_clear(buffer->driver_id, buffer->draw_tracker, p_offset, p_size);
+
+	return OK;
 }
 
 Vector<uint8_t> lain::RenderingDevice::buffer_get_data(RID p_buffer, uint32_t p_offset, uint32_t p_size) {

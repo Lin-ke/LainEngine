@@ -22,7 +22,6 @@ protected:
 	RendererRD::GI gi;
 	RendererRD::CopyEffects* copy_effects; 
 	RendererRD::Resolve* resolve_effects;
-	bool use_physical_light_units = false;
  public:
   static RendererSceneRenderRD* get_singleton() { return singleton; }
   virtual RendererRD::ForwardIDStorage *create_forward_id_storage() { return memnew(RendererRD::ForwardIDStorage); };

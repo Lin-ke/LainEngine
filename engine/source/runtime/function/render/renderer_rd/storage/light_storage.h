@@ -3,6 +3,8 @@
 #include "function/render/rendering_system/light_storage_api.h"
 #include "function/render/rendering_system/rendering_system_globals.h"
 #include "function/render/rendering_system/utilities.h"
+#include "forward_id.h"
+#include "render_data_rd.h"
 namespace lain::RendererRD {
 class LightStorage : public RendererLightStorage {
   static LightStorage* singleton;
@@ -86,7 +88,7 @@ class LightStorage : public RendererLightStorage {
 
     HashSet<RID> shadow_atlases;  // shadow atlases where this light is registered
 
-    // ForwardID forward_id = -1;
+    ForwardID forward_id = -1;
 
     LightInstance() {}
   };
