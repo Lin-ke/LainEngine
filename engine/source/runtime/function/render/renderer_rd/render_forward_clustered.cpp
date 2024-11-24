@@ -6,6 +6,8 @@
 #include "storage/light_storage.h"
 #include "uniform_set_cache_rd.h"
 #include "function/render/rendering_system/rendering_system_default.h"
+#include "function/render/renderer_rd/storage/particles_storage.h"
+#include "pipeline_cache_rd.h"
 
 using namespace lain;
 using namespace lain::RendererSceneRenderImplementation;
@@ -1844,7 +1846,7 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
 			} break;
 		}
 
-		PipelineCacheRD *pipeline = nullptr;
+		RendererRD::PipelineCacheRD *pipeline = nullptr;
 
 		if constexpr (p_pass_mode == PASS_MODE_COLOR) {
 			pipeline = &shader->color_pipelines[cull_variant][primitive][pipeline_color_pass_flags];
@@ -1902,7 +1904,7 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
 		}
 
 		if (surf->owner->base_flags & INSTANCE_DATA_FLAG_PARTICLES) {
-			particles_storage->particles_get_instance_buffer_motion_vectors_offsets(surf->owner->data->base, push_constant.multimesh_motion_vectors_current_offset, push_constant.multimesh_motion_vectors_previous_offset);
+			// particles_storage->particles_get_instance_buffer_motion_vectors_offsets(surf->owner->data->base, push_constant.multimesh_motion_vectors_current_offset, push_constant.multimesh_motion_vectors_previous_offset);
 		} else if (surf->owner->base_flags & INSTANCE_DATA_FLAG_MULTIMESH) {
 			mesh_storage->_multimesh_get_motion_vectors_offsets(surf->owner->data->base, push_constant.multimesh_motion_vectors_current_offset, push_constant.multimesh_motion_vectors_previous_offset);
 		} else {

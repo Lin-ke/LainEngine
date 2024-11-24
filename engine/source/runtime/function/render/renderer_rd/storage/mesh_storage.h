@@ -385,6 +385,16 @@ class MeshStorage : public RendererMeshStorage {
 		Mesh::Surface *s = reinterpret_cast<Mesh::Surface *>(p_surface);
 		return s->lod_count > 0;
 	}
+		_FORCE_INLINE_ RID mesh_surface_get_index_array(void *p_surface, uint32_t p_lod) const {
+		Mesh::Surface *s = reinterpret_cast<Mesh::Surface *>(p_surface);
+
+		if (p_lod == 0) {
+			return s->index_array;
+		} else {
+			return s->lods[p_lod - 1].index_array;
+		}
+	}
+	
 	_FORCE_INLINE_ uint32_t mesh_surface_get_lod(void *p_surface, float p_model_scale, float p_distance_threshold, float p_mesh_lod_threshold, uint32_t &r_index_count) const {
 		Mesh::Surface *s = reinterpret_cast<Mesh::Surface *>(p_surface);
 
@@ -584,6 +594,27 @@ class MeshStorage : public RendererMeshStorage {
 		s->version_lock.unlock();
 	}
 
+L_INLINE bool MeshStorage::_multimesh_uses_motion_vectors(MultiMesh *multimesh) {
+	return (RSG::rasterizer->get_frame_number() - multimesh->motion_vectors_last_change) < 2;
+}
+
+
+L_INLINE bool MeshStorage::_multimesh_uses_motion_vectors_offsets(RID p_multimesh) {
+	MultiMesh *multimesh = multimesh_owner.get_or_null(p_multimesh);
+	ERR_FAIL_NULL_V(multimesh, false);
+	return _multimesh_uses_motion_vectors(multimesh);
+}
+
+
+L_INLINE  void MeshStorage::_multimesh_get_motion_vectors_offsets(RID p_multimesh, uint32_t &r_current_offset, uint32_t &r_prev_offset) {
+	MultiMesh *multimesh = multimesh_owner.get_or_null(p_multimesh);
+	ERR_FAIL_NULL(multimesh);
+	r_current_offset = multimesh->motion_vectors_current_offset;
+	if (!_multimesh_uses_motion_vectors(multimesh)) {
+		multimesh->motion_vectors_previous_offset = multimesh->motion_vectors_current_offset;
+	}
+	r_prev_offset = multimesh->motion_vectors_previous_offset;
+}
 
 };
 }  // namespace lain::RendererRD

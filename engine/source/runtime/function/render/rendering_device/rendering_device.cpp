@@ -2,6 +2,7 @@
 #include "_generated/serializer/all_serializer.h"
 #include "core/engine/engine.h"
 #include "core/io/dir_access.h"
+
 using namespace lain;
 static const char* SHADER_UNIFORM_NAMES[RenderingDevice::UNIFORM_TYPE_MAX] = {
     "Sampler", "CombinedSampler", "Texture", "Image", "TextureBuffer", "SamplerTextureBuffer", "ImageBuffer", "UniformBuffer", "StorageBuffer", "InputAttachment"};
@@ -2181,6 +2182,21 @@ void RenderingDevice::set_resource_name(RID p_id, const String& p_name) {
   resource_names[p_id] = p_name;
 #endif
 }
+void RenderingDevice::draw_command_begin_label(String p_label_name, const Color &p_color) {
+	ERR_RENDER_THREAD_GUARD();
+
+	if (!context->is_debug_utils_enabled()) {
+		return;
+	}
+
+	draw_graph.begin_label(p_label_name, p_color);
+}
+void RenderingDevice::draw_command_end_label() {
+	ERR_RENDER_THREAD_GUARD();
+
+	draw_graph.end_label();
+}
+
 ///************SHADER ************** */
 ///************SHADER ************** */
 ///************SHADER ************** */
@@ -4495,7 +4511,15 @@ RID RenderingDevice::texture_buffer_create(uint32_t p_size_elements, DataFormat 
 #endif
 	return id;
 }
+void RenderingDevice::framebuffer_set_invalidation_callback(RID p_framebuffer, InvalidationCallback p_callback, void *p_userdata) {
+	_THREAD_SAFE_METHOD_
 
+	Framebuffer *framebuffer = framebuffer_owner.get_or_null(p_framebuffer);
+	ERR_FAIL_NULL(framebuffer);
+
+	framebuffer->invalidated_callback = p_callback;
+	framebuffer->invalidated_callback_userdata = p_userdata;
+}
 RID RenderingDevice::storage_buffer_create(uint32_t p_size_bytes, const Vector<uint8_t> &p_data, BitField<StorageBufferUsage> p_usage) {
 	_THREAD_SAFE_METHOD_
 

@@ -9,9 +9,14 @@
 #include "rendering_device_commons.h"
 #include "rendering_device_driver.h"
 #include "rendering_device_graph.h"
+#define ERR_RENDER_THREAD_MSG String("This function (") + String(__func__) + String(") can only be called from the render thread. ")
+#define ERR_RENDER_THREAD_GUARD() ERR_FAIL_COND_MSG(render_thread_id != Thread::get_caller_id(), ERR_RENDER_THREAD_MSG);
+
 namespace lain {
 
 class RenderingDevice : public RenderingDeviceCommons {
+	Thread::ID render_thread_id;
+
   LCLASS(RenderingDevice, Object)
   _THREAD_SAFE_CLASS_
   RenderingDeviceDriver* driver = nullptr;
@@ -1257,9 +1262,12 @@ class RenderingDevice : public RenderingDeviceCommons {
   RenderingDevice() {
     if (singleton == nullptr)  // 允许多个device
       singleton = this;
+	  render_thread_id = Thread::get_caller_id();
   }
   //
-  ~RenderingDevice() {}
+  ~RenderingDevice() {
+    
+  }
   void finalize();  // 主要清理dependency graph
   void free(RID p_id);
   
