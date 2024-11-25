@@ -498,7 +498,7 @@ void ProjectSettings::set_custom_property_info(const PropertyInfo &p_info) {
 Variant lain::_GLOBAL_DEF(const PropertyInfo & p_info, const Variant & p_default, bool p_restart_if_changed, bool p_ignore_value_in_docs, bool p_basic, bool p_internal)
 {
 	Variant ret = _GLOBAL_DEF(p_info.name, p_default, p_restart_if_changed, p_ignore_value_in_docs, p_basic, p_internal);
-  L_PRINT("set: " , p_info.name, p_default.operator lain::String());
+  // L_PRINT("set: " , p_info.name, p_default.operator lain::String());
 	ProjectSettings::GetSingleton()->set_custom_property_info(p_info);
 	return ret;
 }

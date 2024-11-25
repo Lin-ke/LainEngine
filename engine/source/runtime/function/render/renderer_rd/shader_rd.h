@@ -67,7 +67,7 @@ private:
 	void _initialize_version(Version *p_version);
 	void _clear_version(Version *p_version);
 	void _compile_version(Version *p_version, int p_group);
-	void _allocate_placeholders(Version *p_version, int p_group){}// @todo 
+	void _allocate_placeholders(Version *p_version, int p_group);// @todo 
 
 	RID_Owner<Version> version_owner;
 

@@ -262,6 +262,7 @@ target("main")
     -- modules?
 
 target("lain-windows")
+    set_default(true)
     set_languages("cxx17")
     set_kind("binary")
     add_files("engine/source/runtime/platform/**_windows.cpp")

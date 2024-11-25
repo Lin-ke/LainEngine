@@ -7,12 +7,8 @@
 #include "core/meta/serializer/serializer.h"
 #include "core/io/image_loader_stb.h"
 // scene
-#include "scene/resources/io/resource_format_text.h"
 #include "core/scene/scene_stringnames.h"
 #include "core/scene/object/gobject.h"
-
-#include "scene/resources/io/resource_format_shader.h"
-#include "scene/resources/common/shader_include.h"
 
 
 namespace lain {
@@ -34,15 +30,7 @@ namespace lain {
 	//static Ref<ResourceFormatLoaderJSON> resource_loader_json;
 
 	// godot: register scene types
-	static Ref<ResourceFormatLoaderText> resource_format_loader_text;
-	static Ref<ResourceFormatSaverText> resource_format_saver_text;
 	static Ref<ResourceFormatLoaderImage> resource_format_loader_image;
-	static Ref<ResourceFormatLoaderShader> resource_format_loader_shader;
-	static Ref<ResourceFormatSaverShader> resource_format_saver_shader;
-	static Ref<ResourceFormatLoaderShaderInclude> resource_format_loader_shader_include;
-	static Ref<ResourceFormatSaverShaderInclude> resource_format_saver_shader_include;
-	
-
 
 	void register_core_types() {
 
@@ -73,32 +61,8 @@ namespace lain {
 
 		//resource_format_image.instantiate();
 		//ResourceLoader::add_resource_format_loader(resource_format_image);
-
-		resource_format_loader_text.instantiate();
-		ResourceLoader::add_resource_format_loader(resource_format_loader_text);
-
 		resource_format_loader_image.instantiate();
 		ResourceLoader::add_resource_format_loader(resource_format_loader_image);
-
-		resource_format_saver_text.instantiate();
-		ResourceSaver::add_resource_format_saver(resource_format_saver_text);
-
-		resource_format_loader_shader.instantiate();
-		ResourceLoader::add_resource_format_loader(resource_format_loader_shader);
-
-		resource_format_saver_shader.instantiate();
-		ResourceSaver::add_resource_format_saver(resource_format_saver_shader);
-
-		resource_format_loader_shader_include.instantiate();
-		ResourceLoader::add_resource_format_loader(resource_format_loader_shader_include);
-
-		resource_format_saver_shader_include.instantiate();
-		ResourceSaver::add_resource_format_saver(resource_format_saver_shader_include);
-		
-
-		auto&& dict = ResourceLoader::ext_to_loader_idx;
-		L_JSON(dict);
-		
 
 		GObject::init_gobj_hrcr();
 

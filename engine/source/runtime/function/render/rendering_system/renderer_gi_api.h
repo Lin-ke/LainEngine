@@ -4,6 +4,9 @@
 #include  "rendering_system.h"
 namespace lain{
 class RendererGI{
+  public:
+  virtual ~RendererGI(){}
+  
   
 };
 }

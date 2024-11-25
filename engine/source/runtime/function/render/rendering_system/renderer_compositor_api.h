@@ -6,6 +6,9 @@
 #include "function/render/scene/renderer_scene_renderer_api.h"
 #include "texture_storage_api.h"
 #include "light_storage_api.h"
+#include "renderer_gi_api.h"
+#include "renderer_fog_api.h"
+#include "particles_storage_api.h"
 namespace lain{
 struct BlitToScreen {
 	RID render_target;
@@ -47,10 +50,10 @@ public:
 	virtual RendererLightStorage *get_light_storage() = 0;
 	virtual RendererMaterialStorage *get_material_storage() = 0;
 	virtual RendererMeshStorage *get_mesh_storage() = 0;
-	// virtual RendererParticlesStorage *get_particles_storage() = 0;
+	virtual RendererParticlesStorage *get_particles_storage() = 0;
 	virtual RendererTextureStorage *get_texture_storage() = 0;
-	// virtual RendererGI *get_gi() = 0;
-	// virtual RendererFog *get_fog() = 0;
+	virtual RendererGI *get_gi() = 0;
+	virtual RendererFog *get_fog() = 0;
 	// virtual RendererCanvasRender *get_canvas() = 0;
 	virtual RendererSceneRender *get_scene() = 0;
 

@@ -23,6 +23,9 @@ void RenderingSystemDefault::init(){
 		command_queue.push(this, &RenderingSystemDefault::_assign_mt_ids, tid);
 		command_queue.push_and_sync(this, &RenderingSystemDefault::_init);
 		DEV_ASSERT(server_task_id == tid);
+	} else{
+		server_thread = Thread::MAIN_ID;
+		_init();
 	}
 }
 void RenderingSystemDefault::sync() {
@@ -81,7 +84,7 @@ void lain::RenderingSystemDefault::_init() {
 	// RSG::canvas = memnew(RendererCanvasCull);
 	RSG::viewport = memnew(RendererViewport);
 	RendererSceneCull *sr = memnew(RendererSceneCull);
-	// RSG::camera_attributes = memnew(RendererCameraAttributes);
+	RSG::camera_attributes = memnew(RendererCameraAttributes);
 	RSG::scene = sr;
 	RSG::rasterizer = RendererCompositor::create();
 	RSG::utilities = RSG::rasterizer->get_utilities();
@@ -89,7 +92,7 @@ void lain::RenderingSystemDefault::_init() {
 	RSG::light_storage = RSG::rasterizer->get_light_storage();
 	RSG::material_storage = RSG::rasterizer->get_material_storage();
 	RSG::mesh_storage = RSG::rasterizer->get_mesh_storage();
-	// RSG::particles_storage = RSG::rasterizer->get_particles_storage();
+	RSG::particles_storage = RSG::rasterizer->get_particles_storage();
 	RSG::texture_storage = RSG::rasterizer->get_texture_storage();
 	// RSG::gi = RSG::rasterizer->get_gi();
 	// RSG::fog = RSG::rasterizer->get_fog();
@@ -151,6 +154,14 @@ uint64_t lain::RenderingSystemDefault::get_rendering_info(RenderingInfo p_info)
 		return RSG::viewport->get_total_draw_calls_used();
 	}
 	return RSG::utilities->get_rendering_info(p_info);
+}
+
+void RenderingSystemDefault::set_default_clear_color(const Color &p_color) {
+	RSG::texture_storage->set_default_clear_color(p_color);
+}
+
+Color lain::RenderingSystemDefault::get_default_clear_color() const {
+  return RSG::texture_storage->get_default_clear_color();
 }
 
 void RenderingSystemDefault::_draw(bool p_swap_buffers, double frame_step) {

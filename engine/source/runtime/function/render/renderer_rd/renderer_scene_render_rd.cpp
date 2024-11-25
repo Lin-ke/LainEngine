@@ -4,6 +4,7 @@
 #include "storage/render_scene_data_rd.h"
 #include "storage/texture_storage.h"
 #include "storage/render_data_rd.h"
+#include "storage/framebuffer_cache_rd.h"
 using namespace lain::RendererRD;
 using namespace lain;
 
@@ -295,4 +296,97 @@ bool RendererSceneRenderRD::_compositor_effects_has_flag(const RenderDataRD *p_r
 	}
 
 	return false;
+}
+
+void RendererSceneRenderRD::_render_buffers_copy_screen_texture(const RenderDataRD *p_render_data) {
+	Ref<RenderSceneBuffersRD> rb = p_render_data->render_buffers;
+	ERR_FAIL_COND(rb.is_null());
+
+	if (!rb->has_internal_texture()) {
+		// We're likely rendering reflection probes where we can't use our backbuffers.
+		return;
+	}
+
+	RD::get_singleton()->draw_command_begin_label("Copy screen texture");
+
+	StringName texture_name;
+	bool can_use_storage = _render_buffers_can_be_storage();
+	Size2i size = rb->get_internal_size();
+
+	// When upscaling, the blur texture needs to be at the target size for post-processing to work. We prefer to use a
+	// dedicated backbuffer copy texture instead if the blur texture is not an option so shader effects work correctly.
+	Size2i target_size = rb->get_target_size();
+	bool internal_size_matches = (size.width() == target_size.width()) && (size.height() == target_size.height());
+	bool reuse_blur_texture = !rb->has_upscaled_texture() || internal_size_matches;
+	if (reuse_blur_texture) {
+		rb->allocate_blur_textures();
+		texture_name = RB_TEX_BLUR_0;
+	} else {
+		uint32_t usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
+		usage_bits |= can_use_storage ? RD::TEXTURE_USAGE_STORAGE_BIT : RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+		rb->create_texture(RB_SCOPE_BUFFERS, RB_TEX_BACK_COLOR, rb->get_base_data_format(), usage_bits);
+		texture_name = RB_TEX_BACK_COLOR;
+	}
+
+	for (uint32_t v = 0; v < rb->get_view_count(); v++) {
+		RID texture = rb->get_internal_texture(v);
+		int mipmaps = int(rb->get_texture_format(RB_SCOPE_BUFFERS, texture_name).mipmaps);
+		RID dest = rb->get_texture_slice(RB_SCOPE_BUFFERS, texture_name, v, 0);
+
+		if (can_use_storage) {
+			copy_effects->copy_to_rect(texture, dest, Rect2i(0, 0, size.x, size.y));
+		} else {
+			RID fb = FramebufferCacheRD::get_singleton()->get_cache(dest);
+			copy_effects->copy_to_fb_rect(texture, fb, Rect2i(0, 0, size.x, size.y));
+		}
+
+		for (int i = 1; i < mipmaps; i++) {
+			RID source = dest;
+			dest = rb->get_texture_slice(RB_SCOPE_BUFFERS, texture_name, v, i);
+			Size2i msize = rb->get_texture_slice_size(RB_SCOPE_BUFFERS, texture_name, i);
+
+			if (can_use_storage) {
+				copy_effects->make_mipmap(source, dest, msize);
+			} else {
+				copy_effects->make_mipmap_raster(source, dest, msize);
+			}
+		}
+	}
+
+	RD::get_singleton()->draw_command_end_label();
+}
+
+void RendererSceneRenderRD::_render_buffers_copy_depth_texture(const RenderDataRD *p_render_data) {
+	Ref<RenderSceneBuffersRD> rb = p_render_data->render_buffers;
+	ERR_FAIL_COND(rb.is_null());
+
+	if (!rb->has_depth_texture()) {
+		// We're likely rendering reflection probes where we can't use our backbuffers.
+		return;
+	}
+
+	RD::get_singleton()->draw_command_begin_label("Copy depth texture");
+
+	// note, this only creates our back depth texture if we haven't already created it.
+	uint32_t usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT;
+	usage_bits |= RD::TEXTURE_USAGE_CAN_COPY_TO_BIT | RD::TEXTURE_USAGE_STORAGE_BIT;
+	usage_bits |= RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT; // set this as color attachment because we're copying data into it, it's not actually used as a depth buffer
+
+	rb->create_texture(RB_SCOPE_BUFFERS, RB_TEX_BACK_DEPTH, RD::DATA_FORMAT_R32_SFLOAT, usage_bits, RD::TEXTURE_SAMPLES_1);
+
+	bool can_use_storage = _render_buffers_can_be_storage();
+	Size2i size = rb->get_internal_size();
+	for (uint32_t v = 0; v < p_render_data->scene_data->view_count; v++) {
+		RID depth_texture = rb->get_depth_texture(v);
+		RID depth_back_texture = rb->get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_BACK_DEPTH, v, 0);
+
+		if (can_use_storage) {
+			copy_effects->copy_to_rect(depth_texture, depth_back_texture, Rect2i(0, 0, size.x, size.y));
+		} else {
+			RID depth_back_fb = FramebufferCacheRD::get_singleton()->get_cache(depth_back_texture);
+			copy_effects->copy_to_fb_rect(depth_texture, depth_back_fb, Rect2i(0, 0, size.x, size.y));
+		}
+	}
+
+	RD::get_singleton()->draw_command_end_label();
 }

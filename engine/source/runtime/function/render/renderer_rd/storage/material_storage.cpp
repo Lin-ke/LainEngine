@@ -1116,7 +1116,7 @@ void MaterialStorage::MaterialData::free_parameters_uniform_set(RID p_uniform_se
     RD::get_singleton()->free(p_uniform_set);
   }
 }
-
+// 这里的shader都是gdshader
 void lain::RendererRD::MaterialStorage::shader_set_code(RID p_shader, const String& p_code) {
   Shader* shader = shader_owner.get_or_null(p_shader);
   ERR_FAIL_NULL(shader);
@@ -1722,4 +1722,11 @@ void MaterialStorage::MaterialData::update_textures(const HashMap<StringName, Va
       }
     }
   }
+}
+
+
+void MaterialStorage::MaterialData::set_as_used() {
+	for (int i = 0; i < render_target_cache.size(); i++) {
+		render_target_cache[i]->was_used = true;
+	}
 }

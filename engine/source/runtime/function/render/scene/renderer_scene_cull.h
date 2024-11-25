@@ -618,6 +618,15 @@ class RendererSceneCull : public RenderingMethod {
 #endif
 
 #define PASSBASE scene_render
+  	// Compositor effect
+	PASS0R(RID, compositor_effect_allocate)
+	PASS1(compositor_effect_initialize, RID)
+	PASS1RC(bool, is_compositor_effect, RID)
+  	// Compositor
+	PASS0R(RID, compositor_allocate)
+	PASS1(compositor_initialize, RID)
+	PASS1RC(bool, is_compositor, RID)
+
 
   PASS0R(RID, environment_allocate)
   PASS1(environment_initialize, RID)
@@ -625,6 +634,17 @@ class RendererSceneCull : public RenderingMethod {
   PASS1RC(RS::EnvironmentBG, environment_get_background, RID)
   PASS1RC(int, environment_get_canvas_max_layer, RID)
   PASS0R(Ref<RenderSceneBuffers>, render_buffers_create)
+
+  	// Background
+	PASS2(environment_set_background, RID, RS::EnvironmentBG)
+	PASS2(environment_set_sky, RID, RID)
+	PASS2(environment_set_sky_custom_fov, RID, float)
+	PASS2(environment_set_sky_orientation, RID, const Basis &)
+	PASS2(environment_set_bg_color, RID, const Color &)
+	PASS3(environment_set_bg_energy, RID, float, float)
+	PASS2(environment_set_canvas_max_layer, RID, int)
+	PASS6(environment_set_ambient_light, RID, const Color &, RS::EnvironmentAmbientSource, float, float, RS::EnvironmentReflectionSource)
+
 #undef PASSBASE
 
   virtual void render_camera(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_camera, RID p_scenario, RID p_viewport, Size2 p_viewport_size,

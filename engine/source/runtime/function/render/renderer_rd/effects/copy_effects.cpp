@@ -1,6 +1,7 @@
 #include "copy_effects.h"
 #include "function/render/renderer_rd/storage/material_storage.h"
 #include "function/render/renderer_rd/uniform_set_cache_rd.h"
+#include "../storage/framebuffer_cache_rd.h"
 using namespace lain;
 using namespace lain::RendererRD;
 CopyEffects* CopyEffects::singleton = nullptr;
@@ -221,3 +222,71 @@ void CopyEffects::copy_to_fb_rect(RID p_source_rd_texture, RID p_dest_framebuffe
   RD::get_singleton()->draw_list_draw(draw_list, true);
   RD::get_singleton()->draw_list_end();
 }
+
+void CopyEffects::make_mipmap(RID p_source_rd_texture, RID p_dest_texture, const Size2i &p_size) {
+	ERR_FAIL_COND_MSG(prefer_raster_effects, "Can't use the compute version of the make_mipmap shader with the mobile renderer.");
+
+	UniformSetCacheRD *uniform_set_cache = UniformSetCacheRD::get_singleton();
+	ERR_FAIL_NULL(uniform_set_cache);
+	MaterialStorage *material_storage = MaterialStorage::get_singleton();
+	ERR_FAIL_NULL(material_storage);
+
+	memset(&copy.push_constant, 0, sizeof(CopyPushConstant));
+
+	copy.push_constant.section[0] = 0;
+	copy.push_constant.section[1] = 0;
+	copy.push_constant.section[2] = p_size.width();
+	copy.push_constant.section[3] = p_size.height();
+
+	// setup our uniforms
+	RID default_sampler = material_storage->sampler_rd_get_default(RS::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, RS::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
+
+	RD::Uniform u_source_rd_texture(RD::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE, 0, Vector<RID>({ default_sampler, p_source_rd_texture }));
+	RD::Uniform u_dest_texture(RD::UNIFORM_TYPE_IMAGE, 0, p_dest_texture);
+
+	CopyMode mode = COPY_MODE_MIPMAP;
+	RID shader = copy.shader.version_get_shader(copy.shader_version, mode);
+	ERR_FAIL_COND(shader.is_null());
+
+	RD::ComputeListID compute_list = RD::get_singleton()->compute_list_begin();
+	RD::get_singleton()->compute_list_bind_compute_pipeline(compute_list, copy.pipelines[mode]);
+	RD::get_singleton()->compute_list_bind_uniform_set(compute_list, uniform_set_cache->get_cache(shader, 0, u_source_rd_texture), 0);
+	RD::get_singleton()->compute_list_bind_uniform_set(compute_list, uniform_set_cache->get_cache(shader, 3, u_dest_texture), 3);
+	RD::get_singleton()->compute_list_set_push_constant(compute_list, &copy.push_constant, sizeof(CopyPushConstant));
+	RD::get_singleton()->compute_list_dispatch_threads(compute_list, p_size.width(), p_size.height(), 1);
+	RD::get_singleton()->compute_list_end();
+}
+
+// void CopyEffects::make_mipmap_raster(RID p_source_rd_texture, RID p_dest_texture, const Size2i &p_size) {
+// 	ERR_FAIL_COND_MSG(!prefer_raster_effects, "Can't use the raster version of mipmap with the clustered renderer.");
+
+// 	RID dest_framebuffer = FramebufferCacheRD::get_singleton()->get_cache(p_dest_texture);
+
+// 	UniformSetCacheRD *uniform_set_cache = UniformSetCacheRD::get_singleton();
+// 	ERR_FAIL_NULL(uniform_set_cache);
+// 	MaterialStorage *material_storage = MaterialStorage::get_singleton();
+// 	ERR_FAIL_NULL(material_storage);
+
+// 	memset(&blur_raster.push_constant, 0, sizeof(BlurRasterPushConstant));
+
+// 	BlurRasterMode mode = BLUR_MIPMAP;
+
+// 	blur_raster.push_constant.pixel_size[0] = 1.0 / float(p_size.x);
+// 	blur_raster.push_constant.pixel_size[1] = 1.0 / float(p_size.y);
+
+// 	// setup our uniforms
+// 	RID default_sampler = material_storage->sampler_rd_get_default(RS::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, RS::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
+
+// 	RD::Uniform u_source_rd_texture(RD::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE, 0, Vector<RID>({ default_sampler, p_source_rd_texture }));
+
+// 	RID shader = blur_raster.shader.version_get_shader(blur_raster.shader_version, mode);
+// 	ERR_FAIL_COND(shader.is_null());
+
+// 	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(dest_framebuffer, RD::INITIAL_ACTION_LOAD, RD::FINAL_ACTION_STORE, RD::INITIAL_ACTION_LOAD, RD::FINAL_ACTION_DISCARD);
+// 	RD::get_singleton()->draw_list_bind_render_pipeline(draw_list, blur_raster.pipelines[mode].get_render_pipeline(RD::INVALID_ID, RD::get_singleton()->framebuffer_get_format(dest_framebuffer)));
+// 	RD::get_singleton()->draw_list_bind_uniform_set(draw_list, uniform_set_cache->get_cache(shader, 0, u_source_rd_texture), 0);
+// 	RD::get_singleton()->draw_list_set_push_constant(draw_list, &blur_raster.push_constant, sizeof(BlurRasterPushConstant));
+
+// 	RD::get_singleton()->draw_list_draw(draw_list, false, 1u, 3u);
+// 	RD::get_singleton()->draw_list_end();
+// }

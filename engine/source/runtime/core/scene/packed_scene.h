@@ -4,13 +4,14 @@
 #define PACKED_SCENE_H
 
 #include "core/io/resource.h"
-#include "core/scene/object/gobject.h"
 #include "core/templates/hash_set.h"
 namespace lain {
 
 	
 	// 引擎内部的场景数据结构
-	class PackedScene; 
+	class PackedScene;
+	class Component; 
+	class GObject;
 class SceneState : public RefCounted {
 	LCLASS(SceneState, RefCounted);
 

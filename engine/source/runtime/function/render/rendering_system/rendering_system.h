@@ -672,6 +672,8 @@ public:
 		SHADOW_CASTING_SETTING_SHADOWS_ONLY,
 	};
 /* ENVIRONMENT API */
+	virtual RID environment_create() = 0;
+
 	enum EnvironmentBG { // 背景类型
 		ENV_BG_CLEAR_COLOR,
 		ENV_BG_COLOR,
@@ -716,23 +718,6 @@ public:
 		ENV_SDFGI_Y_SCALE_100_PERCENT,
 	};
 
-	/*CAMERA EFFECT*/
-	/*CAMERA EFFECT*/
-	/*CAMERA EFFECT*/
-
-	enum DOFBlurQuality {
-		DOF_BLUR_QUALITY_VERY_LOW,
-		DOF_BLUR_QUALITY_LOW,
-		DOF_BLUR_QUALITY_MEDIUM,
-		DOF_BLUR_QUALITY_HIGH,
-	};
-
-	enum DOFBokehShape {
-		DOF_BOKEH_BOX,
-		DOF_BOKEH_HEXAGON,
-		DOF_BOKEH_CIRCLE
-	};
-
 
 	enum EnvironmentSSAOQuality {
 		ENV_SSAO_QUALITY_VERY_LOW,
@@ -762,9 +747,46 @@ public:
 		SUB_SURFACE_SCATTERING_QUALITY_MEDIUM,
 		SUB_SURFACE_SCATTERING_QUALITY_HIGH,
 	};
+	
+	virtual void environment_set_background(RID p_env, EnvironmentBG p_bg) = 0;
+	virtual void environment_set_sky(RID p_env, RID p_sky) = 0;
+	virtual void environment_set_sky_custom_fov(RID p_env, float p_scale) = 0;
+	virtual void environment_set_sky_orientation(RID p_env, const Basis &p_orientation) = 0;
+	virtual void environment_set_bg_color(RID p_env, const Color &p_color) = 0;
+	virtual void environment_set_bg_energy(RID p_env, float p_multiplier, float p_exposure_value) = 0;
+	virtual void environment_set_canvas_max_layer(RID p_env, int p_max_layer) = 0;
+	virtual void environment_set_ambient_light(RID p_env, const Color &p_color, EnvironmentAmbientSource p_ambient = ENV_AMBIENT_SOURCE_BG, float p_energy = 1.0, float p_sky_contribution = 0.0, EnvironmentReflectionSource p_reflection_source = ENV_REFLECTION_SOURCE_BG) = 0;
 
+
+	/*CAMERA EFFECT*/
+	/*CAMERA EFFECT*/
+	/*CAMERA EFFECT*/
+	virtual RID camera_attributes_create() = 0;
+
+	enum DOFBlurQuality {
+		DOF_BLUR_QUALITY_VERY_LOW,
+		DOF_BLUR_QUALITY_LOW,
+		DOF_BLUR_QUALITY_MEDIUM,
+		DOF_BLUR_QUALITY_HIGH,
+	};
+
+	enum DOFBokehShape {
+		DOF_BOKEH_BOX,
+		DOF_BOKEH_HEXAGON,
+		DOF_BOKEH_CIRCLE
+	};
+	virtual void camera_attributes_set_dof_blur_quality(DOFBlurQuality p_quality, bool p_use_jitter) = 0;
+
+	virtual void camera_attributes_set_dof_blur_bokeh_shape(DOFBokehShape p_shape) = 0;
+	virtual void camera_attributes_set_dof_blur(RID p_camera_attributes, bool p_far_enable, float p_far_distance, float p_far_transition, bool p_near_enable, float p_near_distance, float p_near_transition, float p_amount) = 0;
+	virtual void camera_attributes_set_exposure(RID p_camera_attributes, float p_multiplier, float p_exposure_normalization) = 0;
+	virtual void camera_attributes_set_auto_exposure(RID p_camera_attributes, bool p_enable, float p_min_sensitivity, float p_max_sensitivity, float p_speed, float p_scale) = 0;
+
+
+	virtual RID compositor_create() = 0;
 
 	/* COMPOSITOR EFFECTS API */
+	virtual RID compositor_effect_create() = 0;
 
 	enum CompositorEffectFlags {
 		COMPOSITOR_EFFECT_FLAG_ACCESS_RESOLVED_COLOR = 1,
@@ -783,7 +805,8 @@ public:
 		COMPOSITOR_EFFECT_CALLBACK_TYPE_MAX,
 		COMPOSITOR_EFFECT_CALLBACK_TYPE_ANY = -1,
 	};
-
+	virtual Color get_default_clear_color() const = 0;
+	virtual void set_default_clear_color(const Color &p_color)  = 0;
 
   virtual void free(RID p_rid) = 0;
 

@@ -104,26 +104,98 @@ void RenderSceneBuffersRD::configure(const RenderSceneBuffersConfiguration *p_co
 		E.value->configure(this);
 	}
 }
+// Allocate shared buffers
+void RenderSceneBuffersRD::allocate_blur_textures() {
+	if (has_texture(RB_SCOPE_BUFFERS, RB_TEX_BLUR_0)) {
+		// already allocated...
+		return;
+	}
+
+	Size2i blur_size = internal_size;
+	if (scaling_3d_mode == RS::VIEWPORT_SCALING_3D_MODE_FSR2) {
+		// The blur texture should be as big as the target size when using an upscaler.
+		blur_size = target_size;
+	}
+
+	uint32_t mipmaps_required = Image::get_image_required_mipmaps(blur_size.x, blur_size.y, Image::FORMAT_RGBAH);
+
+	uint32_t usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
+	if (can_be_storage) {
+		usage_bits += RD::TEXTURE_USAGE_STORAGE_BIT;
+	} else {
+		usage_bits += RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+	}
+
+	create_texture(RB_SCOPE_BUFFERS, RB_TEX_BLUR_0, base_data_format, usage_bits, RD::TEXTURE_SAMPLES_1, blur_size, view_count, mipmaps_required);
+	create_texture(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, base_data_format, usage_bits, RD::TEXTURE_SAMPLES_1, Size2i(blur_size.x >> 1, blur_size.y >> 1), view_count, mipmaps_required - 1);
+
+	// if !can_be_storage we need a half width version
+	if (!can_be_storage) {
+		create_texture(RB_SCOPE_BUFFERS, RB_TEX_HALF_BLUR, base_data_format, usage_bits, RD::TEXTURE_SAMPLES_1, Size2i(blur_size.x >> 1, blur_size.y), 1, mipmaps_required);
+	}
+
+	// TODO redo this:
+	if (!can_be_storage) {
+		// create 4 weight textures, 2 full size, 2 half size
+
+		RD::TextureFormat tf;
+		tf.format = RD::DATA_FORMAT_R16_SFLOAT; // We could probably use DATA_FORMAT_R8_SNORM if we don't pre-multiply by blur_size but that depends on whether we can remove DEPTH_GAP
+		tf.width = blur_size.x;
+		tf.height = blur_size.y;
+		tf.texture_type = RD::TEXTURE_TYPE_2D;
+		tf.array_layers = 1; // Our DOF effect handles one eye per turn
+		tf.usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+		tf.mipmaps = 1;
+		for (uint32_t i = 0; i < 4; i++) {
+			// associated blur texture
+			RID texture;
+			if (i == 1) {
+				texture = get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_BLUR_0, 0, 0);
+			} else if (i == 2) {
+				texture = get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_BLUR_1, 0, 0);
+			} else if (i == 3) {
+				texture = get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_BLUR_0, 0, 1);
+			}
+
+			// create weight texture
+			// weight_buffers[i].weight = RD::get_singleton()->texture_create(tf, RD::TextureView());
+
+			// create frame buffer
+			Vector<RID> fb;
+			if (i != 0) {
+				fb.push_back(texture);
+			}
+			// fb.push_back(weight_buffers[i].weight);
+			// weight_buffers[i].fb = RD::get_singleton()->framebuffer_create(fb);
+
+			if (i == 1) {
+				// next 2 are half size
+				tf.width = MAX(1u, tf.width >> 1);
+				tf.height = MAX(1u, tf.height >> 1);
+			}
+		}
+	}
+}
 
 void RenderSceneBuffersRD::update_samplers() {
-	float computed_mipmap_bias = texture_mipmap_bias;
+  float computed_mipmap_bias = texture_mipmap_bias;
 
-	if (use_taa || (scaling_3d_mode == RS::VIEWPORT_SCALING_3D_MODE_FSR2)) {
-		// Use negative mipmap LOD bias when TAA or FSR2 is enabled to compensate for loss of sharpness.
-		// This restores sharpness in still images to be roughly at the same level as without TAA,
-		// but moving scenes will still be blurrier.
-		computed_mipmap_bias -= 0.5;
-	}
+  if (use_taa || (scaling_3d_mode == RS::VIEWPORT_SCALING_3D_MODE_FSR2)) {
+    // Use negative mipmap LOD bias when TAA or FSR2 is enabled to compensate for loss of sharpness.
+    // This restores sharpness in still images to be roughly at the same level as without TAA,
+    // but moving scenes will still be blurrier.
+    computed_mipmap_bias -= 0.5;
+  }
 
-	if (screen_space_aa == RS::VIEWPORT_SCREEN_SPACE_AA_FXAA) {
-		// Use negative mipmap LOD bias when FXAA is enabled to compensate for loss of sharpness.
-		// If both TAA and FXAA are enabled, combine their negative LOD biases together.
-		computed_mipmap_bias -= 0.25;
-	}
+  if (screen_space_aa == RS::VIEWPORT_SCREEN_SPACE_AA_FXAA) {
+    // Use negative mipmap LOD bias when FXAA is enabled to compensate for loss of sharpness.
+    // If both TAA and FXAA are enabled, combine their negative LOD biases together.
+    computed_mipmap_bias -= 0.25;
+  }
 
-	RendererRD::MaterialStorage *material_storage = RendererRD::MaterialStorage::get_singleton();
-	material_storage->samplers_rd_free(samplers);
-	samplers = material_storage->samplers_rd_allocate(computed_mipmap_bias);
+  RendererRD::MaterialStorage* material_storage = RendererRD::MaterialStorage::get_singleton();
+  material_storage->samplers_rd_free(samplers);
+  samplers = material_storage->samplers_rd_allocate(computed_mipmap_bias);
 }
 void RenderSceneBuffersRD::cleanup() {
 	// Free our data buffers (but don't destroy them)
@@ -172,25 +244,7 @@ void RenderSceneBuffersRD::clear_context(const StringName &p_context) {
 	}
 }
 
-RID RenderSceneBuffersRD::get_velocity_buffer(bool p_get_msaa) {
-	if (p_get_msaa) {
-		if (!has_texture(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY_MSAA)) {
-			return RID();
-		} else {
-			return get_texture(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY_MSAA);
-		}
-	} else {
-		RendererRD::TextureStorage *texture_storage = RendererRD::TextureStorage::get_singleton();
-		RID velocity = texture_storage->render_target_get_override_velocity(render_target);
-		if (velocity.is_valid()) {
-			return velocity;
-		} else if (!has_texture(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY)) {
-			return RID();
-		} else {
-			return get_texture(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY);
-		}
-	}
-}
+
 
 bool RenderSceneBuffersRD::has_texture(const StringName &p_context, const StringName &p_texture_name) const {
 	NTKey key(p_context, p_texture_name);
@@ -248,10 +302,116 @@ RID RenderSceneBuffersRD::create_texture_from_format(const StringName &p_context
 	return named_texture.texture;
 }
 
+
+RID RenderSceneBuffersRD::create_texture_view(const StringName &p_context, const StringName &p_texture_name, const StringName &p_view_name, RD::TextureView p_view) {
+	NTKey view_key(p_context, p_view_name);
+
+	// check if this is a known texture
+	if (named_textures.has(view_key)) {
+		return named_textures[view_key].texture;
+	}
+
+	NTKey key(p_context, p_texture_name);
+
+	ERR_FAIL_COND_V(!named_textures.has(key), RID());
+
+	NamedTexture &named_texture = named_textures[key];
+	NamedTexture &view_texture = named_textures[view_key];
+
+	view_texture.format = named_texture.format;
+	view_texture.is_unique = named_texture.is_unique;
+
+	view_texture.texture = RD::get_singleton()->texture_create_shared(p_view, named_texture.texture);
+
+	RD::get_singleton()->set_resource_name(view_texture.texture, 
+	String("RenderBuffer View "+p_context + "/" + p_view_name));
+
+	update_sizes(named_texture);
+
+	return view_texture.texture;
+}
+
 RID lain::RenderSceneBuffersRD::get_texture(const StringName& p_context, const StringName& p_texture_name) const {
 	NTKey key(p_context, p_texture_name);
 	ERR_FAIL_COND_V(!named_textures.has(key), RID());
 	return named_textures[key].texture;
+}
+
+RID RenderSceneBuffersRD::get_texture_slice(const StringName &p_context, const StringName &p_texture_name, const uint32_t p_layer, const uint32_t p_mipmap, const uint32_t p_layers, const uint32_t p_mipmaps) {
+	return get_texture_slice_view(p_context, p_texture_name, p_layer, p_mipmap, p_layers, p_mipmaps, RD::TextureView());
+}
+
+
+RID RenderSceneBuffersRD::get_texture_slice_view(const StringName &p_context, const StringName &p_texture_name, const uint32_t p_layer, const uint32_t p_mipmap, const uint32_t p_layers, const uint32_t p_mipmaps, RD::TextureView p_view) {
+	NTKey key(p_context, p_texture_name);
+
+	// check if this is a known texture
+	ERR_FAIL_COND_V(!named_textures.has(key), RID());
+	NamedTexture &named_texture = named_textures[key];
+	ERR_FAIL_COND_V(named_texture.texture.is_null(), RID());
+
+	// check if we're in bounds
+	ERR_FAIL_UNSIGNED_INDEX_V(p_layer, named_texture.format.array_layers, RID());
+	ERR_FAIL_COND_V(p_layers == 0, RID());
+	ERR_FAIL_COND_V(p_layer + p_layers > named_texture.format.array_layers, RID());
+	ERR_FAIL_UNSIGNED_INDEX_V(p_mipmap, named_texture.format.mipmaps, RID());
+	ERR_FAIL_COND_V(p_mipmaps == 0, RID());
+	ERR_FAIL_COND_V(p_mipmap + p_mipmaps > named_texture.format.mipmaps, RID());
+
+	// asking the whole thing? just return the original
+	RD::TextureView default_view = RD::TextureView();
+	if (p_layer == 0 && p_mipmap == 0 && named_texture.format.array_layers == p_layers && named_texture.format.mipmaps == p_mipmaps && p_view == default_view) {
+		return named_texture.texture;
+	}
+
+	// see if we have this
+	NTSliceKey slice_key(p_layer, p_layers, p_mipmap, p_mipmaps, p_view);
+	if (named_texture.slices.has(slice_key)) {
+		return named_texture.slices[slice_key];
+	}
+
+	// create our slice
+	RID &slice = named_texture.slices[slice_key];
+	slice = RD::get_singleton()->texture_create_shared_from_slice(p_view, named_texture.texture, p_layer, p_mipmap, p_mipmaps, p_layers > 1 ? RD::TEXTURE_SLICE_2D_ARRAY : RD::TEXTURE_SLICE_2D, p_layers);
+
+	Array arr;
+	arr.push_back(p_context);
+	arr.push_back(p_texture_name);
+	arr.push_back(itos(p_layer));
+	arr.push_back(itos(p_layers));
+	arr.push_back(itos(p_mipmap));
+	arr.push_back(itos(p_mipmaps));
+	arr.push_back(itos(p_view.format_override));
+	arr.push_back(itos(p_view.swizzle_r));
+	arr.push_back(itos(p_view.swizzle_g));
+	arr.push_back(itos(p_view.swizzle_b));
+	arr.push_back(itos(p_view.swizzle_a));
+	// RD::get_singleton()->set_resource_name(slice, String("RenderBuffer {0}/{1}, layer {2}/{3}, mipmap {4}/{5}, view {6}/{7}/{8}/{9}/{10}").format(arr));
+
+	// and return our slice
+	return slice;
+}
+
+Size2i RenderSceneBuffersRD::get_texture_slice_size(const StringName &p_context, const StringName &p_texture_name, const uint32_t p_mipmap) {
+	NTKey key(p_context, p_texture_name);
+
+	// check if this is a known texture
+	ERR_FAIL_COND_V(!named_textures.has(key), Size2i());
+	NamedTexture &named_texture = named_textures[key];
+	ERR_FAIL_COND_V(named_texture.texture.is_null(), Size2i());
+
+	// check if we're in bounds
+	ERR_FAIL_UNSIGNED_INDEX_V(p_mipmap, named_texture.format.mipmaps, Size2i());
+
+	// return our size
+	return named_texture.sizes[p_mipmap];
+}
+const RD::TextureFormat RenderSceneBuffersRD::get_texture_format(const StringName &p_context, const StringName &p_texture_name) const {
+	NTKey key(p_context, p_texture_name);
+
+	ERR_FAIL_COND_V(!named_textures.has(key), RD::TextureFormat());
+
+	return named_textures[key].format;
 }
 
 void RenderSceneBuffersRD::update_sizes(NamedTexture &p_named_texture) {
@@ -280,4 +440,116 @@ void RenderSceneBuffersRD::set_texture_mipmap_bias(float p_texture_mipmap_bias) 
 void lain::RenderSceneBuffersRD::set_use_debanding(bool p_use_debanding) {
 	use_debanding = p_use_debanding;
 
+}
+
+// Depth texture
+
+bool RenderSceneBuffersRD::has_depth_texture() {
+	if (render_target.is_null()) {
+		// not applicable when there is no render target (likely this is for a reflection probe)
+		return false;
+	}
+
+	RendererRD::TextureStorage *texture_storage = RendererRD::TextureStorage::get_singleton();
+	RID depth = texture_storage->render_target_get_override_depth(render_target);
+	if (depth.is_valid()) {
+		return true;
+	} else {
+		return has_texture(RB_SCOPE_BUFFERS, RB_TEX_DEPTH);
+	}
+}
+
+RID RenderSceneBuffersRD::get_depth_texture() {
+	if (render_target.is_null()) {
+		// not applicable when there is no render target (likely this is for a reflection probe)
+		return RID();
+	}
+
+	RendererRD::TextureStorage *texture_storage = RendererRD::TextureStorage::get_singleton();
+	RID depth = texture_storage->render_target_get_override_depth(render_target);
+	if (depth.is_valid()) {
+		return depth;
+	} else {
+		return get_texture(RB_SCOPE_BUFFERS, RB_TEX_DEPTH);
+	}
+}
+
+RID RenderSceneBuffersRD::get_depth_texture(const uint32_t p_layer) {
+	RendererRD::TextureStorage *texture_storage = RendererRD::TextureStorage::get_singleton();
+	RID depth_slice = texture_storage->render_target_get_override_depth_slice(render_target, p_layer);
+	if (depth_slice.is_valid()) {
+		return depth_slice;
+	} else {
+		return get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_DEPTH, p_layer, 0);
+	}
+}
+void RenderSceneBuffersRD::ensure_upscaled() {
+	if (!has_upscaled_texture()) {
+		uint32_t usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | (can_be_storage ? RD::TEXTURE_USAGE_STORAGE_BIT : 0) | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+		usage_bits |= RD::TEXTURE_USAGE_INPUT_ATTACHMENT_BIT;
+		create_texture(RB_SCOPE_BUFFERS, RB_TEX_COLOR_UPSCALED, base_data_format, usage_bits, RD::TEXTURE_SAMPLES_1, target_size);
+	}
+}
+
+void RenderSceneBuffersRD::ensure_velocity() {
+  if (!has_texture(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY)) {
+    uint32_t usage_bits = RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT;
+
+    if (msaa_3d != RS::VIEWPORT_MSAA_DISABLED) {
+      uint32_t msaa_usage_bits = RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
+      usage_bits |= RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
+
+      create_texture(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY_MSAA, RD::DATA_FORMAT_R16G16_SFLOAT, msaa_usage_bits, texture_samples);
+    }
+
+    create_texture(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY, RD::DATA_FORMAT_R16G16_SFLOAT, usage_bits);
+  }
+}
+
+bool RenderSceneBuffersRD::has_velocity_buffer(bool p_has_msaa) {
+	if (p_has_msaa) {
+		return has_texture(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY_MSAA);
+	} else {
+		RendererRD::TextureStorage *texture_storage = RendererRD::TextureStorage::get_singleton();
+		RID velocity = texture_storage->render_target_get_override_velocity(render_target);
+		if (velocity.is_valid()) {
+			return true;
+		} else {
+			return has_texture(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY);
+		}
+	}
+}
+
+RID RenderSceneBuffersRD::get_velocity_buffer(bool p_get_msaa) {
+	if (p_get_msaa) {
+		if (!has_texture(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY_MSAA)) {
+			return RID();
+		} else {
+			return get_texture(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY_MSAA);
+		}
+	} else {
+		RendererRD::TextureStorage *texture_storage = RendererRD::TextureStorage::get_singleton();
+		RID velocity = texture_storage->render_target_get_override_velocity(render_target);
+		if (velocity.is_valid()) {
+			return velocity;
+		} else if (!has_texture(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY)) {
+			return RID();
+		} else {
+			return get_texture(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY);
+		}
+	}
+}
+
+RID RenderSceneBuffersRD::get_velocity_buffer(bool p_get_msaa, uint32_t p_layer) {
+	if (p_get_msaa) {
+		return get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY_MSAA, p_layer, 0);
+	} else {
+		RendererRD::TextureStorage *texture_storage = RendererRD::TextureStorage::get_singleton();
+		RID velocity_slice = texture_storage->render_target_get_override_velocity_slice(render_target, p_layer);
+		if (velocity_slice.is_valid()) {
+			return velocity_slice;
+		} else {
+			return get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_VELOCITY, p_layer, 0);
+		}
+	}
 }

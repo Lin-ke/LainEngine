@@ -12,7 +12,7 @@
 #include "function/display/window_system.h"
 #include "function/render/rendering_system/rendering_system_default.h"
 #include "module/register_module_types.h"
-
+#include "scene/register_scene_types.h"
 #include "timer_sync.h"
 //  initialization part
 namespace lain {
@@ -166,16 +166,28 @@ Error Main::Initialize(int argc, char* argv[]) {
     Vector2i position = init_custom_pos;
     window_position = &position;
   }
+
+  register_system_types();
+  register_scene_types();
+
+
   MainLoop* main_loop = memnew(SceneTree);
   Error err;
   // 注意这里的顺序（见WindowSystem里的注释）
   window_system = memnew(WindowSystem(rendering_driver, window_mode, window_vsync_mode, window_flags, window_position, window_size, init_screen, err));
   { // rendering thread mode
     int rtm = -1;
-    rtm = GLOBAL_DEF("rendering/driver/render_thread_mode", OS::RENDER_SEPARATE_THREAD);
+    rtm = GLOBAL_DEF("rendering/driver/render_thread_mode", OS::RenderThreadMode::RENDER_THREAD_SAFE);
     OS::GetSingleton()->set_render_thread_mode(OS::RenderThreadMode(rtm));
     render_system = memnew(RenderingSystemDefault(OS::GetSingleton()->get_render_thread_mode() == OS::RENDER_SEPARATE_THREAD));
+		render_system->init();
+
   }
+  Color clear = GLOBAL_DEF_BASIC("rendering/environment/defaults/default_clear_color", Color(0.3, 0.3, 0.3));
+  RS::get_singleton()->set_default_clear_color(clear);
+
+
+
 
   if (main_scene != "") {}
   OS::GetSingleton()->SetMainLoop(main_loop);
@@ -211,7 +223,7 @@ bool Main::Loop() {
 
   ui64 delta_time_usec = ticks - last_ticks;
 	uint64_t process_begin = OS::GetSingleton()->GetTicksUsec();
- 	RS::get_singleton()->sync(); //sync if still drawing from previous frames.
+ 	// RS::get_singleton()->sync(); //sync if still drawing from previous frames.
 
   if (window_system->CanAnyWindowDraw() && render_system->is_render_loop_enabled()) {
 				RenderingSystem::get_singleton()->draw(true, scaled_step); // flush visual commands

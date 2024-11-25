@@ -8,6 +8,21 @@ namespace lain {
   void Callable::call_deferredp(const Variant **p_arguments, int p_argcount) const {
 }
 
+Variant Callable::callv(const Array &p_arguments) const {
+	int argcount = p_arguments.size();
+	const Variant **argptrs = nullptr;
+	if (argcount) {
+		argptrs = (const Variant **)alloca(sizeof(Variant *) * argcount);
+		for (int i = 0; i < argcount; i++) {
+			argptrs[i] = &p_arguments[i];
+		}
+	}
+	CallError ce;
+	Variant ret;
+	callp(argptrs, argcount, ret, ce);
+	return ret;
+}
+
 uint32_t Callable::hash() const {
   if (is_custom()) {
     return custom->hash();

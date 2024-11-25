@@ -1,5 +1,7 @@
 #include "packed_scene.h"
 #include "core/io/resource_loader.h"
+#include "core/scene/object/gobject.h"	
+#include "core/scene/component/component.h"	
 
 namespace lain {
 	bool SceneState::disable_placeholders = false;

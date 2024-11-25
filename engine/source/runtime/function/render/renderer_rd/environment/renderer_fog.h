@@ -8,8 +8,8 @@ namespace lain::RendererRD{
  private:
   static Fog* p_singleton;
   public:
-  ~Fog();
-  Fog();
+  virtual ~Fog() { p_singleton = nullptr;}
+  Fog() { p_singleton = this;}
   static Fog* get_singleton() { return p_singleton;}
   bool owns_fog_volume(RID p_rid) {return false;}
 

@@ -133,6 +133,20 @@ class RendererSceneRender {
                             int p_render_sdfgi_region_count, const RenderSDFGIUpdateData* p_sdfgi_update_data = nullptr,
                             RenderingMethod::RenderInfo* r_render_info = nullptr) = 0;
   // 这几个API最后在 render_forward_clustered.h中实现
+
+
+/* Environment*/
+	// Background
+	void environment_set_background(RID p_env, RS::EnvironmentBG p_bg);
+	void environment_set_sky(RID p_env, RID p_sky);
+	void environment_set_sky_custom_fov(RID p_env, float p_scale);
+	void environment_set_sky_orientation(RID p_env, const Basis &p_orientation);
+	void environment_set_bg_color(RID p_env, const Color &p_color);
+	void environment_set_bg_energy(RID p_env, float p_multiplier, float p_exposure_value);
+	void environment_set_canvas_max_layer(RID p_env, int p_max_layer);
+	void environment_set_ambient_light(RID p_env, const Color &p_color, RS::EnvironmentAmbientSource p_ambient = RS::ENV_AMBIENT_SOURCE_BG, float p_energy = 1.0, float p_sky_contribution = 0.0, RS::EnvironmentReflectionSource p_reflection_source = RS::ENV_REFLECTION_SOURCE_BG);
+
+  
 	// SSAO
 	void environment_set_ssao(RID p_env, bool p_enable, float p_radius, float p_intensity, float p_power, float p_detail, float p_horizon, float p_sharpness, float p_light_affect, float p_ao_channel_affect);
 	bool environment_get_ssao_enabled(RID p_env) const;

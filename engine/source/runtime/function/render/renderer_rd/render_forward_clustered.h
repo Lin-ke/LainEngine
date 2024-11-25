@@ -19,7 +19,8 @@
 #define RB_TEX_ROUGHNESS_MSAA SNAME("normal_roughnesss_msaa")
 #define RB_TEX_VOXEL_GI SNAME("voxel_gi")
 #define RB_TEX_VOXEL_GI_MSAA SNAME("voxel_gi_msaa")
-
+#define RB_TEX_NORMAL_ROUGHNESS SNAME("normal_roughness")
+#define RB_TEX_NORMAL_ROUGHNESS_MSAA SNAME("normal_roughness_msaa")
 namespace lain::RendererSceneRenderImplementation {
 // _render_scene
 class RenderForwardClustered : public RendererSceneRenderRD {
@@ -85,7 +86,7 @@ class RenderForwardClustered : public RendererSceneRenderRD {
     // RendererRD::FSR2Context *get_fsr2_context() const { return fsr2_context; }
 
     RID get_color_only_fb();
-    RID get_color_pass_fb(uint32_t p_color_pass_flags);
+    RID get_color_pass_fb(uint32_t p_color_pass_flags); // ColorPassFlags
     RID get_depth_fb(DepthFrameBufferType p_type = DEPTH_FB);
     RID get_specular_only_fb();
     RID get_velocity_only_fb();
@@ -541,7 +542,7 @@ class RenderForwardClustered : public RendererSceneRenderRD {
 
   void _update_volumetric_fog(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_environment, const Projection& p_cam_projection, const Transform3D& p_cam_transform,
                               const Transform3D& p_prev_cam_inv_transform, RID p_shadow_atlas, int p_directional_light_count, bool p_use_directional_shadows,
-                              int p_positional_light_count, int p_voxel_gi_count, const PagedArray<RID>& p_fog_volumes);
+                              int p_positional_light_count, int p_voxel_gi_count, const PagedArray<RID>& p_fog_volumes){}
 
   /* Render shadows */
 

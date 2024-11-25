@@ -17,6 +17,8 @@ namespace lain {
 
 	class Texture2D :public Texture{
 		LCLASS(Texture2D, Texture);
+		OBJ_SAVE_TYPE(Texture2D); // Saves derived classes with common type so they can be interchanged.
+
 		virtual int get_width() const;
 		virtual int get_height() const;
 		virtual Size2 get_size() const;

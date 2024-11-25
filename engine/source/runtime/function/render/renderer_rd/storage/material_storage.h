@@ -29,7 +29,7 @@ class MaterialStorage : public RendererMaterialStorage {
   MaterialStorage();
   ~MaterialStorage() override;
   // ShaderData
-  // 这里很复杂，@？ 如何与shader的反射相结合
+
   struct ShaderData {
     String path;
     HashMap<StringName, shader::ShaderLanguage::ShaderNode::Uniform> uniforms; // 这些在setcode 的时候编译好
@@ -68,7 +68,7 @@ class MaterialStorage : public RendererMaterialStorage {
 		Vector<RendererRD::TextureStorage::RenderTarget *> render_target_cache;
 		void update_uniform_buffer(const HashMap<StringName, shader::ShaderLanguage::ShaderNode::Uniform> &p_uniforms, const uint32_t *p_uniform_offsets, const HashMap<StringName, Variant> &p_parameters, uint8_t *p_buffer, uint32_t p_buffer_size, bool p_use_linear_color);
 		void update_textures(const HashMap<StringName, Variant> &p_parameters, const HashMap<StringName, HashMap<int, RID>> &p_default_textures, const Vector<shader::ShaderCompiler::GeneratedCode::Texture> &p_texture_uniforms, RID *p_textures, bool p_use_linear_color, bool p_3d_material);
-		void set_as_used();
+		void set_as_used(); // set render target cache all used
 
 		virtual void set_render_priority(int p_priority) = 0;
 		virtual void set_next_pass(RID p_pass) = 0;

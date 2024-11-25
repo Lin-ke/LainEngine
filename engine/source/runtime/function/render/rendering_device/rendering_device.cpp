@@ -801,6 +801,51 @@ bool lain::RenderingDevice::texture_is_valid(RID p_texture) {
   return texture_owner.owns(p_texture);
 }
 
+Error RenderingDevice::texture_resolve_multisample(RID p_from_texture, RID p_to_texture) {
+	_THREAD_SAFE_METHOD_
+
+	Texture *src_tex = texture_owner.get_or_null(p_from_texture);
+	ERR_FAIL_NULL_V(src_tex, ERR_INVALID_PARAMETER);
+
+	ERR_FAIL_COND_V_MSG(src_tex->bound, ERR_INVALID_PARAMETER,
+			"Source texture can't be copied while a draw list that uses it as part of a framebuffer is being created. Ensure the draw list is finalized (and that the color/depth texture using it is not set to `RenderingDevice.FINAL_ACTION_CONTINUE`) to copy this texture.");
+	ERR_FAIL_COND_V_MSG(!(src_tex->usage_flags & TEXTURE_USAGE_CAN_COPY_FROM_BIT), ERR_INVALID_PARAMETER,
+			"Source texture requires the `RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT` to be set to be retrieved.");
+
+	ERR_FAIL_COND_V_MSG(src_tex->type != TEXTURE_TYPE_2D, ERR_INVALID_PARAMETER, "Source texture must be 2D (or a slice of a 3D/Cube texture)");
+	ERR_FAIL_COND_V_MSG(src_tex->samples == TEXTURE_SAMPLES_1, ERR_INVALID_PARAMETER, "Source texture must be multisampled.");
+
+	Texture *dst_tex = texture_owner.get_or_null(p_to_texture);
+	ERR_FAIL_NULL_V(dst_tex, ERR_INVALID_PARAMETER);
+
+	ERR_FAIL_COND_V_MSG(dst_tex->bound, ERR_INVALID_PARAMETER,
+			"Destination texture can't be copied while a draw list that uses it as part of a framebuffer is being created. Ensure the draw list is finalized (and that the color/depth texture using it is not set to `RenderingDevice.FINAL_ACTION_CONTINUE`) to copy this texture.");
+	ERR_FAIL_COND_V_MSG(!(dst_tex->usage_flags & TEXTURE_USAGE_CAN_COPY_TO_BIT), ERR_INVALID_PARAMETER,
+			"Destination texture requires the `RenderingDevice.TEXTURE_USAGE_CAN_COPY_TO_BIT` to be set to be retrieved.");
+
+	ERR_FAIL_COND_V_MSG(dst_tex->type != TEXTURE_TYPE_2D, ERR_INVALID_PARAMETER, "Destination texture must be 2D (or a slice of a 3D/Cube texture).");
+	ERR_FAIL_COND_V_MSG(dst_tex->samples != TEXTURE_SAMPLES_1, ERR_INVALID_PARAMETER, "Destination texture must not be multisampled.");
+
+	ERR_FAIL_COND_V_MSG(src_tex->format != dst_tex->format, ERR_INVALID_PARAMETER, "Source and Destination textures must be the same format.");
+	ERR_FAIL_COND_V_MSG(src_tex->width != dst_tex->width && src_tex->height != dst_tex->height && src_tex->depth != dst_tex->depth, ERR_INVALID_PARAMETER, "Source and Destination textures must have the same dimensions.");
+
+	ERR_FAIL_COND_V_MSG(src_tex->read_aspect_flags != dst_tex->read_aspect_flags, ERR_INVALID_PARAMETER,
+			"Source and destination texture must be of the same type (color or depth).");
+
+	// Indicate the texture will get modified for the shared texture fallback.
+	_texture_update_shared_fallback(p_to_texture, dst_tex, true);
+
+	// The textures must be mutable to be used in the resolve operation.
+	bool src_made_mutable = _texture_make_mutable(src_tex, p_from_texture);
+	bool dst_made_mutable = _texture_make_mutable(dst_tex, p_to_texture);
+	if (src_made_mutable || dst_made_mutable) {
+		draw_graph.add_synchronization();
+	}
+
+	draw_graph.add_texture_resolve(src_tex->driver_id, src_tex->draw_tracker, dst_tex->driver_id, dst_tex->draw_tracker, src_tex->base_layer, src_tex->base_mipmap, dst_tex->base_layer, dst_tex->base_mipmap);
+
+	return OK;
+}
 ///
 /// ******FRAME **********
 ///
@@ -2295,6 +2340,10 @@ RID RenderingDevice::shader_create_from_bytecode(const Vector<uint8_t>& p_shader
   return id;
 }
 
+RID RenderingDevice::shader_create_placeholder() {
+	Shader shader;
+	return shader_owner.make_rid(shader);
+}
 uint64_t RenderingDevice::shader_get_vertex_input_attribute_mask(RID p_shader) {
 	_THREAD_SAFE_METHOD_
 

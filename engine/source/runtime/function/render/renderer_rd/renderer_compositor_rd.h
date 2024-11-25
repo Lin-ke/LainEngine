@@ -7,6 +7,10 @@
 #include "storage/material_storage.h"
 #include "storage/mesh_storage.h"
 #include "storage/texture_storage.h"
+#include "storage/particles_storage.h"
+#include "environment/renderer_fog.h"
+#include "environment/renderer_gi.h"
+
 #include "utilities_rd.h"
 
 #include "shaders/blit.glsl.gen.h"
@@ -14,13 +18,20 @@
 namespace lain {
 class RendererCompositorRD : public RendererCompositor {
  protected:
+  RendererSceneRenderRD* scene = nullptr;
   RendererRD::MaterialStorage* material_storage = nullptr;
   RendererRD::MeshStorage* mesh_storage = nullptr;
   RendererRD::TextureStorage* texture_storage = nullptr;
   // light
   RendererRD::LightStorage* light_storage = nullptr;
-  RendererSceneRenderRD* scene = nullptr;
   RendererRD::Utilities* utilities = nullptr;
+  RendererRD::GI* gi = nullptr;
+  RendererRD::Fog* fog= nullptr;
+
+  RendererRD::ParticlesStorage* particles_storage = nullptr;
+
+
+  
 
   static RendererCompositorRD* singleton;
   enum BlitMode { BLIT_MODE_NORMAL, BLIT_MODE_USE_LAYER, BLIT_MODE_LENS, BLIT_MODE_NORMAL_ALPHA, BLIT_MODE_MAX };
@@ -65,7 +76,12 @@ class RendererCompositorRD : public RendererCompositor {
   virtual RendererTextureStorage* get_texture_storage() override { return texture_storage; }
   virtual RendererSceneRender* get_scene() override { return scene; }
   virtual RendererUtilities* get_utilities() override { return utilities; }
+  virtual RendererGI* get_gi() override { return gi; }
+  virtual RendererFog* get_fog() override { return fog; }
+  virtual RendererParticlesStorage* get_particles_storage() override { return particles_storage; }
   static RendererCompositorRD* get_singleton() { return singleton; }
+
+
 
   // void set_boot_image(const Ref<Image>& p_image, const Color& p_color, bool p_scale, bool p_use_filter);
 
@@ -85,7 +101,7 @@ class RendererCompositorRD : public RendererCompositor {
 
   static RendererCompositor* _create_current() { return memnew(RendererCompositorRD); }
 
-  static void make_current() {
+  static void make_current() { // 在这里初始化了 _create_func
     _create_func = _create_current;
     low_end = false;
   }

@@ -2392,7 +2392,23 @@ RID lain::RendererRD::TextureStorage::render_target_get_rd_texture(RID p_render_
 		return rt->color;
 	}
 }
+RID TextureStorage::render_target_get_override_velocity_slice(RID p_render_target, const uint32_t p_layer) const {
+	RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
+	ERR_FAIL_NULL_V(rt, RID());
 
+	if (rt->overridden.velocity.is_null()) {
+		return RID();
+	} else if (rt->view_count == 1) {
+		return rt->overridden.velocity;
+	} else {
+		RenderTarget::RTOverridden::SliceKey key(rt->overridden.velocity, p_layer);
+
+		if (!rt->overridden.cached_slices.has(key)) {
+			rt->overridden.cached_slices[key] = RD::get_singleton()->texture_create_shared_from_slice(RD::TextureView(), rt->overridden.velocity, p_layer, 0);
+		}
+		return rt->overridden.cached_slices[key];
+	}
+}
 void lain::RendererRD::TextureStorage::render_target_request_clear(RID p_render_target, const Color& p_clear_color) {
   RenderTarget *rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);

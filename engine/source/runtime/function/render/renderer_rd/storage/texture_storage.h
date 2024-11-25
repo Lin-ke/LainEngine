@@ -293,6 +293,7 @@ class TextureStorage : public RendererTextureStorage {
   RID render_target_get_override_color(RID p_render_target) const;
   RID render_target_get_override_depth(RID p_render_target) const;
   virtual RID render_target_get_override_velocity(RID p_render_target) const override;
+	RID render_target_get_override_velocity_slice(RID p_render_target, const uint32_t p_layer) const;
 
   //  rt->overridden.depth
 
@@ -370,7 +371,7 @@ class TextureStorage : public RendererTextureStorage {
 
 		return t->uv_rect;
 	}
-  
+
 };
 }  // namespace lain::RendererRD
 #endif

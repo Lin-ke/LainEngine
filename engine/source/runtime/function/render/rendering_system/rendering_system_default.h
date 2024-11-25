@@ -240,6 +240,42 @@ class RenderingSystemDefault: public RenderingSystem{
 	FUNC3(shadow_atlas_set_quadrant_subdivision, RID, int, int)
 
 	FUNC2(directional_shadow_atlas_set_size, int, bool)
+#undef server_name
+#undef ServerName
+
+	/* CAMERA ATTRIBUTES */
+//from now on, calls forwarded to this singleton
+#define ServerName RendererCameraAttributes
+#define server_name RSG::camera_attributes
+
+	FUNCRIDSPLIT(camera_attributes)
+
+	FUNC2(camera_attributes_set_dof_blur_quality, DOFBlurQuality, bool)
+	FUNC1(camera_attributes_set_dof_blur_bokeh_shape, DOFBokehShape)
+
+	FUNC8(camera_attributes_set_dof_blur, RID, bool, float, float, bool, float, float, float)
+	FUNC3(camera_attributes_set_exposure, RID, float, float)
+	FUNC6(camera_attributes_set_auto_exposure, RID, bool, float, float, float, float)
+
+
+#define ServerName RenderingMethod
+#define server_name RSG::scene
+
+	FUNCRIDSPLIT(compositor)
+	FUNCRIDSPLIT(compositor_effect)
+	/* ENVIRONMENT */
+
+	FUNCRIDSPLIT(environment)
+
+	FUNC2(environment_set_background, RID, EnvironmentBG)
+	FUNC2(environment_set_sky, RID, RID)
+	FUNC2(environment_set_sky_custom_fov, RID, float)
+	FUNC2(environment_set_sky_orientation, RID, const Basis &)
+	FUNC2(environment_set_bg_color, RID, const Color &)
+	FUNC3(environment_set_bg_energy, RID, float, float)
+	FUNC2(environment_set_canvas_max_layer, RID, int)
+	FUNC6(environment_set_ambient_light, RID, const Color &, EnvironmentAmbientSource, float, float, EnvironmentReflectionSource)
+
 
 
 
@@ -254,7 +290,8 @@ class RenderingSystemDefault: public RenderingSystem{
 	virtual void sync() override;
 	virtual uint64_t get_rendering_info(RenderingInfo p_info) override;
 
-
+	virtual void set_default_clear_color(const Color &p_color) override;
+	virtual Color get_default_clear_color() const override;
 private:
 
 

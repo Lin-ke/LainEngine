@@ -4,6 +4,8 @@
 #include  "rendering_system.h"
 namespace lain{
 class RendererFog{
+  public:
+  virtual ~RendererFog(){}
   
 };
 }

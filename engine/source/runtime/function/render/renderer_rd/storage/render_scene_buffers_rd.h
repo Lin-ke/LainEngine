@@ -124,12 +124,10 @@ class RenderSceneBuffersRD : public RenderSceneBuffers {
 
     // Our texture objects, slices are lazy (i.e. only created when requested).
     RID texture;
-    mutable HashMap<NTSliceKey, RID, NTSliceKey> slices;
+    mutable HashMap<NTSliceKey, RID, NTSliceKey> slices; // 也是一个cache
     Vector<Size2i> sizes;  // 记录每个mipmap的size （就是逐渐的/2)
   };
-	// velocity 是 render target管理，和custom data无关
-	// 如果false 会优先检查是否有override的velocity
-	RID get_velocity_buffer(bool p_get_msaa);
+
 
   bool has_texture(const StringName& p_context, const StringName& p_texture_name) const;
   RID create_texture(const StringName& p_context, const StringName& p_texture_name, const RD::DataFormat p_data_format, const uint32_t p_usage_bits,
@@ -150,6 +148,9 @@ class RenderSceneBuffersRD : public RenderSceneBuffers {
 
   mutable HashMap<NTKey, NamedTexture, NTKey> named_textures;
   mutable HashMap<StringName, Ref<RenderBufferCustomDataRD>> data_buffers;  // custom rb data
+
+  // Allocate shared buffers
+  void allocate_blur_textures();
 
   // Samplers.
   RendererRD::MaterialStorage::Samplers samplers;
@@ -240,6 +241,20 @@ class RenderSceneBuffersRD : public RenderSceneBuffers {
 			return RID();
 		}
 	}
+
+  // upscaled
+
+	void ensure_upscaled();
+  	_FORCE_INLINE_ bool has_upscaled_texture() const {
+		return has_texture(RB_SCOPE_BUFFERS, RB_TEX_COLOR_UPSCALED);
+	}
+
+	void ensure_velocity();
+	bool has_velocity_buffer(bool p_has_msaa);
+  	// velocity 是 render target管理，和custom data无关
+	// 如果false 会优先检查是否有override的velocity
+	RID get_velocity_buffer(bool p_get_msaa);
+	RID get_velocity_buffer(bool p_get_msaa, uint32_t p_layer);
 
 
 };

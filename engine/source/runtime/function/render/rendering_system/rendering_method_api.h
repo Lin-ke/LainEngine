@@ -4,9 +4,14 @@
 #include "function/render/scene/render_scene_buffers_api.h"
 namespace lain{
 class RenderingMethod {
+	//负责 camera, occluder, scenario, instance, environment 的创建和初始化
+	// 实现为 RendererSceneCull
+	// 其中 environment 传给了 scene，用scene实际管理执行
+	// scene 实际传给了 environment_storage
+
   public:
 	
-	struct RenderInfo { //@?
+	struct RenderInfo {
 		int info[RS::VIEWPORT_RENDER_INFO_TYPE_MAX][RS::VIEWPORT_RENDER_INFO_MAX] = {};
 	};
 
@@ -65,16 +70,40 @@ class RenderingMethod {
 
 	virtual void instance_set_ignore_culling(RID p_instance, bool p_enabled) = 0;
 
+	/* ENVIRONMENT API */
+
+	virtual RID environment_allocate() = 0;
+	virtual void environment_initialize(RID p_rid) = 0;
+
 	virtual bool is_environment(RID p_environment) const = 0; // 确保rid是environment
+
+	// Background
+	virtual void environment_set_background(RID p_env, RS::EnvironmentBG p_bg) = 0;
+	virtual void environment_set_sky(RID p_env, RID p_sky) = 0;
+	virtual void environment_set_sky_custom_fov(RID p_env, float p_scale) = 0;
+	virtual void environment_set_sky_orientation(RID p_env, const Basis &p_orientation) = 0;
+	virtual void environment_set_bg_color(RID p_env, const Color &p_color) = 0;
+	virtual void environment_set_bg_energy(RID p_env, float p_multiplier, float p_exposure_value) = 0;
+	virtual void environment_set_canvas_max_layer(RID p_env, int p_max_layer) = 0;
+	virtual void environment_set_ambient_light(RID p_env, const Color &p_color, RS::EnvironmentAmbientSource p_ambient = RS::ENV_AMBIENT_SOURCE_BG, float p_energy = 1.0, float p_sky_contribution = 0.0, RS::EnvironmentReflectionSource p_reflection_source = RS::ENV_REFLECTION_SOURCE_BG) = 0;
+
+
 	virtual RS::EnvironmentBG environment_get_background(RID p_Env) const = 0;
 	virtual int environment_get_canvas_max_layer(RID p_env) const = 0;
+
+		/* COMPOSITOR EFFECT API */
+
+	virtual RID compositor_effect_allocate() = 0;
+	virtual void compositor_effect_initialize(RID p_rid) = 0;
+	/* COMPOSITOR API */
+
+	virtual RID compositor_allocate() = 0;
+	virtual void compositor_initialize(RID p_rid) = 0;
 
 	/* Render Buffers */
 
 	virtual Ref<RenderSceneBuffers> render_buffers_create() = 0;
 	// virtual void render_empty_scene(const Ref<RenderSceneBuffers> &p_render_buffers, RID p_scenario, RID p_shadow_atlas) = 0;
-
-	
 	virtual void update() = 0;
 
 	virtual void render_camera(const Ref<RenderSceneBuffers> &p_render_buffers, RID p_camera, RID p_scenario, RID p_viewport, Size2 p_viewport_size, uint32_t p_jitter_phase_count, float p_screen_mesh_lod_threshold, RID p_shadow_atlas, RenderInfo *r_render_info) = 0;

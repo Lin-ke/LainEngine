@@ -1,3 +1,5 @@
+#ifndef VARIANT_BINDER_COMMON_H 
+#define VARIANT_BINDER_COMMON_H
 #include "method_ptrcall.h"
 #include "variant.h"
 namespace lain {
@@ -188,3 +190,4 @@ struct VariantCasterAndValidate<const T&> {
 
 #endif  // DEBUG_METHODS_ENABLED
 } // namespace lain
+#endif

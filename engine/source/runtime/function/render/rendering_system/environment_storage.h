@@ -128,6 +128,32 @@ public:
 	float environment_get_ambient_sky_contribution(RID p_env) const;
 	RS::EnvironmentReflectionSource environment_get_reflection_source(RID p_env) const;
 
+	// SSAO
+	void environment_set_ssao(RID p_env, bool p_enable, float p_radius, float p_intensity, float p_power, float p_detail, float p_horizon, float p_sharpness, float p_light_affect, float p_ao_channel_affect);
+	bool environment_get_ssao_enabled(RID p_env) const;
+	float environment_get_ssao_radius(RID p_env) const;
+	float environment_get_ssao_intensity(RID p_env) const;
+	float environment_get_ssao_power(RID p_env) const;
+	float environment_get_ssao_detail(RID p_env) const;
+	float environment_get_ssao_horizon(RID p_env) const;
+	float environment_get_ssao_sharpness(RID p_env) const;
+	float environment_get_ssao_direct_light_affect(RID p_env) const;
+	float environment_get_ssao_ao_channel_affect(RID p_env) const;
+
+		// SSIL
+	void environment_set_ssil(RID p_env, bool p_enable, float p_radius, float p_intensity, float p_sharpness, float p_normal_rejection);
+	bool environment_get_ssil_enabled(RID p_env) const;
+	float environment_get_ssil_radius(RID p_env) const;
+	float environment_get_ssil_intensity(RID p_env) const;
+	float environment_get_ssil_sharpness(RID p_env) const;
+	float environment_get_ssil_normal_rejection(RID p_env) const;
+	// SSR
+	void environment_set_ssr(RID p_env, bool p_enable, int p_max_steps, float p_fade_int, float p_fade_out, float p_depth_tolerance);
+	bool environment_get_ssr_enabled(RID p_env) const;
+	int environment_get_ssr_max_steps(RID p_env) const;
+	float environment_get_ssr_fade_in(RID p_env) const;
+	float environment_get_ssr_fade_out(RID p_env) const;
+	float environment_get_ssr_depth_tolerance(RID p_env) const;
 };
 }  // namespace lain
 #endif

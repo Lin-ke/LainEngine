@@ -106,15 +106,15 @@ void ShaderRD::setup(const String &p_vertex_code, const String &p_fragment_code,
 {
     name = p_name;
 
-	if (p_compute_code.is_empty()) {
+	if (!p_compute_code.is_empty()) {
 		_add_stage(p_compute_code, STAGE_TYPE_COMPUTE);
 		is_compute = true;
 	} else {
 		is_compute = false;
-		if (p_vertex_code.is_empty()) {
+		if (!p_vertex_code.is_empty()) {
 			_add_stage(p_vertex_code, STAGE_TYPE_VERTEX);
 		}
-		if (p_fragment_code.is_empty()) {
+		if (!p_fragment_code.is_empty()) {
 			_add_stage(p_fragment_code, STAGE_TYPE_FRAGMENT);
 		}
 	}
@@ -391,6 +391,17 @@ void ShaderRD::_compile_version(Version *p_version, int p_group) {
 	p_version->valid = true;
 }
 
+void ShaderRD::_allocate_placeholders(Version *p_version, int p_group) {
+	ERR_FAIL_NULL(p_version->variants);
+	for (uint32_t i = 0; i < group_to_variant_map[p_group].size(); i++) {
+		int variant_id = group_to_variant_map[p_group][i];
+		RID shader = RD::get_singleton()->shader_create_placeholder();
+		{
+			MutexLock lock(variant_set_mutex);
+			p_version->variants[variant_id] = shader;
+		}
+	}
+}
 
 void ShaderRD::_initialize_cache() {
 	for (const KeyValue<int, LocalVector<int>> &E : group_to_variant_map) {

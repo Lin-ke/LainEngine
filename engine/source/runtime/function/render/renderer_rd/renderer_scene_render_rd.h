@@ -110,6 +110,9 @@ void _process_compositor_effects(RS::CompositorEffectCallbackType p_callback_typ
   void set_time(double p_time, double p_frame_step) { time = p_time;
   time_step = p_frame_step; }
 	bool _compositor_effects_has_flag(const RenderDataRD *p_render_data, RS::CompositorEffectFlags p_flag, RS::CompositorEffectCallbackType p_callback_type = RS::COMPOSITOR_EFFECT_CALLBACK_TYPE_ANY);
+	void _render_buffers_copy_screen_texture(const RenderDataRD *p_render_data);
+	void _render_buffers_copy_depth_texture(const RenderDataRD *p_render_data);
+	void _render_buffers_post_process_and_tonemap(const RenderDataRD *p_render_data);
 
 	// * getters *
 	private:

@@ -6,6 +6,7 @@
 #include "scene/resources/common/world.h"
 #include "texture.h"
 namespace lain {
+	class Viewport;
 	class ViewportTexture : public Texture2D {
 		LCLASS(ViewportTexture, Texture2D);
 
