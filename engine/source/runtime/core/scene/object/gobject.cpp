@@ -298,6 +298,51 @@ void GObject::init_gobj_hrcr() {
   gobj_hrcr_count.init(1);
 }
 
+void GObject::reparent(GObject* p_parent, bool p_keep_global_transform) {
+  // ERR_THREAD_GUARD
+	ERR_FAIL_NULL(p_parent);
+	ERR_FAIL_NULL_MSG(data.parent, "Node needs a parent to be reparented.");
+
+	if (p_parent == data.parent) {
+		return;
+	}
+
+	bool preserve_owner = data.owner && (data.owner == p_parent || data.owner->is_ancestor_of(p_parent));
+	GObject *owner_temp = data.owner;
+	LocalVector<GObject *> common_parents;
+
+	// If the new parent is related to the owner, find all children of the reparented node who have the same owner so that we can reassign them.
+	if (preserve_owner) {
+		LocalVector<GObject *> to_visit;
+
+		to_visit.push_back(this);
+		common_parents.push_back(this);
+
+		while (to_visit.size() > 0) {
+			GObject *check = to_visit[to_visit.size() - 1];
+			to_visit.resize(to_visit.size() - 1);
+
+			for (int i = 0; i < check->get_child_count(false); i++) {
+				GObject *child = check->get_child(i, false);
+				to_visit.push_back(child);
+				if (child->data.owner == owner_temp) {
+					common_parents.push_back(child);
+				}
+			}
+		}
+	}
+
+	data.parent->remove_child(this);
+	p_parent->add_child(this);
+
+	// Reassign the old owner to those found nodes.
+	if (preserve_owner) {
+		for (GObject *E : common_parents) {
+			E->set_owner(owner_temp);
+		}
+	}
+}
+
 void GObject::_validate_child_name(GObject* p_child, bool p_force_human_readable) {
   bool unique = true;
 
@@ -924,9 +969,6 @@ void GObject::_propagate_ready() {
   }
 }
 
-bool GObject::is_group_processing() {
-  { return current_process_thread_group; }
-}
 
 GObject* GObject::get_child(int p_index, bool p_include_internal) const {
   //ERR_THREAD_GUARD_V(nullptr);
@@ -1067,7 +1109,6 @@ void GObject::_add_tree_to_process_thread_group(GObject* p_owner) {
 }
 
 int GObject::orphan_node_count = 0;
-thread_local TickObject* GObject::current_process_thread_group = nullptr;
 
 GObject::GObject() {
 

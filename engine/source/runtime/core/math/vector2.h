@@ -37,6 +37,9 @@ STRUCT(_NO_DISCARD_ Vector2, Fields) {
   real_t& height() {
     return y;
   }
+  L_INLINE real_t aspect() const{
+    return x / y;
+  }
 
   Vector2(float x_, float y_) : x(x_), y(y_) {}
 

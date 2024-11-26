@@ -157,7 +157,7 @@ namespace lain
         bool               ShouldClose() const;
         void window_set_vsync_mode(VSyncMode p_vsync_mode, WindowID p_window);
         GLFWwindow* getWindow() const {};
-        Size2i window_get_size(WindowSystem::WindowID p_id) const;
+        Size2i window_get_size(WindowSystem::WindowID p_id = MAIN_WINDOW_ID) const;
 
         Point2i mouse_get_position() const;
         int get_screen_count() const;

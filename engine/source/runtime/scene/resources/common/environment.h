@@ -417,6 +417,8 @@ public:
 
 	Environment();
 	~Environment();
+
+	
 };
 
 // VARIANT_ENUM_CAST(Environment::BGMode)

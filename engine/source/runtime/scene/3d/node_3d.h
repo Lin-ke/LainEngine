@@ -1,7 +1,22 @@
 #ifndef GObject3D_H
 #define GObject3D_H
 #include "core/scene/object/gobject.h"
+#include "scene/resources/common/world.h"
 namespace lain{
+class Viewport;
+class GObject3DGizmo : public RefCounted {
+	LCLASS(GObject3DGizmo, RefCounted);
+
+public:
+	virtual void create() = 0;
+	virtual void transform() = 0;
+	virtual void clear() = 0;
+	virtual void redraw() = 0;
+	virtual void free() = 0;
+
+	GObject3DGizmo();
+	virtual ~GObject3DGizmo() {}
+};
 
 class GObject3D : public GObject {
 	LCLASS(GObject3D, GObject);
@@ -52,7 +67,7 @@ private:
 		mutable Vector3 scale = Vector3(1, 1, 1);
 		mutable RotationEditMode rotation_edit_mode = ROTATION_EDIT_MODE_EULER;
 
-		// mutable MTNumeric<uint32_t> dirty;
+		mutable MTNumeric<uint32_t> dirty;
 
 		Viewport *viewport = nullptr;
 
@@ -122,7 +137,7 @@ public:
 		NOTIFICATION_LOCAL_TRANSFORM_CHANGED = 44,
 	};
 
-	GObject3D *get_parent_GObject_3d() const;
+	GObject3D *get_parent_gobject_3d() const;
 
 	Ref<World3D> get_world_3d() const;
 
@@ -176,7 +191,7 @@ public:
 	void set_subgizmo_selection(Ref<GObject3DGizmo> p_gizmo, int p_id, Transform3D p_transform = Transform3D());
 	void clear_subgizmo_selection();
 	Vector<Ref<GObject3DGizmo>> get_gizmos() const;
-	TypedArray<GObject3DGizmo> get_gizmos_bind() const;
+	Vector<Ref<GObject3DGizmo>> get_gizmos_bind() const;
 	void add_gizmo(Ref<GObject3DGizmo> p_gizmo);
 	void remove_gizmo(Ref<GObject3DGizmo> p_gizmo);
 	void clear_gizmos();

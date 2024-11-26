@@ -1,6 +1,5 @@
-
-#ifndef TEXTURE_H
-#define TEXTURE_H
+#ifndef SCENE_RES_TEXTURE_H
+#define SCENE_RES_TEXTURE_H
 
 #include "core/io/file_access.h"
 #include "core/io/resource.h"

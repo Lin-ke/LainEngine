@@ -10,6 +10,8 @@ namespace lain
 {
     class GObject;
     // Component
+    // component 直接反射， Gobject 通过 GobjData 反射
+    // @todo 完成这个反射系统（在渲染系统之后）
     REFLECTION_TYPE(Component)
         CLASS(Component : public TickObject, WhiteListFields)
     {

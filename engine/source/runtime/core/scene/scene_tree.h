@@ -13,6 +13,8 @@ namespace lain {
 	class TickObject;
 	class SceneTree : public MainLoop {
 		_THREAD_SAFE_CLASS_
+
+
 		friend class TickObject;
 		friend class GObject;
 		friend class Component;
@@ -34,6 +36,9 @@ namespace lain {
 			Vector<GObject*> nodes;
 			bool changed = false;
 		};
+		enum {
+		NOTIFICATION_TRANSFORM_CHANGED = 2000
+	};
 	private:
 		uint64_t process_last_pass = 1;
 		struct ProcessGroup {

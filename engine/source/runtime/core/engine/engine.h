@@ -41,6 +41,9 @@ class Engine {
   int m_server_syncs = 0;
   int m_frames_drawn = 0;
   
+	uint64_t _physics_frames = 0;
+	uint64_t _process_frames = 0;
+
   // 这个设置在 RendererCompositor里，但是会导致shader Parser 依赖renderer
   bool m_xr_enabled = false;
   float m_time_scale = 1.0;
@@ -65,6 +68,9 @@ class Engine {
   ENGINE_SET(set_frame_ticks, ui64, m_frame_ticks);
   ENGINE_GET(is_xr_enabled, m_xr_enabled);
   ENGINE_GET(get_physics_ticks_per_second, ips);
+  ENGINE_GET(get_physics_frames, _physics_frames);
+  ENGINE_GET(get_process_frames, _process_frames);
+  
   Engine::Engine() { singleton = this; }
   L_INLINE static Engine* Engine::GetSingleton() { return singleton; }
   L_INLINE void increment_frames_drawn() { m_frames_drawn++; }

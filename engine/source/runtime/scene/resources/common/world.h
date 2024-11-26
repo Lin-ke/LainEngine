@@ -11,7 +11,7 @@ namespace lain {
 //class VisibleOnScreenNotifier2D;
 class Viewport;
 //struct SpatialIndexer2D;
-
+class CameraAttributes;
 class World2D : public Resource {
 	LCLASS(World2D, Resource);
 
@@ -44,6 +44,7 @@ class Camera3D;
 
 class World3D : public Resource{
 	LCLASS(World3D, Resource);
+	friend class Camera3D;
 
 private:
 	RID scenario;
@@ -59,6 +60,8 @@ private:
 	
 	void _register_camera(Camera3D *p_camera);
 	void _remove_camera(Camera3D *p_camera);
+	public:
+	Ref<CameraAttributes> get_camera_attributes() const;
 };
 }
 

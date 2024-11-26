@@ -27,7 +27,22 @@ class GObject : public TickObject {
   friend class SceneState;
   friend class SceneTree;
   friend void register_core_types();
-
+ protected:
+	// During group processing, these are thread-safe.
+	// Outside group processing, these avoid the cost of sync by working as plain primitive types.
+	union MTFlag {
+		SafeFlag mt;
+		bool st;
+		MTFlag() :
+				mt{} {}
+	};
+	template <typename T>
+	union MTNumeric {
+		SafeNumeric<T> mt;
+		T st;
+		MTNumeric() :
+				mt{} {}
+	};
  public:
   enum InternalMode {
     INTERNAL_MODE_DISABLED,
@@ -97,10 +112,9 @@ class GObject : public TickObject {
     // ?
 
   } data;  // 防止名称冲突
-  static bool is_group_processing();
 
   GObject* get_child(int p_index, bool p_include_internal = true) const;
-
+  L_INLINE bool is_part_of_edited_scene() const {return false;}
   L_INLINE String get_scene_file_path() const { return data.scene_file_path; }
   L_INLINE int get_index() const { return data.index; }
   L_INLINE StringName get_name() const { return data.name; }
@@ -146,6 +160,8 @@ class GObject : public TickObject {
   void remove_component(Component* p_child);
   void move_component(Component* p_component, int p_index);
 
+	_FORCE_INLINE_ Viewport *get_viewport() const { return data.viewport; }
+
   void set_owner(GObject*);
   void set_scene_inherited_state(Ref<SceneState> p_scene_state);
   L_INLINE GObject* get_owner() { return data.owner; }
@@ -165,10 +181,6 @@ class GObject : public TickObject {
 
   void _remove_tree_from_process_thread_group();
   void _add_tree_to_process_thread_group(GObject* p_owner);
-
-  static thread_local TickObject* current_process_thread_group;
-
-  // process
 
   GObject();
   ~GObject();
@@ -221,11 +233,13 @@ class GObject : public TickObject {
     NOTIFICATION_APPLICATION_FOCUS_IN = MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN,
     NOTIFICATION_APPLICATION_FOCUS_OUT = MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT,
     NOTIFICATION_TEXT_SERVER_CHANGED = MainLoop::NOTIFICATION_TEXT_SERVER_CHANGED,
-
     // Editor specific node notifications
     NOTIFICATION_EDITOR_PRE_SAVE = 9001,
     NOTIFICATION_EDITOR_POST_SAVE = 9002,
   };
+
+  virtual String get_description() const { 
+    return is_inside_tree()? get_path() : String(get_name()) + "/"+get_class(); }
 
  private:
   _FORCE_INLINE_ void _update_children_cache() const {
@@ -279,6 +293,7 @@ class GObject : public TickObject {
 
   // GObject needed in register
   static void init_gobj_hrcr();
+	virtual void reparent(GObject *p_parent, bool p_keep_global_transform = true);
 
  protected:
   void _block() { data.blocked++; }
@@ -294,5 +309,9 @@ class GObject : public TickObject {
   virtual void owner_changed_notify() {}
 };
 }  // namespace lain
+
+
+
+
 
 #endif
