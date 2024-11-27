@@ -4,6 +4,8 @@
 #include "core/math/projection.h"
 #include "scene/main/viewport.h"
 #include "core/engine/engine.h"
+
+#include "camera_3d_data.h"
 using namespace lain;
 
 void Camera3D::_update_audio_listener_state() {
@@ -158,6 +160,14 @@ Projection Camera3D::_get_camera_projection(real_t p_near) const {
 	}
 
 	return cm;
+}
+
+void Camera3D::_from_data(void* p_data) {
+
+}
+
+void* Camera3D::get_instance_data() const {
+  return (void*)memnew(Camera3DData);
 }
 
 Projection Camera3D::get_camera_projection() const {

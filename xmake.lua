@@ -193,6 +193,12 @@ target("Core")
     add_includedirs("engine/thirdparty/misc")
     add_files("engine/thirdparty/misc/*.c")
     add_headerfiles(("engine/thirdparty/misc/*.h"))
+    add_includedirs("engine/thirdparty/volk", {public = true})
+    add_includedirs("engine/thirdparty/vma", {public = true})
+     -- spirv-reflect 
+    add_includedirs("engine/thirdparty/spirv-reflect")
+    
+    add_includedirs("$(env VULKAN_SDK)/Include", {public = true})
     if is_plat("windows") then
         add_defines("L_PLATFORM_WINDOWS", {public = true})
     end

@@ -8,10 +8,25 @@ CompositorEffect::CompositorEffect() {
 	// }
 }
 
+lain::CompositorEffect::~CompositorEffect()
+{
+  RenderingSystem *rs = RenderingSystem::get_singleton();
+	if (rs != nullptr && rid.is_valid()) {
+		rs->free(rid);
+	}
+}
+
 
 Compositor::Compositor() {
 	RenderingSystem *rs = RenderingSystem::get_singleton();
 	if (rs != nullptr) {
 		compositor = rs->compositor_create();
+	}
+}
+
+lain::Compositor::~Compositor() {
+	RS *rs = RS::get_singleton();
+	if (rs != nullptr && compositor.is_valid()) {
+		rs->free(compositor);
 	}
 }

@@ -29,6 +29,10 @@ Environment::Environment() {
 	// notify_property_list_changed();
 }
 
+Environment::~Environment() {
+	ERR_FAIL_NULL(RS::get_singleton());
+	RS::get_singleton()->free(environment);
+}
 
 void Environment::_update_ambient_light() {
 	RS::get_singleton()->environment_set_ambient_light(
@@ -54,4 +58,8 @@ void Environment::set_camera_feed_id(int p_id) {
 #if 0
 	RS::get_singleton()->environment_set_camera_feed_id(environment, camera_feed_id);
 #endif
+}
+
+RID Environment::GetRID() const{
+	return environment;
 }

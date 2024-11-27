@@ -6,11 +6,13 @@
 #include "core/os/os.h"
 #include "core/scene/component/component.h"
 namespace lain {
-	REFLECTION_TYPE(TestNode)
-
-		CLASS(TestNode : public GObject, WhiteListFields) {
-		REFLECTION_BODY(TestNode);
+		STRUCT(TestNodeData, Fields){
+		
+		};
+		class TestNode : public GObject {
 		LCLASS(TestNode, GObject);
+	META(WhiteListFields)
+		int a;
 		void _notification(int p_notification) {
 			switch (p_notification) {
 			case NOTIFICATION_PROCESS:
@@ -24,7 +26,9 @@ namespace lain {
 		}
 		public:
 		TestNode() { tickdata.process = true; }
+		void* get_instance_data() const override { return memnew(TestNodeData()); }
 	};
+
 	REFLECTION_TYPE(TestComponent)
 		CLASS(TestComponent : public Component, WhiteListFields) {
 		REFLECTION_BODY(TestComponent);

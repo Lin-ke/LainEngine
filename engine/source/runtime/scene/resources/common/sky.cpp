@@ -1,3 +1,5 @@
+#include "sky.h"
+using namespace lain;
 // #include "sky.h"
 
 // #include "core/io/image_loader.h"
@@ -39,6 +41,9 @@
 // 	return sky_material;
 // }
 
-// RID Sky::get_rid() const {
-// 	return sky;
-// }
+RID Sky::GetRID() const {
+	return sky;
+}
+lain::Sky::Sky() {}
+
+lain::Sky::~Sky() {}

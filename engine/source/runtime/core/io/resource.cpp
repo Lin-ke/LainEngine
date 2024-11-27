@@ -189,8 +189,11 @@ namespace lain {
 	}
 
 	RID Resource::GetRID() const { return RID(); }
-	void Resource::ResetState(){}
-	// resourceCache static:
+    void Resource::emit_changed() {
+			// emit_signal();
+		}
+    void Resource::ResetState() {}
+    // resourceCache static:
 	void ResourceCache::clear() {
 		if (!resources.is_empty()) {
 			L_PWARNING(resources.size(), " resources still in use at exit.");

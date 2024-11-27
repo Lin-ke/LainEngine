@@ -1,3 +1,4 @@
+#include "core/meta/serializer/serializer.h"
 // scene
 #include "scene/resources/io/resource_format_text.h"
 #include "scene/resources/io/resource_format_shader.h"
@@ -35,6 +36,9 @@ namespace lain{
 
 		resource_format_saver_shader_include.instantiate();
 		ResourceSaver::add_resource_format_saver(resource_format_saver_shader_include);
+
+		auto& importers = ResourceLoader::ext_to_loader_idx;
+		// L_JSON(importers);
 		
   }
 	shader::ShaderTypes *shader_types = nullptr;

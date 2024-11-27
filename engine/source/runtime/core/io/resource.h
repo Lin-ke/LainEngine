@@ -47,6 +47,7 @@ namespace lain {
 
 		virtual RID GetRID() const; // some resources may offer conversion to RID
 
+		virtual void emit_changed();
 		/// <summary>
 		/// @TODO
 		/// </summary>

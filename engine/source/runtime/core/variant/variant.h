@@ -29,7 +29,7 @@ struct MethodInfo;
 class Variant {
   friend class VariantInternal;
   friend class Serializer;
-
+  friend class VariantHelper;
  public:
   enum Type {
     NIL,

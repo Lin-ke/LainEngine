@@ -5,10 +5,9 @@
 #define REFLECT_REG(class) Reflection::TypeWrappersRegister::##class##();
 
 #include "core/meta/reflection/reflection.h"
-#include "core/meta/others/serializer.ipp"
 namespace lain {
-	// serializer随处可以定义，所以使用这个
-
+	// 这里手动写一些reflection的注册
+	// 就类似于godot 的 variant 巴拉巴拉
 	SERIALIZER(Dictionary); 
 	SERIALIZER(StringName);
 	SERIALIZER(GObjectPath);
@@ -27,9 +26,10 @@ namespace lain {
 	MANUAL_REFLECT_FIELD_SAFETY(StringName, data) 
 	// Name, setfunction, getfunction (name), is array bool
 
+	
 
 
-	L_INLINE void register_other_meta() {
+	void register_other_meta() {
 		REFLECT_REG(StringName);
 		SERIAL_REG(Dictionary);
 		SERIAL_REG(StringName);

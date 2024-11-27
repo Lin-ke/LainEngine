@@ -5,6 +5,7 @@
 #include "core/os/thread_safe.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/hash_set.h"
+#include "core/templates/self_list.h"
 namespace lain {
 	// 需要一个main viewport
 	// viewport只保存渲染信息
@@ -68,6 +69,8 @@ namespace lain {
 		int nodes_removed_on_group_call_lock = 0;
 		HashSet<TickObject*> nodes_removed_on_group_call; // Skip erased nodes.
 		int nodes_in_tree_count = 0;
+		friend class GObject3D;
+		SelfList<GObject>::List xform_change_list;
 
 
 		void _process(bool);

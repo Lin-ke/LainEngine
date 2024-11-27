@@ -2,6 +2,7 @@
 #define GObject3D_H
 #include "core/scene/object/gobject.h"
 #include "scene/resources/common/world.h"
+#include "core/templates/self_list.h"
 namespace lain{
 class Viewport;
 class GObject3DGizmo : public RefCounted {
@@ -187,7 +188,7 @@ public:
 	virtual void reparent(GObject *p_parent, bool p_keep_global_transform = true) override;
 
 	void set_disable_gizmos(bool p_enabled);
-	void update_gizmos();
+	void update_gizmos(){}
 	void set_subgizmo_selection(Ref<GObject3DGizmo> p_gizmo, int p_id, Transform3D p_transform = Transform3D());
 	void clear_subgizmo_selection();
 	Vector<Ref<GObject3DGizmo>> get_gizmos() const;
@@ -249,6 +250,7 @@ public:
 	GObjectPath get_visibility_parent() const;
 
 	GObject3D();
+	void _from_data(void* p_data);
 };
 }
 

@@ -5,6 +5,8 @@
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "core/templates/hash_set.h"
+#include "core/meta/serializer/serializer.h"
+
 namespace lain{
 
 class ShaderInclude : public Resource {

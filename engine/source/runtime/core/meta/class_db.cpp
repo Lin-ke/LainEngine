@@ -1,5 +1,7 @@
 #include "class_db.h"
 #include "reflection/reflection.h"
+#include "core/variant/variant_helper.h"
+#include "core/object/object.h"
 namespace lain {
 
 	MethodDefinition D_METHODP(const char* p_name, const char* const** p_args, uint32_t p_argcount) {
@@ -29,13 +31,35 @@ namespace lain {
 			p_extensions->push_back(E.key);
 		}
 	}
-	// class数据库
-	Object* ClassDB::instantiate(const StringName& cp_class, bool p_require_real_class) {
+	bool ClassDB::class_exists(const StringName& p_class) {
+		if(Reflection::TypeMeta::is_valid_type(p_class)){
+			return true;
+		}
+	}
+	
+	template<typename T, typename = void>
+	struct has_serial_spectialization : std::false_type {};
+
+	template<typename T>
+	struct has_serial_spectialization<T, std::void_t<decltype(Serializer::write<T>())>>
+	 : std::true_type {};
+
+	bool ClassDB::class_can_serializable(const StringName& p_class) {
+		if(ClassDB::class_exists(p_class)){
+			return true;
+		}
+		//	属于可以序列化的类型
+		// 但是需要从 StringName -> typename T ，这一步需要typeinfo 这个code gen
+		return true;
+		
+	}
+    // class数据库
+    Object* ClassDB::instantiate(const StringName& cp_class, bool p_require_real_class) {
 		return static_cast<Object*>(Reflection::TypeMeta::memnewByName(SCSTR(cp_class)));
 	}
 
 	bool ClassDB::can_instantiate(const StringName& cp_class) {
-		Reflection::TypeMeta meta = Reflection::TypeMeta::newMetaFromName(SCSTR(cp_class));
+		Reflection::TypeMeta meta = Reflection::TypeMeta::newMetaFromName(cp_class.operator String());
 		return meta.isValid();
 	}
 	// 这个json格式不一定正确
@@ -88,13 +112,43 @@ namespace lain {
 	/*StringName ClassDB::get_parent_class(const StringName& p_class) {
 		
 	}*/
-// 我感觉这里直接用我们的后端就可以
+// 这里理应按着继承的顺序往上找，但是piccolo这一套太烂了，不弄他了
 	bool ClassDB::get_property(Object* p_object, const StringName& p_property, Variant& r_value) {
-		return true;
+		void* property_ptr = nullptr;
+		Reflection::TypeMeta meta = Reflection::TypeMeta::newMetaFromName(p_object->get_class_name());
+		Reflection::FieldAccessor* fields;
+		int fields_count = meta.getFieldsList(fields);
+		bool found = false;
+		for(int i = 0 ; i< fields_count; i++){
+			if(fields[i].getFieldName() == p_property){
+				property_ptr = fields[i].get(p_object);
+				found = true; break;
+			}
+		}
+		if(!found){return false;}
+		// 变成variant
+		Variant::Type type = VariantHelper::get_type_from_name(fields->getFieldTypeName());
+		VariantHelper::variant_from_data(type, property_ptr, r_value);
 	}
 
 	bool ClassDB::set_property(Object* p_object, const StringName& p_property, const Variant& r_value) {
-		return true;
+				void* property_ptr = nullptr;
+			Reflection::TypeMeta meta = Reflection::TypeMeta::newMetaFromName(p_object->get_class_name());
+			Reflection::FieldAccessor* fields; // @todo 把这个做成缓存，就是做成表
+			int fields_count = meta.getFieldsList(fields);
+			bool found = false;
+			for(int i = 0 ; i< fields_count; i++){
+				if(fields[i].getFieldName() == p_property){
+					property_ptr = fields[i].get(p_object);
+					found = true; break;
+				}
+			}
+			if(!found){return false;}
+			Variant::Type type = VariantHelper::get_type_from_name(fields->getFieldTypeName());
+			if (type != r_value.get_type()) {
+				L_CORE_WARN("type mismatch");
+			}
+			VariantHelper::object_set_data(property_ptr, r_value);
 	}
 }
 

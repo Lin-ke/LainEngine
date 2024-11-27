@@ -132,9 +132,15 @@ class Viewport : public GObject {
   enum VRSMode { VRS_DISABLED, VRS_TEXTURE, VRS_XR, VRS_MAX };
 
  private:
+	RID viewport;
+	Viewport *parent = nullptr;
+
   friend class ViewportTexture;
   Size2i size = Size2i(512, 512);
   Size2i size_2d_override;
+
+  Transform2D global_canvas_transform;
+	Transform2D stretch_transform;
 
   Ref<World2D> world_2d;
   Ref<World3D> world_3d;
@@ -166,14 +172,35 @@ class Viewport : public GObject {
 
 	friend class Camera3D;
 	Camera3D *camera_3d = nullptr;
+	HashSet<Camera3D *> camera_3d_set;
+
 	void _camera_3d_transform_changed_notify();
 	void _camera_3d_set(Camera3D *p_camera);
 	bool _camera_3d_add(Camera3D *p_camera); //true if first
 	void _camera_3d_remove(Camera3D *p_camera);
 	void _camera_3d_make_next_current(Camera3D *p_exclude);
 
+	struct Camera3DOverrideData {
+		Transform3D transform;
+		enum Projection {
+			PROJECTION_PERSPECTIVE,
+			PROJECTION_ORTHOGONAL
+		};
+		Projection projection = Projection::PROJECTION_PERSPECTIVE;
+		real_t fov = 0.0;
+		real_t size = 0.0;
+		real_t z_near = 0.0;
+		real_t z_far = 0.0;
+		RID rid;
+
+		operator bool() const {
+			return rid != RID();
+		}
+	} camera_3d_override;
+
  protected:
   void _set_size(const Size2i& p_size, const Size2i& p_size_2d_override, bool p_allocated);
+
 
  public:
   Ref<World3D> get_world_3d() const;

@@ -1,6 +1,5 @@
 #include "serializer.h"
 #include <assert.h>
-#include "_generated/serializer/all_serializer.h"
 #include "core/object/object.h"
 #include "core/templates/hash_map.h"
 #include "core/variant/dictionary.h"
@@ -14,7 +13,8 @@ Json Serializer::write(const char& instance) {
 }
 template <>
 static Json Serializer::writePointer(Object* instance) {
-  return Json::object{{"$typeName", Json{CSTR(instance->get_class())}}, {"$context", Serializer::write(*instance)}};
+  return Json::object{{"$typeName", Json{CSTR(instance->get_class())}}, {"$context", 
+  Reflection::TypeMeta::writeByName(CSTR(instance->get_class()), (void*)instance)}};
 }
 
 template <>
@@ -223,6 +223,29 @@ void Serializer::read(const Json& json_context, Array& instance) {
   }
 
   instance;
+}
+
+template<>
+void Serializer::read(const Json& json_context, StringName& instance)
+{
+  memnew_placement(&instance, StringName(String(json_context.string_value())));
+}
+template<>
+Json Serializer::write(const StringName& instance)
+{
+  return Json(CSTR(instance.operator lain::String()));
+}
+
+template<>
+void Serializer::read(const Json& json_context, GObjectPath& instance) {
+  String str;
+  Serializer::read(json_context, str);
+  memnew_placement(&instance, GObjectPath(String(json_context.string_value())));
+}
+
+template<>
+Json Serializer::write(const GObjectPath& instance) {
+  return Serializer::write(instance.operator String());
 }
 
 //////////////////////////////////

@@ -18,6 +18,9 @@
 //
 // 反射总归是通过字典实现的，但是A.传包装过的variant，B.直接传指针，我觉得还是B更可行，比如一些自定义类，在当前实现中需要通过object* 然后 variant来传
 // Macros
+
+// 现在已经允许了一种两边都是字典的写法，但是效率受限，因此也使用一些typemeta
+
 namespace lain {
 
 #define LCLASS(m_class, m_inherits)                                                                    \
@@ -51,6 +54,9 @@ namespace lain {
   _FORCE_INLINE_ void (Object::*_get_notification() const)(int) {                                      \
     return (void(Object::*)(int)) & m_class::_notification;                                            \
   }                                                                                                    \
+  _FORCE_INLINE_ void (Object::*_get_from_data() const)(int) {                                         \
+    return (void(Object::*)(int)) & m_class::_from_data;                                               \
+  }                                                                                                    \
   virtual void _notificationv(int p_notification, bool p_reversed) override {                          \
     if (!p_reversed) {                                                                                 \
       m_inherits::_notificationv(p_notification, p_reversed);                                          \
@@ -60,6 +66,17 @@ namespace lain {
     }                                                                                                  \
     if (p_reversed) {                                                                                  \
       m_inherits::_notificationv(p_notification, p_reversed);                                          \
+    }                                                                                                  \
+  }                                                                                                    \
+  virtual void _from_datav(void* p_data, bool p_reversed) override {                                   \
+    if (!p_reversed) {                                                                                 \
+      m_inherits::_from_datav(p_data, p_reversed);                                                     \
+    }                                                                                                  \
+    if (m_class::_get_from_data() != m_inherits::_get_from_data()) {                                   \
+      _from_data(p_data);                                                                      \
+    }                                                                                                  \
+    if (p_reversed) {                                                                                  \
+      m_inherits::_from_datav(p_data, p_reversed);                                              \
     }                                                                                                  \
   }                                                                                                    \
                                                                                                        \
@@ -78,7 +95,7 @@ namespace lain {
       return;                                                                                          \
     }                                                                                                  \
     m_inherits::initialize_class();                                                                    \
-    ClassDB::_add_class<m_class>();                                                     \
+    ClassDB::_add_class<m_class>();                                                                    \
     if (m_class::_get_bind_methods() != m_inherits::_get_bind_methods()) {                             \
       _bind_methods();                                                                                 \
     }                                                                                                  \
@@ -175,7 +192,6 @@ enum PropertyUsageFlags {
 };
 
 #define MAKE_RESOURCE_TYPE_HINT(m_type) vformat("%s/%s:%s", Variant::OBJECT, PROPERTY_HINT_RESOURCE_TYPE, m_type)
-
 
 // base class of all object
 class Viewport;
@@ -276,7 +292,7 @@ class Object {
   virtual String get_class() const { return String("Object"); }
   virtual char* get_c_class() const { return "Object"; }
   static String get_class_static() { return String("Object"); }
-	virtual String get_save_class() const { return get_class(); } //class stored when saving
+  virtual String get_save_class() const { return get_class(); }  //class stored when saving
 
   virtual const StringName* _get_class_namev() const {
     static StringName _class_name_static;
@@ -301,7 +317,7 @@ class Object {
   // 其目的是允许对象响应可能与其相关的各种引擎级回调
   void notification(int p_notification, bool p_reversed = false);
   virtual void _notificationv(int p_notification, bool p_reversed) {}
-  void _notification(int p_notification) {}
+  void _notification(int p_notification) {}  // 用这个写，不virtual的重载
   _FORCE_INLINE_ void (Object::*_get_notification() const)(int) { return &Object::_notification; }
   static void _bind_methods() {}
   static void _bind_compatibility_methods() {}
@@ -310,12 +326,11 @@ class Object {
   _FORCE_INLINE_ static void (*_get_bind_compatibility_methods())() { return &Object::_bind_compatibility_methods; }
 
   Variant callp(const StringName& p_method, const Variant** p_args, int p_argcount, Callable::CallError& r_error);
-  L_INLINE virtual String to_string() const{
-    return "<" + get_class() + "#" + itos(get_instance_id()) + ">";
-  }
+  L_INLINE virtual String to_string() const { return "<" + get_class() + "#" + itos(get_instance_id()) + ">"; }
 
-  Variant get(const StringName& p_name, bool *r_valid) const;
-  void set(const StringName& p_name, const Variant& p_value, bool *r_valid);
+  Variant get(const StringName& p_name, bool* r_valid) const;
+  void set(const StringName& p_name, const Variant& p_value, bool* r_valid);
+
  private:
   ObjectID m_instance_id;
   bool m_type_is_reference = false;
@@ -332,28 +347,46 @@ class Object {
   };
   HashMap<StringName, SignalData> signal_map;
 
-  // for gc
+ public:
+  // 在godot里，通过宏 和 propertyinfo 注册有哪些属性和函数，并绑定修改这个属性的方法(set, get)
+  // 之后在 classdb里调用这个方法修改
+  // 全部通过variant进行
+
+  // piccolo这种写法根本都没法回调，set那个数值就完了
+
+  // 目前先按下面的写法，
+  // 返回一个数据类，后者比较容易反射，并提供一个from_data进行数据的设置
+  // 这是因为设置时具有一些副作用，因此使用数据类再在from_data中进行调用可能更稳定
+  virtual void* get_instance_data() const { return nullptr; }  // 仅在一些特殊情况下使用，一般直接序列化就可以了
+  virtual StringName get_data_classname() const { return get_class() + "Data"; }
+  virtual void _from_datav(void* p_data, bool p_reversed = false) {}
+  void _from_data(void* p_data) {} // 子类写这个
+  void from_data(void* p_data, bool p_reversed = false);
+  _FORCE_INLINE_ void (Object::*_get_from_data() const)(int) {                                         \
+    return (void(Object::*)(int)) & Object::_from_data;                                               \
+  } 
+  
+
 };
 
-
 enum MethodFlags {
-	METHOD_FLAG_NORMAL = 1,
-	METHOD_FLAG_EDITOR = 2,
-	METHOD_FLAG_CONST = 4,
-	METHOD_FLAG_VIRTUAL = 8,
-	METHOD_FLAG_VARARG = 16,
-	METHOD_FLAG_STATIC = 32,
-	METHOD_FLAG_OBJECT_CORE = 64,
-	METHOD_FLAGS_DEFAULT = METHOD_FLAG_NORMAL,
+  METHOD_FLAG_NORMAL = 1,
+  METHOD_FLAG_EDITOR = 2,
+  METHOD_FLAG_CONST = 4,
+  METHOD_FLAG_VIRTUAL = 8,
+  METHOD_FLAG_VARARG = 16,
+  METHOD_FLAG_STATIC = 32,
+  METHOD_FLAG_OBJECT_CORE = 64,
+  METHOD_FLAGS_DEFAULT = METHOD_FLAG_NORMAL,
 };
 
 struct MethodInfo {
-	String name;
-	PropertyInfo return_val;
-	uint32_t flags = METHOD_FLAGS_DEFAULT;
-	int id = 0;
-	List<PropertyInfo> arguments;
-	Vector<Variant> default_arguments;
+  String name;
+  PropertyInfo return_val;
+  uint32_t flags = METHOD_FLAGS_DEFAULT;
+  int id = 0;
+  List<PropertyInfo> arguments;
+  Vector<Variant> default_arguments;
 };
 }  // namespace lain
 

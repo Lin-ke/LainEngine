@@ -1332,8 +1332,6 @@ struct VariantInternalAccessor<Vector<Variant>> {
 		}
 	}
 };
-
-
 }
 
 #endif // !VARIANT_INTERNAL_H

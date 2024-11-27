@@ -5,6 +5,18 @@ void Object::_construct_object(bool p_is_ref) {
   m_type_is_reference = p_is_ref;
   m_instance_id = ObjectDB::add_instance(this);
 }
+// 考虑script里的顺序
+void Object::from_data(void* p_data, bool p_reversed) {
+  if (p_reversed) {
+
+  } else{
+    _from_datav(p_data, p_reversed);
+  }
+  if (p_reversed) {
+    _from_datav(p_data, p_reversed);
+  }
+
+}
 // reverse：先调父类再调子类
 void Object::notification(int p_notification, bool p_reversed) {
   if (p_reversed) {

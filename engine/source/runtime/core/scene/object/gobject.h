@@ -39,7 +39,7 @@ class GObject : public TickObject {
 	template <typename T>
 	union MTNumeric {
 		SafeNumeric<T> mt;
-		T st;
+		T st; // 不需要锁的，在 !is_group_processing 中使用·
 		MTNumeric() :
 				mt{} {}
 	};
@@ -155,7 +155,7 @@ class GObject : public TickObject {
   Component* get_component(int p_index) const;
   Vector<Component*> get_components() const;
   int get_component_count() const;
-  void add_component(Component*);  // 还有一套和children对应的组件
+  void add_component(Component*);  // 还有一套和children对应的组件s
   // @TODO
   void remove_component(Component* p_child);
   void move_component(Component* p_component, int p_index);
@@ -181,6 +181,9 @@ class GObject : public TickObject {
 
   void _remove_tree_from_process_thread_group();
   void _add_tree_to_process_thread_group(GObject* p_owner);
+
+	virtual void reparent(GObject *p_parent, bool p_keep_global_transform = true);
+
 
   GObject();
   ~GObject();
@@ -293,7 +296,6 @@ class GObject : public TickObject {
 
   // GObject needed in register
   static void init_gobj_hrcr();
-	virtual void reparent(GObject *p_parent, bool p_keep_global_transform = true);
 
  protected:
   void _block() { data.blocked++; }

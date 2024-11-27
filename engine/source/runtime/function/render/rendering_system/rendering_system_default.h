@@ -276,8 +276,27 @@ class RenderingSystemDefault: public RenderingSystem{
 	FUNC2(environment_set_canvas_max_layer, RID, int)
 	FUNC6(environment_set_ambient_light, RID, const Color &, EnvironmentAmbientSource, float, float, EnvironmentReflectionSource)
 
+	/* Instance API*/
+	FUNCRIDSPLIT(instance)
+	
+	FUNC2(instance_set_base, RID, RID)
+	FUNC2(instance_set_scenario, RID, RID)
+	FUNC2(instance_set_layer_mask, RID, uint32_t)
+	FUNC3(instance_set_pivot_data, RID, float, bool)
+	FUNC2(instance_set_transform, RID, const Transform3D &)
+	FUNC2(instance_attach_object_instance_id, RID, ObjectID)
+	FUNC3(instance_set_blend_shape_weight, RID, int, float)
+	FUNC3(instance_set_surface_override_material, RID, int, RID)
+	FUNC2(instance_set_visible, RID, bool)
 
+	FUNC2(instance_set_custom_aabb, RID, AABB)
 
+	FUNC2(instance_attach_skeleton, RID, RID)
+
+	FUNC2(instance_set_extra_visibility_margin, RID, real_t)
+	FUNC2(instance_set_visibility_parent, RID, RID)
+
+	FUNC2(instance_set_ignore_culling, RID, bool)
 
 	RenderingSystemDefault(bool p_create_thread = false);
 	~RenderingSystemDefault();

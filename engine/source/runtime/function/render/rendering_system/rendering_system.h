@@ -331,6 +331,26 @@ class RenderingSystem : public Object {
 		VISIBILITY_RANGE_FADE_SELF,
 		VISIBILITY_RANGE_FADE_DEPENDENCIES,
 	};
+
+	virtual RID instance_create() = 0;
+	virtual void instance_set_base(RID p_instance, RID p_base) = 0;
+	virtual void instance_set_scenario(RID p_instance, RID p_scenario) = 0;
+	virtual void instance_set_layer_mask(RID p_instance, uint32_t p_mask) = 0;
+	virtual void instance_set_pivot_data(RID p_instance, float p_sorting_offset, bool p_use_aabb_center) = 0;
+	virtual void instance_set_transform(RID p_instance, const Transform3D &p_transform) = 0;
+	virtual void instance_attach_object_instance_id(RID p_instance, ObjectID p_id) = 0;
+	virtual void instance_set_blend_shape_weight(RID p_instance, int p_shape, float p_weight) = 0;
+	virtual void instance_set_surface_override_material(RID p_instance, int p_surface, RID p_material) = 0;
+	virtual void instance_set_visible(RID p_instance, bool p_visible) = 0;
+
+	virtual void instance_set_custom_aabb(RID p_instance, AABB aabb) = 0;
+
+	virtual void instance_attach_skeleton(RID p_instance, RID p_skeleton) = 0;
+
+	virtual void instance_set_extra_visibility_margin(RID p_instance, real_t p_margin) = 0;
+	virtual void instance_set_visibility_parent(RID p_instance, RID p_parent_instance) = 0;
+
+	virtual void instance_set_ignore_culling(RID p_instance, bool p_enabled) = 0;
     /// *************** ///
   /// ***CAMERA API*** ///
   /// *************** ///

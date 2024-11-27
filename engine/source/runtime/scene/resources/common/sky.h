@@ -1,8 +1,7 @@
-#ifndef SKY_H
-#define SKY_H
+#ifndef RES_SKY_H
+#define RES_SKY_H
 
 #include "core/os/thread.h"
-#include "core/variant/binder_common.h"
 #include "scene/resources/common/material.h"
 #include "scene/resources/common/texture.h"
 namespace lain{
@@ -54,8 +53,8 @@ public:
 	~Sky();
 };
 
-// VARIANT_ENUM_CAST(Sky::RadianceSize)
-// VARIANT_ENUM_CAST(Sky::ProcessMode)
+VARIANT_ENUM_CAST(Sky::RadianceSize)
+VARIANT_ENUM_CAST(Sky::ProcessMode)
 }
 
 #endif // SKY_H

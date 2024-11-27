@@ -20,7 +20,8 @@ public:
 	static Variant::Type get_type_from_name(const char* p_name);
 	static Variant::Type get_type_from_name(const String& p_name);
 
-	static void* get_ptr();
+	static void variant_from_data(const Variant::Type p_type, const void* p_data, Variant& r_variant);
+	static void object_set_data(void* p_ptr, const Variant& r_variant);
 };
 }
 

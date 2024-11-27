@@ -3,9 +3,7 @@
 #define ENVIRONMENT_H
 
 #include "core/io/resource.h"
-#include "scene/resources/common/sky.h"
-#include "scene/resources/common/texture.h"
-#include "core/variant/binder_common.h"
+#include "sky.h"
 namespace lain{
 
 class Environment : public Resource {

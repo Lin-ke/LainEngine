@@ -1,7 +1,6 @@
 #pragma once
-#include <cassert>
-#include <string>
-#include <vector>
+#ifndef META_SERIALIZER_H
+#define META_SERIALIZER_H
 #include "base.h"
 #include "core/os/memory.h"
 #include "core/templates/hash_map.h"
@@ -190,6 +189,10 @@ Json Serializer::write(const String& instance);
 template <>
 void Serializer::read(const Json& json_context, String& instance);
 
+template<>
+Json Serializer::write(const StringName& instance);
+template<>
+void Serializer::read(const Json& json_context, StringName& instance);
 template <>
 Json Serializer::write(const String& instance);
 template <>
@@ -198,6 +201,10 @@ template <>
 Json Serializer::write(const Dictionary& instance);
 template <>
 void Serializer::read(const Json& json_context, Dictionary& instance);
+template<>
+void Serializer::read(const Json& json_context, GObjectPath& instance);
+template<>
+Json Serializer::write(const GObjectPath& instance);
 // vector
 
 template <>
@@ -260,3 +267,5 @@ void Serializer::read(const Json& json_context, Array& instance);
 //
 ////////////////////////////////////
 }  // namespace lain
+
+#endif
