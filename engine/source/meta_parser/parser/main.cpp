@@ -62,7 +62,7 @@ int parse(std::string project_input_file_name,
 
     bool is_show_errors = "0" != show_errors;
 
-    // �滻 "\" Ϊ "/"
+    // 替换 "\" 为 "/"
     
     
 

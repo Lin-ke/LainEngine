@@ -5601,6 +5601,7 @@ String RenderingDevice::get_device_vendor_name() const {
     case RCD::VENDOR_APPLE:
       return "Apple";
   }
+  return "";
 }
 
 String lain::RenderingDevice::get_device_name() const {

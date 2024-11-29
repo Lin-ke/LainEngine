@@ -7,7 +7,7 @@ set_warnings("all")
 set_policy("build.ccache", false)
 set_policy("check.auto_ignore_flags", false)
 set_policy("build.warning", true)
-
+set_defaultmode("debug")
 add_rules("mode.debug", "mode.release")
 add_cxflags("/wd4305") -- double to float
 add_cxflags("/wd4267") -- size_t to int

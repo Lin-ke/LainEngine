@@ -422,7 +422,12 @@ struct _NO_DISCARD_ Vector3 {
   static Vector3 cross(const Vector3& lhs, const Vector3& rhs) { return lhs.cross(rhs); }
 
   static Vector3 lerp(const Vector3& lhs, const Vector3& rhs, real_t alpha) { return lhs + alpha * (rhs - lhs); }
-
+  Vector3 clamp(const Vector3 &p_min, const Vector3 &p_max) const {
+	return Vector3(
+			CLAMP(x, p_min.x, p_max.x),
+			CLAMP(y, p_min.y, p_max.y),
+			CLAMP(z, p_min.z, p_max.z));
+}
   static Vector3 clamp(const Vector3& v, const Vector3& min, const Vector3& max) {
     return Vector3(Math::clamp(v.x, min.x, max.x), Math::clamp(v.y, min.y, max.y), Math::clamp(v.z, min.z, max.z));
   }

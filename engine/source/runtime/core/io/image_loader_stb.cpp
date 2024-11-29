@@ -22,25 +22,26 @@ namespace lain {
 		return OK;
 	}
 	Image::Format StbLoader::_get_format(String p_ext, int p_channels) {
+		Image::Format format = Image::FORMAT_MAX;
 		if (p_ext == "jpeg" || p_ext == "jpg") {
 			if (p_channels == 1) {
-				return Image::FORMAT_L8;
+				format = Image::FORMAT_L8;
 			}
 			else if(p_channels == 3) {
-				return Image::FORMAT_RGB8;
+				format = Image::FORMAT_RGB8;
 			}
 			ERR_FAIL_COND_V_MSG(false, Image::FORMAT_MAX, "wrong jpeg?");
 		}
 		else if (p_ext == "bmp") {
 			switch (p_channels) {
 			case 1:
-				return Image::FORMAT_L8;
+				format = Image::FORMAT_L8;
 			case 2:
-				return Image::FORMAT_LA8;
+				format = Image::FORMAT_LA8;
 			case 3:
-				return Image::FORMAT_RGB8;
+				format = Image::FORMAT_RGB8;
 			case 4:
-				return Image::FORMAT_RGBA8;
+				format = Image::FORMAT_RGBA8;
 			default:
 				ERR_FAIL_COND_V_MSG(false, Image::FORMAT_MAX, "wrong bmp?");
 			}
@@ -48,19 +49,21 @@ namespace lain {
 		else if (p_ext == "png") {
 			switch (p_channels) {
 			case 1:
-				return Image::FORMAT_L8;
+				format = Image::FORMAT_L8;
 			case 2:
-				return Image::FORMAT_LA8;
+				format = Image::FORMAT_LA8;
 			case 3:
-				return Image::FORMAT_RGB8;
+				format = Image::FORMAT_RGB8;
 			case 4:
-				return Image::FORMAT_RGBA8;
+				format = Image::FORMAT_RGBA8;
 			default:
 				ERR_FAIL_COND_V_MSG(false, Image::FORMAT_MAX, "wrong png?");
 			}
 		}
-		ERR_FAIL_COND_V_MSG(false, Image::FORMAT_MAX, "unknown format");
-
+		else {
+			ERR_FAIL_COND_V_MSG(false, Image::FORMAT_MAX, "unknown format");
+		}
+		return format;
 	}
 
 }

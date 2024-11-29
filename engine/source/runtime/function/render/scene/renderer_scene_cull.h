@@ -18,7 +18,8 @@ class RendererSceneCull : public RenderingMethod {
 
  public:
   enum { SDFGI_MAX_CASCADES = 8, SDFGI_MAX_REGIONS_PER_CASCADE = 3, MAX_INSTANCE_PAIRS = 32, MAX_UPDATE_SHADOWS = 512 };
-
+	RendererSceneCull();
+	virtual ~RendererSceneCull();
   RendererSceneRender* scene_render = nullptr;
 
   static RendererSceneCull* singleton;
@@ -552,6 +553,9 @@ class RendererSceneCull : public RenderingMethod {
   struct InstanceParticlesCollisionData : public InstanceBaseData {
     RID instance;
   };
+  	PagedArrayPool<Instance *> instance_cull_page_pool;
+	PagedArrayPool<RenderGeometryInstance *> geometry_instance_cull_page_pool;
+	PagedArrayPool<RID> rid_cull_page_pool;
   	PagedArray<Instance *> instance_cull_result;
 	PagedArray<Instance *> instance_shadow_cull_result;
   struct InstanceCullResult {  // 这里全用RID，感觉PageArray就很没意义。。

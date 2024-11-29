@@ -108,6 +108,7 @@ Variant Object::get(const StringName& p_name, bool* r_valid) const {
       return ret;
     }
   }
+  return ret;
 }
 
 void Object::set(const StringName& p_name, const Variant& p_value, bool* r_valid) {

@@ -70,6 +70,9 @@ uint8_t RenderingLightCuller::Data::LUT_entries[LUT_SIZE][8] = {
 {0, 0, 0, 0, 0, 0, 0, 0, },
 };
 
+lain::RenderingLightCuller::RenderingLightCuller() {
+	data.debug_count = -1;
+}
 
 bool lain::RenderingLightCuller::prepare_camera(const Transform3D& p_cam_transform, const Projection& p_cam_matrix) {
   data.debug_count++;

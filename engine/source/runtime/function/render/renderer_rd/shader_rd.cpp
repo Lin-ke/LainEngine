@@ -636,9 +636,15 @@ bool lain::ShaderRD::version_is_valid(RID p_version) {
 }
 
 bool lain::ShaderRD::version_free(RID p_version) {
-  Version* version = version_owner.get_or_null(p_version);
-	ERR_FAIL_COND_V(!version, false);
-	_clear_version(version);
+if (version_owner.owns(p_version)) {
+		Version *version = version_owner.get_or_null(p_version);
+		_clear_version(version);
+		version_owner.free(p_version);
+	} else {
+		return false;
+	}
+
+	return true;
 }
 
 RS::ShaderNativeSourceCode ShaderRD::version_get_native_source_code(RID p_version) {

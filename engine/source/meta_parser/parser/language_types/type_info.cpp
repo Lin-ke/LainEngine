@@ -15,4 +15,4 @@ Namespace TypeInfo::getCurrentNamespace() const { return m_namespace; }
 
 Cursor& TypeInfo::getCurosr() { return m_root_cursor; }
 
-// @TODO: 是否可以避免修改CLASS，在内部定义META
+// @TODO: 鏄惁鍙互閬垮厤淇敼CLASS锛屽湪鍐呴儴瀹氫箟META

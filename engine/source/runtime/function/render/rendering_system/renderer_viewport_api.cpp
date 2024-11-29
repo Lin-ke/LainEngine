@@ -440,6 +440,21 @@ void RendererViewport::draw_viewports(bool p_swap_buffers) {
     }
     }
    }
+
+	//  RSG::scene->set_debug_draw_mode(RS::VIEWPORT_DEBUG_DRAW_DISABLED);
+
+	total_objects_drawn = objects_drawn;
+	total_vertices_drawn = vertices_drawn;
+	total_draw_calls_used = draw_calls_used;
+
+	RENDER_TIMESTAMP("< Render Viewports");
+
+	if (p_swap_buffers && !blit_to_screen_list.is_empty()) {
+		for (const KeyValue<int, Vector<BlitToScreen>> &E : blit_to_screen_list) {
+			RSG::rasterizer->blit_render_targets_to_screen(E.key, E.value.ptr(), E.value.size());
+		}
+	}
+
 }
 
 int lain::RendererViewport::get_total_objects_drawn() const {

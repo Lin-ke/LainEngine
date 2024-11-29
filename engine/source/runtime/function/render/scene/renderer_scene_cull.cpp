@@ -2499,3 +2499,62 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance, cons
 
   return animated_material_found;
 }
+
+
+RendererSceneCull::RendererSceneCull() {
+	render_pass = 1;
+	singleton = this;
+	instance_cull_result.set_page_pool(&instance_cull_page_pool);
+	instance_shadow_cull_result.set_page_pool(&instance_cull_page_pool);
+
+  	for (uint32_t i = 0; i < MAX_UPDATE_SHADOWS; i++) {
+		render_shadow_data[i].instances.set_page_pool(&geometry_instance_cull_page_pool);
+	}
+	for (uint32_t i = 0; i < SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE; i++) {
+		render_sdfgi_data[i].instances.set_page_pool(&geometry_instance_cull_page_pool);
+	}
+
+	scene_cull_result.init(&rid_cull_page_pool, &geometry_instance_cull_page_pool, &instance_cull_page_pool);
+	scene_cull_result_threads.resize(WorkerThreadPool::get_singleton()->get_thread_count());
+	for (InstanceCullResult &thread : scene_cull_result_threads) {
+		thread.init(&rid_cull_page_pool, &geometry_instance_cull_page_pool, &instance_cull_page_pool);
+	}
+  indexer_update_iterations = GLOBAL_GET("rendering/limits/spatial_indexer/update_iterations_per_frame");
+	thread_cull_threshold = GLOBAL_GET("rendering/limits/spatial_indexer/threaded_cull_minimum_instances");
+	thread_cull_threshold = MAX(thread_cull_threshold, (uint32_t)WorkerThreadPool::get_singleton()->get_thread_count()); //make sure there is at least one thread per CPU
+	RendererSceneOcclusionCull::HZBuffer::occlusion_jitter_enabled = GLOBAL_GET("rendering/occlusion_culling/jitter_projection");
+
+	dummy_occlusion_culling = memnew(RendererSceneOcclusionCull);
+
+	light_culler = memnew(RenderingLightCuller);
+
+	bool tighter_caster_culling = GLOBAL_DEF("rendering/lights_and_shadows/tighter_shadow_caster_culling", true);
+	light_culler->set_caster_culling_active(tighter_caster_culling);
+	light_culler->set_light_culling_active(tighter_caster_culling);
+}
+RendererSceneCull::~RendererSceneCull() {
+	instance_cull_result.reset();
+	instance_shadow_cull_result.reset();
+
+	for (uint32_t i = 0; i < MAX_UPDATE_SHADOWS; i++) {
+		render_shadow_data[i].instances.reset();
+	}
+	for (uint32_t i = 0; i < SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE; i++) {
+		render_sdfgi_data[i].instances.reset();
+	}
+
+	scene_cull_result.reset();
+	for (InstanceCullResult &thread : scene_cull_result_threads) {
+		thread.reset();
+	}
+	scene_cull_result_threads.clear();
+
+	if (dummy_occlusion_culling) {
+		memdelete(dummy_occlusion_culling);
+	}
+
+	if (light_culler) {
+		memdelete(light_culler);
+		light_culler = nullptr;
+	}
+}

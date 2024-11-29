@@ -35,6 +35,7 @@ bool ClassDB::class_exists(const StringName& p_class) {
   if (Reflection::TypeMeta::is_valid_type(p_class)) {
     return true;
   }
+  return false;
 }
 
 template <typename T, typename = void>
@@ -148,6 +149,7 @@ bool ClassDB::get_property(Object* p_object, const StringName& p_property, Varia
   // 变成variant
   Variant::Type type = VariantHelper::get_type_from_name(fields->getFieldTypeName());
   VariantHelper::variant_from_data(type, property_ptr, r_value);
+  return true;
 }
 
 bool ClassDB::set_property(Object* p_object, const StringName& p_property, const Variant& r_value) {
@@ -171,5 +173,6 @@ bool ClassDB::set_property(Object* p_object, const StringName& p_property, const
     L_CORE_WARN("type mismatch");
   }
   VariantHelper::object_set_data(property_ptr, r_value);
+  return true;
 }
 }  // namespace lain

@@ -94,6 +94,13 @@ STRUCT(_NO_DISCARD_ Vector2, Fields) {
     return Vector2(x * rhs.x, y * rhs.y);
   }
 
+	Vector2 minf(real_t p_scalar) const {
+		return Vector2(MIN(x, p_scalar), MIN(y, p_scalar));
+	}
+	Vector2 maxf(real_t p_scalar) const {
+		return Vector2(MAX(x, p_scalar), MAX(y, p_scalar));
+	}
+
   Vector2 operator/(float scale) const {
     assert(scale != 0.0);
 

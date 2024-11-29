@@ -5,10 +5,6 @@
   struct m_class##Data : m_inherit {    \
     META(Fields)
 
-#define DATA_STRUCT(m_class) \
-  struct m_class##Data {     \
-    META(Fields)
-
 #define DATA_STRUCT_END() \
   }                       \
   ;
@@ -18,9 +14,11 @@
   bool is_##name##_used = false;
 
 namespace lain {
-DATA_STRUCT(GObject3D)
-DATA_STRUCT_DEFINE(Transform3D, transform)
-DATA_STRUCT_END()
+struct GObject3DData {     \
+    META(Fields)
+    Transform3D transform;
+    bool is_transform_used = false;
+};
 
 }  // namespace lain
 #endif
