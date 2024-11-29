@@ -1,7 +1,12 @@
 #ifndef VARIANT_BINDER_COMMON_H 
 #define VARIANT_BINDER_COMMON_H
-#include "method_ptrcall.h"
+#include "core/object/object.h"
+#include "core/variant/method_ptrcall.h"
+#include "core/meta/type_info.h"
+#include "core/typedefs.h"
 #include "variant.h"
+#include "variant_internal.h"
+
 namespace lain {
 // 如果是 Object的子类，转成Object
 template <typename T>
@@ -98,8 +103,6 @@ struct VariantObjectClassChecker<const Ref<T> &> {
 };
 
 
-#ifdef DEBUG_METHODS_ENABLED
-
 template <typename T>
 struct VariantCasterAndValidate {
   static _FORCE_INLINE_ T cast(const Variant** p_args, uint32_t p_arg_idx, Callable::CallError& r_error) {
@@ -176,7 +179,6 @@ struct VariantCasterAndValidate<const T&> {
     }                                                                    \
   };
 
-
   VARIANT_ENUM_CAST(Vector2::Axis);
   VARIANT_ENUM_CAST(Vector2i::Axis);
   VARIANT_ENUM_CAST(Vector3::Axis);
@@ -185,9 +187,5 @@ struct VariantCasterAndValidate<const T&> {
   VARIANT_ENUM_CAST(Vector4i::Axis);
   VARIANT_ENUM_CAST(Error);
   VARIANT_ENUM_CAST(Variant::Type);
-
-
-
-#endif  // DEBUG_METHODS_ENABLED
 } // namespace lain
 #endif

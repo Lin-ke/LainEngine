@@ -5,7 +5,7 @@
 #include "core/typedefs.h"
 #include "core/variant/variant.h"
 #include <type_traits>
-// 注意 include 该头文件，需要已经include 过 object.h 。
+// 需要include object.h 来包括property_info
 namespace lain {
 template <bool C, typename T = void>
 struct EnableIf {
@@ -127,6 +127,7 @@ enum Metadata {
 // GetTypeInfo 通过特化提供对应的 VariantType 和 PropertyInfo
 template <typename T, typename = void>
 struct GetTypeInfo;
+
 
 #define MAKE_TYPE_INFO(m_type, m_var_type)                                  \
   template <>                                                               \

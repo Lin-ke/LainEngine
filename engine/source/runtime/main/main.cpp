@@ -14,6 +14,11 @@
 #include "module/register_module_types.h"
 #include "scene/register_scene_types.h"
 #include "timer_sync.h"
+#include "core/io/resource_loader.h"
+#include "core/scene/packed_scene.h"
+#include "core/scene/scene_tree.h"
+#include "core/scene/object/gobject.h"
+#include "scene/main/viewport.h"
 //  initialization part
 namespace lain {
 
@@ -58,6 +63,7 @@ static MainTimerSync main_timer_sync;
 /// </summary>
 Error Main::Initialize(int argc, char* argv[]) {
   Thread::make_main_thread();
+  set_current_thread_safe_for_nodes(true); // main thread is always safe
 
   String project_path = "";
   // logger
@@ -110,17 +116,7 @@ Error Main::Initialize(int argc, char* argv[]) {
   initialize_modules(MODULE_INITIALIZATION_LEVEL_CORE); // 在其他等级时再初始化别的模块
 
   Ref<DirAccess> da = DirAccess::create_for_path(project_path);
-  String main_scene = GLOBAL_GET("application/config/name");
-  if (main_scene == "") {
-    // no default scene
-    Vector<String> scene_list = da->get_files();
-    for (String& scene : scene_list) {
-      if (scene.ends_with(".tscn")) {
-        main_scene = scene;
-        break;
-      }
-    }
-  }
+ 
 
   // note this is the desired rendering driver, it doesn't mean we will get it.
 	// TODO - make sure this is updated in the case of fallbacks, so that the user interface
@@ -171,7 +167,6 @@ Error Main::Initialize(int argc, char* argv[]) {
   register_scene_types();
 
 
-  MainLoop* main_loop = memnew(SceneTree);
   Error err;
   // 注意这里的顺序（见WindowSystem里的注释）
   window_system = memnew(WindowSystem(rendering_driver, window_mode, window_vsync_mode, window_flags, window_position, window_size, init_screen, err));
@@ -185,11 +180,33 @@ Error Main::Initialize(int argc, char* argv[]) {
   }
   Color clear = GLOBAL_DEF_BASIC("rendering/environment/defaults/default_clear_color", Color(0.3, 0.3, 0.3));
   RS::get_singleton()->set_default_clear_color(clear);
+  // memnew(scenetree) 会 memnew一个window 会memnew一个viewport所以必须先进行RS的初始化
+  MainLoop* main_loop = memnew(SceneTree);
+  SceneTree *sml = static_cast<SceneTree*>(main_loop);
+  if(sml){
+  String main_scene = GLOBAL_GET("application/config/default_scene");
+  if (main_scene.is_empty()) {
+    // no default scene
+    Vector<String> scene_list = da->get_files();
+    for (String& scene : scene_list) {
+      if (scene.ends_with(".tscn")) {
+        main_scene = scene;
+        break;
+      }
+    }
+  }
+  // 无scene
+  if (!main_scene.is_empty()) {
+    // load scene
+    Ref<PackedScene> ps = ResourceLoader::load(main_scene);
+    if (ps.is_valid()) {
+      GObject* newscene = ps->instantiate();
+      SceneTree::get_singleton()->get_root()->add_child(newscene);
+    }
 
+  }
+  }
 
-
-
-  if (main_scene != "") {}
   OS::GetSingleton()->SetMainLoop(main_loop);
 
   return OK;

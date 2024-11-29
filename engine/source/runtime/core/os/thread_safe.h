@@ -7,4 +7,11 @@
 #define _THREAD_SAFE_METHOD_ MutexLock _thread_safe_method_(_thread_safe_); 
 #define _THREAD_SAFE_LOCK_ _thread_safe_.lock();
 #define _THREAD_SAFE_UNLOCK_ _thread_safe_.unlock();
+
+namespace lain{
+
+bool is_current_thread_safe_for_nodes();
+void set_current_thread_safe_for_nodes(bool p_safe);
+}
+
 #endif // !__THREAD_SAFE_H__

@@ -1,7 +1,6 @@
 #pragma once
 #ifndef RENDERING_DEVICE_COMMONS_H
 #define RENDERING_DEVICE_COMMONS_H
-#include "core/typedefs.h"
 #include "core/object/object.h"
 #include "core/meta/type_info.h"
 #define STEPIFY(m_number, m_alignment) ((((m_number) + ((m_alignment)-1)) / (m_alignment)) * (m_alignment))

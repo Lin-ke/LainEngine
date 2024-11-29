@@ -1,15 +1,8 @@
 #pragma once
 #ifndef __PROJECT_SETTINGS_H__
 #define __PROJECT_SETTINGS_H__
-#include "core/string/ustring.h"
-#include "core/variant/variant.h"
-#include "core/templates/hash_map.h"
-#include "core/string/string_name.h"
-#include "core/templates/hash_set.h"
+#include "core/meta/class_db.h"
 #include "core/io/file_access.h"
-#include "core/os/thread_safe.h"
-#include "core/templates/rb_map.h"
-
 // TODO:
 #define GLOBAL_GET(m_var) ProjectSettings::GetSingleton()->GetSetting(m_var)
 namespace lain {

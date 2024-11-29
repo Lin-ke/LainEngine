@@ -58,6 +58,8 @@ void Camera3D::_validate_property(PropertyInfo &p_property) const {
 	// GObject3D::_validate_property(p_property);
 }
 
+void lain::Camera3D::_bind_methods() {}
+
 void Camera3D::_update_camera() {
 	if (!is_inside_tree()) {
 		return;

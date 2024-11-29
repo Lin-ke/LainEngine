@@ -257,9 +257,19 @@ class RenderingSystemDefault: public RenderingSystem{
 	FUNC3(camera_attributes_set_exposure, RID, float, float)
 	FUNC6(camera_attributes_set_auto_exposure, RID, bool, float, float, float, float)
 
+#undef server_name
+#undef ServerName
+
 
 #define ServerName RenderingMethod
 #define server_name RSG::scene
+	FUNCRIDSPLIT(scenario)
+
+	FUNC2(scenario_set_environment, RID, RID)
+	FUNC2(scenario_set_camera_attributes, RID, RID)
+	FUNC2(scenario_set_fallback_environment, RID, RID)
+	FUNC2(scenario_set_compositor, RID, RID)
+
 
 	FUNCRIDSPLIT(compositor)
 	FUNCRIDSPLIT(compositor_effect)

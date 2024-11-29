@@ -1,12 +1,11 @@
 #pragma once
 #ifndef RESOURCE_H
 #define RESOURCE_H
+#include "core/meta/class_db.h"
 #include "core/object/refcounted.h"
-#include "core/object/object.h"
-#include "core/meta/reflection/reflection.h"
+#include "core/meta/reflection/reflection_marcos.h"
 #include "core/string/ustring.h"
 #include "core/templates/self_list.h"
-#include "core/meta/class_db.h"
 #include "core/os/rwlock.h"
 #define RES_BASE_EXTENSION(m_ext)                                                                                   \
 public:                                                                                                             \
@@ -16,6 +15,7 @@ public:                                                                         
 private:
 
 namespace lain {
+	class GObject;
 	class Resource: public RefCounted {
 		friend class ResourceCache;
 		LCLASS(Resource, RefCounted);
@@ -62,6 +62,7 @@ namespace lain {
 		void _set_path(const String& p_path) { set_path(p_path, false); }
 		void _take_over_path(const String& p_path) { set_path(p_path, true); }
 		virtual void reset_local_to_scene() {}
+		virtual GObject* get_local_scene(){return nullptr;}
 	private:
 
 	};

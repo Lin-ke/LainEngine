@@ -3335,6 +3335,8 @@ void Image::_set_color_at_ofs(uint8_t* ptr, uint32_t ofs, const Color& p_color) 
 	}
 }
 
+void Image::_bind_methods() {}
+
 Color Image::get_pixel(int p_x, int p_y) const {
 #ifdef DEBUG_ENABLED
 	ERR_FAIL_INDEX_V(p_x, width, Color());

@@ -1006,7 +1006,7 @@ void TextureStorage::_update_render_target(RenderTarget* rt) {
   if (rt->texture.is_null()) {
     //create a placeholder until updated
     rt->texture = texture_allocate();
-    // texture_2d_placeholder_initialize(rt->texture);
+    texture_2d_placeholder_initialize(rt->texture);
     Texture* tex = get_texture(rt->texture);
     tex->is_render_target = true;
     tex->path = "Render Target (Internal)";

@@ -1,4 +1,6 @@
 #pragma once
+#ifndef _VECTOR2_H_
+#define _VECTOR2_H_
 #include "core/math/math_defs.h"
 #include "runtime/core/math/math.h"
 #include "runtime/core/meta/reflection/reflection_marcos.h"
@@ -466,3 +468,5 @@ STRUCT(_NO_DISCARD_ Vector2, Fields) {
 typedef Vector2 Size2;
 typedef Vector2 Point2;
 }  // namespace lain
+
+#endif

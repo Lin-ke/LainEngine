@@ -261,11 +261,11 @@ void WorkerThreadPool::_process_task(Task *p_task) {
 	int pool_thread_index = thread_ids[Thread::get_caller_id()];
 	ThreadData &curr_thread = threads[pool_thread_index];
 	Task *prev_task = nullptr; // In case this is recursively called.
-	//bool safe_for_nodes_backup = is_current_thread_safe_for_nodes();
+	bool safe_for_nodes_backup = is_current_thread_safe_for_nodes();
 
 	{
 		// Tasks must start with this unset. They are free to set-and-forget otherwise.
-		//set_current_thread_safe_for_nodes(false);
+		set_current_thread_safe_for_nodes(false);
 		// Since the WorkerThreadPool is started before the script server,
 		// its pre-created threads can't have ScriptServer::thread_enter() called on them early.
 		// Therefore, we do it late at the first opportunity, so in case the task
@@ -371,7 +371,7 @@ void WorkerThreadPool::_process_task(Task *p_task) {
 		task_mutex.unlock();
 	}
 
-	//set_current_thread_safe_for_nodes(safe_for_nodes_backup);
+	set_current_thread_safe_for_nodes(safe_for_nodes_backup);
 }
 // 低优先级，加入任务队列
 bool WorkerThreadPool::_try_promote_low_priority_task() {

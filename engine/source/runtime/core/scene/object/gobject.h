@@ -109,7 +109,6 @@ class GObject : public TickObject {
 
     // view
     Viewport* viewport = nullptr;
-    // ?
 
   } data;  // 防止名称冲突
 
@@ -165,6 +164,7 @@ class GObject : public TickObject {
   void set_owner(GObject*);
   void set_scene_inherited_state(Ref<SceneState> p_scene_state);
   L_INLINE GObject* get_owner() { return data.owner; }
+  L_INLINE bool is_ready() const { return !data.ready_first; }
   GObjectPath get_path_to(const GObject*, bool use_unique_path = false) const;
   void add_to_group(const StringName&, bool);
   int get_child_count(bool p_include_internal = true) const;
@@ -175,6 +175,7 @@ class GObject : public TickObject {
 
   void _add_all_components_to_ptg();
   void _remove_all_components_from_ptg();
+
 
   void _add_components_to_ptg();
   // 一个指针和一个函数指针的大小是一样的吧
@@ -191,55 +192,7 @@ class GObject : public TickObject {
   // notification机制
   // notification机制可以用来解耦，并不需要在意
   // 就用这个notification作为所有的notification吧
-  enum {
-    // You can make your own, but don't use the same numbers as other notifications in other nodes.
-    NOTIFICATION_ENTER_TREE = 10,
-    NOTIFICATION_EXIT_TREE = 11,
-    NOTIFICATION_MOVED_IN_PARENT = 12,
-    NOTIFICATION_READY = 13,
-    NOTIFICATION_PAUSED = 14,
-    NOTIFICATION_UNPAUSED = 15,
-    NOTIFICATION_PHYSICS_PROCESS = 16,
-    NOTIFICATION_PROCESS = 17,
-    NOTIFICATION_PARENTED = 18,
-    NOTIFICATION_UNPARENTED = 19,
-    NOTIFICATION_SCENE_INSTANTIATED = 20,
-    NOTIFICATION_DRAG_BEGIN = 21,
-    NOTIFICATION_DRAG_END = 22,
-    NOTIFICATION_PATH_RENAMED = 23,
-    NOTIFICATION_CHILD_ORDER_CHANGED = 24,
-    NOTIFICATION_INTERNAL_PROCESS = 25,
-    NOTIFICATION_INTERNAL_PHYSICS_PROCESS = 26,
-    NOTIFICATION_POST_ENTER_TREE = 27,
-    NOTIFICATION_DISABLED = 28,
-    NOTIFICATION_ENABLED = 29,
-    NOTIFICATION_RESET_PHYSICS_INTERPOLATION = 2001,  // A GodotSpace Odyssey.
-    // Keep these linked to Node.
-    NOTIFICATION_WM_MOUSE_ENTER = 1002,
-    NOTIFICATION_WM_MOUSE_EXIT = 1003,
-    NOTIFICATION_WM_WINDOW_FOCUS_IN = 1004,
-    NOTIFICATION_WM_WINDOW_FOCUS_OUT = 1005,
-    NOTIFICATION_WM_CLOSE_REQUEST = 1006,
-    NOTIFICATION_WM_GO_BACK_REQUEST = 1007,
-    NOTIFICATION_WM_SIZE_CHANGED = 1008,
-    NOTIFICATION_WM_DPI_CHANGE = 1009,
-    NOTIFICATION_VP_MOUSE_ENTER = 1010,
-    NOTIFICATION_VP_MOUSE_EXIT = 1011,
-
-    NOTIFICATION_OS_MEMORY_WARNING = MainLoop::NOTIFICATION_OS_MEMORY_WARNING,
-    NOTIFICATION_TRANSLATION_CHANGED = MainLoop::NOTIFICATION_TRANSLATION_CHANGED,
-    NOTIFICATION_WM_ABOUT = MainLoop::NOTIFICATION_WM_ABOUT,
-    NOTIFICATION_CRASH = MainLoop::NOTIFICATION_CRASH,
-    NOTIFICATION_OS_IME_UPDATE = MainLoop::NOTIFICATION_OS_IME_UPDATE,
-    NOTIFICATION_APPLICATION_RESUMED = MainLoop::NOTIFICATION_APPLICATION_RESUMED,
-    NOTIFICATION_APPLICATION_PAUSED = MainLoop::NOTIFICATION_APPLICATION_PAUSED,
-    NOTIFICATION_APPLICATION_FOCUS_IN = MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN,
-    NOTIFICATION_APPLICATION_FOCUS_OUT = MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT,
-    NOTIFICATION_TEXT_SERVER_CHANGED = MainLoop::NOTIFICATION_TEXT_SERVER_CHANGED,
-    // Editor specific node notifications
-    NOTIFICATION_EDITOR_PRE_SAVE = 9001,
-    NOTIFICATION_EDITOR_POST_SAVE = 9002,
-  };
+ 
 
   virtual String get_description() const { 
     return is_inside_tree()? get_path() : String(get_name()) + "/"+get_class(); }
@@ -275,6 +228,7 @@ class GObject : public TickObject {
   void _propagate_ready();
   void _propagate_groups_dirty();
   void _propagate_after_exit_tree();
+  virtual void _propagate_process_owner(TickObject* owner, int, int);
 
   void _add_component_nocheck(Component*);
 

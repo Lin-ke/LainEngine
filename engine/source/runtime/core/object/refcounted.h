@@ -1,13 +1,8 @@
 #pragma once
 #ifndef __REFCOUNT_H__
 #define __REFCOUNT_H__
-#include "base.h"
-#include "object.h"
-#include "core/os/memory.h"
+#include "core/meta/class_db.h"
 #include "safe_refcount.h"
-#include "core/variant/method_ptrcall.h"
-#include "core/meta/type_info.h"
-#include "core/variant/variant_internal.h"
 namespace lain {
 
 class RefCounted: public Object{
@@ -200,6 +195,7 @@ public:
 };
 // 弱引用
 class WeakRef : public RefCounted {
+	LCLASS(WeakRef, RefCounted);
 	ObjectID ref;
 
 protected:

@@ -1,3 +1,5 @@
+#ifndef META_EXAMPLE_H
+#define META_EXAMPLE_H
 #pragma once
 #include "base.h"
 #include "runtime/core/meta/reflection/reflection.h"
@@ -51,3 +53,5 @@ namespace lain
     void metaExample();
     
 } // namespace lain
+
+#endif

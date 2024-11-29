@@ -62,6 +62,8 @@ private:
 	void _remove_camera(Camera3D *p_camera);
 	public:
 	Ref<CameraAttributes> get_camera_attributes() const;
+	RID get_scenario() const{return scenario;}
+	World3D();
 };
 }
 

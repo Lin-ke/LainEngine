@@ -21,8 +21,8 @@ int main() {
 	}
 	// test::test_vulkan_driver();
 	// test::test_shader();
-	test::test_scene();
-	// os.Run();
+	// test::test_scene();
+	os.Run();
 
 }
 #endif // _TEST_

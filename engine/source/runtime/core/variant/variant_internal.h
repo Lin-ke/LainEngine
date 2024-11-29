@@ -2,8 +2,8 @@
 #ifndef VARIANT_INTERNAL_H
 #define VARIANT_INTERNAL_H
 #include "variant.h"
-#include "core/meta/type_info.h"
 #include "core/templates/simple_type.h" // 提供GetSimpleTypeT
+// 应该已经实例化了 type_info
 namespace lain {
 	class RefCounted;
 

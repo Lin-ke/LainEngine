@@ -21,7 +21,7 @@ namespace lain {
 		friend class Component;
 		static SceneTree* singleton;
 		GObject* current_scene;
-		GObject* root; // window
+		Viewport* root; // window
 		// state
 		int root_lock = 0;
 		bool paused = false;
@@ -92,7 +92,7 @@ namespace lain {
 		virtual void finalize() override;
 
 		void tree_changed() {}
-		L_INLINE GObject* get_root() const { return root; }
+		L_INLINE Viewport* get_root() const { return root; }
 		Group* add_to_group(const StringName&, GObject*);
 		virtual bool process(double p_time) override;
 		L_INLINE int get_node_count() {

@@ -1,5 +1,6 @@
 #include "object.h"
 #include "core/object/objectdb.h"
+#include "core/meta/class_db.h"
 namespace lain {
 void Object::_construct_object(bool p_is_ref) {
   m_type_is_reference = p_is_ref;
@@ -74,6 +75,17 @@ PropertyInfo::operator Dictionary() const {
   d["hint_string"] = hint_string;
   d["usage"] = usage;
   return d;
+}
+
+void Object::initialize_class() {
+	static bool initialized = false;
+	if (initialized) {
+		return;
+	}
+	ClassDB::_add_class<Object>();
+	_bind_methods();
+	_bind_compatibility_methods();
+	initialized = true;
 }
 
 Variant Object::callp(const StringName& p_method, const Variant** p_args, int p_argcount, Callable::CallError& r_error) {

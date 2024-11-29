@@ -6,7 +6,6 @@
 #include "core/io/resource.h"
 #include "core/math/color.h"
 #include "core/math/rect2.h"
-#include "core/variant/binder_common.h"
 namespace lain {
 
 /**

@@ -2,6 +2,7 @@
 
 config/name="default_project"
 config/description="this is a default project"
+config/default_scene="1.tscn"
 
 [display]
 window/size/initial_position_type=1

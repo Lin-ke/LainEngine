@@ -1,11 +1,14 @@
 #pragma once
 #ifndef RENDERING_DEVICE_H
 #define RENDERING_DEVICE_H
-#include "core/io/rid_owner.h"
 #include "core/meta/class_db.h"
-#include "core/os/thread_safe.h"
-#include "core/templates/rb_map.h"
 #include "core/thread/worker_thread_pool.h"
+#include "core/os/thread_safe.h"
+#include "core/templates/local_vector.h"
+#include "core/templates/oa_hash_map.h"
+#include "core/io/rid_owner.h"
+#include "core/templates/rb_map.h"
+#include "core/io/resource.h"
 #include "rendering_device_commons.h"
 #include "rendering_device_driver.h"
 #include "rendering_device_graph.h"

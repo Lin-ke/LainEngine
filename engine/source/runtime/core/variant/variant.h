@@ -21,6 +21,7 @@ class VariantInternal;
 class RID;
 class Serializer;
 struct MethodInfo;
+struct PropertyInfo;
 
 // variant的实现和lua是一样的，但是多一些基本类，如果只有数学类和table就是lua了
 // 就像lua一样，主要类是依靠字典来实现的

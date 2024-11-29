@@ -1,6 +1,7 @@
 
 #pragma once
-
+#ifndef JSON_11_H
+#define JSON_11_H
 #include "core/templates/vector.h"
 #include "core/templates/hash_map.h"
 
@@ -162,3 +163,5 @@ protected:
 };
 
 } // namespace json11
+
+#endif

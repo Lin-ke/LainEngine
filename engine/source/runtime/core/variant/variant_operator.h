@@ -1,10 +1,8 @@
 #ifndef VARIANT_OPERATOR_H
 #define VARIANT_OPERATOR_H
 #include "variant.h"
-#include "core/object/object.h"
-#include "method_ptrcall.h"
-#include "variant_internal.h"
 
+#include "core/meta/class_db.h"
 namespace lain {
  // 各种operator的注册
  // operator 表： operator， 类型1， 类型2

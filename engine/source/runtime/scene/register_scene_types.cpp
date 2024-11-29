@@ -4,7 +4,8 @@
 #include "scene/resources/io/resource_format_shader.h"
 #include "scene/resources/common/shader_include.h"
 #include "register_scene_types.h"
-
+#include "core/meta/class_db.h"
+#include "scene/3d/camera_3d.h"
 // function types
 #include "function/shader/shader_types.h"
 
@@ -45,6 +46,13 @@ namespace lain{
 
   void register_system_types() {
 		shader_types = memnew(shader::ShaderTypes);
+	
+	GDREGISTER_CLASS(GObject);
+
+	GDREGISTER_CLASS(GObject3D);
+	GDREGISTER_CLASS(Camera3D);
+	
+	
 	}
 
   }  // namespace lain

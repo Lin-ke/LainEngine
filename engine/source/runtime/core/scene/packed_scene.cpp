@@ -310,25 +310,8 @@ GObject* SceneState::instantiate(GenEditState p_edit_state) const {
       }
     } else {
       // GObject belongs to this scene and must be created. @TODO
-      Object* obj = nullptr;
-      // 需要有memnew 才行
-      if (ClassDB::can_instantiate(snames[n.type])) {
-        obj = static_cast<Object*>(Reflection::TypeMeta::memnewByName(SCSTR(snames[n.type])));
-        gobj = Object::cast_to<GObject>(obj);
-        if (!gobj) {
-          WARN_PRINT("Gobject can't deserialize");
-        } else {                         // initialized
-          if (n.node_ins_res != "{}") {  //empty json
-            void* data = ClassDB::instantiate_with_name_json(gobj->get_data_classname(), n.node_ins_res);
-            if (!data) {
-              WARN_PRINT("GobjectData can't deserialize");
-            } else {
-              gobj->from_data(data);
-            }
-            memdelete(data);  // 注意data 不能靠引用之类的，要复制
-          }
-        }
-      }  // fall : A placeholder will be created instead
+      Object* obj = ClassDB::instantiate(snames[n.type]);
+
       gobj = Object::cast_to<GObject>(obj);
       if (!gobj) {
         if (obj) {
@@ -362,7 +345,6 @@ GObject* SceneState::instantiate(GenEditState p_edit_state) const {
           if (!obj) {
             obj = memnew(GObject);
           }
-          //
           gobj = Object::cast_to<GObject>(obj);
         }
       }
@@ -370,6 +352,22 @@ GObject* SceneState::instantiate(GenEditState p_edit_state) const {
     // end of instantiate
     if (gobj) {
       // 添加 properties 和 关系
+      // properties
+      String parse_error = "";
+      if (n.node_ins_res != "{}") {  //empty json
+        void* data = ClassDB::instantiate_with_name_json(gobj->get_data_classname(), Json::parse(n.node_ins_res, parse_error));
+        if (!data) {
+          WARN_PRINT("GobjectData can't deserialize");
+          if(parse_error != "") {
+            ERR_PRINT(parse_error);
+          }
+        } else {
+          gobj->from_data(data);
+        }
+        memdelete(data); 
+      }
+
+      // groups
       for (int j = 0; j < n.groups.size(); j++) {
         ERR_FAIL_INDEX_V(n.groups[j], sname_count, nullptr);
         gobj->add_to_group(snames[n.groups[j]], true);

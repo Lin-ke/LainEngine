@@ -19,28 +19,7 @@ namespace lain {
 		};
 
 		void test_process() {
-			List<Ref<Resource>> resources;
-
-			ResourceCache::get_cached_resources(&resources);
-			for (auto&& i : resources) {
-				L_JSON(i->GetPath());
-				L_JSON(i->GetName());
-			}
-			auto scenetree = SceneTree::get_singleton();
-			Ref<PackedScene> s3 = ResourceLoader::load("3.tscn", "PackedScene");
-			auto new_scene = s3->instantiate();
-			L_PRINT("-------------");
-			draw_tree(new_scene);
-			L_PRINT("-------------");
-
-			TEQ(scenetree->get_root()->get_child_count(), 0);
-			TEQ(scenetree->get_node_count(), 1);
-			new_scene->tickdata.process_thread_group = TickObject::ProcessThreadGroup::PROCESS_THREAD_GROUP_SUB_THREAD;
-			scenetree->get_root()->add_child(new_scene);
-			new_scene->set_process(true);
 			
-			scenetree->process(0);
-
 		}
 	}
 }

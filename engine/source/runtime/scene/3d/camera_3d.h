@@ -26,7 +26,6 @@ class Camera3D : public GObject3D {
 		DOPPLER_TRACKING_PHYSICS_STEP
 	};
   private:
-	META(WhiteListFields)
 	bool force_change = false;
 	bool current = false;
 	Viewport *viewport = nullptr;

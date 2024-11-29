@@ -3,8 +3,7 @@
 #define __RENDERING_SYSTEM_H__
 #include "base.h"
 #include "core/io/image.h"
-#include "core/object/object.h"
-#include "core/templates/hash_set.h"
+#include "core/meta/class_db.h"
 #include "function/display/window_system.h"
 #include "function/render/rendering_device/rendering_device.h"
 namespace lain {
@@ -295,6 +294,15 @@ class RenderingSystem : public Object {
 		MULTIMESH_TRANSFORM_2D,
 		MULTIMESH_TRANSFORM_3D,
 	};
+
+	/* SCENARIO API */
+
+	virtual RID scenario_create() = 0;
+
+	virtual void scenario_set_environment(RID p_scenario, RID p_environment) = 0;
+	virtual void scenario_set_fallback_environment(RID p_scenario, RID p_environment) = 0;
+	virtual void scenario_set_camera_attributes(RID p_scenario, RID p_camera_attributes) = 0;
+	virtual void scenario_set_compositor(RID p_scenario, RID p_compositor) = 0;
 
   /**************** */
   /* INSTANCING API */

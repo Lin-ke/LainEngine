@@ -1,5 +1,4 @@
 #include "variant.h"
-#include "variant_internal.h"
 namespace lain{
 
 struct VariantUtilityFunctions {

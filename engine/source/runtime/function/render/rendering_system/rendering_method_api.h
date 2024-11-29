@@ -7,8 +7,8 @@ class RenderingMethod {
 	//负责 camera, occluder, scenario, instance, environment 的创建和初始化
 	// 实现为 RendererSceneCull
 	// 其中 environment 传给了 scene，用scene实际管理执行
-	// scene 实际传给了 environment_storage
-
+	// enviroment 实际传给了 environment_storage
+	// scenario 由 实现类型 RendererSceneCull 实现
   public:
 	
 	struct RenderInfo {
@@ -35,7 +35,8 @@ class RenderingMethod {
 	virtual void occluder_set_mesh(RID p_occluder, const PackedVector3Array &p_vertices, const PackedInt32Array &p_indices) = 0;
 
   // senario
-  
+	virtual RID scenario_allocate() = 0;
+	virtual void scenario_initialize(RID p_rid) = 0;
 	virtual void scenario_set_environment(RID p_scenario, RID p_environment) = 0;
 	virtual void scenario_set_camera_attributes(RID p_scenario, RID p_attributes) = 0;
 	virtual void scenario_set_fallback_environment(RID p_scenario, RID p_environment) = 0;

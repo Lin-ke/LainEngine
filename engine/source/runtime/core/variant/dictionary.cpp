@@ -4,9 +4,10 @@
 #include "core/templates/safe_numeric.h"
 #include "core/variant/variant.h"
 // required in this order by VariantInternal, do not remove this comment.
+#include "core/meta/class_db.h"
 #include "core/object/object.h"
+#include "core/meta/type_info.h"
 #include "core/variant/variant_internal.h"
-//#include "core/variant/type_info.h"
 namespace lain {
 	struct DictionaryPrivate {
 		SafeRefCount refcount;

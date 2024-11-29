@@ -3,6 +3,7 @@
 #include "core/scene/packed_scene.h"
 #include "core/thread/worker_thread_pool.h"
 #include "core/scene/component/component.h"
+#include "scene/main/viewport.h"
 namespace lain {
 	SceneTree* SceneTree::singleton = nullptr;
 	SceneTree::SceneTree() {
@@ -10,8 +11,12 @@ namespace lain {
 			singleton = this;
 		}
 		current_scene = nullptr;
-		root = memnew(GObject);
+		root = memnew(Viewport); // 这是个window
 		root->set_name("root");
+		root->set_process_mode(TickObject::PROCESS_MODE_PAUSABLE);
+		if (!root->get_world_3d().is_valid()) {
+		root->set_world_3d(Ref<World3D>(memnew(World3D)));
+		}
 		// 在这里设置屏幕相关数据
 		// MSAA等等
 		process_groups.push_back(&default_process_group);
@@ -24,6 +29,7 @@ namespace lain {
 		ERR_FAIL_NULL(root);
 		MainLoop::initialize();
 		root->_set_tree(this);
+
 	}
 
 	SceneTree::Group* SceneTree::add_to_group(const StringName& p_group, GObject* p_node) {

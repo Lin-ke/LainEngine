@@ -2,6 +2,7 @@
 #include "core/meta/serializer/serializer.h"
 #include "_generated/serializer/all_serializer.h"
 #include "json.h"
+#include "core/io/file_access.h"
 using namespace lain;
 ResourceFormatImporter* ResourceFormatImporter::singleton = nullptr;
 Error ResourceFormatImporter::_get_path_and_type(const String& p_path, ImportPathAndType& r_path_and_type, bool* r_valid) const {

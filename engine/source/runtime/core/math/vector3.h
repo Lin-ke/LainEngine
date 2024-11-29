@@ -1,5 +1,6 @@
 #pragma once
-
+#ifndef _VECTOR3_H_
+#define _VECTOR3_H_
 #include "runtime/core/math/math.h"
 #include "runtime/core/meta/reflection/reflection_marcos.h"
 
@@ -472,3 +473,4 @@ _FORCE_INLINE_ Vector3 vec3_cross(const Vector3& p_a, const Vector3& p_b) {
   return p_a.cross(p_b);
 }
 }  // namespace lain
+#endif

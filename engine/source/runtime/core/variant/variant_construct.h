@@ -7,10 +7,9 @@
 // #include "core/crypto/crypto_core.h"
 // #include "core/debugger/engine_debugger.h"
 // #include "core/io/compression.h"
-// #include "core/object/class_db.h"
+#include "core/meta/class_db.h"
 #include "core/os/os.h"
 #include "core/templates/local_vector.h"
-#include "variant_internal.h"
 // #include "core/templates/oa_hash_map.h"
 namespace lain {
 

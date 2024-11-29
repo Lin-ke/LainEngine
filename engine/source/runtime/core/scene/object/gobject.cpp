@@ -5,6 +5,7 @@
 #include "core/scene/packed_scene.h"
 #include "core/scene/scene_stringnames.h"
 #include "core/templates/hash_set.h"
+#include "scene/main/viewport.h"
 namespace lain {
 
 GObject* GObject::find_parent(const String& p_pattern) const {
@@ -462,7 +463,7 @@ void GObject::_propagate_enter_tree() {
     data.depth = 1;
   }
   // 如果这是viewport，直接用
-  //data.viewport = dynamic_cast<ViewPort*>(this);
+  data.viewport = dynamic_cast<Viewport*>(this); // 
   if (!data.viewport && data.parent) {
     data.viewport = data.parent->data.viewport;
   }
@@ -881,6 +882,33 @@ void GObject::_propagate_after_exit_tree() {
   data.blocked--;
 
   //emit_signal(SceneStringNames::get_singleton()->tree_exited);
+}
+
+void GObject::_propagate_process_owner(TickObject* p_owner, int p_pause_notification, int p_enabled_notification) {
+  	tickdata.process_owner = p_owner;
+
+	if (p_pause_notification != 0) {
+		notification(p_pause_notification);
+	}
+
+	if (p_enabled_notification != 0) {
+		notification(p_enabled_notification);
+	}
+
+	data.blocked++;
+	for (KeyValue<StringName, GObject *> &K : data.children) {
+		GObject *c = K.value;
+		if (c->tickdata.process_mode == PROCESS_MODE_INHERIT) {
+			c->_propagate_process_owner(p_owner, p_pause_notification, p_enabled_notification);
+		}
+	}
+  for (KeyValue<StringName, Component *> &K : data.components) {
+    Component *c = K.value;
+    if (c->tickdata.process_mode == PROCESS_MODE_INHERIT) {
+      c->_propagate_process_owner(p_owner, p_pause_notification, p_enabled_notification);
+    }
+  }
+	data.blocked--;
 }
 
 void GObject::_clean_up_owner() {

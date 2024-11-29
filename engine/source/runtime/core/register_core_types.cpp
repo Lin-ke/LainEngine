@@ -10,7 +10,11 @@
 #include "core/scene/scene_stringnames.h"
 #include "core/scene/object/gobject.h"
 
+#include "core/meta/class_db.h"
+#include "core/math/triangle_mesh.h"
+#include "core/scene/component/component.h"
 
+#include "core/scene/object/testnode.h"
 namespace lain {
 	static WorkerThreadPool* worker_thread_pool = nullptr;
 	static ResourceUID* resource_uid = nullptr;
@@ -65,6 +69,21 @@ namespace lain {
 		ResourceLoader::add_resource_format_loader(resource_format_loader_image);
 
 		GObject::init_gobj_hrcr();
+
+
+		GDREGISTER_CLASS(Object);
+	GDREGISTER_CLASS(RefCounted);
+	GDREGISTER_CLASS(WeakRef);
+	GDREGISTER_CLASS(Resource);
+	GDREGISTER_CLASS(Image);
+	GDREGISTER_CLASS(TriangleMesh);
+		GDREGISTER_CLASS(TickObject);
+		GDREGISTER_CLASS(GObject);
+		GDREGISTER_CLASS(Component);
+		GDREGISTER_CLASS(TestNode);
+		GDREGISTER_CLASS(TestComponent);
+
+
 
 	}
 }

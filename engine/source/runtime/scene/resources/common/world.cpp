@@ -13,3 +13,11 @@ void World3D::_remove_camera(Camera3D *p_camera) {
 Ref<CameraAttributes> World3D::get_camera_attributes() const {
 	return camera_attributes;
 }
+
+lain::World3D::World3D() {
+	scenario = RS::get_singleton()->scenario_create();
+}
+
+lain::World2D::World2D() {}
+
+lain::World2D::~World2D() {}

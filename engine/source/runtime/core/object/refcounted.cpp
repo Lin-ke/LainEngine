@@ -33,21 +33,23 @@ RefCounted::RefCounted() :Object(true){
 	refcount_init.init();
 }
 
+void WeakRef::_bind_methods() {}
+
 Variant WeakRef::get_ref() const {
-	if (ref.is_null()) {
-		return Variant();
-	}
+  if (ref.is_null()) {
+    return Variant();
+  }
 
-	Object *obj = ObjectDB::get_instance(ref);
-	if (!obj) {
-		return Variant();
-	}
-	RefCounted *r = cast_to<RefCounted>(obj);
-	if (r) {
-		return Ref<RefCounted>(r);
-	}
+  Object* obj = ObjectDB::get_instance(ref);
+  if (!obj) {
+    return Variant();
+  }
+  RefCounted* r = cast_to<RefCounted>(obj);
+  if (r) {
+    return Ref<RefCounted>(r);
+  }
 
-	return obj;
+  return obj;
 }
 
 void WeakRef::set_obj(Object *p_object) {

@@ -1,5 +1,6 @@
 #pragma once
-
+#ifndef __RANDOM_H__
+#define __RANDOM_H__
 #include <algorithm>
 #include <cfloat>
 #include <random>
@@ -98,3 +99,5 @@ namespace lain
 
     using DefaultRNG = RandomNumberGenerator<std::mt19937>;
 } // namespace Chaos
+
+#endif

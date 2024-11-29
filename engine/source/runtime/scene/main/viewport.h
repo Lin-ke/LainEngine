@@ -27,7 +27,7 @@ class ViewportTexture : public Texture2D {
   static void _bind_methods();
 
   virtual void reset_local_to_scene() override;
-
+  
  public:
   void set_viewport_path_in_scene(const GObjectPath& p_path);
   GObjectPath get_viewport_path_in_scene() const;
@@ -40,6 +40,7 @@ class ViewportTexture : public Texture2D {
   virtual bool has_alpha() const override;
 
   virtual Ref<Image> get_image() const override;
+  void setup_local_to_scene();
 
   ViewportTexture();
   ~ViewportTexture();
@@ -198,18 +199,24 @@ class Viewport : public GObject {
 		}
 	} camera_3d_override;
 
+	void _propagate_enter_world_3d(GObject *p_node);
+	void _propagate_exit_world_3d(GObject *p_node);
+
+
  protected:
   void _set_size(const Size2i& p_size, const Size2i& p_size_2d_override, bool p_allocated);
 
 
  public:
+  Viewport();
+  ~Viewport();
   Ref<World3D> get_world_3d() const;
+  void set_world_3d(const Ref<World3D>&);
   Ref<World3D> find_world_3d() const;
   Rect2 get_visible_rect() const;
 	Camera3D *get_camera_3d() const;
 	Vector2 get_camera_coords(const Vector2 &p_viewport_coords) const;
 	Vector2 get_camera_rect_size() const;
-
 };
 }  // namespace lain
 #endif

@@ -3,6 +3,7 @@
 #define IMAGE_LOADER_H
 #include "core/io/resource_loader.h"
 #include "core/io/image.h"
+#include "core/io/file_access.h"
 
 namespace lain {
 

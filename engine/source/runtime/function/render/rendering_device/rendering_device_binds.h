@@ -3,8 +3,6 @@
 // 向上级 (Editor、脚本) 暴露的接口
 // 这个值得学习的是封装了很底层的操作，比如load一个glsl
 // 和 RD::TextureFormat 这种底层的数据结构
-#include "core/io/resource.h"
-#include "core/object/refcounted.h"
 #include "rendering_device.h"
 
 #define RD_SETGET(m_type, m_member)          \

@@ -7,7 +7,8 @@
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/camera_3d_data.h"
 #include "scene/resources/io/resource_format_text.h"
-
+#include "core/scene/component/component.h"
+#include "core/scene/object/testnode.h"
 namespace lain {
 namespace test {
 void draw_tree(GObject* root) {

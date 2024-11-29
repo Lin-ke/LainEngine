@@ -29,9 +29,9 @@ private:
 	// Camera properties.
 	float frustum_focal_length = 35.0; // In millimeters.
 	float frustum_focus_distance = 10.0; // In Meters.
-	real_t frustum_near = 0.05;
-	real_t frustum_far = 4000.0;
-	real_t frustum_fov = 75.0;
+	real_t frustum_near = static_cast<real_t>(0.05);
+	real_t frustum_far = static_cast<real_t>(4000.0);
+	real_t frustum_fov = static_cast<real_t>(75.0);
 	void _update_frustum();
 
 	virtual void _update_auto_exposure() override;

@@ -2,9 +2,8 @@
 #ifndef __STRING_NAME_H__
 #define __STRING_NAME_H__
 #include "core/os/mutex.h"
-#include "core/templates/safe_numeric.h"
-#include "core/object/safe_refcount.h"
 #include "core/string/ustring.h"
+#include "core/object/safe_refcount.h"
 #include "core/meta/reflection/reflection_marcos.h"
 
 #define UNIQUE_NODE_PREFIX "%"

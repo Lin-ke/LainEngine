@@ -248,7 +248,7 @@ void ResourceLoader::_thread_load_function(void* p_userdata) {
   // --
 
   if (!Thread::is_main_thread()) {
-    //set_current_thread_safe_for_nodes(true);
+    set_current_thread_safe_for_nodes(true);
   }
   // @TODO : remapped path;
   Ref<Resource> res = _load(load_task.remapped_path, load_task.remapped_path != load_task.local_path ? load_task.local_path : String(), load_task.type_hint,

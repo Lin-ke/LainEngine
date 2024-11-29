@@ -123,6 +123,7 @@ void GObject3D::_notification(int p_what){
 		} break;
 	}
 }
+void lain::GObject3D::_bind_methods() {}
 // 一路乘上来即可
 Transform3D lain::GObject3D::get_global_transform() const {
 ERR_FAIL_COND_V(!is_inside_tree(), Transform3D());

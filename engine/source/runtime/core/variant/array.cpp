@@ -1,11 +1,9 @@
-#include "core/object/object.h"  // 需要包含在variant_internal之前以保证propertyInfo得到
 // 包含。@todo：修正这个逻辑
 #include "array.h"
-#include "base.h"
-#include "container_type_validate.h"
+#include "core/meta/class_db.h"
 #include "core/math/hashfuncs.h"
-#include "core/variant/variant.h"
-#include "variant_internal.h"
+#include "core/variant/dictionary.h"
+#include "container_type_validate.h"
 namespace lain {
 class ArrayPrivate {
  public:

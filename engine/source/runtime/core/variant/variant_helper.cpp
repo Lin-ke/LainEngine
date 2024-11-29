@@ -1,6 +1,5 @@
 #include "variant_helper.h"
-#include "core/object/object.h"
-#include "variant_internal.h"
+#include "core/meta/class_db.h"
 namespace lain {
 Vector<String> VariantHelper::variant_basic_reflect_types{"String", "int", "float", "bool", "Array"};
 bool VariantHelper::is_serializable_type(const char* type_name) {

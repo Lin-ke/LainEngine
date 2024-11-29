@@ -9,6 +9,9 @@ set_policy("check.auto_ignore_flags", false)
 set_policy("build.warning", true)
 
 add_rules("mode.debug", "mode.release")
+add_cxflags("/wd4305") -- double to float
+add_cxflags("/wd4267") -- size_t to int
+add_cxflags("/wd4244") -- int64, int32 int;
 
 add_requires( "assimp",  "zstd","glfw","imgui",  "zlib", "spdlog","tinyobjloader", "vulkan-headers")
 add_requires("mustache")
@@ -193,15 +196,16 @@ target("Core")
     add_includedirs("engine/thirdparty/misc")
     add_files("engine/thirdparty/misc/*.c")
     add_headerfiles(("engine/thirdparty/misc/*.h"))
+    
+    if is_plat("windows") then
+        add_defines("L_PLATFORM_WINDOWS", {public = true})
+    end
+
     add_includedirs("engine/thirdparty/volk", {public = true})
     add_includedirs("engine/thirdparty/vma", {public = true})
      -- spirv-reflect 
     add_includedirs("engine/thirdparty/spirv-reflect")
-    
     add_includedirs("$(env VULKAN_SDK)/Include", {public = true})
-    if is_plat("windows") then
-        add_defines("L_PLATFORM_WINDOWS", {public = true})
-    end
 
     if is_config("mode", "debug") then
         add_defines("L_DEBUG", "DEBUG_ENABLED", {public = true})
