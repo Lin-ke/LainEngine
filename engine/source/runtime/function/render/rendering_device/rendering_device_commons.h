@@ -262,16 +262,16 @@ namespace lain {
 			TEXTURE_TYPE_MAX,
 		};
 		// msaa usage?
-		enum TextureSamples {
-			TEXTURE_SAMPLES_1 = 1,
-			TEXTURE_SAMPLES_2 = 2,
-			TEXTURE_SAMPLES_4 = 4,
-			TEXTURE_SAMPLES_8 = 8,
-			TEXTURE_SAMPLES_16 = 16,
-			TEXTURE_SAMPLES_32 = 32,
-			TEXTURE_SAMPLES_64 = 64,
-			TEXTURE_SAMPLES_MAX,
-		};
+	enum TextureSamples {
+		TEXTURE_SAMPLES_1,
+		TEXTURE_SAMPLES_2,
+		TEXTURE_SAMPLES_4,
+		TEXTURE_SAMPLES_8,
+		TEXTURE_SAMPLES_16,
+		TEXTURE_SAMPLES_32,
+		TEXTURE_SAMPLES_64,
+		TEXTURE_SAMPLES_MAX,
+	};
 		// VK_IMAGE_USAGE_TRANSFER_SRC_BIT -> TEXTURE_USAGE_CAN_COPY_FROM_BIT, see texture_create
 		// VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR -> TEXTURE_USAGE_VRS_ATTACHMENT_BIT
 		// 可变着色率
@@ -440,7 +440,7 @@ namespace lain {
 		/**** SHADER ****/
 		/****************/
 		
-		ENUM(ShaderStage, Disable) {
+		enum ShaderStage {
 			SHADER_STAGE_VERTEX,
 			SHADER_STAGE_FRAGMENT,
 			SHADER_STAGE_TESSELATION_CONTROL,
@@ -467,22 +467,20 @@ namespace lain {
 
 		static const uint32_t MAX_UNIFORM_SETS = 16;
 		// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkDescriptorType.html
-		enum UniformType {
-			UNIFORM_TYPE_SAMPLER, // For sampling only (sampler GLSL type).
-			UNIFORM_TYPE_SAMPLER_WITH_TEXTURE, // For sampling only, but includes a texture, (samplerXX GLSL type), first a sampler then a texture.
-			UNIFORM_TYPE_TEXTURE, // Only texture, (textureXX GLSL type). // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
-			UNIFORM_TYPE_IMAGE, // Storage image (imageXX GLSL type), for compute mostly. // VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-			UNIFORM_TYPE_TEXTURE_BUFFER, // Buffer texture (or TBO, textureBuffer type).
-			UNIFORM_TYPE_SAMPLER_WITH_TEXTURE_BUFFER, // Buffer texture with a sampler(or TBO, samplerBuffer type).
-			UNIFORM_TYPE_IMAGE_BUFFER, // Texel buffer, (imageBuffer type), for compute mostly.
-			UNIFORM_TYPE_UNIFORM_BUFFER, // Regular uniform buffer (or UBO). 【小型只读数据】
-			UNIFORM_TYPE_DYNAMIC_UNIFORM_BUFFER, // 【dynamic】
-			UNIFORM_TYPE_STORAGE_BUFFER, // Storage buffer ("buffer" qualifier) like UBO, but supports storage, for compute mostly.【不知道大小，或者是可写的数据，整个场景填充到一个缓冲区中】
-			UNIFORM_TYPE_INPUT_ATTACHMENT, // Used for sub-pass read/write, for mobile mostly.
-			UNIFORM_TYPE_ACCELERATION_STRUCTURE, // Used for accelerationStructureEXT 
 
-			UNIFORM_TYPE_MAX
-		};
+	enum UniformType {
+		UNIFORM_TYPE_SAMPLER, // For sampling only (sampler GLSL type).
+		UNIFORM_TYPE_SAMPLER_WITH_TEXTURE, // For sampling only, but includes a texture, (samplerXX GLSL type), first a sampler then a texture.
+		UNIFORM_TYPE_TEXTURE, // Only texture, (textureXX GLSL type).
+		UNIFORM_TYPE_IMAGE, // Storage image (imageXX GLSL type), for compute mostly.
+		UNIFORM_TYPE_TEXTURE_BUFFER, // Buffer texture (or TBO, textureBuffer type).
+		UNIFORM_TYPE_SAMPLER_WITH_TEXTURE_BUFFER, // Buffer texture with a sampler(or TBO, samplerBuffer type).
+		UNIFORM_TYPE_IMAGE_BUFFER, // Texel buffer, (imageBuffer type), for compute mostly.
+		UNIFORM_TYPE_UNIFORM_BUFFER, // Regular uniform buffer (or UBO).
+		UNIFORM_TYPE_STORAGE_BUFFER, // Storage buffer ("buffer" qualifier) like UBO, but supports storage, for compute mostly.
+		UNIFORM_TYPE_INPUT_ATTACHMENT, // Used for sub-pass read/write, for mobile mostly.
+		UNIFORM_TYPE_MAX
+	};
 		// array?
 		/******************/
 		/**** PIPELINE ****/

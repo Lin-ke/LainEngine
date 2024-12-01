@@ -17,11 +17,10 @@ add_requires( "assimp",  "zstd","glfw","imgui",  "zlib", "spdlog","tinyobjloader
 add_requires("mustache")
 target("Spirv-Reflect")
     set_kind("static")
-    set_languages("cxx17")
-    add_files("engine/thirdparty/spirv-reflect/**.cpp")
+    set_languages("c99")
     add_files("engine/thirdparty/spirv-reflect/**.c")
     add_headerfiles("engine/thirdparty/spirv-reflect/**.h")
-    add_includedirs("engine/thirdparty/spirv-reflect/include")
+    add_includedirs("engine/thirdparty/spirv-reflect", {public = true})
     target_end()
 target("mbedtls")
     set_kind("static")
@@ -147,7 +146,7 @@ target("CompileShader")
                 try {
                     function ()
                         -- print("glslangValidator.exe -o " .. v ..".spv -V ".. v)
-                        -- os.run("glslangValidator.exe -o " .. v ..".spv -V ".. v)
+                        os.run("glslangValidator.exe -o " .. v ..".spv -V ".. v)
                     end,
                     catch {
                         function (v) 
@@ -204,7 +203,7 @@ target("Core")
     add_includedirs("engine/thirdparty/volk", {public = true})
     add_includedirs("engine/thirdparty/vma", {public = true})
      -- spirv-reflect 
-    add_includedirs("engine/thirdparty/spirv-reflect")
+    -- add_includedirs("engine/thirdparty/spirv-reflect")
     add_includedirs("$(env VULKAN_SDK)/Include", {public = true})
 
     if is_config("mode", "debug") then
@@ -222,8 +221,7 @@ static_component("Renderer", "Core")
 
     add_includedirs("engine/thirdparty/volk", {public = true})
     add_includedirs("engine/thirdparty/vma", {public = true})
-     -- spirv-reflect 
-    add_includedirs("engine/thirdparty/spirv-reflect")
+    --  spirv-reflect 
     
     add_includedirs("$(env VULKAN_SDK)/Include", {public = true})
     add_linkdirs("$(env VULKAN_SDK)/Lib", {public = true})

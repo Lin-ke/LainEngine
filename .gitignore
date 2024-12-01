@@ -33,7 +33,7 @@ build/
 *.lib
 *.dll
 
-
+vsxmake2022/
 
 # gen shader files
 *.lglsl

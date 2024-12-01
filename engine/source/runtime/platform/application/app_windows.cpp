@@ -20,9 +20,9 @@ int main() {
 		L_PERROR("initialize failed");
 	}
 	// test::test_vulkan_driver();
-	// test::test_shader();
+	test::test_shader();
 	// test::test_scene();
-	os.Run();
+	// os.Run();
 
 }
 #endif // _TEST_

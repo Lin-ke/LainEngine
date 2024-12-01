@@ -412,7 +412,9 @@ void LightStorage::update_light_buffers(RenderDataRD *p_render_data, const Paged
 	RendererRD::TextureStorage *texture_storage = RendererRD::TextureStorage::get_singleton();
 
 
-	// Basis * coord  in basis = new coord in I => Basis^-1 coord in I = coord in basis // 注意I需要是正交的 
+	// Basis * coord  in basis = new coord in I => Basis^-1 coord in I = coord in basis
+	// 因此， inverse_transform 获得了在相机空间中的坐标
+	//inverse_transform * light_transform 是 光源空间中的坐标 变换到世界空间 再到相机空间的坐标
 	Transform3D inverse_transform = p_camera_transform.affine_inverse();
 
 	r_directional_light_count = 0;
@@ -792,7 +794,7 @@ void LightStorage::update_light_buffers(RenderDataRD *p_render_data, const Paged
 			if (type == RS::LIGHT_OMNI) {
 				Transform3D proj = (inverse_transform * light_transform).inverse();
 
-				RendererRD::MaterialStorage::store_transform(proj, light_data.shadow_matrix);
+				RendererRD::MaterialStorage::store_transform(proj, light_data.shadow_matrix); // 相机坐标到光源坐标
 
 				if (size > 0.0 && light_data.soft_shadow_scale > 0.0) {
 					// Only enable PCSS-like soft shadows if blurring is enabled.

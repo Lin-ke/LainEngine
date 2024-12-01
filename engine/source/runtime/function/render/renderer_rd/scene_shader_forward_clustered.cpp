@@ -162,7 +162,7 @@ void SceneShaderForwardClustered::ShaderData::set_code(const String &p_code) {
 	uses_normal |= uses_normal_map;
 	uses_tangent |= uses_normal_map;
 
-#if 0
+#if 1
 	print_line("**compiling shader:");
 	print_line("**defines:\n");
 	for (int i = 0; i < gen_code.defines.size(); i++) {
@@ -299,6 +299,7 @@ void SceneShaderForwardClustered::ShaderData::set_code(const String &p_code) {
 
 			for (int k = 0; k < PIPELINE_VERSION_MAX; k++) {
 				ShaderVersion shader_version;
+				// 这个 shader version table 和 前面的 variant defines 是一一对应的
 				static const ShaderVersion shader_version_table[PIPELINE_VERSION_MAX] = {
 					SHADER_VERSION_DEPTH_PASS,
 					SHADER_VERSION_DEPTH_PASS_DP,
@@ -493,11 +494,11 @@ SceneShaderForwardClustered::~SceneShaderForwardClustered() {
 	material_storage->material_free(default_material);
 	material_storage->material_free(debug_shadow_splits_material);
 }
-
+// 传入的：general defines
 void SceneShaderForwardClustered::init(const String p_defines) {
 	RendererRD::MaterialStorage *material_storage = RendererRD::MaterialStorage::get_singleton();
 
-	{
+	{ // 在这里进行了变体和组的定义
 		Vector<ShaderRD::VariantDefine> shader_versions;
 		shader_versions.push_back(ShaderRD::VariantDefine(SHADER_GROUP_BASE, "\n#define MODE_RENDER_DEPTH\n", true)); // SHADER_VERSION_DEPTH_PASS
 		shader_versions.push_back(ShaderRD::VariantDefine(SHADER_GROUP_BASE, "\n#define MODE_RENDER_DEPTH\n#define MODE_DUAL_PARABOLOID\n", true)); // SHADER_VERSION_DEPTH_PASS_DP
@@ -516,7 +517,7 @@ void SceneShaderForwardClustered::init(const String p_defines) {
 			"\n#define MOTION_VECTORS\n", // SHADER_COLOR_PASS_FLAG_MOTION_VECTORS
 		};
 
-		for (int i = 0; i < SHADER_COLOR_PASS_FLAG_COUNT; i++) {
+		for (int i = 0; i < SHADER_COLOR_PASS_FLAG_COUNT; i++) { // color pass flag 所有可能的组合
 			String version = "";
 			for (int j = 0; (1 << j) < SHADER_COLOR_PASS_FLAG_COUNT; j += 1) {
 				if ((1 << j) & i) {
@@ -535,10 +536,9 @@ void SceneShaderForwardClustered::init(const String p_defines) {
 			} else if (multiview_group) {
 				group = SHADER_GROUP_MULTIVIEW;
 			}
-
+			
 			shader_versions.push_back(ShaderRD::VariantDefine(group, version, false));
 		}
-	
 		shader.initialize(shader_versions, p_defines);
 
 		if (RendererCompositorRD::get_singleton()->is_xr_enabled()) {

@@ -561,7 +561,7 @@ WorkerThreadPool::GroupID WorkerThreadPool::add_group_task(const Callable &p_act
 WorkerThreadPool::GroupID WorkerThreadPool::_add_group_task(const Callable &p_callable, void (*p_func)(void *, uint32_t), void *p_userdata, BaseTemplateUserdata *p_template_userdata, int p_elements, int p_tasks, bool p_high_priority, const String &p_description) {
 	ERR_FAIL_COND_V(p_elements < 0, INVALID_TASK_ID);
 	if (p_tasks < 0) {
-		p_tasks = MIN(p_elements, threads.size());
+		p_tasks = MAX(1u, threads.size());
 	}
 
 	task_mutex.lock();

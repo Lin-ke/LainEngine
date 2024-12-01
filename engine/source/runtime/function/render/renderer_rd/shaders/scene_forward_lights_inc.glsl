@@ -420,16 +420,18 @@ float light_process_omni_shadow(uint idx, vec3 vertex, vec3 normal) {
 		vec4 base_uv_rect = omni_lights.data[idx].atlas_rect;
 		base_uv_rect.xy += texel_size;
 		base_uv_rect.zw -= texel_size * 2.0;
+		// 稍微往里一点？ 那个pixelsize是很小的(1/size)这个级别
 
 		// Omni lights use direction.xy to store to store the offset between the two paraboloid regions
 		vec2 flip_offset = omni_lights.data[idx].direction.xy;
-
+		// 在光源空间的坐标
 		vec3 local_vert = (omni_lights.data[idx].shadow_matrix * vec4(vertex, 1.0)).xyz;
 
 		float shadow_len = length(local_vert); //need to remember shadow len from here
 		vec3 shadow_dir = normalize(local_vert);
 
 		vec3 local_normal = normalize(mat3(omni_lights.data[idx].shadow_matrix) * normal);
+		// 法线方向，法线与光线方向越接近偏移越小
 		vec3 normal_bias = local_normal * omni_lights.data[idx].shadow_normal_bias * (1.0 - abs(dot(local_normal, shadow_dir)));
 
 		float shadow;
@@ -455,11 +457,12 @@ float light_process_omni_shadow(uint idx, vec3 vertex, vec3 normal) {
 			vec3 tangent = normalize(cross(v0, basis_normal));
 			vec3 bitangent = normalize(cross(tangent, basis_normal));
 			float z_norm = 1.0 - shadow_len * omni_lights.data[idx].inv_radius;
-
+			// 这个有道理，相当于采样的范围变大了
 			tangent *= omni_lights.data[idx].soft_shadow_size * omni_lights.data[idx].soft_shadow_scale;
 			bitangent *= omni_lights.data[idx].soft_shadow_size * omni_lights.data[idx].soft_shadow_scale;
 
 			for (uint i = 0; i < sc_penumbra_shadow_samples; i++) {
+				// 采样位置  可以在循环外计算
 				vec2 disk = disk_rotation * scene_data_block.data.penumbra_shadow_kernel[i].xy;
 
 				vec3 pos = local_vert + tangent * disk.x + bitangent * disk.y;
@@ -472,14 +475,14 @@ float light_process_omni_shadow(uint idx, vec3 vertex, vec3 normal) {
 					uv_rect.xy += flip_offset;
 				}
 
-				pos.z = 1.0 + abs(pos.z);
-				pos.xy /= pos.z;
+				pos.z = 1.0 + abs(pos.z); // 
+				pos.xy /= pos.z; 
 
-				pos.xy = pos.xy * 0.5 + 0.5;
+				pos.xy = pos.xy * 0.5 + 0.5; // [-1, 1] -> [0, 1]
 				pos.xy = uv_rect.xy + pos.xy * uv_rect.zw;
 
 				float d = textureLod(sampler2D(shadow_atlas, SAMPLER_LINEAR_CLAMP), pos.xy, 0.0).r;
-				if (d > z_norm) {
+				if (d > z_norm) { 
 					blocker_average += d;
 					blocker_count += 1.0;
 				}

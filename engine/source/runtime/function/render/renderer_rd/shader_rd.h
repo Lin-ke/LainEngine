@@ -15,6 +15,7 @@
 // 包含了所有的variant，其 variant_data 当然与variant_define大小一样
 // 每次compile version的时候会 同时 compile所有的 variant
 // version 中的 uniforms等等信息 会 和 variant.text（也就是一些defines，替代 .glsl里的version_defines）一起加入，编译成为shader文件，存储在 verision中
+// version 是一个实际的shader资源， version.set_code 的时候 会编译的shader 的所有变体
 namespace lain{
 class ShaderRD {
 public:
@@ -35,7 +36,7 @@ private:
 	CharString general_defines;
 	Vector<VariantDefine> variant_defines; // 该变体的定义区域
 	Vector<bool> variants_enabled;
-	HashMap<int, LocalVector<int>> group_to_variant_map; // 这一组里所有的变体（映射到index of variant_defines）
+	HashMap<int, LocalVector<int>> group_to_variant_map; // 这一组里所有的变体（映射到index of variant_defines）, 看 initialize
 	Vector<bool> group_enabled;
 
 	struct Version {

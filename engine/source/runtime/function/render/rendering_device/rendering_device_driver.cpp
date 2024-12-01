@@ -104,9 +104,8 @@ Error RenderingDeviceDriver::_reflect_spirv(VectorView<ShaderStageSPIRVData> p_s
 						need_array_dimensions = true;
 					} break;
 					case SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: {
-						uniform.type = UNIFORM_TYPE_ACCELERATION_STRUCTURE;
-						need_array_dimensions = false;
-						continue;
+						ERR_PRINT("Acceleration structure not supported.");
+							continue;
 					} break;
 					}
 					// 多维数组

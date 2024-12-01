@@ -156,7 +156,6 @@ void ShaderRD::_compile_variant(uint32_t p_variant, const CompileData *p_data) {
 	String current_source;
 	RD::ShaderStage current_stage = RD::SHADER_STAGE_VERTEX;
 	bool build_ok = true;
-
 	if (!is_compute) {
 		//vertex stage
 
@@ -173,6 +172,7 @@ void ShaderRD::_compile_variant(uint32_t p_variant, const CompileData *p_data) {
 			stage.shader_stage = RD::SHADER_STAGE_VERTEX;
 			stages.push_back(stage);
 		}
+		FileAccess::open("res://vertex.vert", FileAccess::WRITE_READ)->store_string(current_source);
 	}
 
 	if (!is_compute && build_ok) {
@@ -210,6 +210,7 @@ void ShaderRD::_compile_variant(uint32_t p_variant, const CompileData *p_data) {
 			stage.shader_stage = RD::SHADER_STAGE_COMPUTE;
 			stages.push_back(stage);
 		}
+		FileAccess::open("res://compute.comp", FileAccess::WRITE_READ)->store_string(current_source);
 	}
 
 	if (!build_ok) {
@@ -338,7 +339,6 @@ void ShaderRD::_compile_version(Version *p_version, int p_group) {
 	CompileData compile_data;
 	compile_data.version = p_version;
 	compile_data.group = p_group;
-
 #if 1
 	// 一次编译group里所有的变体
 	WorkerThreadPool::GroupID group_task = WorkerThreadPool::get_singleton()->add_template_group_task(this, &ShaderRD::_compile_variant, &compile_data, group_to_variant_map[p_group].size(), -1, true, SNAME("ShaderCompilation"));
@@ -481,18 +481,18 @@ void ShaderRD::initialize(const Vector<VariantDefine> &p_variant_defines, const 
 		variant_defines.push_back(p_variant_defines[i]);
 		variants_enabled.push_back(true);
 
-		// Map variant array index to group id, so we can iterate over groups later.
-		if (!group_to_variant_map.has(p_variant_defines[i].group)) {
-			group_to_variant_map.insert(p_variant_defines[i].group, LocalVector<int>{});
+		int group = p_variant_defines[i].group;
+		if(!group_to_variant_map.has(group)){
+			group_to_variant_map.insert(group, LocalVector<int>{});
 		}
-		group_to_variant_map[p_variant_defines[i].group].push_back(i);
+		// Map variant array index to group id, so we can iterate over groups later.
+		group_to_variant_map[group].push_back(i);
 
 		// Track max size.
-		if (p_variant_defines[i].group > max_group_id) {
-			max_group_id = p_variant_defines[i].group;
+		if(group > max_group_id){
+			max_group_id = group;
 		}
 	}
-
 	// Set all to groups to false, then enable those that should be default.
 	group_enabled.resize_zeroed(max_group_id + 1);
 	bool *enabled_ptr = group_enabled.ptrw();

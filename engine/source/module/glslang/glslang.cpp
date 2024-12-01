@@ -135,12 +135,16 @@ static Vector<uint8_t> _compile_shader_glsl(RenderingDevice::ShaderStage p_stage
 
   if (Engine::GetSingleton()->is_generate_spirv_debug_info_enabled()) {
     spvOptions.generateDebugInfo = true;
-    // spvOptions.emitNonSemanticShaderDebugInfo = true;
-    // spvOptions.emitNonSemanticShaderDebugSource = true;
+    spvOptions.emitNonSemanticShaderDebugInfo = true;
+    spvOptions.emitNonSemanticShaderDebugSource = true;
   }
 
   glslang::GlslangToSpv(*program.getIntermediate(stages[p_stage]), SpirV, &logger, &spvOptions);
 
+  std::string spv_msg = logger.getAllMessages();
+  if(spv_msg.size() > 0) {
+    L_PRINT("GLSLANG: SPIR-V log:\n" + String(spv_msg.c_str()));
+  }
   ret.resize(SpirV.size() * sizeof(uint32_t));
   {
     uint8_t* w = ret.ptrw();

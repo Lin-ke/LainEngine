@@ -4673,7 +4673,7 @@ RDD::ShaderID RDDV::shader_create_from_bytecode(const Vector<uint8_t>& p_shader_
 
     VkShaderModule vk_module = VK_NULL_HANDLE;
     VkResult res = vkCreateShaderModule(vk_device, &shader_module_create_info, nullptr, &vk_module);
-    if (res) {
+    if (res) { // 如果pCode不是正确的spirv代码这里也不会返回Error（属于UB）
       error_text = "Error (" + itos(res) + ") creating shader module for stage: " + String(SHADER_STAGE_NAMES[r_shader_desc.stages[i]]);
       break;
     }

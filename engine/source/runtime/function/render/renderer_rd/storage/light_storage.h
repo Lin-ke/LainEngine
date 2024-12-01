@@ -99,7 +99,7 @@ class LightStorage : public RendererLightStorage {
 
   struct LightData {
     float position[3];
-    float inv_radius;
+    float inv_radius; // 1/radius
     float direction[3];  // in omni, x and y are used for dual paraboloid offset
     float size;
 
@@ -111,8 +111,9 @@ class LightStorage : public RendererLightStorage {
     float specular_amount;
     float shadow_opacity;
 
+    // shadow atlas的位置和大小
     float atlas_rect[4];  // in omni, used for atlas uv, in spot, used for projector uv
-    float shadow_matrix[16];
+    float shadow_matrix[16]; // 相机空间坐标到光源空间坐标
     float shadow_bias;
     float shadow_normal_bias;
     float transmittance_bias;

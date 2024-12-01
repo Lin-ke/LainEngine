@@ -115,6 +115,10 @@ public:
 		bool valid = false;
 		RID version;
 		uint64_t vertex_input_mask = 0;
+		// pipeline 在 shaderdata->setcode的时候做好
+		// 包括：cull的变体，primitive的变体，version的变体
+		// version的变体即在 init()的 shader_versions 中定义好，和
+		// enum ShaderVersion 一一对应
 		RendererRD::PipelineCacheRD pipelines[CULL_VARIANT_MAX][RS::PRIMITIVE_MAX][PIPELINE_VERSION_MAX];
 		RendererRD::PipelineCacheRD color_pipelines[CULL_VARIANT_MAX][RS::PRIMITIVE_MAX][PIPELINE_COLOR_PASS_FLAG_COUNT];
 

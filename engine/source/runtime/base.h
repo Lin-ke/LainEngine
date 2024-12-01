@@ -133,7 +133,6 @@ void  L_CORE_LOG(const LogLevel level = LOGINFO, const Types&... args)
 #define L_CORE_ERROR(...) L_CORE_LOG(LOGERROR, __FUNCTION__, "in line:", __LINE__, __VA_ARGS__);
 
 
-
 # define L_JSON(x) L_PRINT("json of ",#x,lain::Serializer::write(x).dump());
 # define L_CORE_JSON(x) L_CORE_PRINT("json of " + std::string(#x) + " " + (lain::Serializer::write(x).dump()));
 
