@@ -381,7 +381,9 @@ Error RenderingContextDriverVulkan::_find_validation_layers(TightLocalVector<con
 
 		// Alternative (deprecated, removed in SDK 1.1.121.1) set of validation layers.
 		const std::initializer_list<const char*> google = { "VK_LAYER_GOOGLE_threading", "VK_LAYER_LUNARG_parameter_validation", "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_core_validation", "VK_LAYER_GOOGLE_unique_objects" };
-
+		for (int i = 0; i< layer_properties.size() ;i++){
+			L_PRINT("layer_name : " + String(layer_properties[i].layerName));
+		}
 		// Verify all the layers of the list are present.
 		for (const std::initializer_list<const char*>& list : { preferred, lunarg, google }) {
 			bool layers_found = false;
