@@ -219,6 +219,21 @@ void RendererViewport::viewport_attach_to_screen(RID p_viewport, const Rect2& p_
     viewport->viewport_to_screen = WindowSystem::INVALID_WINDOW_ID;
   }
 }
+void RendererViewport::viewport_set_active(RID p_viewport, bool p_active) {
+	Viewport *viewport = viewport_owner.get_or_null(p_viewport);
+	ERR_FAIL_NULL(viewport);
+
+	if (p_active) {
+		ERR_FAIL_COND_MSG(active_viewports.has(viewport), "Can't make active a Viewport that is already active.");
+		viewport->occlusion_buffer_dirty = true;
+		active_viewports.push_back(viewport);
+	} else {
+		active_viewports.erase(viewport);
+	}
+
+	sorted_active_viewports_dirty = true;
+}
+
 void RendererViewport::viewport_set_parent_viewport(RID p_viewport, RID p_parent_viewport) {
   Viewport* viewport = viewport_owner.get_or_null(p_viewport);
   ERR_FAIL_NULL(viewport);
@@ -290,7 +305,7 @@ void RendererViewport::viewport_set_scenario(RID p_viewport, RID p_scenario) {
   viewport->scenario = p_scenario;
   if (viewport->use_occlusion_culling) {
     // @todo
-    // RendererSceneOcclusionCull::get_singleton()->buffer_set_scenario(p_viewport, p_scenario);
+    RendererSceneOcclusionCull::get_singleton()->buffer_set_scenario(p_viewport, p_scenario);
   }
 }
 
@@ -455,6 +470,40 @@ void RendererViewport::draw_viewports(bool p_swap_buffers) {
 		}
 	}
 
+}
+
+bool lain::RendererViewport::free(RID p_rid) {
+if (viewport_owner.owns(p_rid)) {
+		Viewport *viewport = viewport_owner.get_or_null(p_rid);
+
+		RSG::texture_storage->render_target_free(viewport->render_target);
+		RSG::light_storage->shadow_atlas_free(viewport->shadow_atlas);
+		if (viewport->render_buffers.is_valid()) {
+			viewport->render_buffers.unref();
+		}
+
+		// while (viewport->canvas_map.begin()) {
+		// 	viewport_remove_canvas(p_rid, viewport->canvas_map.begin()->key);
+		// }
+
+		viewport_set_scenario(p_rid, RID());
+		active_viewports.erase(viewport);
+		sorted_active_viewports_dirty = true;
+
+		if (viewport->use_occlusion_culling) {
+			// RendererSceneOcclusionCull::get_singleton()->remove_buffer(p_rid);
+		}
+
+		if (_viewport_requires_motion_vectors(viewport)) {
+			num_viewports_with_motion_vectors--;
+		}
+
+		viewport_owner.free(p_rid);
+
+		return true;
+	}
+
+	return false;
 }
 
 int lain::RendererViewport::get_total_objects_drawn() const {

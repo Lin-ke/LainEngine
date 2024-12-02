@@ -742,6 +742,112 @@ void RendererSceneCull::instance_set_visibility_parent(RID p_instance, RID p_par
   _update_instance_visibility_dependencies(instance);
 }
 
+
+void RendererSceneCull::instance_geometry_set_material_override(RID p_instance, RID p_material) {
+	Instance *instance = instance_owner.get_or_null(p_instance);
+	ERR_FAIL_NULL(instance);
+
+	instance->material_override = p_material;
+	_instance_queue_update(instance, false, true);
+
+	if ((1 << instance->base_type) & RS::INSTANCE_GEOMETRY_MASK && instance->base_data) {
+		InstanceGeometryData *geom = static_cast<InstanceGeometryData *>(instance->base_data);
+		ERR_FAIL_NULL(geom->geometry_instance);
+		geom->geometry_instance->set_material_override(p_material);
+	}
+}
+
+void RendererSceneCull::instance_geometry_set_material_overlay(RID p_instance, RID p_material) {
+	Instance *instance = instance_owner.get_or_null(p_instance);
+	ERR_FAIL_NULL(instance);
+
+	instance->material_overlay = p_material;
+	_instance_queue_update(instance, false, true);
+
+	if ((1 << instance->base_type) & RS::INSTANCE_GEOMETRY_MASK && instance->base_data) {
+		InstanceGeometryData *geom = static_cast<InstanceGeometryData *>(instance->base_data);
+		ERR_FAIL_NULL(geom->geometry_instance);
+		geom->geometry_instance->set_material_overlay(p_material);
+	}
+}
+
+
+void RendererSceneCull::instance_geometry_set_lightmap(RID p_instance, RID p_lightmap, const Rect2 &p_lightmap_uv_scale, int p_slice_index) {
+	Instance *instance = instance_owner.get_or_null(p_instance);
+	ERR_FAIL_NULL(instance);
+
+	if (instance->lightmap) {
+		InstanceLightmapData *lightmap_data = static_cast<InstanceLightmapData *>(((Instance *)instance->lightmap)->base_data);
+		lightmap_data->users.erase(instance);
+		instance->lightmap = nullptr;
+	}
+
+	Instance *lightmap_instance = instance_owner.get_or_null(p_lightmap);
+
+	instance->lightmap = lightmap_instance;
+	instance->lightmap_uv_scale = p_lightmap_uv_scale;
+	instance->lightmap_slice_index = p_slice_index;
+
+	RID lightmap_instance_rid;
+
+	if (lightmap_instance) {
+		InstanceLightmapData *lightmap_data = static_cast<InstanceLightmapData *>(lightmap_instance->base_data);
+		lightmap_data->users.insert(instance);
+		lightmap_instance_rid = lightmap_data->instance;
+	}
+
+	if ((1 << instance->base_type) & RS::INSTANCE_GEOMETRY_MASK && instance->base_data) {
+		InstanceGeometryData *geom = static_cast<InstanceGeometryData *>(instance->base_data);
+		ERR_FAIL_NULL(geom->geometry_instance);
+		geom->geometry_instance->set_use_lightmap(lightmap_instance_rid, p_lightmap_uv_scale, p_slice_index);
+	}
+}
+
+void RendererSceneCull::instance_geometry_set_lod_bias(RID p_instance, float p_lod_bias) {
+	Instance *instance = instance_owner.get_or_null(p_instance);
+	ERR_FAIL_NULL(instance);
+
+	instance->lod_bias = p_lod_bias;
+
+	if ((1 << instance->base_type) & RS::INSTANCE_GEOMETRY_MASK && instance->base_data) {
+		InstanceGeometryData *geom = static_cast<InstanceGeometryData *>(instance->base_data);
+		ERR_FAIL_NULL(geom->geometry_instance);
+		geom->geometry_instance->set_lod_bias(p_lod_bias);
+	}
+}
+
+void RendererSceneCull::instance_geometry_set_cast_shadows_setting(RID p_instance, RS::ShadowCastingSetting p_shadow_casting_setting) {
+	Instance *instance = instance_owner.get_or_null(p_instance);
+	ERR_FAIL_NULL(instance);
+
+	instance->cast_shadows = p_shadow_casting_setting;
+
+	if (instance->scenario && instance->array_index >= 0) {
+		InstanceData &idata = instance->scenario->instance_data[instance->array_index];
+
+		if (instance->cast_shadows != RS::SHADOW_CASTING_SETTING_OFF) {
+			idata.flags |= InstanceData::FLAG_CAST_SHADOWS;
+		} else {
+			idata.flags &= ~uint32_t(InstanceData::FLAG_CAST_SHADOWS);
+		}
+
+		if (instance->cast_shadows == RS::SHADOW_CASTING_SETTING_SHADOWS_ONLY) {
+			idata.flags |= InstanceData::FLAG_CAST_SHADOWS_ONLY;
+		} else {
+			idata.flags &= ~uint32_t(InstanceData::FLAG_CAST_SHADOWS_ONLY);
+		}
+	}
+
+	if ((1 << instance->base_type) & RS::INSTANCE_GEOMETRY_MASK && instance->base_data) {
+		InstanceGeometryData *geom = static_cast<InstanceGeometryData *>(instance->base_data);
+		ERR_FAIL_NULL(geom->geometry_instance);
+
+		geom->geometry_instance->set_cast_double_sided_shadows(instance->cast_shadows == RS::SHADOW_CASTING_SETTING_DOUBLE_SIDED);
+	}
+
+	_instance_queue_update(instance, false, true);
+}
+
 bool RendererSceneCull::_update_instance_visibility_depth(Instance* p_instance) {
   bool cycle_detected = false;
   HashSet<Instance*> traversed_nodes;
@@ -1367,6 +1473,63 @@ void RendererSceneCull::_instance_unpair(Instance *p_A, Instance *p_B) {
 	// 	RSG::particles_storage->particles_remove_collision(A->base, collision->instance);
 	// }
 }
+bool RendererSceneCull::free(RID p_rid) {
+	if (p_rid.is_null()) {
+		return true;
+	}
+
+	if (scene_render->free(p_rid)) {
+		return true;
+	}
+
+	if (camera_owner.owns(p_rid)) {
+		camera_owner.free(p_rid);
+
+	} else if (scenario_owner.owns(p_rid)) {
+		Scenario *scenario = scenario_owner.get_or_null(p_rid);
+
+		while (scenario->instances.first()) {
+			instance_set_scenario(scenario->instances.first()->self()->self, RID());
+		}
+		scenario->instance_aabbs.reset();
+		scenario->instance_data.reset();
+		scenario->instance_visibility.reset();
+
+		RSG::light_storage->shadow_atlas_free(scenario->reflection_probe_shadow_atlas);
+		RSG::light_storage->reflection_atlas_free(scenario->reflection_atlas);
+		scenario_owner.free(p_rid);
+		RendererSceneOcclusionCull::get_singleton()->remove_scenario(p_rid);
+
+	} else if (RendererSceneOcclusionCull::get_singleton() && RendererSceneOcclusionCull::get_singleton()->is_occluder(p_rid)) {
+		RendererSceneOcclusionCull::get_singleton()->free_occluder(p_rid);
+	} else if (instance_owner.owns(p_rid)) {
+		// delete the instance
+
+		update_dirty_instances();
+
+		Instance *instance = instance_owner.get_or_null(p_rid);
+
+		instance_geometry_set_lightmap(p_rid, RID(), Rect2(), 0);
+		instance_set_scenario(p_rid, RID());
+		instance_set_base(p_rid, RID());
+		instance_geometry_set_material_override(p_rid, RID());
+		instance_geometry_set_material_overlay(p_rid, RID());
+		instance_attach_skeleton(p_rid, RID());
+
+		if (instance->instance_allocated_shader_uniforms) {
+			//free the used shader parameters
+			RSG::material_storage->global_shader_parameters_instance_free(instance->self);
+		}
+		update_dirty_instances(); //in case something changed this
+
+		instance_owner.free(p_rid);
+	} else {
+		return false;
+	}
+
+	return true;
+}
+
 
 /* HALTON SEQUENCE */
 

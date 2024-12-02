@@ -113,7 +113,7 @@ public:
 		};
 
 		bool valid = false;
-		RID version;
+		RID version; // shaderRD::Version
 		uint64_t vertex_input_mask = 0;
 		// pipeline 在 shaderdata->setcode的时候做好
 		// 包括：cull的变体，primitive的变体，version的变体

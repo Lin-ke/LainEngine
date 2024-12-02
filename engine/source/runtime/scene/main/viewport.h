@@ -175,6 +175,9 @@ class Viewport : public GObject {
 	Camera3D *camera_3d = nullptr;
 	HashSet<Camera3D *> camera_3d_set;
 
+	int positional_shadow_atlas_size = 2048;
+
+
 	void _camera_3d_transform_changed_notify();
 	void _camera_3d_set(Camera3D *p_camera);
 	bool _camera_3d_add(Camera3D *p_camera); //true if first
@@ -202,9 +205,9 @@ class Viewport : public GObject {
 	void _propagate_enter_world_3d(GObject *p_node);
 	void _propagate_exit_world_3d(GObject *p_node);
 
-
  protected:
   void _set_size(const Size2i& p_size, const Size2i& p_size_2d_override, bool p_allocated);
+  void _notification(int p_what);
 
 
  public:
@@ -217,6 +220,8 @@ class Viewport : public GObject {
 	Camera3D *get_camera_3d() const;
 	Vector2 get_camera_coords(const Vector2 &p_viewport_coords) const;
 	Vector2 get_camera_rect_size() const;
+  RID get_viewport_rid() const;
+  void set_positional_shadow_atlas_size(int p_size);
 };
 }  // namespace lain
 #endif

@@ -27,7 +27,9 @@ namespace lain {
 		String name;
 		String path_cache;
 		String scene_unique_id;
+
 		//SelfList<Resource> remapped_list;
+		bool local_to_scene = false;
 	public:
 		void SetName(const String& p_name);
 		String GetName() const;
@@ -58,11 +60,13 @@ namespace lain {
 		
 		_FORCE_INLINE_ bool IsBuiltIn() const { return path_cache.is_empty() || path_cache.contains("::") || path_cache.begins_with("local://"); }
 		~Resource();
+		void set_local_to_scene(bool p_enable);
 	protected:
 		void _set_path(const String& p_path) { set_path(p_path, false); }
 		void _take_over_path(const String& p_path) { set_path(p_path, true); }
 		virtual void reset_local_to_scene() {}
 		virtual GObject* get_local_scene(){return nullptr;}
+
 	private:
 
 	};

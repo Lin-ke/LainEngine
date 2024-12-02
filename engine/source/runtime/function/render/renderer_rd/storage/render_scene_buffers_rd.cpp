@@ -10,6 +10,7 @@ void RenderSceneBuffersRD::configure(const RenderSceneBuffersConfiguration *p_co
 	target_size = p_config->get_target_size();
 	internal_size = p_config->get_internal_size();
 	view_count = p_config->get_view_count();
+	L_PRINT(texture_storage->owns_texture(render_target))
 
 	scaling_3d_mode = p_config->get_scaling_3d_mode();
 	msaa_3d = p_config->get_msaa_3d();
@@ -277,7 +278,7 @@ RID RenderSceneBuffersRD::create_texture(const StringName& p_context, const Stri
 
 	return create_texture_from_format(p_context, p_texture_name, tf, RD::TextureView(), p_unique);
 }
-
+// base_data_format 是 set进来的
 RID RenderSceneBuffersRD::create_texture_from_format(const StringName &p_context, const StringName &p_texture_name, const RD::TextureFormat &p_texture_format, RD::TextureView p_view, bool p_unique) {
 	// TODO p_unique, if p_unique is true, this is a texture that can be shared. This will be implemented later as an optimization.
 
@@ -293,10 +294,11 @@ RID RenderSceneBuffersRD::create_texture_from_format(const StringName &p_context
 	named_texture.format = p_texture_format;
 	named_texture.is_unique = p_unique;
 	named_texture.texture = RD::get_singleton()->texture_create(p_texture_format, p_view);
-
-  RD::get_singleton()->set_resource_name(named_texture.texture, String("RenderBuffer "+String(p_context)+"/"+String(p_texture_name)));
-	update_sizes(named_texture);
-
+	// 可能失败
+	if(named_texture.texture.is_null()) {
+		RD::get_singleton()->set_resource_name(named_texture.texture, String("RenderBuffer "+String(p_context)+"/"+String(p_texture_name)));
+		update_sizes(named_texture);
+	}
 	// The rest is lazy created..
 
 	return named_texture.texture;

@@ -166,7 +166,7 @@ class GObject : public TickObject {
   L_INLINE GObject* get_owner() { return data.owner; }
   L_INLINE bool is_ready() const { return !data.ready_first; }
   GObjectPath get_path_to(const GObject*, bool use_unique_path = false) const;
-  void add_to_group(const StringName&, bool);
+  void add_to_group(const StringName&, bool p_persistent = false);
   int get_child_count(bool p_include_internal = true) const;
   void move_child(GObject* p_child, int p_index);
 

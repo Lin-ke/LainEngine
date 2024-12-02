@@ -36,22 +36,21 @@ void RenderingSystemDefault::sync() {
 	}
 }
 void RenderingSystemDefault::_free(RID p_rid) {
-// 	if (unlikely(p_rid.is_null())) {
-// 		return;
-// 	}
-// 	if (RSG::utilities->free(p_rid)) {
-// 		return;
-// 	}
-// 	if (RSG::canvas->free(p_rid)) {
-// 		return;
-// 	}
-// 	if (RSG::viewport->free(p_rid)) {
-// 		return;
-// 	}
-// 	if (RSG::scene->free(p_rid)) {
-// 		return;
-// 	}
-// }
+	if (unlikely(p_rid.is_null())) {
+		return;
+	}
+	if (RSG::utilities->free(p_rid)) {
+		return;
+	}
+	// if (RSG::canvas->free(p_rid)) {
+	// 	return;
+	// }
+	if (RSG::viewport->free(p_rid)) {
+		return;
+	}
+	if (RSG::scene->free(p_rid)) {
+		return;
+	}
 }
 
 void lain::RenderingSystemDefault::_finish() {
@@ -94,8 +93,8 @@ void lain::RenderingSystemDefault::_init() {
 	RSG::mesh_storage = RSG::rasterizer->get_mesh_storage();
 	RSG::particles_storage = RSG::rasterizer->get_particles_storage();
 	RSG::texture_storage = RSG::rasterizer->get_texture_storage();
-	// RSG::gi = RSG::rasterizer->get_gi();
-	// RSG::fog = RSG::rasterizer->get_fog();
+	RSG::gi = RSG::rasterizer->get_gi();
+	RSG::fog = RSG::rasterizer->get_fog();
 	// RSG::canvas_render = RSG::rasterizer->get_canvas();
 	sr->set_scene_render(RSG::rasterizer->get_scene());
 }

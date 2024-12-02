@@ -388,6 +388,8 @@ class RendererSceneCull : public RenderingMethod {
 
     float extra_margin = 0.0;  // extra visibility margin
 
+		float lod_bias;
+
     bool ignore_occlusion_culling = false;
     bool ignore_all_culling = false;
 
@@ -411,6 +413,12 @@ class RendererSceneCull : public RenderingMethod {
     ObjectID object_id;
 		SelfList<InstancePair>::List pairs; // 记录与其他instance的pair， 例如 light->geometry和geometry->light
     // 需要在unpair的时候从这些list中删除， 此外还要再BVH中删除
+    /* light map */
+		Instance *lightmap = nullptr;
+		Rect2 lightmap_uv_scale;
+		int lightmap_slice_index;
+		uint32_t lightmap_cull_index;
+		Vector<Color> lightmap_sh; //spherical harmonic
 
     HashMap<StringName, InstanceShaderParameter> instance_shader_uniforms;
     bool instance_allocated_shader_uniforms = false;
@@ -546,7 +554,13 @@ class RendererSceneCull : public RenderingMethod {
   };
   SelfList<InstanceVoxelGIData>::List voxel_gi_update_list;
 
-  struct InstanceLightmapData : public InstanceBaseData {};
+  struct InstanceLightmapData : public InstanceBaseData {
+    		RID instance;
+		HashSet<Instance *> geometries;
+		HashSet<Instance *> users;
+    InstanceLightmapData() {
+		}
+  };
   struct InstanceOccluderData : public InstanceBaseData {};
   struct InstanceVisibilityNotifierData : public InstanceBaseData {};
   struct InstanceFogVolumeData : public InstanceBaseData {};
@@ -613,6 +627,11 @@ class RendererSceneCull : public RenderingMethod {
   virtual void instance_set_ignore_culling(RID p_instance, bool p_enabled) override;
   virtual void instance_attach_skeleton(RID p_instance, RID p_skeleton) override;
   virtual void instance_set_visibility_parent(RID p_instance, RID p_parent_instance) override;
+	virtual void instance_geometry_set_material_override(RID p_instance, RID p_material);
+	virtual void instance_geometry_set_material_overlay(RID p_instance, RID p_material);
+	virtual void instance_geometry_set_cast_shadows_setting(RID p_instance, RS::ShadowCastingSetting p_shadow_casting_setting);
+	virtual void instance_geometry_set_lightmap(RID p_instance, RID p_lightmap, const Rect2 &p_lightmap_uv_scale, int p_slice_index);
+	virtual void instance_geometry_set_lod_bias(RID p_instance, float p_lod_bias);
 
   // 直接memnew()
   RendererSceneOcclusionCull* dummy_occlusion_culling = nullptr;
@@ -695,6 +714,9 @@ class RendererSceneCull : public RenderingMethod {
   bool _visibility_parent_check(const CullData &p_cull_data, const InstanceData &p_instance_data);
 	bool _light_instance_update_shadow(Instance *p_instance, const Transform3D p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, bool p_cam_vaspect, RID p_shadow_atlas, Scenario *p_scenario, float p_scren_mesh_lod_threshold, uint32_t p_visible_layers = 0xFFFFFF);
   void _instance_unpair(Instance* , Instance*);
+
+	virtual bool free(RID p_rid) override;
+
 };
 }  // namespace lain
 #endif

@@ -71,6 +71,10 @@ class RenderingMethod {
 
 	virtual void instance_set_ignore_culling(RID p_instance, bool p_enabled) = 0;
 
+	virtual void instance_geometry_set_material_override(RID p_instance, RID p_material) = 0;
+	virtual void instance_geometry_set_lightmap(RID p_instance, RID p_lightmap,const Rect2 &p_lightmap_uv_scale, int p_slice_index ) = 0;
+	virtual void instance_geometry_set_material_overlay(RID p_instance, RID p_material) = 0;
+
 	/* ENVIRONMENT API */
 
 	virtual RID environment_allocate() = 0;
@@ -110,6 +114,8 @@ class RenderingMethod {
 	virtual void render_camera(const Ref<RenderSceneBuffers> &p_render_buffers, RID p_camera, RID p_scenario, RID p_viewport, Size2 p_viewport_size, uint32_t p_jitter_phase_count, float p_screen_mesh_lod_threshold, RID p_shadow_atlas, RenderInfo *r_render_info) = 0;
 	// virtual void render_probes() = 0;
 	// virtual void update_visibility_notifiers() = 0;
+
+	virtual bool free(RID p_rid) = 0;
 };
 }
 #endif // RENDERING_METHOD_API_H

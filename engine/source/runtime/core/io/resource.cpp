@@ -257,6 +257,11 @@ namespace lain {
 		}
 	}
 
+void Resource::set_local_to_scene(bool p_enable)
+{
+	{local_to_scene = p_enable;}
+}
+
 	void ResourceCache::get_cached_resources(List<Ref<Resource>>* p_resources) {
 		lock.lock();
 

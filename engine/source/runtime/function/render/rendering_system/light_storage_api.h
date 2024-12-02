@@ -104,7 +104,7 @@ class RendererLightStorage {
 	// /* REFLECTION ATLAS */
 
 	// virtual RID reflection_atlas_create() = 0;
-	// virtual void reflection_atlas_free(RID p_ref_atlas) = 0;
+	virtual void reflection_atlas_free(RID p_ref_atlas) = 0;
 	// virtual void reflection_atlas_set_size(RID p_ref_atlas, int p_reflection_size, int p_reflection_count) = 0;
 	// virtual int reflection_atlas_get_size(RID p_ref_atlas) const = 0;
 

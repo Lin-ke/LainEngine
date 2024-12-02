@@ -481,6 +481,8 @@ class LightStorage : public RendererLightStorage {
     ERR_FAIL_UNSIGNED_INDEX_V(p_quadrant, 4, 0);
     return atlas->quadrants[p_quadrant].shadows.size();
   }
+  /* Reflection Atlas*/
+  virtual void reflection_atlas_free(RID p_rid) {}
 
   /* SHADOW CUBEMAPS */
 

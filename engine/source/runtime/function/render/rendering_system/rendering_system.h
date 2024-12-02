@@ -359,6 +359,10 @@ class RenderingSystem : public Object {
 	virtual void instance_set_visibility_parent(RID p_instance, RID p_parent_instance) = 0;
 
 	virtual void instance_set_ignore_culling(RID p_instance, bool p_enabled) = 0;
+	
+	virtual void instance_geometry_set_material_override(RID p_instance, RID p_material) = 0;
+	virtual void instance_geometry_set_lightmap(RID p_instance, RID p_lightmap,const Rect2 &p_lightmap_uv_scale, int p_slice_index ) = 0;
+	virtual void instance_geometry_set_material_overlay(RID p_instance, RID p_material) = 0;
     /// *************** ///
   /// ***CAMERA API*** ///
   /// *************** ///
@@ -408,6 +412,7 @@ class RenderingSystem : public Object {
 	virtual void viewport_set_parent_viewport(RID p_viewport, RID p_parent_viewport) = 0;
 	virtual void viewport_attach_to_screen(RID p_viewport, const Rect2 &p_rect = Rect2(), WindowSystem::WindowID p_screen = WindowSystem::MAIN_WINDOW_ID) = 0;
 	virtual void viewport_set_render_direct_to_screen(RID p_viewport, bool p_enable) = 0;
+	virtual void viewport_set_active(RID p_viewport, bool p_active) = 0;
   enum ViewportUpdateMode {
 		VIEWPORT_UPDATE_DISABLED,
 		VIEWPORT_UPDATE_ONCE, // Then goes to disabled, must be manually updated.

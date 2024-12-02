@@ -552,7 +552,10 @@ VkSampleCountFlagBits RenderingDeviceDriverVulkan::_ensure_supported_sample_coun
 BitField<RDD::TextureUsageBits> RenderingDeviceDriverVulkan::texture_get_usages_supported_by_format(DataFormat p_format, bool p_cpu_readable) {
   VkFormatProperties properties = {};
   vkGetPhysicalDeviceFormatProperties(physical_device, RD_TO_VK_FORMAT[p_format], &properties);
-
+  // for(int i = 0; i < RDD::DATA_FORMAT_MAX;i++){
+  // vkGetPhysicalDeviceFormatProperties(physical_device, RD_TO_VK_FORMAT[i], &properties);
+  // L_PRINT("format: " + itos(i) + " linearTilingFeatures: " + itos(properties.linearTilingFeatures) + " optimalTilingFeatures: " + itos(properties.optimalTilingFeatures));
+  // }
   const VkFormatFeatureFlags& flags = p_cpu_readable ? properties.linearTilingFeatures : properties.optimalTilingFeatures;
 
   // Everything supported by default makes an all-or-nothing check easier for the caller.

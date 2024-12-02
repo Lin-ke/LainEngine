@@ -713,7 +713,9 @@ class RenderingDevice : public RenderingDeviceCommons {
 
   String shader_get_binary_cache_key() const{return driver->shader_get_binary_cache_key();}
   Vector<uint8_t> shader_compile_binary_from_spirv(const Vector<ShaderStageSPIRVData>& p_spirv, const String& p_shader_name = "");
-
+  // gdshader-> glslshader(拼接到ubershader里) -> spriv [GLSL->SPIRV在glslang module] -> 
+  // -> 成 binary，包括 用smolv压缩的spriv 和 再封装上shader discription ，通过反射spirv获得
+  // binary —> driver shader，做shader discription的填充
   RID shader_create_from_spirv(const Vector<ShaderStageSPIRVData>& p_spirv, const String& p_shader_name = "");
   RID shader_create_from_bytecode(const Vector<uint8_t>& p_shader_binary, RID p_placeholder = RID());
   RID shader_create_placeholder();

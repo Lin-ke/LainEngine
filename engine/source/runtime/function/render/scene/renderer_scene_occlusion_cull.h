@@ -174,6 +174,8 @@ class RendererSceneOcclusionCull {
   virtual void add_scenario(RID p_scenario) {}
   virtual void scenario_set_instance(RID p_scenario, RID p_instance, RID p_occluder, const Transform3D& p_xform, bool p_enabled) {}
   virtual void buffer_update(RID p_buffer, const Transform3D& p_cam_transform, const Projection& p_cam_projection, bool p_cam_orthogonal) {}
+	virtual void remove_scenario(RID p_scenario) {}
+	virtual void buffer_set_scenario(RID p_buffer, RID p_scenario) {  }
   
 	RendererSceneOcclusionCull() {
 		singleton = this;

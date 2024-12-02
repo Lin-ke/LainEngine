@@ -376,7 +376,7 @@ class Object {
   void _from_data(void* p_data) {}  // 子类写这个
   void from_data(void* p_data, bool p_reversed = false);
   _FORCE_INLINE_ void (Object::*_get_from_data() const)(int) { return (void(Object::*)(int)) & Object::_from_data; }
-
+  void notify_property_list_changed(){}
   static constexpr bool _class_is_enabled = true;
   typedef Object self_type;
   static void* get_class_ptr_static() {  // 这是何意

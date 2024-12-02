@@ -16,7 +16,8 @@ class RendererViewport {
     RID camera;
     RID scenario;
 
-    RID render_target;
+    RID render_target; // 会被 送到 render_scene_buffer 的 render target那里
+    // rb_config.set_render_target(p_viewport->render_target);
     RID render_target_texture;
     Size2i internal_size = Size2i(0, 0);  // 是render size ( target_size * scale, For FSR etc. )
 		RenderingMethod::RenderInfo render_info;

@@ -322,11 +322,11 @@ RID RenderingDevice::texture_create(const TextureFormat& p_format, const Texture
     String format_text = "'" + String(FORMAT_NAMES[format.format]) + "'";
     auto valid = [&](RDD::TextureUsageBits usage) {
       if (format.usage_bits & usage && !supported_usage.has_flag(usage)) {
-        ERR_FAIL_MSG("Format " + format_text + " does not support usage as " + Serializer::write(usage).string_value());
+        ERR_FAIL_V_MSG(RID(), "Format " + format_text + " does not support usage as " + Serializer::write(usage).string_value());
       }
     };
     valid(TEXTURE_USAGE_SAMPLING_BIT);
-    valid(TEXTURE_USAGE_COLOR_ATTACHMENT_BIT);
+    valid(TEXTURE_USAGE_COLOR_ATTACHMENT_BIT);  
     valid(TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     valid(TEXTURE_USAGE_STORAGE_BIT);
     valid(TEXTURE_USAGE_STORAGE_ATOMIC_BIT);

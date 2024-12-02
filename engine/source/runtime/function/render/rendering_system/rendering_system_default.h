@@ -192,6 +192,7 @@ class RenderingSystemDefault: public RenderingSystem{
 	FUNCRIDSPLIT(viewport)
 	FUNC3(viewport_set_size, RID, int, int)
 	FUNC2(viewport_set_parent_viewport, RID, RID)
+	FUNC2(viewport_set_active, RID, bool)
 
 	FUNC3(viewport_attach_to_screen, RID, const Rect2 &, int)
 	FUNC2(viewport_set_render_direct_to_screen, RID, bool)
@@ -307,6 +308,10 @@ class RenderingSystemDefault: public RenderingSystem{
 	FUNC2(instance_set_visibility_parent, RID, RID)
 
 	FUNC2(instance_set_ignore_culling, RID, bool)
+	FUNC2(instance_geometry_set_material_override, RID, RID)
+	FUNC2(instance_geometry_set_material_overlay, RID, RID)
+	FUNC4(instance_geometry_set_lightmap, RID, RID, const Rect2 &, int)
+
 
 	RenderingSystemDefault(bool p_create_thread = false);
 	~RenderingSystemDefault();

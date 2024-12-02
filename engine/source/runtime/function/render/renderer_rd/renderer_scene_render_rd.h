@@ -45,7 +45,7 @@ protected:
 
 	virtual Ref<RenderSceneBuffers> render_buffers_create() override;
 	virtual bool _render_buffers_can_be_storage() { return true;}
-  virtual RD::DataFormat _render_buffers_get_color_format() const {return RD::DATA_FORMAT_R16G16B16_SFLOAT;}
+  virtual RD::DataFormat _render_buffers_get_color_format() const {return RD::DATA_FORMAT_R16G16B16A16_SFLOAT;}
   /* 提供 compositor 的渲染相关*/
 void _process_compositor_effects(RS::CompositorEffectCallbackType p_callback_type, const RenderDataRD *p_render_data);
 

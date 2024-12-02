@@ -51,7 +51,7 @@ class MaterialStorage : public RendererMaterialStorage {
   };
   struct Material;
   struct Shader {
-    ShaderData* data = nullptr;
+    ShaderData* data = nullptr; // 根据这个data找到实际的set_code 函数进行shader编译
     String code;
     String path_hint;
     ShaderType type;
