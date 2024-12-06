@@ -1,3 +1,6 @@
-1. ����ϵͳ����generator �� propertyinfo �� methodinfo ����������
-- ����variant
-- ���� ReflectBody ��ô��Variant ת���������ƺ����С�e.g. .opeartor T �����Ϊ�����ڡ�
+1. 反射系统：将generator 与 propertyinfo 和 methodinfo 连接起来。
+- 利用variant
+- 考虑 ReflectBody 怎么与Variant 转换，但是似乎不行。e.g. .opeartor T 这个行为不存在。
+
+现在的shader读取方式不太好，没法打包成一个EXE文件，需要改进，按godot那个方式比较好
+- 现在的方式比较方便。

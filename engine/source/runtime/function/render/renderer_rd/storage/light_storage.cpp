@@ -517,12 +517,12 @@ void LightStorage::update_light_buffers(RenderDataRD *p_render_data, const Paged
 						float split = light_instance->shadow_transform[MIN(limit, j)].split;
 
 						Projection bias;
-						bias.set_light_bias();
-						Projection rectm;
+						bias.set_light_bias(); // [-1, 1]到[0, 1]
+						Projection rectm; // 到 阴影atlas rect 的uv
 						rectm.set_light_atlas_rect(atlas_rect);
-
+						// 相机坐标到灯坐标
 						Transform3D modelview = (inverse_transform * light_instance->shadow_transform[j].transform).inverse();
-
+						// 灯坐标->正交相机->
 						Projection shadow_mtx = rectm * bias * matrix * modelview;
 						light_data.shadow_split_offsets[j] = split;
 						float bias_scale = light_instance->shadow_transform[j].bias_scale * light_data.soft_shadow_scale;

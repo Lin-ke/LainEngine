@@ -168,6 +168,7 @@ void ShaderRD::_compile_variant(uint32_t p_variant, const CompileData* p_data) {
       stage.shader_stage = RD::SHADER_STAGE_VERTEX;
       stages.push_back(stage);
     }
+		// FileAccess::open("res://vertex" + itos(variant) +  "group" + itos((p_data->group)) + ".vert", FileAccess::WRITE)->store_string(current_source);
   }
 
   if (!is_compute && build_ok) {
@@ -186,6 +187,8 @@ void ShaderRD::_compile_variant(uint32_t p_variant, const CompileData* p_data) {
       stage.shader_stage = RD::SHADER_STAGE_FRAGMENT;
       stages.push_back(stage);
     }
+		// FileAccess::open("res://frag" + itos(variant) + "group" +itos((p_data->group)) + ".frag", FileAccess::WRITE)->store_string(current_source);
+
   }
 
   if (is_compute) {
@@ -205,6 +208,7 @@ void ShaderRD::_compile_variant(uint32_t p_variant, const CompileData* p_data) {
       stage.shader_stage = RD::SHADER_STAGE_COMPUTE;
       stages.push_back(stage);
     }
+		// FileAccess::open("res://compute" + itos(variant) + "group" +itos((p_data->group)) + ".comp", FileAccess::WRITE)->store_string(current_source);
   }
 
   if (!build_ok) {

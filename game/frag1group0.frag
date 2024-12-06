@@ -15,7 +15,11 @@
 
 #define MATERIAL_UNIFORM_SET 3
 
-#define VERTEX_CODE_USED
+#define MODE_RENDER_DEPTH
+#define MODE_DUAL_PARABOLOID
+#define DEBUG_DRAW_PSSM_SPLITS
+#define FOG_DISABLED
+
 #define FRAGMENT_CODE_USED
 #define RENDER_DRIVER_VULKAN
 #define SHADER_IS_SRGB false
@@ -44,7 +48,9 @@ const float sc_luminance_multiplier = 1.0;
 #define USE_SUBGROUPS
 #endif
 #endif 
-
+#if defined(USE_MULTIVIEW) && defined(has_VK_KHR_multiview)
+#extension GL_EXT_multiview : enable
+#endif
 #define CLUSTER_COUNTER_SHIFT 20
 #define CLUSTER_POINTER_MASK ((1 << CLUSTER_COUNTER_SHIFT) - 1)
 #define CLUSTER_COUNTER_MASK 0xfff
@@ -120,7 +126,7 @@ struct SceneData {
 	bool pancake_shadows;
 	uint camera_visible_layers;
 	float pass_alpha_multiplier;
-}; // normal used 被define了
+};
 #if !defined(MODE_RENDER_DEPTH) || defined(MODE_RENDER_MATERIAL) || defined(MODE_RENDER_SDF) || defined(MODE_RENDER_NORMAL_ROUGHNESS) || defined(MODE_RENDER_VOXEL_GI) || defined(TANGENT_USED) || defined(NORMAL_MAP_USED) || defined(LIGHT_ANISOTROPY_USED)
 #ifndef NORMAL_USED
 #define NORMAL_USED
@@ -352,8 +358,11 @@ layout(set = 1, binding = 2, std430) buffer restrict readonly InstanceDataBuffer
 	InstanceData data[];
 }
 instances;
+#ifdef USE_RADIANCE_CUBEMAP_ARRAY
 layout(set = 1, binding = 3) uniform textureCubeArray radiance_cubemap;
-
+#else
+layout(set = 1, binding = 3) uniform textureCube radiance_cubemap;
+#endif
 layout(set = 1, binding = 4) uniform textureCubeArray reflection_atlas;
 layout(set = 1, binding = 5) uniform texture2D shadow_atlas;
 layout(set = 1, binding = 6) uniform texture2D directional_shadow_atlas;
@@ -377,34 +386,57 @@ layout(set = 1, binding = 12 + 8) uniform sampler SAMPLER_NEAREST_WITH_MIPMAPS_R
 layout(set = 1, binding = 12 + 9) uniform sampler SAMPLER_LINEAR_WITH_MIPMAPS_REPEAT;
 layout(set = 1, binding = 12 + 10) uniform sampler SAMPLER_NEAREST_WITH_MIPMAPS_ANISOTROPIC_REPEAT;
 layout(set = 1, binding = 12 + 11) uniform sampler SAMPLER_LINEAR_WITH_MIPMAPS_ANISOTROPIC_REPEAT;
-
-
-		layout(set = 1, binding = 24) uniform texture2D depth_buffer;
-		layout(set = 1, binding = 25) uniform texture2D color_buffer;
-		layout(set = 1, binding = 26) uniform texture2D normal_roughness_buffer;
-		layout(set = 1, binding = 27) uniform texture2D ao_buffer;
-		layout(set = 1, binding = 28) uniform texture2D ambient_buffer;
-		layout(set = 1, binding = 29) uniform texture2D reflection_buffer;
-		#define multiviewSampler sampler2D
-	layout(set = 1, binding = 30) uniform texture2DArray sdfgi_lightprobe_texture;
-	layout(set = 1, binding = 31) uniform texture3D sdfgi_occlusion_cascades;
-	struct VoxelGIData {
-		mat4 xform; 
-		vec3 bounds; 
-		float dynamic_range; 
-		float bias; 
-		float normal_bias; 
-		bool blend_ambient; 
-		uint mipmaps; 
-		vec3 pad; 
-		float exposure_normalization; 
-	};
-	layout(set = 1, binding = 32, std140) uniform VoxelGIs {
-		VoxelGIData data[MAX_VOXEL_GI_INSTANCES];
-	}
-	voxel_gi_instances;
-	layout(set = 1, binding = 33) uniform texture3D volumetric_fog_texture;
-	layout(set = 1, binding = 34) uniform texture2D ssil_buffer;
+#ifdef MODE_RENDER_SDF
+layout(r16ui, set = 1, binding = 24) uniform restrict writeonly uimage3D albedo_volume_grid;
+layout(r32ui, set = 1, binding = 25) uniform restrict writeonly uimage3D emission_grid;
+layout(r32ui, set = 1, binding = 26) uniform restrict writeonly uimage3D emission_aniso_grid;
+layout(r32ui, set = 1, binding = 27) uniform restrict uimage3D geom_facing_grid;
+#define depth_buffer shadow_atlas
+#define color_buffer shadow_atlas
+#define normal_roughness_buffer shadow_atlas
+#define multiviewSampler sampler2D
+#else
+#ifdef USE_MULTIVIEW
+layout(set = 1, binding = 24) uniform texture2DArray depth_buffer;
+layout(set = 1, binding = 25) uniform texture2DArray color_buffer;
+layout(set = 1, binding = 26) uniform texture2DArray normal_roughness_buffer;
+layout(set = 1, binding = 27) uniform texture2DArray ao_buffer;
+layout(set = 1, binding = 28) uniform texture2DArray ambient_buffer;
+layout(set = 1, binding = 29) uniform texture2DArray reflection_buffer;
+#define multiviewSampler sampler2DArray
+#else 
+layout(set = 1, binding = 24) uniform texture2D depth_buffer;
+layout(set = 1, binding = 25) uniform texture2D color_buffer;
+layout(set = 1, binding = 26) uniform texture2D normal_roughness_buffer;
+layout(set = 1, binding = 27) uniform texture2D ao_buffer;
+layout(set = 1, binding = 28) uniform texture2D ambient_buffer;
+layout(set = 1, binding = 29) uniform texture2D reflection_buffer;
+#define multiviewSampler sampler2D
+#endif
+layout(set = 1, binding = 30) uniform texture2DArray sdfgi_lightprobe_texture;
+layout(set = 1, binding = 31) uniform texture3D sdfgi_occlusion_cascades;
+struct VoxelGIData {
+	mat4 xform; 
+	vec3 bounds; 
+	float dynamic_range; 
+	float bias; 
+	float normal_bias; 
+	bool blend_ambient; 
+	uint mipmaps; 
+	vec3 pad; 
+	float exposure_normalization; 
+};
+layout(set = 1, binding = 32, std140) uniform VoxelGIs {
+	VoxelGIData data[MAX_VOXEL_GI_INSTANCES];
+}
+voxel_gi_instances;
+layout(set = 1, binding = 33) uniform texture3D volumetric_fog_texture;
+#ifdef USE_MULTIVIEW
+layout(set = 1, binding = 34) uniform texture2DArray ssil_buffer;
+#else
+layout(set = 1, binding = 34) uniform texture2D ssil_buffer;
+#endif 
+#endif
 vec4 normal_roughness_compatibility(vec4 p_normal_roughness) {
 	float roughness = p_normal_roughness.w;
 	if (roughness > 0.5) {
@@ -423,6 +455,9 @@ transforms;
 layout(location = 0) in vec3 vertex_interp;
 #ifdef NORMAL_USED
 layout(location = 1) in vec3 normal_interp;
+#endif
+#if defined(COLOR_USED)
+layout(location = 2) in vec4 color_interp;
 #endif
 #ifdef UV_USED
 layout(location = 3) in vec2 uv_interp;
@@ -479,9 +514,31 @@ ivec2 multiview_uv(ivec2 uv) {
 layout(set = MATERIAL_UNIFORM_SET, binding = 0, std140) uniform MaterialUniforms{
 } material;
 #endif
-
-
-	layout(location = 0) out vec4 frag_color;
+#ifdef MODE_RENDER_DEPTH
+#ifdef MODE_RENDER_MATERIAL
+layout(location = 0) out vec4 albedo_output_buffer;
+layout(location = 1) out vec4 normal_output_buffer;
+layout(location = 2) out vec4 orm_output_buffer;
+layout(location = 3) out vec4 emission_output_buffer;
+layout(location = 4) out float depth_output_buffer;
+#endif 
+#ifdef MODE_RENDER_NORMAL_ROUGHNESS
+layout(location = 0) out vec4 normal_roughness_output_buffer;
+#ifdef MODE_RENDER_VOXEL_GI
+layout(location = 1) out uvec2 voxel_gi_buffer;
+#endif
+#endif 
+#else 
+#ifdef MODE_SEPARATE_SPECULAR
+layout(location = 0) out vec4 diffuse_buffer; 
+layout(location = 1) out vec4 specular_buffer; 
+#else
+layout(location = 0) out vec4 frag_color;
+#endif 
+#endif 
+#ifdef MOTION_VECTORS
+layout(location = 2) out vec2 motion_vector;
+#endif
 #ifdef ALPHA_HASH_USED
 float hash_2d(vec2 p) {
 	return fract(1.0e4 * sin(17.0 * p.x + 0.1 * p.y) *
@@ -854,6 +911,7 @@ float get_omni_attenuation(float distance, float inv_range, float decay) {
 	return nd * pow(max(distance, 0.0001), -decay);
 }
 float light_process_omni_shadow(uint idx, vec3 vertex, vec3 normal) {
+#ifndef SHADOWS_DISABLED
 	if (omni_lights.data[idx].shadow_opacity > 0.001) {
 		
 		vec2 texel_size = scene_data_block.data.shadow_atlas_pixel_size;
@@ -950,6 +1008,7 @@ float light_process_omni_shadow(uint idx, vec3 vertex, vec3 normal) {
 		}
 		return shadow;
 	}
+#endif
 	return 1.0;
 }
 void light_process_omni(uint idx, vec3 vertex, vec3 eye_vec, vec3 normal, vec3 vertex_ddx, vec3 vertex_ddy, vec3 f0, uint orms, float shadow, vec3 albedo, inout float alpha,
@@ -1693,9 +1752,7 @@ void fragment_shader(in SceneData scene_data) {
 	vec2 read_viewport_size = scene_data.viewport_size;
 	{
 	{
-		albedo=vec3(0.60000002384186,0.60000002384186,0.60000002384186);
-		roughness=0.80000001192093;
-		metallic=0.20000000298023;
+		albedo=vec3(1.0,1.0,1.0);
 	}
 	}
 #ifdef LIGHT_TRANSMITTANCE_USED

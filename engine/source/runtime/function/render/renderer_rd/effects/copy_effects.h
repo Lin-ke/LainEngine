@@ -2,6 +2,7 @@
 #include "function/render/renderer_rd/shaders/copy.glsl.gen.h"
 #include "function/render/renderer_rd/shaders/copy_to_fb.glsl.gen.h"
 #include "function/render/rendering_system/rendering_system.h"
+#include "function/render/renderer_rd/shaders/cube_to_dp.glsl.gen.h"
 namespace lain::RendererRD {
 // 几个shader 的组合：
 // copy
@@ -120,6 +121,23 @@ class CopyEffects {
 
   } copy_to_fb;
 
+
+// Copy to DP
+
+	struct CopyToDPPushConstant {
+		float z_far;
+		float z_near;
+		float texel_size[2];
+		float screen_rect[4];
+	};
+
+	struct CopyToDP {
+		CubeToDpShaderRD shader;
+		RID shader_version;
+		PipelineCacheRD pipeline;
+	} cube_to_dp;
+
+
   CopyEffects(bool p_prefer_raster_effects);
   ~CopyEffects();
 
@@ -128,6 +146,8 @@ class CopyEffects {
   void copy_to_fb_rect(RID p_source_rd_texture, RID p_dest_framebuffer, const Rect2i& p_rect, bool p_flip_y = false, bool p_force_luminance = false,
                        bool p_alpha_to_zero = false, bool p_srgb = false, RID p_secondary = RID(), bool p_multiview = false, bool alpha_to_one = false, bool p_linear = false,
                        bool p_normal = false, const Rect2& p_src_rect = Rect2());
+	void copy_cubemap_to_dp(RID p_source_rd_texture, RID p_dst_framebuffer, const Rect2 &p_rect, const Vector2 &p_dst_size, float p_z_near, float p_z_far, bool p_dp_flip);
+                       
 
   void make_mipmap(RID p_source_rd_texture, RID p_dest_texture, const Size2i& p_size);
   void make_mipmap_raster(RID p_source_rd_texture, RID p_dest_texture, const Size2i &p_size) {}

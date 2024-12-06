@@ -1,5 +1,27 @@
 #version 450
-#VERSION_DEFINES
+
+
+#define MAX_ROUGHNESS_LOD 7.0
+
+#define USE_RADIANCE_CUBEMAP_ARRAY 
+
+#define SDFGI_OCT_SIZE 1
+
+#define MAX_DIRECTIONAL_LIGHT_DATA_STRUCTS 8
+
+#define MAX_LIGHTMAP_TEXTURES 8
+
+#define MAX_LIGHTMAPS 8
+
+#define MATERIAL_UNIFORM_SET 3
+
+#define MODE_RENDER_DEPTH
+#define MODE_RENDER_NORMAL_ROUGHNESS
+#define DEBUG_DRAW_PSSM_SPLITS
+#define FOG_DISABLED
+
+#define FRAGMENT_CODE_USED
+#define RENDER_DRIVER_VULKAN
 #define SHADER_IS_SRGB false
 /* Specialization Constants (Toggles) */
 layout(constant_id = 0) const bool sc_use_forward_gi = false;
@@ -490,10 +512,8 @@ ivec2 multiview_uv(ivec2 uv) {
 #endif
 #ifdef MATERIAL_UNIFORMS_USED
 layout(set = MATERIAL_UNIFORM_SET, binding = 0, std140) uniform MaterialUniforms{
-#MATERIAL_UNIFORMS
 } material;
 #endif
-#GLOBALS
 #ifdef MODE_RENDER_DEPTH
 #ifdef MODE_RENDER_MATERIAL
 layout(location = 0) out vec4 albedo_output_buffer;
@@ -636,7 +656,6 @@ void light_compute(vec3 N, vec3 L, vec3 V, float A, vec3 light_color, bool is_di
 	vec3 normal = N;
 	vec3 light = L;
 	vec3 view = V;
-#CODE : LIGHT
 #else
 	float NdotL = min(A + dot(N, L), 1.0);
 	float cNdotL = max(NdotL, 0.0); 
@@ -900,14 +919,11 @@ float light_process_omni_shadow(uint idx, vec3 vertex, vec3 normal) {
 		base_uv_rect.xy += texel_size;
 		base_uv_rect.zw -= texel_size * 2.0;
 		
-		
 		vec2 flip_offset = omni_lights.data[idx].direction.xy;
-		
 		vec3 local_vert = (omni_lights.data[idx].shadow_matrix * vec4(vertex, 1.0)).xyz;
 		float shadow_len = length(local_vert); 
 		vec3 shadow_dir = normalize(local_vert);
 		vec3 local_normal = normalize(mat3(omni_lights.data[idx].shadow_matrix) * normal);
-		
 		vec3 normal_bias = local_normal * omni_lights.data[idx].shadow_normal_bias * (1.0 - abs(dot(local_normal, shadow_dir)));
 		float shadow;
 		if (sc_use_light_soft_shadows && omni_lights.data[idx].soft_shadow_size > 0.0) {
@@ -927,11 +943,9 @@ float light_process_omni_shadow(uint idx, vec3 vertex, vec3 normal) {
 			vec3 tangent = normalize(cross(v0, basis_normal));
 			vec3 bitangent = normalize(cross(tangent, basis_normal));
 			float z_norm = 1.0 - shadow_len * omni_lights.data[idx].inv_radius;
-			
 			tangent *= omni_lights.data[idx].soft_shadow_size * omni_lights.data[idx].soft_shadow_scale;
 			bitangent *= omni_lights.data[idx].soft_shadow_size * omni_lights.data[idx].soft_shadow_scale;
 			for (uint i = 0; i < sc_penumbra_shadow_samples; i++) {
-				
 				vec2 disk = disk_rotation * scene_data_block.data.penumbra_shadow_kernel[i].xy;
 				vec3 pos = local_vert + tangent * disk.x + bitangent * disk.y;
 				pos = normalize(pos);
@@ -939,12 +953,12 @@ float light_process_omni_shadow(uint idx, vec3 vertex, vec3 normal) {
 				if (pos.z >= 0.0) {
 					uv_rect.xy += flip_offset;
 				}
-				pos.z = 1.0 + abs(pos.z); 
-				pos.xy /= pos.z; 
-				pos.xy = pos.xy * 0.5 + 0.5; 
+				pos.z = 1.0 + abs(pos.z);
+				pos.xy /= pos.z;
+				pos.xy = pos.xy * 0.5 + 0.5;
 				pos.xy = uv_rect.xy + pos.xy * uv_rect.zw;
 				float d = textureLod(sampler2D(shadow_atlas, SAMPLER_LINEAR_CLAMP), pos.xy, 0.0).r;
-				if (d > z_norm) { 
+				if (d > z_norm) {
 					blocker_average += d;
 					blocker_count += 1.0;
 				}
@@ -1737,7 +1751,9 @@ void fragment_shader(in SceneData scene_data) {
 	mat4 read_view_matrix = scene_data.view_matrix;
 	vec2 read_viewport_size = scene_data.viewport_size;
 	{
-#CODE : FRAGMENT
+	{
+		albedo=vec3(1.0,1.0,1.0);
+	}
 	}
 #ifdef LIGHT_TRANSMITTANCE_USED
 	transmittance_color.a *= sss_strength;

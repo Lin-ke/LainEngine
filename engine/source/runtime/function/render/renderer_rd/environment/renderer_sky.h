@@ -26,7 +26,7 @@ class SkyRD {
   SkyRD();
   float sky_get_baked_exposure(RID p_sky) const;
   int roughness_layers;
-  bool sky_use_cubemap_array;
+  bool sky_use_cubemap_array; // default true;
   struct Sky {
     float baked_exposure = 1.0;
   };

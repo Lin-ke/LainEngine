@@ -1117,6 +1117,8 @@ void MaterialStorage::MaterialData::free_parameters_uniform_set(RID p_uniform_se
   }
 }
 // 这里的shader都是gdshader
+// 在这里做data的初始化的，etc.
+// 会调用version_set_code 以进行对应variant的编译
 void lain::RendererRD::MaterialStorage::shader_set_code(RID p_shader, const String& p_code) {
   Shader* shader = shader_owner.get_or_null(p_shader);
   ERR_FAIL_NULL(shader);

@@ -104,7 +104,7 @@ void _process_compositor_effects(RS::CompositorEffectCallbackType p_callback_typ
 		return sky.roughness_layers;
 	}
 	bool is_using_radiance_cubemap_array(){
-		return sky.sky_use_cubemap_array;
+		return sky.sky_use_cubemap_array; 
 	}
 
   void set_time(double p_time, double p_frame_step) { time = p_time;

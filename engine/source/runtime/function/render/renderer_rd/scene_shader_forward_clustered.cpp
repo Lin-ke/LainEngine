@@ -546,7 +546,7 @@ void SceneShaderForwardClustered::init(const String p_defines) {
 
       shader_versions.push_back(ShaderRD::VariantDefine(group, version, false));
     }
-    shader.initialize(shader_versions, p_defines);
+    shader.initialize(shader_versions, p_defines); // 这里会编译一些不合理的shader
 
     if (RendererCompositorRD::get_singleton()->is_xr_enabled()) {
       shader.enable_group(SHADER_GROUP_MULTIVIEW);
@@ -842,7 +842,7 @@ void fragment() {
     u.append_id(default_vec4_xform_buffer);
     u.binding = 0;
     uniforms.push_back(u);
-
+		// 这是transform // /* Set 2 Skeleton & Instancing (can change per item) */ 的uniform set
     default_vec4_xform_uniform_set = RD::get_singleton()->uniform_set_create(uniforms, default_shader_rd, RenderForwardClustered::TRANSFORMS_UNIFORM_SET);
   }
   {

@@ -62,7 +62,7 @@ class MaterialStorage : public RendererMaterialStorage {
   
   mutable RID_Owner<Shader, true> shader_owner;
 	typedef ShaderData *(*ShaderDataRequestFunction)();
-	ShaderDataRequestFunction shader_data_request_func[SHADER_TYPE_MAX];
+	ShaderDataRequestFunction shader_data_request_func[SHADER_TYPE_MAX]; // 每种类型对应一个shader类，这里初始化这个类
   
 	struct MaterialData {
 		Vector<RendererRD::TextureStorage::RenderTarget *> render_target_cache;
