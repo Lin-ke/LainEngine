@@ -246,6 +246,14 @@ public:
 		GEN_EDIT_STATE_MAIN,
 		GEN_EDIT_STATE_MAIN_INHERITED,
 	};
+	enum {
+		FLAG_ID_IS_PATH = (1 << 30),
+		TYPE_INSTANTIATED = 0x7FFFFFFF,
+		FLAG_INSTANCE_IS_PLACEHOLDER = (1 << 30),
+		FLAG_PATH_PROPERTY_IS_NODE = (1 << 30),
+		FLAG_PROP_NAME_MASK = FLAG_PATH_PROPERTY_IS_NODE - 1,
+		FLAG_MASK = (1 << 24) - 1,
+	};
 
 	Error pack(GObject* p_scene) { return state->pack(p_scene); }
 

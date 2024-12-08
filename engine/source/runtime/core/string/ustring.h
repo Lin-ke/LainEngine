@@ -571,5 +571,8 @@ namespace lain {
 		sarray_add_str(arr, p_args...);
 		return arr;
 	}
+
+	
+
 }
 #endif // USTRING_GODOT_H

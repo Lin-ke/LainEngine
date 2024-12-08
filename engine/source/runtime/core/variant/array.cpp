@@ -318,8 +318,14 @@ int Array::find(const Variant &p_value, int p_from) const {
 
 	return ret;
 }
-bool Array::operator<=(const Array &p_array) const {
-	return !operator>(p_array);
+bool Array::has(const Variant &p_value) const {
+	Variant value = p_value;
+	ERR_FAIL_COND_V(!_p->typed.validate(value, "use 'has'"), false);
+
+	return find(value) != -1;
+}
+bool Array::operator<=(const Array& p_array) const {
+  return !operator>(p_array);
 }
 bool Array::operator>(const Array &p_array) const {
 	return p_array < *this;

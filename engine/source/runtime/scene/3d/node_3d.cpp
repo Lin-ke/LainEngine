@@ -14,6 +14,15 @@ Ref<World3D> GObject3D::get_world_3d() const {
 	return data.viewport->find_world_3d();
 }
 
+void lain::GObject3D::set_position(const Vector3& p_position) {
+		ERR_THREAD_GUARD;
+	data.local_transform.origin = p_position;
+	_propagate_transform_changed(this);
+	if (data.notify_local_transform) {
+		notification(NOTIFICATION_LOCAL_TRANSFORM_CHANGED);
+	}
+}
+
 void lain::GObject3D::set_notify_transform(bool p_enabled) {
 		ERR_THREAD_GUARD;
 	data.notify_transform = p_enabled;
@@ -123,7 +132,12 @@ void GObject3D::_notification(int p_what){
 		} break;
 	}
 }
-void lain::GObject3D::_bind_methods() {}
+void GObject3D::_bind_methods() {
+		ClassDB::bind_method(D_METHOD("set_transform", "local"), &GObject3D::set_transform);
+	ClassDB::bind_method(D_METHOD("get_transform"), &GObject3D::get_transform);
+	ClassDB::bind_method(D_METHOD("set_position", "position"), &GObject3D::set_position);
+	ClassDB::bind_method(D_METHOD("get_position"), &GObject3D::get_position);
+}
 // 一路乘上来即可
 Transform3D lain::GObject3D::get_global_transform() const {
 ERR_FAIL_COND_V(!is_inside_tree(), Transform3D());
@@ -303,4 +317,9 @@ void GObject3D::_propagate_transform_changed(GObject3D *p_origin) {
 		}
 	}
 	_set_dirty_bits(DIRTY_GLOBAL_TRANSFORM);
+}
+
+Vector3 lain::GObject3D::get_position() const {
+	ERR_READ_THREAD_GUARD_V(Vector3());
+	return data.local_transform.origin;
 }

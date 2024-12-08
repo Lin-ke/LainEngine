@@ -33,7 +33,7 @@ class MeshStorage : public RendererMeshStorage {
 	// 持有instance的引用
   struct Mesh {
     struct Surface {
-			RS::PrimitiveType primitive = RS::PRIMITIVE_POINTS;
+			RS::PrimitiveType primitive = RS::PrimitiveType::PRIMITIVE_POINTS;
 			uint64_t format = 0; // RS::ArrayFormat 前是 RS::ArrayType， 
 
 			RID vertex_buffer;

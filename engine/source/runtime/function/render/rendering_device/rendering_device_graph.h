@@ -190,7 +190,7 @@ class RenderingDeviceGraph {
     }
     L_INLINE bool is_buffer() const { return buffer_driver_id.id != 0; }
     L_INLINE bool is_texture() const { return texture_driver_id.id != 0; }
-    L_INLINE bool has_write() const { return write_cmd_idx > 0; }
+    L_INLINE bool has_write() const { return write_cmd_idx > -1; }
     L_INLINE Rect2i get_subresources() const {
       ERR_FAIL_COND_V_MSG(!is_buffer() && !is_texture(), Rect2i(),
                           "Resource is not a buffer or texture.");

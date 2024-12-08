@@ -23,6 +23,8 @@ class RenderingSystem : public Object {
 		MAX_2D_DIRECTIONAL_LIGHTS = 8,
 		MAX_MESH_SURFACES = 256
 	};
+	const Vector2 SMALL_VEC2 = Vector2(CMP_EPSILON, CMP_EPSILON);
+	const Vector3 SMALL_VEC3 = Vector3(CMP_EPSILON, CMP_EPSILON, CMP_EPSILON);
 
   RenderingSystem() { p_singleton = this; };
   virtual ~RenderingSystem() { p_singleton = nullptr; }
@@ -198,53 +200,6 @@ class RenderingSystem : public Object {
 		ARRAY_CUSTOM_RGBA_FLOAT,
 		ARRAY_CUSTOM_MAX
 	};
-
-	enum ArrayFormat : uint64_t {
-		/* ARRAY FORMAT FLAGS */
-		ARRAY_FORMAT_VERTEX = 1 << ARRAY_VERTEX,
-		ARRAY_FORMAT_NORMAL = 1 << ARRAY_NORMAL,
-		ARRAY_FORMAT_TANGENT = 1 << ARRAY_TANGENT,
-		ARRAY_FORMAT_COLOR = 1 << ARRAY_COLOR,
-		ARRAY_FORMAT_TEX_UV = 1 << ARRAY_TEX_UV,
-		ARRAY_FORMAT_TEX_UV2 = 1 << ARRAY_TEX_UV2,
-		ARRAY_FORMAT_CUSTOM0 = 1 << ARRAY_CUSTOM0,
-		ARRAY_FORMAT_CUSTOM1 = 1 << ARRAY_CUSTOM1,
-		ARRAY_FORMAT_CUSTOM2 = 1 << ARRAY_CUSTOM2,
-		ARRAY_FORMAT_CUSTOM3 = 1 << ARRAY_CUSTOM3,
-		ARRAY_FORMAT_BONES = 1 << ARRAY_BONES,
-		ARRAY_FORMAT_WEIGHTS = 1 << ARRAY_WEIGHTS,
-		ARRAY_FORMAT_INDEX = 1 << ARRAY_INDEX,
-
-		ARRAY_FORMAT_BLEND_SHAPE_MASK = ARRAY_FORMAT_VERTEX | ARRAY_FORMAT_NORMAL | ARRAY_FORMAT_TANGENT,
-
-		ARRAY_FORMAT_CUSTOM_BASE = (ARRAY_INDEX + 1),
-		ARRAY_FORMAT_CUSTOM_BITS = 3,
-		ARRAY_FORMAT_CUSTOM_MASK = 0x7,
-		ARRAY_FORMAT_CUSTOM0_SHIFT = (ARRAY_FORMAT_CUSTOM_BASE + 0),
-		ARRAY_FORMAT_CUSTOM1_SHIFT = (ARRAY_FORMAT_CUSTOM_BASE + ARRAY_FORMAT_CUSTOM_BITS),
-		ARRAY_FORMAT_CUSTOM2_SHIFT = (ARRAY_FORMAT_CUSTOM_BASE + ARRAY_FORMAT_CUSTOM_BITS * 2),
-		ARRAY_FORMAT_CUSTOM3_SHIFT = (ARRAY_FORMAT_CUSTOM_BASE + ARRAY_FORMAT_CUSTOM_BITS * 3),
-
-		ARRAY_COMPRESS_FLAGS_BASE = (ARRAY_INDEX + 1 + 12),
-
-		ARRAY_FLAG_USE_2D_VERTICES = 1 << (ARRAY_COMPRESS_FLAGS_BASE + 0),
-		ARRAY_FLAG_USE_DYNAMIC_UPDATE = 1 << (ARRAY_COMPRESS_FLAGS_BASE + 1),
-		ARRAY_FLAG_USE_8_BONE_WEIGHTS = 1 << (ARRAY_COMPRESS_FLAGS_BASE + 2),
-
-		ARRAY_FLAG_USES_EMPTY_VERTEX_ARRAY = 1 << (ARRAY_COMPRESS_FLAGS_BASE + 3),
-
-		ARRAY_FLAG_COMPRESS_ATTRIBUTES = 1 << (ARRAY_COMPRESS_FLAGS_BASE + 4),
-		// We leave enough room for up to 5 more compression flags.
-
-		ARRAY_FLAG_FORMAT_VERSION_BASE = ARRAY_COMPRESS_FLAGS_BASE + 10,
-		ARRAY_FLAG_FORMAT_VERSION_SHIFT = ARRAY_FLAG_FORMAT_VERSION_BASE,
-		// When changes are made to the mesh format, add a new version and use it for the CURRENT_VERSION.
-		ARRAY_FLAG_FORMAT_VERSION_1 = 0,
-		ARRAY_FLAG_FORMAT_VERSION_2 = 1ULL << ARRAY_FLAG_FORMAT_VERSION_SHIFT,
-		ARRAY_FLAG_FORMAT_CURRENT_VERSION = ARRAY_FLAG_FORMAT_VERSION_2,
-		ARRAY_FLAG_FORMAT_VERSION_MASK = 0xFF, // 8 bits version
-	};
-
   enum BlendShapeMode {
     BLEND_SHAPE_MODE_NORMALIZED,
     BLEND_SHAPE_MODE_RELATIVE,
@@ -670,8 +625,69 @@ class RenderingSystem : public Object {
 
 
 
+	enum ArrayFormat : uint64_t {
+		/* ARRAY FORMAT FLAGS */
+		ARRAY_FORMAT_VERTEX = 1 << ARRAY_VERTEX,
+		ARRAY_FORMAT_NORMAL = 1 << ARRAY_NORMAL,
+		ARRAY_FORMAT_TANGENT = 1 << ARRAY_TANGENT,
+		ARRAY_FORMAT_COLOR = 1 << ARRAY_COLOR,
+		ARRAY_FORMAT_TEX_UV = 1 << ARRAY_TEX_UV,
+		ARRAY_FORMAT_TEX_UV2 = 1 << ARRAY_TEX_UV2,
+		ARRAY_FORMAT_CUSTOM0 = 1 << ARRAY_CUSTOM0,
+		ARRAY_FORMAT_CUSTOM1 = 1 << ARRAY_CUSTOM1,
+		ARRAY_FORMAT_CUSTOM2 = 1 << ARRAY_CUSTOM2,
+		ARRAY_FORMAT_CUSTOM3 = 1 << ARRAY_CUSTOM3,
+		ARRAY_FORMAT_BONES = 1 << ARRAY_BONES,
+		ARRAY_FORMAT_WEIGHTS = 1 << ARRAY_WEIGHTS,
+		ARRAY_FORMAT_INDEX = 1 << ARRAY_INDEX,
+
+		ARRAY_FORMAT_BLEND_SHAPE_MASK = ARRAY_FORMAT_VERTEX | ARRAY_FORMAT_NORMAL | ARRAY_FORMAT_TANGENT,
+
+		ARRAY_FORMAT_CUSTOM_BASE = (ARRAY_INDEX + 1),
+		ARRAY_FORMAT_CUSTOM_BITS = 3,
+		ARRAY_FORMAT_CUSTOM_MASK = 0x7,
+		ARRAY_FORMAT_CUSTOM0_SHIFT = (ARRAY_FORMAT_CUSTOM_BASE + 0),
+		ARRAY_FORMAT_CUSTOM1_SHIFT = (ARRAY_FORMAT_CUSTOM_BASE + ARRAY_FORMAT_CUSTOM_BITS),
+		ARRAY_FORMAT_CUSTOM2_SHIFT = (ARRAY_FORMAT_CUSTOM_BASE + ARRAY_FORMAT_CUSTOM_BITS * 2),
+		ARRAY_FORMAT_CUSTOM3_SHIFT = (ARRAY_FORMAT_CUSTOM_BASE + ARRAY_FORMAT_CUSTOM_BITS * 3),
+
+		ARRAY_COMPRESS_FLAGS_BASE = (ARRAY_INDEX + 1 + 12),
+
+		ARRAY_FLAG_USE_2D_VERTICES = 1 << (ARRAY_COMPRESS_FLAGS_BASE + 0),
+		ARRAY_FLAG_USE_DYNAMIC_UPDATE = 1 << (ARRAY_COMPRESS_FLAGS_BASE + 1),
+		ARRAY_FLAG_USE_8_BONE_WEIGHTS = 1 << (ARRAY_COMPRESS_FLAGS_BASE + 2),
+
+		ARRAY_FLAG_USES_EMPTY_VERTEX_ARRAY = 1 << (ARRAY_COMPRESS_FLAGS_BASE + 3),
+
+		ARRAY_FLAG_COMPRESS_ATTRIBUTES = 1 << (ARRAY_COMPRESS_FLAGS_BASE + 4),
+		// We leave enough room for up to 5 more compression flags.
+
+		ARRAY_FLAG_FORMAT_VERSION_BASE = ARRAY_COMPRESS_FLAGS_BASE + 10,
+		ARRAY_FLAG_FORMAT_VERSION_SHIFT = ARRAY_FLAG_FORMAT_VERSION_BASE,
+		// When changes are made to the mesh format, add a new version and use it for the CURRENT_VERSION.
+		ARRAY_FLAG_FORMAT_VERSION_1 = 0,
+		ARRAY_FLAG_FORMAT_VERSION_2 = 1ULL << ARRAY_FLAG_FORMAT_VERSION_SHIFT,
+		ARRAY_FLAG_FORMAT_CURRENT_VERSION = ARRAY_FLAG_FORMAT_VERSION_2,
+		ARRAY_FLAG_FORMAT_VERSION_MASK = 0xFF, // 8 bits version
+	};
+
+	static_assert(sizeof(ArrayFormat) == 8, "ArrayFormat should be 64 bits long.");
 
 
+
+	
+	virtual RID mesh_create_from_surfaces(const Vector<SurfaceData> &p_surfaces, int p_blend_shape_count = 0) = 0;
+	virtual RID mesh_create() = 0;
+	virtual void mesh_surface_set_material(RID p_mesh, int p_surface, RID p_material) = 0;
+	virtual void mesh_clear(RID p_mesh) = 0;
+	virtual void mesh_add_surface(RID p_mesh, const SurfaceData &p_surface) = 0;
+
+
+	virtual void mesh_add_surface_from_arrays(RID p_mesh, PrimitiveType p_prim, const Array &p_arrays, const Array &p_blend_shapes = Array(), const Dictionary &p_lods = Dictionary(), BitField<ArrayFormat> p_compress_format = 0 );
+	virtual Error mesh_create_surface_data_from_arrays(SurfaceData *r_surface_data, PrimitiveType p_primitive, const Array &p_arrays, const Array &p_blend_shapes = Array(), const Dictionary &p_lods = Dictionary(), uint64_t p_compress_format = 0);
+	Error _surface_set_data(Array p_arrays, uint64_t p_format, uint32_t *p_offsets, uint32_t p_vertex_stride, uint32_t p_normal_stride, uint32_t p_attrib_stride, uint32_t p_skin_stride, Vector<uint8_t> &r_vertex_array, Vector<uint8_t> &r_attrib_array, Vector<uint8_t> &r_skin_array, int p_vertex_array_len, Vector<uint8_t> &r_index_array, int p_index_array_len, AABB &r_aabb, Vector<AABB> &r_bone_aabb, Vector4 &r_uv_scale);
+	virtual void mesh_surface_make_offsets_from_format(uint64_t p_format, int p_vertex_len, int p_index_len, uint32_t *r_offsets, uint32_t &r_vertex_element_size, uint32_t &r_normal_element_size, uint32_t &r_attrib_element_size, uint32_t &r_skin_element_size) const;
+	
 public:
  	virtual void draw(bool p_swap_buffers = true, double frame_step = 0.0) = 0;
 	virtual void sync() = 0;

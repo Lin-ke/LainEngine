@@ -18,6 +18,9 @@ protected:
 	double time = 0.0;
 	double time_step = 0.0;
 	bool use_physical_light_units = false;
+	PagedArrayPool<RenderGeometryInstance *> cull_argument_pool;
+	PagedArray<RenderGeometryInstance *> cull_argument; //need this to exist
+
 	RendererRD::SkyRD sky;
 	RendererRD::GI gi;
 	RendererRD::CopyEffects* copy_effects; 
@@ -122,7 +125,7 @@ void _process_compositor_effects(RS::CompositorEffectCallbackType p_callback_typ
 	float shadows_quality_radius = 1.0;
 	float directional_shadow_quality_radius = 1.0;
 
-	float *directional_penumbra_shadow_kernel = nullptr;
+	float *directional_penumbra_shadow_kernel = nullptr; 
 	float *directional_soft_shadow_kernel = nullptr;
 	float *penumbra_shadow_kernel = nullptr;
 	float *soft_shadow_kernel = nullptr;
@@ -183,6 +186,9 @@ void _process_compositor_effects(RS::CompositorEffectCallbackType p_callback_typ
 	_FORCE_INLINE_ bool is_using_physical_light_units() {
 		return use_physical_light_units;
 	}
+
+	void	positional_soft_shadow_filter_set_quality(RS::ShadowQuality p_quality);
+void directional_soft_shadow_filter_set_quality(RS::ShadowQuality p_quality);
 
 };
 }  // namespace lain

@@ -7,12 +7,31 @@
 #include "storage/framebuffer_cache_rd.h"
 using namespace lain::RendererRD;
 using namespace lain;
+// p_sample_count max = 32
+void get_vogel_disk(float *r_kernel, int p_sample_count) {
+	const float golden_angle = 2.4;
+
+	for (int i = 0; i < p_sample_count; i++) {
+		float r = Math::sqrt(float(i) + 0.5) / Math::sqrt(float(p_sample_count));
+		float theta = float(i) * golden_angle;
+
+		r_kernel[i * 4] = Math::cos(theta) * r;
+		r_kernel[i * 4 + 1] = Math::sin(theta) * r;
+	}
+}
+
 
 RendererSceneRenderRD* RendererSceneRenderRD::singleton  = nullptr;
+
 
 lain::RendererSceneRenderRD::RendererSceneRenderRD() {
   singleton = this;
   // init is called in scene->init()
+	directional_penumbra_shadow_kernel = memnew_arr(float, 129);
+	directional_soft_shadow_kernel = memnew_arr(float,129);
+	penumbra_shadow_kernel = memnew_arr(float,129);
+	soft_shadow_kernel = memnew_arr(float,129);
+
 }
 
 lain::RendererSceneRenderRD::~RendererSceneRenderRD() {
@@ -219,7 +238,98 @@ void RendererSceneRenderRD::update() {
   // @todo
 }
 
+void RendererSceneRenderRD::positional_soft_shadow_filter_set_quality(RS::ShadowQuality p_quality) {
+	ERR_FAIL_INDEX_MSG(p_quality, RS::SHADOW_QUALITY_MAX, "Shadow quality too high, please see RenderingServer's ShadowQuality enum");
 
+	if (shadows_quality != p_quality) {
+		shadows_quality = p_quality;
+
+		switch (shadows_quality) {
+			case RS::SHADOW_QUALITY_HARD: {
+				penumbra_shadow_samples = 4;
+				soft_shadow_samples = 0;
+				shadows_quality_radius = 1.0;
+			} break;
+			case RS::SHADOW_QUALITY_SOFT_VERY_LOW: {
+				penumbra_shadow_samples = 4;
+				soft_shadow_samples = 1;
+				shadows_quality_radius = 1.5;
+			} break;
+			case RS::SHADOW_QUALITY_SOFT_LOW: {
+				penumbra_shadow_samples = 8;
+				soft_shadow_samples = 4;
+				shadows_quality_radius = 2.0;
+			} break;
+			case RS::SHADOW_QUALITY_SOFT_MEDIUM: {
+				penumbra_shadow_samples = 12;
+				soft_shadow_samples = 8;
+				shadows_quality_radius = 2.0;
+			} break;
+			case RS::SHADOW_QUALITY_SOFT_HIGH: {
+				penumbra_shadow_samples = 24;
+				soft_shadow_samples = 16;
+				shadows_quality_radius = 3.0;
+			} break;
+			case RS::SHADOW_QUALITY_SOFT_ULTRA: {
+				penumbra_shadow_samples = 32;
+				soft_shadow_samples = 32;
+				shadows_quality_radius = 4.0;
+			} break;
+			case RS::SHADOW_QUALITY_MAX:
+				break;
+		}
+		get_vogel_disk(penumbra_shadow_kernel, penumbra_shadow_samples);
+		get_vogel_disk(soft_shadow_kernel, soft_shadow_samples);
+	}
+
+	_update_shader_quality_settings();
+}
+void RendererSceneRenderRD::directional_soft_shadow_filter_set_quality(RS::ShadowQuality p_quality) {
+	ERR_FAIL_INDEX_MSG(p_quality, RS::SHADOW_QUALITY_MAX, "Shadow quality too high, please see RenderingServer's ShadowQuality enum");
+
+	if (directional_shadow_quality != p_quality) {
+		directional_shadow_quality = p_quality;
+
+		switch (directional_shadow_quality) {
+			case RS::SHADOW_QUALITY_HARD: {
+				directional_penumbra_shadow_samples = 4;
+				directional_soft_shadow_samples = 0;
+				directional_shadow_quality_radius = 1.0;
+			} break;
+			case RS::SHADOW_QUALITY_SOFT_VERY_LOW: {
+				directional_penumbra_shadow_samples = 4;
+				directional_soft_shadow_samples = 1;
+				directional_shadow_quality_radius = 1.5;
+			} break;
+			case RS::SHADOW_QUALITY_SOFT_LOW: {
+				directional_penumbra_shadow_samples = 8;
+				directional_soft_shadow_samples = 4;
+				directional_shadow_quality_radius = 2.0;
+			} break;
+			case RS::SHADOW_QUALITY_SOFT_MEDIUM: {
+				directional_penumbra_shadow_samples = 12;
+				directional_soft_shadow_samples = 8;
+				directional_shadow_quality_radius = 2.0;
+			} break;
+			case RS::SHADOW_QUALITY_SOFT_HIGH: {
+				directional_penumbra_shadow_samples = 24;
+				directional_soft_shadow_samples = 16;
+				directional_shadow_quality_radius = 3.0;
+			} break;
+			case RS::SHADOW_QUALITY_SOFT_ULTRA: {
+				directional_penumbra_shadow_samples = 32;
+				directional_soft_shadow_samples = 32;
+				directional_shadow_quality_radius = 4.0;
+			} break;
+			case RS::SHADOW_QUALITY_MAX:
+				break;
+		}
+		get_vogel_disk(directional_penumbra_shadow_kernel, directional_penumbra_shadow_samples);
+		get_vogel_disk(directional_soft_shadow_kernel, directional_soft_shadow_samples);
+	}
+
+	_update_shader_quality_settings();
+}
 
 void lain::RendererSceneRenderRD::init() {
   max_cluster_elements = GLOBAL_GET("rendering/limits/cluster_builder/max_clustered_elements");
@@ -237,10 +347,17 @@ void lain::RendererSceneRenderRD::init() {
 
 		copy_effects = memnew(RendererRD::CopyEffects(!can_use_storage));
   }
+
+
   // 在rendering_system::init() 中 已经注册过了
   RSG::camera_attributes->camera_attributes_set_dof_blur_bokeh_shape(RS::DOFBokehShape(int(GLOBAL_GET("rendering/camera/depth_of_field/depth_of_field_bokeh_shape"))));
 	RSG::camera_attributes->camera_attributes_set_dof_blur_quality(RS::DOFBlurQuality(int(GLOBAL_GET("rendering/camera/depth_of_field/depth_of_field_bokeh_quality"))), GLOBAL_GET("rendering/camera/depth_of_field/depth_of_field_use_jitter"));
 	use_physical_light_units = GLOBAL_GET("rendering/lights_and_shadows/use_physical_light_units");
+
+	positional_soft_shadow_filter_set_quality(RS::ShadowQuality(int(GLOBAL_GET("rendering/lights_and_shadows/positional_shadow/soft_shadow_filter_quality"))));
+	directional_soft_shadow_filter_set_quality(RS::ShadowQuality(int(GLOBAL_GET("rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality"))));
+
+	cull_argument.set_page_pool(&cull_argument_pool);
 	
 }
 

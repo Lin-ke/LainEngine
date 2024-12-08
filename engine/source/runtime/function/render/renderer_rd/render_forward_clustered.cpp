@@ -289,11 +289,49 @@ void lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_sc
   bool ce_needs_motion_vectors = _compositor_effects_has_flag(p_render_data, RS::COMPOSITOR_EFFECT_FLAG_NEEDS_MOTION_VECTORS);
   bool ce_needs_normal_roughness = _compositor_effects_has_flag(p_render_data, RS::COMPOSITOR_EFFECT_FLAG_NEEDS_ROUGHNESS);
   bool ce_needs_separate_specular = _compositor_effects_has_flag(p_render_data, RS::COMPOSITOR_EFFECT_FLAG_NEEDS_SEPARATE_SPECULAR);
+  // obtain cluster builder
+	if (light_storage->owns_reflection_probe_instance(p_render_data->reflection_probe)) {
+		// current_cluster_builder = light_storage->reflection_probe_instance_get_cluster_builder(p_render_data->reflection_probe, &cluster_builder_shared);
 
-  RENDER_TIMESTAMP("Setup 3D Scene");
-  bool using_debug_mvs = get_debug_draw_mode() == RS::VIEWPORT_DEBUG_DRAW_MOTION_VECTORS;
-  bool using_taa = rb->get_use_taa();
-  bool using_fsr2 = rb->get_scaling_3d_mode() == RS::VIEWPORT_SCALING_3D_MODE_FSR2;
+		// if (p_render_data->camera_attributes.is_valid()) {
+		// 	light_storage->reflection_probe_set_baked_exposure(light_storage->reflection_probe_instance_get_probe(p_render_data->reflection_probe), RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(p_render_data->camera_attributes));
+		// }
+	} else if (rb_data.is_valid()) {
+		current_cluster_builder = rb_data->cluster_builder;
+
+		p_render_data->voxel_gi_count = 0;
+
+		// if (rb->has_custom_data(RB_SCOPE_SDFGI)) {
+		// 	Ref<RendererRD::GI::SDFGI> sdfgi = rb->get_custom_data(RB_SCOPE_SDFGI);
+		// 	if (sdfgi.is_valid()) {
+		// 		sdfgi->update_cascades();
+		// 		sdfgi->pre_process_gi(p_render_data->scene_data->cam_transform, p_render_data);
+		// 		sdfgi->update_light();
+		// 	}
+		// }
+
+		// gi.setup_voxel_gi_instances(p_render_data, p_render_data->render_buffers, p_render_data->scene_data->cam_transform, *p_render_data->voxel_gi_instances, p_render_data->voxel_gi_count);
+	} else {
+		ERR_PRINT("No render buffer nor reflection atlas, bug"); // Should never happen!
+		current_cluster_builder = nullptr;
+		return; // No point in continuing, we'll just crash.
+	}
+
+	ERR_FAIL_NULL(current_cluster_builder);
+
+	p_render_data->cluster_buffer = current_cluster_builder->get_cluster_buffer();
+	p_render_data->cluster_size = current_cluster_builder->get_cluster_size();
+	p_render_data->cluster_max_elements = current_cluster_builder->get_max_cluster_elements();
+
+	// _update_vrs(rb);
+
+	RENDER_TIMESTAMP("Setup 3D Scene");
+
+	bool using_debug_mvs = get_debug_draw_mode() == RS::VIEWPORT_DEBUG_DRAW_MOTION_VECTORS;
+	bool using_taa = rb->get_use_taa();
+	bool using_fsr2 = rb->get_scaling_3d_mode() == RS::VIEWPORT_SCALING_3D_MODE_FSR2;
+
+
   // check if we need motion vectors
   bool motion_vectors_required;
   if (using_debug_mvs) {
@@ -831,13 +869,13 @@ void RenderForwardClustered::RenderBufferDataForwardClustered::configure(RenderS
   render_buffers = p_render_buffers;
   ERR_FAIL_NULL(render_buffers);
 
-  // if (cluster_builder == nullptr) {
-  // 	cluster_builder = memnew(ClusterBuilderRD);
-  // }
-  // cluster_builder->set_shared(RenderForwardClustered::get_singleton()->get_cluster_builder_shared());
+  if (cluster_builder == nullptr) {
+  	cluster_builder = memnew(ClusterBuilderRD);
+  }
+  cluster_builder->set_shared(RenderForwardClustered::get_singleton()->get_cluster_builder_shared());
 
-  // RID sampler = RendererRD::MaterialStorage::get_singleton()->sampler_rd_get_default(RS::CANVAS_ITEM_TEXTURE_FILTER_NEAREST, RS::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
-  // cluster_builder->setup(p_render_buffers->get_internal_size(), p_render_buffers->get_max_cluster_elements(), p_render_buffers->get_depth_texture(), sampler, p_render_buffers->get_internal_texture());
+  RID sampler = RendererRD::MaterialStorage::get_singleton()->sampler_rd_get_default(RS::CANVAS_ITEM_TEXTURE_FILTER_NEAREST, RS::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
+  cluster_builder->setup(p_render_buffers->get_internal_size(), p_render_buffers->get_max_cluster_elements(), p_render_buffers->get_depth_texture(), sampler, p_render_buffers->get_internal_texture());
 }
 void RenderForwardClustered::RenderBufferDataForwardClustered::free_data() {
   // JIC, should already have been cleared
@@ -2874,6 +2912,79 @@ void RenderForwardClustered::_render_shadow_pass(RID p_light, RID p_shadow_atlas
 	}
 }
 
+
+void RenderForwardClustered::_render_shadow_append(RID p_framebuffer, const PagedArray<RenderGeometryInstance *> &p_instances, const Projection &p_projection, const Transform3D &p_transform, float p_zfar, float p_bias, float p_normal_bias, bool p_reverse_cull_face, bool p_use_dp, bool p_use_dp_flip, bool p_use_pancake, float p_lod_distance_multiplier, float p_screen_mesh_lod_threshold, const Rect2i &p_rect, bool p_flip_y, bool p_clear_region, bool p_begin, bool p_end, RenderingMethod::RenderInfo *p_render_info, const Size2i &p_viewport_size, const Transform3D &p_main_cam_transform) {
+	uint32_t shadow_pass_index = scene_state.shadow_passes.size();
+
+	SceneState::ShadowPass shadow_pass;
+
+	RenderSceneDataRD scene_data;
+	scene_data.flip_y = !p_flip_y; // Q: Why is this inverted? Do we assume flip in shadow logic?
+	scene_data.cam_projection = p_projection;
+	scene_data.cam_transform = p_transform;
+	scene_data.view_projection[0] = p_projection;
+	scene_data.z_far = p_zfar;
+	scene_data.z_near = 0.0;
+	scene_data.lod_distance_multiplier = p_lod_distance_multiplier;
+	scene_data.dual_paraboloid_side = p_use_dp_flip ? -1 : 1;
+	scene_data.opaque_prepass_threshold = 0.1f;
+	scene_data.time = time;
+	scene_data.time_step = time_step;
+	scene_data.main_cam_transform = p_main_cam_transform;
+
+	RenderDataRD render_data;
+	render_data.scene_data = &scene_data;
+	render_data.cluster_size = 1;
+	render_data.cluster_max_elements = 32;
+	render_data.instances = &p_instances;
+	render_data.render_info = p_render_info;
+
+	_setup_environment(&render_data, true, p_viewport_size, Color(), false, false, p_use_pancake, shadow_pass_index);
+
+	if (get_debug_draw_mode() == RS::VIEWPORT_DEBUG_DRAW_DISABLE_LOD) {
+		scene_data.screen_mesh_lod_threshold = 0.0;
+	} else {
+		scene_data.screen_mesh_lod_threshold = p_screen_mesh_lod_threshold;
+	}
+
+	PassMode pass_mode = p_use_dp ? PASS_MODE_SHADOW_DP : PASS_MODE_SHADOW;
+
+	uint32_t render_list_from = render_list[RENDER_LIST_SECONDARY].elements.size();
+	_fill_render_list(RENDER_LIST_SECONDARY, &render_data, pass_mode, false, false, false, true);
+	uint32_t render_list_size = render_list[RENDER_LIST_SECONDARY].elements.size() - render_list_from;
+	render_list[RENDER_LIST_SECONDARY].sort_by_key_range(render_list_from, render_list_size);
+	_fill_instance_data(RENDER_LIST_SECONDARY, p_render_info ? p_render_info->info[RS::VIEWPORT_RENDER_INFO_TYPE_SHADOW] : (int *)nullptr, render_list_from, render_list_size, false);
+
+	{
+		//regular forward for now
+		bool flip_cull = p_use_dp_flip;
+		if (p_flip_y) {
+			flip_cull = !flip_cull;
+		}
+
+		if (p_reverse_cull_face) {
+			flip_cull = !flip_cull;
+		}
+
+		shadow_pass.element_from = render_list_from;
+		shadow_pass.element_count = render_list_size;
+		shadow_pass.flip_cull = flip_cull;
+		shadow_pass.pass_mode = pass_mode;
+
+		shadow_pass.rp_uniform_set = RID(); //will be filled later when instance buffer is complete
+		shadow_pass.screen_mesh_lod_threshold = scene_data.screen_mesh_lod_threshold;
+		shadow_pass.lod_distance_multiplier = scene_data.lod_distance_multiplier;
+
+		shadow_pass.framebuffer = p_framebuffer;
+		shadow_pass.initial_depth_action = p_begin ? RD::INITIAL_ACTION_CLEAR : (p_clear_region ? RD::INITIAL_ACTION_CLEAR : RD::INITIAL_ACTION_LOAD);
+		shadow_pass.rect = p_rect;
+
+		scene_state.shadow_passes.push_back(shadow_pass);
+	}
+}
+
+
+
 void RenderForwardClustered::_render_shadow_begin() {
 	scene_state.shadow_passes.clear();
 	RD::get_singleton()->draw_command_begin_label("Shadow Setup");
@@ -2892,6 +3003,18 @@ void RenderForwardClustered::_render_shadow_process() {
 		//render passes need to be configured after instance buffer is done, since they need the latest version
 		SceneState::ShadowPass &shadow_pass = scene_state.shadow_passes[i];
 		shadow_pass.rp_uniform_set = _setup_render_pass_uniform_set(RENDER_LIST_SECONDARY, nullptr, RID(), RendererRD::MaterialStorage::get_singleton()->samplers_rd_get_default(), false, i);
+	}
+
+	RD::get_singleton()->draw_command_end_label();
+}
+
+
+void RenderForwardClustered::_render_shadow_end() {
+	RD::get_singleton()->draw_command_begin_label("Shadow Render");
+
+	for (SceneState::ShadowPass &shadow_pass : scene_state.shadow_passes) {
+		RenderListParameters render_list_parameters(render_list[RENDER_LIST_SECONDARY].elements.ptr() + shadow_pass.element_from, render_list[RENDER_LIST_SECONDARY].element_info.ptr() + shadow_pass.element_from, shadow_pass.element_count, shadow_pass.flip_cull, shadow_pass.pass_mode, 0, true, false, shadow_pass.rp_uniform_set, false, Vector2(), shadow_pass.lod_distance_multiplier, shadow_pass.screen_mesh_lod_threshold, 1, shadow_pass.element_from);
+		_render_list_with_draw_list(&render_list_parameters, shadow_pass.framebuffer, RD::INITIAL_ACTION_DISCARD, RD::FINAL_ACTION_DISCARD, shadow_pass.initial_depth_action, RD::FINAL_ACTION_STORE, Vector<Color>(), 0.0, 0, shadow_pass.rect);
 	}
 
 	RD::get_singleton()->draw_command_end_label();

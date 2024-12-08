@@ -61,6 +61,9 @@ class RenderForwardClustered : public RendererSceneRenderRD {
 
   class RenderBufferDataForwardClustered : public RenderBufferCustomDataRD {
     LCLASS(RenderBufferDataForwardClustered, RenderBufferCustomDataRD)
+
+		ClusterBuilderRD *cluster_builder = nullptr;
+
     RenderSceneBuffersRD* render_buffers = nullptr;
     enum DepthFrameBufferType { DEPTH_FB, DEPTH_FB_ROUGHNESS, DEPTH_FB_ROUGHNESS_VOXELGI };
     void ensure_specular();
@@ -94,6 +97,7 @@ class RenderForwardClustered : public RendererSceneRenderRD {
     virtual void configure(RenderSceneBuffersRD* p_render_buffers) override;
     virtual void free_data() override;
   };
+	ClusterBuilderSharedDataRD *get_cluster_builder_shared() { return &cluster_builder_shared; }
 
   virtual void setup_render_buffer_data(Ref<RenderSceneBuffersRD> p_render_buffers) override;
 
@@ -531,7 +535,7 @@ class RenderForwardClustered : public RendererSceneRenderRD {
 
   /* Cluster builder */
 
-  // ClusterBuilderSharedDataRD cluster_builder_shared;
+  ClusterBuilderSharedDataRD cluster_builder_shared;
   ClusterBuilderRD* current_cluster_builder = nullptr;
 
   // /* SDFGI */
@@ -555,9 +559,9 @@ class RenderForwardClustered : public RendererSceneRenderRD {
                              float p_zfar, float p_bias, float p_normal_bias, bool p_reverse_cull_face, bool p_use_dp, bool p_use_dp_flip, bool p_use_pancake,
                              float p_lod_distance_multiplier = 0.0, float p_screen_mesh_lod_threshold = 0.0, const Rect2i& p_rect = Rect2i(), bool p_flip_y = false,
                              bool p_clear_region = true, bool p_begin = true, bool p_end = true, RenderingMethod::RenderInfo* p_render_info = nullptr,
-                             const Size2i& p_viewport_size = Size2i(1, 1), const Transform3D& p_main_cam_transform = Transform3D()){}
+                             const Size2i& p_viewport_size = Size2i(1, 1), const Transform3D& p_main_cam_transform = Transform3D());
   void _render_shadow_process();
-  void _render_shadow_end() {}
+  void _render_shadow_end();
 
   /* Render Scene */
   void _process_ssao(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_environment, const RID* p_normal_buffers, const Projection* p_projections);

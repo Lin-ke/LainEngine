@@ -165,12 +165,13 @@ Projection Camera3D::_get_camera_projection(real_t p_near) const {
 }
 
 void Camera3D::_from_data(void* p_data) {
-
+	Camera3DData *data = (Camera3DData *)p_data;
+	if(data->is_fov_used){
+		set_fov(data->fov);
+	}
 }
 
-void* Camera3D::get_instance_data() const {
-  return (void*)memnew(Camera3DData);
-}
+
 
 Projection Camera3D::get_camera_projection() const {
 	ERR_FAIL_COND_V_MSG(!is_inside_tree(), Projection(), "Camera is not inside the scene tree.");

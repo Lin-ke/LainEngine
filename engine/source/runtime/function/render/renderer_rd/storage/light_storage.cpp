@@ -55,6 +55,10 @@ bool lain::RendererRD::LightStorage::owns_reflection_probe(RID p_rid) {
   return false;
 }
 
+bool lain::RendererRD::LightStorage::owns_reflection_probe_instance(RID p_rid) {
+  return false;
+}
+
 bool lain::RendererRD::LightStorage::owns_light(RID p_rid) {
   return light_owner.owns(p_rid);
 }

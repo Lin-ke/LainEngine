@@ -387,51 +387,51 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(const TextureFormat& 
   // if (p_format.texture_type == TEXTURE_TYPE_2D || p_format.texture_type == TEXTURE_TYPE_2D_ARRAY) {
   //   create_info.flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
   // }
-	create_info.imageType = RD_TEX_TYPE_TO_VK_IMG_TYPE[p_format.texture_type];
+  create_info.imageType = RD_TEX_TYPE_TO_VK_IMG_TYPE[p_format.texture_type];
 
-	create_info.format = RD_TO_VK_FORMAT[p_format.format];
+  create_info.format = RD_TO_VK_FORMAT[p_format.format];
 
-	create_info.extent.width = p_format.width;
-	create_info.extent.height = p_format.height;
-	create_info.extent.depth = p_format.depth;
+  create_info.extent.width = p_format.width;
+  create_info.extent.height = p_format.height;
+  create_info.extent.depth = p_format.depth;
 
-	create_info.mipLevels = p_format.mipmaps;
-	create_info.arrayLayers = p_format.array_layers;
+  create_info.mipLevels = p_format.mipmaps;
+  create_info.arrayLayers = p_format.array_layers;
 
-	create_info.samples = _ensure_supported_sample_count(p_format.samples);
-	create_info.tiling = (p_format.usage_bits & TEXTURE_USAGE_CPU_READ_BIT) ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
+  create_info.samples = _ensure_supported_sample_count(p_format.samples);
+  create_info.tiling = (p_format.usage_bits & TEXTURE_USAGE_CPU_READ_BIT) ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
 
-	// Usage.
-	if ((p_format.usage_bits & TEXTURE_USAGE_SAMPLING_BIT)) {
-		create_info.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-	}
-	if ((p_format.usage_bits & TEXTURE_USAGE_STORAGE_BIT)) {
-		create_info.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
-	}
-	if ((p_format.usage_bits & TEXTURE_USAGE_COLOR_ATTACHMENT_BIT)) {
-		create_info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-	}
-	if ((p_format.usage_bits & TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-		create_info.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-	}
-	if ((p_format.usage_bits & TEXTURE_USAGE_INPUT_ATTACHMENT_BIT)) {
-		create_info.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-	}
-	if ((p_format.usage_bits & TEXTURE_USAGE_VRS_ATTACHMENT_BIT)) {
-		create_info.usage |= VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
-	}
-	if ((p_format.usage_bits & TEXTURE_USAGE_CAN_UPDATE_BIT)) {
-		create_info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-	}
-	if ((p_format.usage_bits & TEXTURE_USAGE_CAN_COPY_FROM_BIT)) {
-		create_info.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-	}
-	if ((p_format.usage_bits & TEXTURE_USAGE_CAN_COPY_TO_BIT)) {
-		create_info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-	}
+  // Usage.
+  if ((p_format.usage_bits & TEXTURE_USAGE_SAMPLING_BIT)) {
+    create_info.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+  }
+  if ((p_format.usage_bits & TEXTURE_USAGE_STORAGE_BIT)) {
+    create_info.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+  }
+  if ((p_format.usage_bits & TEXTURE_USAGE_COLOR_ATTACHMENT_BIT)) {
+    create_info.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+  }
+  if ((p_format.usage_bits & TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
+    create_info.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+  }
+  if ((p_format.usage_bits & TEXTURE_USAGE_INPUT_ATTACHMENT_BIT)) {
+    create_info.usage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+  }
+  if ((p_format.usage_bits & TEXTURE_USAGE_VRS_ATTACHMENT_BIT)) {
+    create_info.usage |= VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+  }
+  if ((p_format.usage_bits & TEXTURE_USAGE_CAN_UPDATE_BIT)) {
+    create_info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+  }
+  if ((p_format.usage_bits & TEXTURE_USAGE_CAN_COPY_FROM_BIT)) {
+    create_info.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+  }
+  if ((p_format.usage_bits & TEXTURE_USAGE_CAN_COPY_TO_BIT)) {
+    create_info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+  }
 
-	create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
   // Allocate memory.
 
   uint32_t width = 0, height = 0;
@@ -1271,8 +1271,7 @@ Error RenderingDeviceDriverVulkan::initialize(uint32_t p_device_index, uint32_t 
   ERR_FAIL_COND_V(err != OK, err);
 
   max_descriptor_sets_per_pool = GLOBAL_GET("rendering/rendering_device/vulkan/max_descriptors_per_pool");
-	breadcrumb_buffer = buffer_create(sizeof(uint32_t), BufferUsageBits::BUFFER_USAGE_TRANSFER_TO_BIT, MemoryAllocationType::MEMORY_ALLOCATION_TYPE_CPU);
-
+  breadcrumb_buffer = buffer_create(sizeof(uint32_t), BufferUsageBits::BUFFER_USAGE_TRANSFER_TO_BIT, MemoryAllocationType::MEMORY_ALLOCATION_TYPE_CPU);
 
   return OK;
 }
@@ -1867,26 +1866,26 @@ void RenderingDeviceDriverVulkan::set_object_name(ObjectType p_type, ID p_driver
       _set_object_name(VK_OBJECT_TYPE_SAMPLER, p_driver_id.id, p_name);
     } break;
     case OBJECT_TYPE_BUFFER: {
-		const BufferInfo* buf_info = (const BufferInfo*)p_driver_id.id;
-		_set_object_name(VK_OBJECT_TYPE_BUFFER, (uint64_t)buf_info->vk_buffer, p_name);
-		if (buf_info->vk_view) {
-			_set_object_name(VK_OBJECT_TYPE_BUFFER_VIEW, (uint64_t)buf_info->vk_view, p_name + " View");
-		}
-	} break;
-	case OBJECT_TYPE_SHADER: {
-		const ShaderInfo* shader_info = (const ShaderInfo*)p_driver_id.id;
-		for (uint32_t i = 0; i < shader_info->vk_descriptor_set_layouts.size(); i++) {
-			_set_object_name(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)shader_info->vk_descriptor_set_layouts[i], p_name);
-		}
-		_set_object_name(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)shader_info->vk_pipeline_layout, p_name + " Pipeline Layout");
-	} break;
-	case OBJECT_TYPE_UNIFORM_SET: {
-		const UniformSetInfo* usi = (const UniformSetInfo*)p_driver_id.id;
-		_set_object_name(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)usi->vk_descriptor_set, p_name);
-	} break;
-	case OBJECT_TYPE_PIPELINE: {
-		_set_object_name(VK_OBJECT_TYPE_PIPELINE, (uint64_t)p_driver_id.id, p_name);
-	} break;
+      const BufferInfo* buf_info = (const BufferInfo*)p_driver_id.id;
+      _set_object_name(VK_OBJECT_TYPE_BUFFER, (uint64_t)buf_info->vk_buffer, p_name);
+      if (buf_info->vk_view) {
+        _set_object_name(VK_OBJECT_TYPE_BUFFER_VIEW, (uint64_t)buf_info->vk_view, p_name + " View");
+      }
+    } break;
+    case OBJECT_TYPE_SHADER: {
+      const ShaderInfo* shader_info = (const ShaderInfo*)p_driver_id.id;
+      for (uint32_t i = 0; i < shader_info->vk_descriptor_set_layouts.size(); i++) {
+        _set_object_name(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)shader_info->vk_descriptor_set_layouts[i], p_name);
+      }
+      _set_object_name(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)shader_info->vk_pipeline_layout, p_name + " Pipeline Layout");
+    } break;
+    case OBJECT_TYPE_UNIFORM_SET: {
+      const UniformSetInfo* usi = (const UniformSetInfo*)p_driver_id.id;
+      _set_object_name(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)usi->vk_descriptor_set, p_name);
+    } break;
+    case OBJECT_TYPE_PIPELINE: {
+      _set_object_name(VK_OBJECT_TYPE_PIPELINE, (uint64_t)p_driver_id.id, p_name);
+    } break;
     default: {
       DEV_ASSERT(false);
     }
@@ -3335,7 +3334,9 @@ void RenderingDeviceDriverVulkan::command_pipeline_barrier(CommandBufferID p_cmd
   }
 
 #if PRINT_NATIVE_COMMANDS
-  print_line(vformat("vkCmdPipelineBarrier MEMORY %d BUFFER %d TEXTURE %d", p_memory_barriers.size(), p_buffer_barriers.size(), p_texture_barriers.size()));
+  print_line(vformat("vkCmdPipelineBarrier MEMORY %d BUFFER %d TEXTURE %d SRC_ACCESS_STAGE 0x%uX DST_ACCESS_STAGE 0x%uX", p_memory_barriers.size(), p_buffer_barriers.size(),
+                     p_texture_barriers.size(), _rd_to_vk_pipeline_stages(p_src_stages), _rd_to_vk_pipeline_stages(p_dst_stages)));
+
   for (uint32_t i = 0; i < p_memory_barriers.size(); i++) {
     print_line(vformat("  VkMemoryBarrier #%d src 0x%uX dst 0x%uX", i, vk_memory_barriers[i].srcAccessMask, vk_memory_barriers[i].dstAccessMask));
   }
@@ -4428,7 +4429,7 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::shader_compile_binary_from_spirv(Ve
   total_size += stages_binary_size;
 
   Vector<uint8_t> ret;
-  ret.resize(total_size); 
+  ret.resize(total_size);
   {
     uint32_t offset = 0;
     uint8_t* binptr = ret.ptrw();
@@ -4676,7 +4677,7 @@ RDD::ShaderID RDDV::shader_create_from_bytecode(const Vector<uint8_t>& p_shader_
 
     VkShaderModule vk_module = VK_NULL_HANDLE;
     VkResult res = vkCreateShaderModule(vk_device, &shader_module_create_info, nullptr, &vk_module);
-    if (res) { // 如果pCode不是正确的spirv代码这里也不会返回Error（属于UB）
+    if (res) {  // 如果pCode不是正确的spirv代码这里也不会返回Error（属于UB）
       error_text = "Error (" + itos(res) + ") creating shader module for stage: " + String(SHADER_STAGE_NAMES[r_shader_desc.stages[i]]);
       break;
     }
@@ -5003,44 +5004,44 @@ uint64_t RenderingDeviceDriverVulkan::limit_get(Limit p_limit) {
   }
 }
 uint64_t RenderingDeviceDriverVulkan::get_resource_native_handle(DriverResource p_type, ID p_driver_id) {
-	switch (p_type) {
-		case DRIVER_RESOURCE_LOGICAL_DEVICE: {
-			return (uint64_t)vk_device;
-		}
-		case DRIVER_RESOURCE_PHYSICAL_DEVICE: {
-			return (uint64_t)physical_device;
-		}
-		case DRIVER_RESOURCE_TOPMOST_OBJECT: {
-			return (uint64_t)context_driver->instance_get();
-		}
-		case DRIVER_RESOURCE_COMMAND_QUEUE: {
-			const CommandQueue *queue_info = (const CommandQueue *)p_driver_id.id;
-			return (uint64_t)queue_families[queue_info->queue_family][queue_info->queue_index].queue;
-		}
-		case DRIVER_RESOURCE_QUEUE_FAMILY: {
-			return uint32_t(p_driver_id.id) - 1;
-		}
-		case DRIVER_RESOURCE_TEXTURE: {
-			const TextureInfo *tex_info = (const TextureInfo *)p_driver_id.id;
-			return (uint64_t)tex_info->vk_view_create_info.image;
-		}
-		case DRIVER_RESOURCE_TEXTURE_VIEW: {
-			const TextureInfo *tex_info = (const TextureInfo *)p_driver_id.id;
-			return (uint64_t)tex_info->vk_view;
-		}
-		case DRIVER_RESOURCE_TEXTURE_DATA_FORMAT: {
-			const TextureInfo *tex_info = (const TextureInfo *)p_driver_id.id;
-			return (uint64_t)tex_info->vk_view_create_info.format;
-		}
-		case DRIVER_RESOURCE_SAMPLER:
-		case DRIVER_RESOURCE_UNIFORM_SET:
-		case DRIVER_RESOURCE_BUFFER:
-		case DRIVER_RESOURCE_COMPUTE_PIPELINE:
-		case DRIVER_RESOURCE_RENDER_PIPELINE: {
-			return p_driver_id.id;
-		}
-		default: {
-			return 0;
-		}
-	}
+  switch (p_type) {
+    case DRIVER_RESOURCE_LOGICAL_DEVICE: {
+      return (uint64_t)vk_device;
+    }
+    case DRIVER_RESOURCE_PHYSICAL_DEVICE: {
+      return (uint64_t)physical_device;
+    }
+    case DRIVER_RESOURCE_TOPMOST_OBJECT: {
+      return (uint64_t)context_driver->instance_get();
+    }
+    case DRIVER_RESOURCE_COMMAND_QUEUE: {
+      const CommandQueue* queue_info = (const CommandQueue*)p_driver_id.id;
+      return (uint64_t)queue_families[queue_info->queue_family][queue_info->queue_index].queue;
+    }
+    case DRIVER_RESOURCE_QUEUE_FAMILY: {
+      return uint32_t(p_driver_id.id) - 1;
+    }
+    case DRIVER_RESOURCE_TEXTURE: {
+      const TextureInfo* tex_info = (const TextureInfo*)p_driver_id.id;
+      return (uint64_t)tex_info->vk_view_create_info.image;
+    }
+    case DRIVER_RESOURCE_TEXTURE_VIEW: {
+      const TextureInfo* tex_info = (const TextureInfo*)p_driver_id.id;
+      return (uint64_t)tex_info->vk_view;
+    }
+    case DRIVER_RESOURCE_TEXTURE_DATA_FORMAT: {
+      const TextureInfo* tex_info = (const TextureInfo*)p_driver_id.id;
+      return (uint64_t)tex_info->vk_view_create_info.format;
+    }
+    case DRIVER_RESOURCE_SAMPLER:
+    case DRIVER_RESOURCE_UNIFORM_SET:
+    case DRIVER_RESOURCE_BUFFER:
+    case DRIVER_RESOURCE_COMPUTE_PIPELINE:
+    case DRIVER_RESOURCE_RENDER_PIPELINE: {
+      return p_driver_id.id;
+    }
+    default: {
+      return 0;
+    }
+  }
 }

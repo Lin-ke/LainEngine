@@ -2,7 +2,7 @@
 #define NODE_3D_DATA_H
 #include "core/meta/reflection/reflection_marcos.h"
 #define DATA_STRUCT(m_class, m_inherit) \
-  struct m_class##Data : m_inherit {    \
+  struct m_class##Data : m_inherit##Data {    \
     META(Fields)
 
 #define DATA_STRUCT_END() \

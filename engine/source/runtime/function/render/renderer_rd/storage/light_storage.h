@@ -15,6 +15,7 @@ class LightStorage : public RendererLightStorage {
   virtual ~LightStorage();
   static LightStorage* get_singleton() { return singleton; }
   bool owns_reflection_probe(RID p_rid);
+	bool owns_reflection_probe_instance(RID p_rid);
   bool owns_light(RID p_rid);
   bool owns_lightmap(RID p_rid);
   bool free(RID p_rid);

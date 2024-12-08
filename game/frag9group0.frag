@@ -14,9 +14,8 @@
 #define MAX_LIGHTMAPS 8
 
 #define MATERIAL_UNIFORM_SET 3
-#define MODE_UNSHADED
-#define FOG_DISABLED
 
+#define VERTEX_CODE_USED
 #define FRAGMENT_CODE_USED
 #define RENDER_DRIVER_VULKAN
 #define SHADER_IS_SRGB false
@@ -1749,8 +1748,9 @@ void fragment_shader(in SceneData scene_data) {
 	vec2 read_viewport_size = scene_data.viewport_size;
 	{
 	{
-		albedo=vec3(0.40000000596046,0.80000001192093,0.80000001192093);
-		alpha=0.10000000149012;
+		albedo=vec3(0.60000002384186,0.60000002384186,0.60000002384186);
+		roughness=0.80000001192093;
+		metallic=0.20000000298023;
 	}
 	}
 #ifdef LIGHT_TRANSMITTANCE_USED

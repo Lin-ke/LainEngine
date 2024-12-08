@@ -11,7 +11,7 @@ namespace lain {
 
 class Mesh : public Resource {
 	LCLASS(Mesh, Resource);
-	RES_BASE_EXTENSION("material")
+	
 
 	mutable Ref<TriangleMesh> triangle_mesh; //cached
 	mutable Vector<Ref<TriangleMesh>> surface_triangle_meshes; //cached 
@@ -132,7 +132,7 @@ public:
 	Size2i get_lightmap_size_hint() const;
 	void clear_cache() const;
 
-	Mesh();
+	Mesh(){}
 
 };
 }

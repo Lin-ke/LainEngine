@@ -3,7 +3,7 @@
 #define _VECTOR3_H_
 #include "runtime/core/math/math.h"
 #include "runtime/core/meta/reflection/reflection_marcos.h"
-
+#include "vector2.h"
 #include <cassert>
 
 namespace lain {
@@ -27,7 +27,9 @@ struct _NO_DISCARD_ Vector3 {
   Vector3 min(const Vector3& p_vector3) const { return Vector3(MIN(x, p_vector3.x), MIN(y, p_vector3.y), MIN(z, p_vector3.z)); }
   Vector3 maxf(real_t p_scalar) const { return Vector3(MAX(x, p_scalar), MAX(y, p_scalar), MAX(z, p_scalar)); }
   void Vector3::zero() { x = y = z = 0; }
-  Vector3() = default;
+  Vector3(){
+    x = y = z = 0;
+  }
   Vector3(real_t x_, real_t y_, real_t z_) : x{x_}, y{y_}, z{z_} {}
   Vector3(const Vector3i& p_v);
   operator String() const;
@@ -187,7 +189,39 @@ struct _NO_DISCARD_ Vector3 {
     z /= scalar;
     return *this;
   }
+Vector2 octahedron_encode() const {
+	Vector3 n = *this;
+	n /= Math::abs(n.x) + Math::abs(n.y) + Math::abs(n.z);
+	Vector2 o;
+	if (n.z >= 0.0f) {
+		o.x = n.x;
+		o.y = n.y;
+	} else {
+		o.x = (1.0f - Math::abs(n.y)) * (n.x >= 0.0f ? 1.0f : -1.0f);
+		o.y = (1.0f - Math::abs(n.x)) * (n.y >= 0.0f ? 1.0f : -1.0f);
+	}
+	o.x = o.x * 0.5f + 0.5f;
+	o.y = o.y * 0.5f + 0.5f;
+	return o;
+}
 
+Vector3 Vector3::octahedron_decode(const Vector2 &p_oct) {
+	Vector2 f(p_oct.x * 2.0f - 1.0f, p_oct.y * 2.0f - 1.0f);
+	Vector3 n(f.x, f.y, 1.0f - Math::abs(f.x) - Math::abs(f.y));
+	const real_t t = CLAMP(-n.z, 0.0f, 1.0f);
+	n.x += n.x >= 0 ? -t : t;
+	n.y += n.y >= 0 ? -t : t;
+	return n.normalized();
+}
+
+Vector2 Vector3::octahedron_tangent_encode(float p_sign) const {
+	const real_t bias = 1.0f / (real_t)32767.0f;
+	Vector2 res = octahedron_encode();
+	res.y = MAX(res.y, bias);
+	res.y = res.y * 0.5f + 0.5f;
+	res.y = p_sign >= 0.0f ? res.y : 1 - res.y;
+	return res;
+}
   Vector3& operator/=(const Vector3& rhs) {
     assert(rhs.x != 0 && rhs.y != 0 && rhs.z != 0);
     x /= rhs.x;

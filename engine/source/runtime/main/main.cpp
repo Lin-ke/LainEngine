@@ -85,7 +85,7 @@ Error Main::Initialize(int argc, char* argv[]) {
     args.push_back(String::utf8(argv[i]));
   }
   // initialize workerthreadpool
-  WorkerThreadPool::get_singleton()->init(1, 0.75);
+  WorkerThreadPool::get_singleton()->init(16, 0.75);
 
   // change working dir
   String path = argv[0];

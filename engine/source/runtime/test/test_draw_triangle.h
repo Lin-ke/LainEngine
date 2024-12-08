@@ -38,7 +38,7 @@ void test_draw_triangle() {
   attr.format = RD::DataFormat::DATA_FORMAT_R32G32B32_SFLOAT;
   attr.frequency = RD::VertexFrequency::VERTEX_FREQUENCY_VERTEX;
   RD::VertexFormatID vertex_format_id = device->vertex_format_create({attr});
-  auto points = Vector<float>{1, 1, 0, -1, 1, 0, 0, -1, 0}.to_byte_array();
+  auto points = Vector<float>{.5, .5, 0, -.5, .5, 0, 0, -.5, 0}.to_byte_array();
 
   RID vertex_buffer_id = device->vertex_buffer_create(points.size(), points);
   RID vertex_array_id  = device->vertex_array_create(3, vertex_format_id, {vertex_buffer_id});
@@ -64,7 +64,7 @@ void test_draw_triangle() {
     RD::PipelineDepthStencilState(), RD::PipelineColorBlendState::create_blend()
 
   );
-  auto clear_color_values= PackedColorArray({Color(1,1,1,1)});
+  auto clear_color_values= PackedColorArray({Color(1,0.2,0.2,1)});
   
   auto draw_list = device->draw_list_begin(
     framebuf, RD::ColorInitialAction(), RD::ColorFinalAction(), RD::InitialAction::INITIAL_ACTION_CLEAR, RD::FinalAction::FINAL_ACTION_STORE,

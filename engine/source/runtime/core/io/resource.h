@@ -61,6 +61,7 @@ namespace lain {
 		_FORCE_INLINE_ bool IsBuiltIn() const { return path_cache.is_empty() || path_cache.contains("::") || path_cache.begins_with("local://"); }
 		~Resource();
 		void set_local_to_scene(bool p_enable);
+		virtual bool is_local_to_scene() const {return local_to_scene;}
 	protected:
 		void _set_path(const String& p_path) { set_path(p_path, false); }
 		void _take_over_path(const String& p_path) { set_path(p_path, true); }
@@ -85,6 +86,7 @@ namespace lain {
 
 	public:
 		static bool has(const String& p_path);
+
 
 		static Ref<Resource> get_ref(const String& p_path);
 		static void get_cached_resources(List<Ref<Resource>>* p_resources);

@@ -168,7 +168,8 @@ target("CompileShader")
         end
     )
 target("Core")
-    add_defines("DEBUG_METHODS_ENABLED")
+    -- add_defines("DEBUG_METHODS_ENABLED")
+    add_defines("TYPED_METHOD_BIND", {public=true})
     set_kind("static")
     set_languages("cxx17", "c99")
     add_headerfiles("engine/source/runtime/**.h") --- 

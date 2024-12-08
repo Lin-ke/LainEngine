@@ -2,7 +2,7 @@
 #include "core/io/resource_loader.h"
 #include "core/scene/component/component.h"
 #include "core/scene/object/gobject.h"
-
+#include "property_utils.h"
 namespace lain {
 bool SceneState::disable_placeholders = false;
 
@@ -600,43 +600,45 @@ Error SceneState::_parse_gobject(GObject* p_owner, GObject* p_node, int p_parent
   // all setup, we then proceed to check all properties for the node
   // and save the ones that are worth saving
 
-  //List<PropertyInfo> plist;
-  //p_node->get_property_list(&plist);
+  List<PropertyInfo> plist;
+  p_node->get_property_list(&plist);
 
-  //Array pinned_props = _sanitize_gobject_pinned_properties(p_node);
+  Array pinned_props;
   //Dictionary missing_resource_properties = p_node->get_meta(META_MISSING_RESOURCES, Dictionary());
 
-  //for (const PropertyInfo& E : plist) {
-  //	if (!(E.usage & PROPERTY_USAGE_STORAGE)) {
-  //		continue;
-  //	}
+  for (const PropertyInfo& E : plist) {
+  	if (!(E.usage & PROPERTY_USAGE_STORAGE)) {
+  		continue;
+  	}
+  
 
   //	if (E.name == META_PROPERTY_MISSING_RESOURCES) {
   //		continue; // Ignore this property when packing.
   //	}
 
-  //	// If instance or inheriting, not saving if property requested so.
-  //	if (!states_stack.is_empty()) {
-  //		if ((E.usage & PROPERTY_USAGE_NO_INSTANCE_STATE)) {
-  //			continue;
-  //		}
-  //	}
+  	// If instance or inheriting, not saving if property requested so.
+  	if (!states_stack.is_empty()) {
+  		if ((E.usage & PROPERTY_USAGE_NO_INSTANCE_STATE)) {
+  			continue;
+  		}
+  	}
 
-  /*StringName name = E.name;
+   StringName name = E.name;
 			Variant value = p_node->get(name);
-			bool use_deferred_gobject_path_bit = false;*/
+			bool use_deferred_gobject_path_bit = false;
 
-  //	if (E.type == Variant::OBJECT && E.hint == PROPERTY_HINT_NODE_TYPE) {
-  //		if (value.get_type() == Variant::OBJECT) {
-  //			if (GObject* n = Object::cast_to<GObject>(value)) {
-  //				value = p_node->get_path_to(n);
-  //			}
-  //			use_deferred_gobject_path_bit = true;
-  //		}
-  //		if (value.get_type() != Variant::NODE_PATH) {
-  //			continue; //was never set, ignore.
-  //		}
-  //	}
+
+  	if (E.type == Variant::OBJECT && E.hint == PROPERTY_HINT_NODE_TYPE) {
+  		if (value.get_type() == Variant::OBJECT) {
+  			if (GObject* n = Object::cast_to<GObject>(value)) {
+  				value = p_node->get_path_to(n);
+  			}
+  			use_deferred_gobject_path_bit = true;
+  		}
+  		if (value.get_type() != Variant::GOBJECT_PATH) {
+  			continue; //was never set, ignore.
+  		}
+  	}
   //	else if (E.type == Variant::OBJECT && missing_resource_properties.has(E.name)) {
   //		// Was this missing resource overridden? If so do not save the old value.
   //		Ref<Resource> ures = value;
@@ -644,91 +646,91 @@ Error SceneState::_parse_gobject(GObject* p_owner, GObject* p_node, int p_parent
   //			value = missing_resource_properties[E.name];
   //		}
   //	}
-  //	else if (E.type == Variant::ARRAY && E.hint == PROPERTY_HINT_TYPE_STRING) {
-  //		int hint_subtype_separator = E.hint_string.find(":");
-  //		if (hint_subtype_separator >= 0) {
-  //			String subtype_string = E.hint_string.substr(0, hint_subtype_separator);
-  //			int slash_pos = subtype_string.find("/");
-  //			PropertyHint subtype_hint = PropertyHint::PROPERTY_HINT_NONE;
-  //			if (slash_pos >= 0) {
-  //				subtype_hint = PropertyHint(subtype_string.get_slice("/", 1).to_int());
-  //				subtype_string = subtype_string.substr(0, slash_pos);
-  //			}
-  //			Variant::Type subtype = Variant::Type(subtype_string.to_int());
+  	else if (E.type == Variant::ARRAY && E.hint == PROPERTY_HINT_TYPE_STRING) {
+  		int hint_subtype_separator = E.hint_string.find(":");
+  		if (hint_subtype_separator >= 0) {
+  			String subtype_string = E.hint_string.substr(0, hint_subtype_separator);
+  			int slash_pos = subtype_string.find("/");
+  			PropertyHint subtype_hint = PropertyHint::PROPERTY_HINT_NONE;
+  			if (slash_pos >= 0) {
+  				subtype_hint = PropertyHint(subtype_string.get_slice("/", 1).to_int());
+  				subtype_string = subtype_string.substr(0, slash_pos);
+  			}
+  			Variant::Type subtype = Variant::Type(subtype_string.to_int());
 
-  //			if (subtype == Variant::OBJECT && subtype_hint == PROPERTY_HINT_NODE_TYPE) {
-  //				use_deferred_gobject_path_bit = true;
-  //				Array array = value;
-  //				Array new_array;
-  //				for (int i = 0; i < array.size(); i++) {
-  //					Variant elem = array[i];
-  //					if (elem.get_type() == Variant::OBJECT) {
-  //						if (GObject* n = Object::cast_to<GObject>(elem)) {
-  //							new_array.push_back(p_node->get_path_to(n));
-  //							continue;
-  //						}
-  //					}
-  //					new_array.push_back(elem);
-  //				}
-  //				value = new_array;
-  //			}
-  //		}
-  //	}
+  			if (subtype == Variant::OBJECT && subtype_hint == PROPERTY_HINT_NODE_TYPE) {
+  				use_deferred_gobject_path_bit = true;
+  				Array array = value;
+  				Array new_array;
+  				for (int i = 0; i < array.size(); i++) {
+  					Variant elem = array[i];
+  					if (elem.get_type() == Variant::OBJECT) {
+  						if (GObject* n = Object::cast_to<GObject>(elem)) {
+  							new_array.push_back(p_node->get_path_to(n));
+  							continue;
+  						}
+  					}
+  					new_array.push_back(elem);
+  				}
+  				value = new_array;
+  			}
+  		}
+  	}
 
-  //	if (!pinned_props.has(name)) {
-  //		bool is_valid_default = false;
-  //		Variant default_value = PropertyUtils::get_property_default_value(p_node, name, &is_valid_default, &states_stack, true);
+  	if (!pinned_props.has(name)) {
+  		bool is_valid_default = false;
+  		Variant default_value = PropertyUtils::get_property_default_value(p_node, name);
 
-  //		if (is_valid_default && !PropertyUtils::is_property_value_different(value, default_value)) {
-  //			if (value.get_type() == Variant::ARRAY && has_local_resource(value)) {
-  //				// Save anyway
-  //			}
-  //			else if (value.get_type() == Variant::DICTIONARY) {
-  //				Dictionary dictionary = value;
-  //				if (!has_local_resource(dictionary.values()) && !has_local_resource(dictionary.keys())) {
-  //					continue;
-  //				}
-  //			}
-  //			else {
-  //				continue;
-  //			}
-  //		}
-  //	}
+  		if (is_valid_default && !PropertyUtils::is_property_value_different(p_node, value, default_value)) {
+  			if (value.get_type() == Variant::ARRAY && has_local_resource(value)) {
+  				// Save anyway
+  			}
+  			else if (value.get_type() == Variant::DICTIONARY) {
+  				Dictionary dictionary = value;
+  				if (!has_local_resource(dictionary.values()) && !has_local_resource(dictionary.keys())) {
+  					continue;
+  				}
+  			}
+  			else {
+  				continue;
+  			}
+  		}
+  	}
 
-  //	GObjectData::Property prop;
-  //	prop.name = _nm_get_string(name, name_map);
-  //	prop.value = _vm_get_variant(value, variant_map);
-  //	if (use_deferred_gobject_path_bit) {
-  //		prop.name |= FLAG_PATH_PROPERTY_IS_NODE;
-  //	}
-  //	nd.properties.push_back(prop);
-  //}
+  	GObjectData::Property prop;
+  	prop.name = _nm_get_string(name, name_map);
+  	prop.value = _vm_get_variant(value, variant_map);
+  	if (use_deferred_gobject_path_bit) {
+  		prop.name |= PackedScene::FLAG_PATH_PROPERTY_IS_NODE;
+  	}
+  	nd.properties.push_back(prop);
+  }
 
   //// save the groups this node is into
   //// discard groups that come from the original scene
 
-  //List<GObject::GroupInfo> groups;
-  //p_node->get_groups(&groups);
-  //for (const GObject::GroupInfo& gi : groups) {
-  //	if (!gi.persistent) {
-  //		continue;
-  //	}
+  // List<GObject::GroupInfo> groups;
+  // p_node->get_groups(&groups);
+  // for (const GObject::GroupInfo& gi : groups) {
+  // 	if (!gi.persistent) {
+  // 		continue;
+  // 	}
 
-  //	bool skip = false;
-  //	for (const SceneState::PackState& ia : states_stack) {
-  //		//check all levels of pack to see if the group was added somewhere
-  //		if (ia.state->is_gobject_in_group(ia.node, gi.name)) {
-  //			skip = true;
-  //			break;
-  //		}
-  //	}
+  // 	bool skip = false;
+  // 	for (const SceneState::PackState& ia : states_stack) {
+  // 		//check all levels of pack to see if the group was added somewhere
+  // 		if (ia.state->is_gobject_in_group(ia.node, gi.name)) {
+  // 			skip = true;
+  // 			break;
+  // 		}
+  // 	}
 
-  //	if (skip) {
-  //		continue;
-  //	}
+  // 	if (skip) {
+  // 		continue;
+  // 	}
 
-  //	nd.groups.push_back(_nm_get_string(gi.name, name_map));
-  //}
+  // 	nd.groups.push_back(_nm_get_string(gi.name, name_map));
+  // }
 
   // save the right owner
   // for the saved scene root this is -1
@@ -750,25 +752,25 @@ Error SceneState::_parse_gobject(GObject* p_owner, GObject* p_node, int p_parent
   } else {
     nd.type = TYPE_INSTANTIATED;
   }
-  //MissingGObject* missing_node = Object::cast_to<MissingGObject>(p_node);
+  // MissingGObject* missing_node = Object::cast_to<MissingGObject>(p_node);
 
-  //// Save the right type. If this node was created by an instance
-  //// then flag that the node should not be created but reused
-  //if (states_stack.is_empty() && !is_editable_instance) {
-  //	//This node is not part of an instantiation process, so save the type.
-  //	if (missing_node != nullptr) {
-  //		// It's a missing node (type non existent on load).
-  //		nd.type = _nm_get_string(missing_node->get_original_class(), name_map);
-  //	}
-  //	else {
-  //		nd.type = _nm_get_string(p_node->get_class(), name_map);
-  //	}
-  //}
-  //else {
-  //	// this node is part of an instantiated process, so do not save the type.
-  //	// instead, save that it was instantiated
-  //	nd.type = TYPE_INSTANTIATED;
-  //}
+  // //// Save the right type. If this node was created by an instance
+  // //// then flag that the node should not be created but reused
+  // if (states_stack.is_empty() && !is_editable_instance) {
+  // 	//This node is not part of an instantiation process, so save the type.
+  // 	if (missing_node != nullptr) {
+  // 		// It's a missing node (type non existent on load).
+  // 		nd.type = _nm_get_string(missing_node->get_original_class(), name_map);
+  // 	}
+  // 	else {
+  // 		nd.type = _nm_get_string(p_node->get_class(), name_map);
+  // 	}
+  // }
+  // else {
+  // 	// this node is part of an instantiated process, so do not save the type.
+  // 	// instead, save that it was instantiated
+  // 	nd.type = TYPE_INSTANTIATED;
+  // }
 
   // determine whether to save this node or not
   // if this node is part of an instantiated sub-scene, we can skip storing it if basically
@@ -804,17 +806,17 @@ Error SceneState::_parse_gobject(GObject* p_owner, GObject* p_node, int p_parent
     }
 
     parent_node = idx;
-    {  // 处理node instance resource
-      // 应该全部依靠这个数据聚合类去反射
-      if (p_node->get_instance_data() == nullptr) {
-        L_CORE_ERROR("Node class " + p_node->get_class() + "has no serializer");  // error
-        nd.node_ins_res = "{}";
-      } else {
-        void* ins_data = p_node->get_instance_data();
-        nd.node_ins_res = Reflection::TypeMeta::writeByName(p_node->get_data_classname(), ins_data).dump();
-        memdelete(ins_data);
-      }
-    }
+    // {  // 处理node instance resource
+    //   // 应该全部依靠这个数据聚合类去反射
+    //   if (p_node->get_instance_data() == nullptr) {
+    //     L_CORE_ERROR("Node class " + p_node->get_class() + "has no serializer");  // error
+    //     nd.node_ins_res = "{}";
+    //   } else {
+    //     void* ins_data = p_node->get_instance_data();
+    //     nd.node_ins_res = Reflection::TypeMeta::writeByName(p_node->get_data_classname(), ins_data).dump();
+    //     memdelete(ins_data);
+    //   }
+    // }
     gobjects.push_back(nd);
   }
 
@@ -828,6 +830,16 @@ Error SceneState::_parse_gobject(GObject* p_owner, GObject* p_node, int p_parent
 
   return OK;
 }
+bool SceneState::has_local_resource(const Array &p_array) const {
+	for (int i = 0; i < p_array.size(); i++) {
+		Ref<Resource> res = p_array[i];
+		if (res.is_valid() && res->is_local_to_scene()) {
+			return true;
+		}
+	}
+	return false;
+}
+
 Ref<SceneState> SceneState::get_base_scene_state() const {
   if (base_scene_idx >= 0) {
     Ref<PackedScene> ps = variants[base_scene_idx];

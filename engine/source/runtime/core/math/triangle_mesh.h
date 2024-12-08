@@ -10,8 +10,6 @@ namespace lain {
 	REFLECTION_TYPE(TriangleMesh);
 class TriangleMesh : public RefCounted {
 	REFLECTION_BODY(TriangleMesh);
-	INNER_REFLECTION_BODY(BVH, TriangleMesh);
-
 	LCLASS(TriangleMesh, RefCounted);
 	
 
@@ -24,8 +22,7 @@ public:
 	};
 
 	struct BVH {
-		META(Fields)
-			AABB aabb;
+		AABB aabb;
 		Vector3 center; //used for sorting
 		int left;
 		int right;

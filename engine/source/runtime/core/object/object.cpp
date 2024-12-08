@@ -20,21 +20,9 @@ void Object::from_data(void* p_data, bool p_reversed) {
 }
 // reverse：先调父类再调子类
 void Object::notification(int p_notification, bool p_reversed) {
-  if (p_reversed) {
-    /*if (script_instance) {
-				script_instance->notification(p_notification, p_reversed);
-			}*/
-  } else {
-    _notificationv(p_notification, p_reversed);
-  }
-  if (p_reversed) {
-    _notificationv(p_notification, p_reversed);
-  }
-  /*else {
-			if (script_instance) {
-				script_instance->notification(p_notification, p_reversed);
-			}
-		}*/
+
+  _notificationv(p_notification, p_reversed);
+
 }
 
 PropertyInfo PropertyInfo::from_dict(const Dictionary& p_dict) {
@@ -116,6 +104,11 @@ void Object::set(const StringName& p_name, const Variant& p_value, bool* r_valid
   if (ClassDB::set_property(this, p_name, p_value)) {
     return;
   }
+}
+
+void Object::get_property_list(List<PropertyInfo>* p_list, bool p_reversed) const
+{
+	_get_property_listv(p_list, p_reversed);
 }
 
 }  // namespace lain

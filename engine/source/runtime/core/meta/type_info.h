@@ -125,6 +125,7 @@ enum Metadata {
 //template <typename T, typename = void>
 //struct GetTypeInfo;
 // GetTypeInfo 通过特化提供对应的 VariantType 和 PropertyInfo
+// include 该文件必须已经include propertyinfo 文件（object.h)
 template <typename T, typename = void>
 struct GetTypeInfo;
 
@@ -308,6 +309,33 @@ namespace Reflection{
 	TEMPL_MAKE_ENUM_TYPE_INFO(m_enum, m_enum const) \
 	TEMPL_MAKE_ENUM_TYPE_INFO(m_enum, m_enum &)     \
 	TEMPL_MAKE_ENUM_TYPE_INFO(m_enum, const m_enum &)
+
+
+#define TEMPL_MAKE_BITFIELD_TYPE_INFO(m_enum, m_impl)                                                                                      \
+  template <>                                                                                                                              \
+  struct GetTypeInfo<m_impl> {                                                                                                             \
+    static const Variant::Type VARIANT_TYPE = Variant::INT;                                                                                \
+    static const Reflection::Metadata METADATA = Reflection::METADATA_NONE;                                                          \
+    static inline PropertyInfo get_class_info() {                                                                                          \
+      return PropertyInfo(Variant::INT, String(), PROPERTY_HINT_NONE, String(), PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_CLASS_IS_BITFIELD, \
+                          Reflection::enum_qualified_name_to_class_info_name(String(#m_enum)));                                        \
+    }                                                                                                                                      \
+  };                                                                                                                                       \
+  template <>                                                                                                                              \
+  struct GetTypeInfo<BitField<m_impl>> {                                                                                                   \
+    static const Variant::Type VARIANT_TYPE = Variant::INT;                                                                                \
+    static const Reflection::Metadata METADATA = Reflection::METADATA_NONE;                                                          \
+    static inline PropertyInfo get_class_info() {                                                                                          \
+      return PropertyInfo(Variant::INT, String(), PROPERTY_HINT_NONE, String(), PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_CLASS_IS_BITFIELD, \
+                          Reflection::enum_qualified_name_to_class_info_name(String(#m_enum)));                                        \
+    }                                                                                                                                      \
+  };
+
+#define MAKE_BITFIELD_TYPE_INFO(m_enum)               \
+  TEMPL_MAKE_BITFIELD_TYPE_INFO(m_enum, m_enum)       \
+  TEMPL_MAKE_BITFIELD_TYPE_INFO(m_enum, m_enum const) \
+  TEMPL_MAKE_BITFIELD_TYPE_INFO(m_enum, m_enum&)      \
+  TEMPL_MAKE_BITFIELD_TYPE_INFO(m_enum, const m_enum&)
 
 }  // namespace lain
 #endif  // TYPE_INFO_H

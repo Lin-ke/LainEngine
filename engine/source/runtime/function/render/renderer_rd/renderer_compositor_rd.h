@@ -14,10 +14,13 @@
 #include "utilities_rd.h"
 
 #include "shaders/blit.glsl.gen.h"
-
+#include "storage/framebuffer_cache_rd.h"
+#include "uniform_set_cache_rd.h" // 这个也应该放到那里
 namespace lain {
 class RendererCompositorRD : public RendererCompositor {
  protected:
+   UniformSetCacheRD *uniform_set_cache = nullptr;
+	FramebufferCacheRD *framebuffer_cache = nullptr;
   RendererSceneRenderRD* scene = nullptr;
   RendererRD::MaterialStorage* material_storage = nullptr;
   RendererRD::MeshStorage* mesh_storage = nullptr;
