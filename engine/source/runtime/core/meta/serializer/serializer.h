@@ -131,15 +131,15 @@ class Serializer {
     for (const auto& pair : json_context.object_items()) {
       K k;
       V v;
-      Serializer::read(pair.first, k);
-      Serializer::read(pair.second, v);
+      Serializer::read(pair.key, k);
+      Serializer::read(pair.value, v);
       instance[k] = v;
     }
-    return instance;
+    return ;
   }
 
   template <typename K, typename V>
-  static Json write(const lain::HashMap<K, V>& instance) {
+  static Json write(const HashMap<K, V>& instance) {
     Json::object ret_context;
     // 这里需要避免双引号
     for (const KeyValue<K, V>& E : instance) {

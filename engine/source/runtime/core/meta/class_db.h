@@ -144,7 +144,7 @@ class ClassDB {
   static void add_property(const StringName& p_class, const PropertyInfo& p_pinfo, const StringName& p_setter, const StringName& p_getter, int p_index = -1);
   static bool has_method(const StringName& p_class, const StringName& p_method, bool p_no_inheritance = false);
 	static bool get_property_info(const StringName &p_class, const StringName &p_property, PropertyInfo *r_info, bool p_no_inheritance = false, const Object *p_validator = nullptr);
-
+  static MethodBind* get_method(const StringName&, const StringName&);
 #ifdef DEBUG_METHODS_ENABLED
   static MethodBind* bind_methodfi(uint32_t p_flags, MethodBind* p_bind, bool p_compatibility, const MethodDefinition& method_name, const Variant** p_defs, int p_defcount);
 #else

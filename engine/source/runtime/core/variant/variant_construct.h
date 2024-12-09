@@ -15,6 +15,7 @@ namespace lain {
 
 template <typename T>
 struct PtrConstruct {};
+// 提供construct 方法，在p_ptr位置构造一个p_value
 
 #define MAKE_PTRCONSTRUCT(m_type)                                              \
   template <>                                                                  \

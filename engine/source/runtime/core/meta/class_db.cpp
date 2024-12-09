@@ -283,12 +283,78 @@ void ClassDB::get_property_list(const StringName& p_class, List<PropertyInfo>* p
 		check = check->inherits_ptr;
 	}
 }
+MethodBind *ClassDB::get_method(const StringName &p_class, const StringName &p_name) {
+	OBJTYPE_RLOCK;
+
+	ClassInfo *type = classes.getptr(p_class);
+
+	while (type) {
+		MethodBind **method = type->method_map.getptr(p_name);
+		if (method && *method) {
+			return *method;
+		}
+		type = type->inherits_ptr;
+	}
+	return nullptr;
+}
+
+
 
 void ClassDB::add_property(const StringName& p_class, const PropertyInfo& p_pinfo, const StringName& p_setter, const StringName& p_getter, int p_index) {
   	lock.read_lock();
 	ClassInfo *type = classes.getptr(p_class);
 	lock.read_unlock();
+ERR_FAIL_NULL(type);
 
+	MethodBind *mb_set = nullptr;
+	if (p_setter) {
+		mb_set = get_method(p_class, p_setter);
+#ifdef DEBUG_METHODS_ENABLED
+
+		ERR_FAIL_NULL_MSG(mb_set, "Invalid setter '" + p_class + "::" + p_setter + "' for property '" + p_pinfo.name + "'.");
+
+		int exp_args = 1 + (p_index >= 0 ? 1 : 0);
+		ERR_FAIL_COND_MSG(mb_set->get_argument_count() != exp_args, "Invalid function for setter '" + p_class + "::" + p_setter + " for property '" + p_pinfo.name + "'.");
+#endif
+	}
+
+	MethodBind *mb_get = nullptr;
+	if (p_getter) {
+		mb_get = get_method(p_class, p_getter);
+#ifdef DEBUG_METHODS_ENABLED
+
+		ERR_FAIL_NULL_MSG(mb_get, "Invalid getter '" + p_class + "::" + p_getter + "' for property '" + p_pinfo.name + "'.");
+
+		int exp_args = 0 + (p_index >= 0 ? 1 : 0);
+		ERR_FAIL_COND_MSG(mb_get->get_argument_count() != exp_args, "Invalid function for getter '" + p_class + "::" + p_getter + "' for property: '" + p_pinfo.name + "'.");
+#endif
+	}
+
+#ifdef DEBUG_METHODS_ENABLED
+	ERR_FAIL_COND_MSG(type->property_setget.has(p_pinfo.name), "Object '" + p_class + "' already has property '" + p_pinfo.name + "'.");
+#endif
+
+	OBJTYPE_WLOCK
+
+	type->property_list.push_back(p_pinfo);
+	type->property_map[p_pinfo.name] = p_pinfo;
+#ifdef DEBUG_METHODS_ENABLED
+	if (mb_get) {
+		type->methods_in_properties.insert(p_getter);
+	}
+	if (mb_set) {
+		type->methods_in_properties.insert(p_setter);
+	}
+#endif
+	PropertySetGet psg;
+	psg.setter = p_setter;
+	psg.getter = p_getter;
+	psg._setptr = mb_set;
+	psg._getptr = mb_get;
+	psg.index = p_index;
+	psg.type = p_pinfo.type;
+
+	type->property_setget[p_pinfo.name] = psg;
 }
 
 bool ClassDB::has_method(const StringName& p_class, const StringName& p_method, bool p_no_inheritance) {

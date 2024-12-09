@@ -49,13 +49,14 @@ void test_scene() {
       GObject* gobj1 = memnew(TestNode);
       GObject* gobj2 = memnew(TestNode);
       GObject* gobj1_1 = memnew(TestNode);
-      GObject* cam = memnew(Camera3D);
+      Camera3D* cam = memnew(Camera3D);
       scene->set_name("TestScene");
       scene->add_component(memnew(TestComponent));
       scene->add_child(cam);
       cam->set_owner(scene);
       cam->set_name("default_cam");
-
+      cam->set_transform(
+        Transform3D(Vector3(1,2,3), Vector3(1,2,3), Vector3(1,2,3), Vector3(1,2,3)));
       gobj1->set_name("hello");
 
       scene->add_child(gobj1);
@@ -86,7 +87,8 @@ void test_scene() {
       Ref<PackedScene> s1 = ResourceLoader::load("1.tscn");
       GObject* newscene = s1->instantiate();
       L_JSON(newscene->get_components());
-
+      /// 这个get说明get set 方法都能正常被call
+      L_PRINT((newscene->get_gobject_or_null(String("./default_cam"))->get("transform")).operator String());
       L_PRINT(subscene->data.instance_state.is_null(), CSTR(subscene->data.scene_file_path));
       List<Ref<Resource>> resources;
       ResourceCache::get_cached_resources(&resources);

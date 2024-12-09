@@ -344,6 +344,18 @@ void GObject::reparent(GObject* p_parent, bool p_keep_global_transform) {
 	}
 }
 
+void GObject::get_storable_properties(HashSet<String>& r_storable_properties) const
+{
+  	ERR_THREAD_GUARD
+	List<PropertyInfo> pi;
+	get_property_list(&pi);
+	for (List<PropertyInfo>::Element *E = pi.front(); E; E = E->next()) {
+		if ((E->get().usage & PROPERTY_USAGE_STORAGE)) {
+			r_storable_properties.insert(E->get().name);
+		}
+	}
+}
+
 void GObject::_validate_child_name(GObject* p_child, bool p_force_human_readable) {
   bool unique = true;
 

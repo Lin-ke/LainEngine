@@ -3,6 +3,7 @@
 #include "core/scene/component/component.h"
 #include "core/scene/object/gobject.h"
 #include "property_utils.h"
+#include "core/meta/serializer/serializer.h"
 namespace lain {
 bool SceneState::disable_placeholders = false;
 
@@ -64,6 +65,24 @@ int SceneState::get_gobject_count() const {
 int SceneState::get_gobject_index(int p_idx) const {
   ERR_FAIL_INDEX_V(p_idx, gobjects.size(), -1);
   return gobjects[p_idx].index;
+}
+
+int SceneState::get_gobject_property_count(int p_idx) const {
+	ERR_FAIL_INDEX_V(p_idx, gobjects.size(), -1);
+	return gobjects[p_idx].properties.size();
+}
+
+StringName SceneState::get_gobject_property_name(int p_idx, int p_prop) const {
+	ERR_FAIL_INDEX_V(p_idx, gobjects.size(), StringName());
+	ERR_FAIL_INDEX_V(p_prop, gobjects[p_idx].properties.size(), StringName());
+	return names[gobjects[p_idx].properties[p_prop].name & FLAG_PROP_NAME_MASK];
+}
+
+Variant SceneState::get_gobject_property_value(int p_idx, int p_prop) const {
+	ERR_FAIL_INDEX_V(p_idx, gobjects.size(), Variant());
+	ERR_FAIL_INDEX_V(p_prop, gobjects[p_idx].properties.size(), Variant());
+
+	return variants[gobjects[p_idx].properties[p_prop].value];
 }
 
 GObjectPath SceneState::get_gobject_path(int p_idx, bool p_for_parent) const {
@@ -147,6 +166,20 @@ GObjectPath SceneState::get_gobject_owner_path(int p_idx) const {
 int SceneState::add_name(const StringName& p_name) {
   names.push_back(p_name);
   return names.size() - 1;
+}
+
+void SceneState::add_gobject_property(int p_node, int p_name, int p_value, bool p_deferred_node_path) {
+	ERR_FAIL_INDEX(p_node, gobjects.size());
+	ERR_FAIL_INDEX(p_name, names.size());
+	ERR_FAIL_INDEX(p_value, variants.size());
+
+	GObjectData::Property prop;
+	prop.name = p_name;
+	if (p_deferred_node_path) {
+		prop.name |= PackedScene::FLAG_PATH_PROPERTY_IS_NODE;
+	}
+	prop.value = p_value;
+	gobjects.write[p_node].properties.push_back(prop);
 }
 
 void SceneState::add_gobject_group(int p_node, int p_group) {
@@ -236,6 +269,8 @@ GObject* SceneState::instantiate(GenEditState p_edit_state) const {
                           vformat("Invalid scene: root node %s in an instance, but there's no base scene.", snames[n.name]));
     }
     GObject* gobj = nullptr;
+		bool is_inherited_scene = false;
+
     if (i == 0 && base_scene_idx >= 0) {
       // Scene inheritance on root node. 根节点是继承节点，实例化节点不许成为根
       Ref<PackedScene> sdata = props[base_scene_idx];
@@ -351,20 +386,27 @@ GObject* SceneState::instantiate(GenEditState p_edit_state) const {
     }
     // end of instantiate
     if (gobj) {
-      // 添加 properties 和 关系
-      // properties
-      String parse_error = "";
-      if (n.node_ins_res != "{}") {  //empty json
-        void* data = ClassDB::instantiate_with_name_json(gobj->get_data_classname(), Json::parse(n.node_ins_res, parse_error));
-        if (!data) {
-          WARN_PRINT("GobjectData can't deserialize");
-          if(parse_error != "") {
-            ERR_PRINT(parse_error);
+      //properties
+      int nprop_count = n.properties.size();
+      if (nprop_count) {
+        const GObjectData::Property* nprops = &n.properties[0];
+        HashMap<Ref<Resource>, Ref<Resource>> resources_local_to_sub_scene;  // Record the mappings in the sub-scene.
+        for (int j = 0; j < nprop_count; j++) {
+          bool valid;
+          ERR_FAIL_INDEX_V(nprops[j].value, prop_count, nullptr);
+          ERR_FAIL_INDEX_V(nprops[j].name, sname_count, nullptr);
+          Variant value = props[nprops[j].value];
+          if (is_inherited_scene) {
+            value = value.duplicate(true);
           }
-        } else {
-          gobj->from_data(data);
+          // L_PRINT((snames[nprops[j].name]).operator String());
+          // L_PRINT(value.operator lain::String());
+          bool set_valid = true;
+
+          if (set_valid) {
+            gobj->set(snames[nprops[j].name], value, &valid);
+          }
         }
-        memdelete(data); 
       }
 
       // groups
@@ -603,6 +645,7 @@ Error SceneState::_parse_gobject(GObject* p_owner, GObject* p_node, int p_parent
   List<PropertyInfo> plist;
   p_node->get_property_list(&plist);
 
+
   Array pinned_props;
   //Dictionary missing_resource_properties = p_node->get_meta(META_MISSING_RESOURCES, Dictionary());
 
@@ -679,7 +722,7 @@ Error SceneState::_parse_gobject(GObject* p_owner, GObject* p_node, int p_parent
 
   	if (!pinned_props.has(name)) {
   		bool is_valid_default = false;
-  		Variant default_value = PropertyUtils::get_property_default_value(p_node, name);
+  		Variant default_value = PropertyUtils::get_property_default_value(p_node, name, &is_valid_default);
 
   		if (is_valid_default && !PropertyUtils::is_property_value_different(p_node, value, default_value)) {
   			if (value.get_type() == Variant::ARRAY && has_local_resource(value)) {
@@ -696,7 +739,6 @@ Error SceneState::_parse_gobject(GObject* p_owner, GObject* p_node, int p_parent
   			}
   		}
   	}
-
   	GObjectData::Property prop;
   	prop.name = _nm_get_string(name, name_map);
   	prop.value = _vm_get_variant(value, variant_map);

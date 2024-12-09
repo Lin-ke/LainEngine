@@ -185,6 +185,7 @@ class GObject : public TickObject {
 
 	virtual void reparent(GObject *p_parent, bool p_keep_global_transform = true);
 
+  void get_storable_properties(HashSet<String> &r_properties) const; 
 
   GObject();
   ~GObject();

@@ -170,7 +170,7 @@ class Variant {
     Transform2D* _transform2d;
     Projection* _projection;
     PackedArrayRefBase* packed_array;
-    uint8_t _mem[sizeof(ObjData) > (sizeof(real_t) * 4) ? sizeof(ObjData) : (sizeof(real_t) * 4)]{0};
+    uint8_t _mem[sizeof(ObjData) > (sizeof(real_t) * 4) ? sizeof(ObjData) : (sizeof(real_t) * 4)]{0}; // 至少是4个real_t的大小
   } _data alignas(8);
 
   void reference(const Variant& p_variant);
@@ -706,6 +706,9 @@ Variant Callable::call(VarArgs... p_args) const {
 	callp(sizeof...(p_args) == 0 ? nullptr : (const Variant **)argptrs, sizeof...(p_args), ret, ce);
 	return ret;
 }
+
+
+
 
 
 };  // namespace lain

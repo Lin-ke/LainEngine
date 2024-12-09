@@ -22,6 +22,7 @@ public:
 	};
 
 	struct BVH {
+		META(Fields)
 		AABB aabb;
 		Vector3 center; //used for sorting
 		int left;

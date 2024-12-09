@@ -70,7 +70,7 @@ bool PropertyUtils::is_property_value_different(const Object *p_object, const Va
 	// For our purposes, treating null object as NIL is the right thing to do
 	const Variant &a = p_a.get_type() == Variant::OBJECT && (Object *)p_a == nullptr ? Variant() : p_a;
 	const Variant &b = p_b.get_type() == Variant::OBJECT && (Object *)p_b == nullptr ? Variant() : p_b;
-	return a != b;
+	return !(a == b);
 }
 
 Variant PropertyUtils::get_property_default_value(const Object *p_object, const StringName &p_property, bool *r_is_valid, const Vector<SceneState::PackState> *p_states_stack_cache, bool p_update_exports, const GObject *p_owner, bool *r_is_class_default) {
@@ -78,9 +78,15 @@ Variant PropertyUtils::get_property_default_value(const Object *p_object, const 
 	Variant ret;
 	bool ok = ClassDB::get_property_info(p_object->get_class_name(), p_property, &value);
 	if(!ok){
+		if (r_is_valid) {
+			*r_is_valid = false;
+		}
 		return Variant();
 	}
 	VariantInternal::initialize(&ret, value.type);
+	if (r_is_valid) {
+		*r_is_valid = true;
+	}
 	return ret;
 }
 

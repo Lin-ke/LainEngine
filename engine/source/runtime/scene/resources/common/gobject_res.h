@@ -46,7 +46,7 @@ namespace lain
         REFLECTION_BODY(GObjectInstanceRes);
 
     public:
-        Dictionary m_variants; // type parent name owner 
+        HashMap<String, Variant> m_variants; // type parent name owner 
         //Groups 
         Vector <Reflection::ReflectionPtr<Component>> m_instanced_components;
         String m_instance_res;

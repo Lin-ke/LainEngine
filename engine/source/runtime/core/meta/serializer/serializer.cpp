@@ -98,6 +98,7 @@ Json Serializer::write(const Dictionary& instance) {
   List<Variant> keys;
   instance.get_key_list(&keys);
   for (const Variant& E : keys) {
+    // 不用dump() 因为string会被加入\" \"
     ret_context.insert(CSTR(E.operator String()), Serializer::write(instance[E]));
   }
   return ret_context;
@@ -142,12 +143,23 @@ Json Serializer::write(const Variant& instance) {
       Reflection::ReflectionPtr rptr = Reflection::ReflectionPtr(obj->get_c_class(), obj);
       return Serializer::write(rptr);
     }
+    // 特制的指针(_ptr)
+
+    case Variant::TRANSFORM2D:
+    case Variant::TRANSFORM3D:
+    case Variant::AABB:
+    case Variant::PROJECTION:
+    case Variant::BASIS:{
+      const char* type_name = Variant::get_c_type_name(instance.get_type());
+        return Json::object{{"$typeName", Json(type_name)},
+                            {"$context", Reflection::TypeMeta::writeByName(type_name,(instance._data._ptr))}};
+      }
+      // 用 _mem 则会个根据objdata不同可能有对齐问题
     default: {
-      // plan A :从typename到Type，然后转
       if (VariantHelper::is_serializable(instance)) {
         const char* type_name = Variant::get_c_type_name(instance.get_type());
         return Json::object{{"$typeName", Json(type_name)},
-                            {"$context", Reflection::TypeMeta::writeByName(type_name, const_cast<void*>(reinterpret_cast<const void*>(instance._data._mem)))}};
+                            {"$context", Reflection::TypeMeta::writeByName(type_name,const_cast<void*>(reinterpret_cast<const void*>(instance._data._mem)))}};
       }
       return Serializer::write(String(instance));
     }
@@ -192,7 +204,47 @@ void Serializer::read(const Json& json_context, Variant& instance) {
     case Json::OBJECT: {
       String type_name = json_context["$typeName"].string_value();
       ERR_FAIL_COND_MSG(!VariantHelper::is_serializable_type(type_name), "type " + type_name +"cant be reflected");
-      Reflection::TypeMeta::writeToInstanceFromNameAndJson(type_name, json_context["$context"], instance._data._mem);
+      Variant p;
+      // 之前没分配内存
+      // 这个地方memnew 内存会出问题，现在先按着笨的写法来
+      // 因为析构的时候调用的是pool.free()
+       if (type_name == "Transform3D" || 
+      type_name == "Transform2D" || 
+      type_name == "AABB" ||
+      type_name == "Basis") {
+
+      if (type_name == "Transform3D"){
+        void* new_ins = Reflection::TypeMeta::newFromNameAndJson(type_name, json_context["$context"]).m_instance;
+        ERR_FAIL_NULL_MSG(new_ins, "Error when new instance from json");
+        instance = *reinterpret_cast<Transform3D*>(new_ins);
+        memdelete((Transform3D*)new_ins);
+      }
+      if(type_name == "Transform2D"){
+        void* new_ins = Reflection::TypeMeta::newFromNameAndJson(type_name, json_context["$context"]).m_instance;
+        ERR_FAIL_NULL_MSG(new_ins, "Error when new instance from json");
+        instance = *reinterpret_cast<Transform2D*>(new_ins);
+        memdelete((Transform2D*)new_ins);
+
+      }
+      if(type_name == "AABB"){
+        void* new_ins = Reflection::TypeMeta::newFromNameAndJson(type_name, json_context["$context"]).m_instance;
+        ERR_FAIL_NULL_MSG(new_ins, "Error when new instance from json");
+        instance = *reinterpret_cast<AABB*>(new_ins);
+        memdelete((AABB*)new_ins);
+
+      }
+      if(type_name == "Basis"){
+        void* new_ins = Reflection::TypeMeta::newFromNameAndJson(type_name, json_context["$context"]).m_instance;
+        ERR_FAIL_NULL_MSG(new_ins, "Error when new instance from json");
+        instance = *reinterpret_cast<Basis*>(new_ins);
+        memdelete((Basis*)new_ins);
+
+      }
+      } else 
+      // @todo 完成对object 的
+      { // 在原地分配（memnew placement)
+        Reflection::TypeMeta::writeToInstanceFromNameAndJson(type_name, json_context["$context"], instance._data._mem);
+      }
       instance.type = VariantHelper::get_type_from_name(type_name);
       ERR_FAIL_COND_MSG(instance.type == Variant::NIL, type_name);
       return;

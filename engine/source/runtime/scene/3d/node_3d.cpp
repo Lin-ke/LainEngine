@@ -137,6 +137,8 @@ void GObject3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_transform"), &GObject3D::get_transform);
 	ClassDB::bind_method(D_METHOD("set_position", "position"), &GObject3D::set_position);
 	ClassDB::bind_method(D_METHOD("get_position"), &GObject3D::get_position);
+	ADD_PROPERTY(PropertyInfo(Variant::TRANSFORM3D, "transform", PROPERTY_HINT_NONE, "suffix:m", PROPERTY_USAGE_NO_EDITOR), "set_transform", "get_transform");
+
 }
 // 一路乘上来即可
 Transform3D lain::GObject3D::get_global_transform() const {

@@ -436,7 +436,10 @@ struct MethodInfo {
   List<PropertyInfo> arguments;
   Vector<Variant> default_arguments;
 };
+
 }  // namespace lain
+#define ADD_PROPERTY(m_property, m_setter, m_getter) lain::ClassDB::add_property(get_class_static(), m_property, _scs_create(m_setter), _scs_create(m_getter))
+#define ADD_PROPERTYI(m_property, m_setter, m_getter, m_index) lain::ClassDB::add_property(get_class_static(), m_property, _scs_create(m_setter), _scs_create(m_getter), m_index)
 
 // const 限定符是必要的，因为const对象拒绝调用非const方法
 
