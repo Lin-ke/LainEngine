@@ -30,8 +30,77 @@ class Light3D : public VisualInstance3D {
 		PARAM_INTENSITY = RS::LIGHT_PARAM_INTENSITY,
 		PARAM_MAX = RS::LIGHT_PARAM_MAX
 	};
+  	enum BakeMode {
+		BAKE_DISABLED,
+		BAKE_STATIC,
+		BAKE_DYNAMIC,
+	};
 
+private:
+	Color color;
+	real_t param[PARAM_MAX] = {};
+	bool shadow = false;
+	bool negative = false;
+	bool reverse_cull = false;
+	uint32_t cull_mask = 0;
+	bool distance_fade_enabled = false;
+	real_t distance_fade_begin = 40.0;
+	real_t distance_fade_shadow = 50.0;
+	real_t distance_fade_length = 10.0;
+	RS::LightType type = RS::LIGHT_DIRECTIONAL;
+	bool editor_only = false;
+	void _update_visibility();
+	BakeMode bake_mode = BAKE_DYNAMIC;
+	Ref<Texture2D> projector;
+	Color correlated_color = Color(1.0, 1.0, 1.0);
+	float temperature = 6500.0;
+
+protected:
+	RID light;
+
+	static void _bind_methods();
+	void _notification(int p_what);
+	void _validate_property(PropertyInfo &p_property) const;
+
+	Light3D(RS::LightType p_type);
+
+public:
+	RS::LightType get_light_type() const { return type; }
+	void set_param(Param p_param, real_t p_value);
+	real_t get_param(Param p_param) const;
+  
+  	void set_shadow(bool p_enable);
+	bool has_shadow() const;
+
+  
+	void set_color(const Color &p_color);
+	Color get_color() const;
+
+  	Light3D();
+	~Light3D();
 
 };
+
+
+class DirectionalLight3D : public Light3D {
+  LCLASS(DirectionalLight3D, Light3D);
+  public:
+  	enum ShadowMode {
+		SHADOW_ORTHOGONAL,
+		SHADOW_PARALLEL_2_SPLITS,
+		SHADOW_PARALLEL_4_SPLITS,
+	};
+  private:
+	ShadowMode shadow_mode;
+  protected:
+  static void _bind_methods();
+  public:
+	void set_shadow_mode(ShadowMode p_mode);
+	ShadowMode get_shadow_mode() const;
+  DirectionalLight3D();
+};
+
+VARIANT_ENUM_CAST(DirectionalLight3D::ShadowMode)
+
 }
 #endif

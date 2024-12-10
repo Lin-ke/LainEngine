@@ -1,6 +1,7 @@
 #ifndef GObject3D_H
 #define GObject3D_H
 #include "core/scene/object/gobject.h"
+#include "scene/resources/common/camera_attributes.h"
 #include "scene/resources/common/world.h"
 #include "core/templates/self_list.h"
 namespace lain{

@@ -12,6 +12,7 @@ void lain::VisualInstance3D::_update_visibility() {
 void VisualInstance3D::_notification(int p_what) {
   switch (p_what) {
     case NOTIFICATION_ENTER_WORLD: {
+			L_PRINT("visual instance inter world " + get_name());
       ERR_FAIL_COND(get_world_3d().is_null());
       RS::get_singleton()->instance_set_scenario(instance, get_world_3d()->get_scenario());
       _update_visibility();
