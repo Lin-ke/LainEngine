@@ -25,8 +25,73 @@ namespace lain::RendererRD{
 		float pad[3]; // 12 - 108
 		float exposure_normalization; // 4 - 112
 	};
-  ~GI(){}
-  GI(){}
+	RID sdfgi_ubo;
+
+	// class SDFGI : public RenderBufferCustomDataRD{
+	// 	LCLASS(SDFGI, RenderBufferCustomDataRD);
+	// 	enum {
+	// 		MAX_CASCADES = 8,
+	// 		CASCADE_SIZE = 128,
+	// 		PROBE_DIVISOR = 16,
+	// 		ANISOTROPY_SIZE = 6,
+	// 		MAX_DYNAMIC_LIGHTS = 128,
+	// 		MAX_STATIC_LIGHTS = 1024,
+	// 		LIGHTPROBE_OCT_SIZE = 6,
+	// 		SH_SIZE = 16
+	// 	};
+	// 	GI *gi = nullptr;
+
+	// };
+	class SDFGI{
+	public:
+		enum{
+			MAX_CASCADES = 8,
+		};
+	};
+
+	struct SDFGIData {
+		float grid_size[3];
+		uint32_t max_cascades;
+
+		uint32_t use_occlusion;
+		int32_t probe_axis_size;
+		float probe_to_uvw;
+		float normal_bias;
+
+		float lightprobe_tex_pixel_size[3];
+		float energy;
+
+		float lightprobe_uv_offset[3];
+		float y_mult;
+
+		float occlusion_clamp[3];
+		uint32_t pad3;
+
+		float occlusion_renormalize[3];
+		uint32_t pad4;
+
+		float cascade_probe_size[3];
+		uint32_t pad5;
+
+		struct ProbeCascadeData {
+			float position[3]; //offset of (0,0,0) in world coordinates
+			float to_probe; // 1/bounds * grid_size
+			int32_t probe_world_offset[3];
+			float to_cell; // 1/bounds * grid_size
+			float pad[3];
+			float exposure_normalization;
+		};
+
+		ProbeCascadeData cascades[SDFGI::MAX_CASCADES];
+	};
+
+
+  ~GI(){
+	p_singleton = this;
+	}
+  GI(){
+	p_singleton = nullptr;
+	}
   static GI* get_singleton() { return p_singleton;}
   bool owns_voxel_gi(RID p_rid) {return false;}
 	int sdfgi_get_lightprobe_octahedron_size() const { return 1; }

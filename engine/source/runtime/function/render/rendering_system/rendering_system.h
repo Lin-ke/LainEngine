@@ -688,6 +688,21 @@ class RenderingSystem : public Object {
 	Error _surface_set_data(Array p_arrays, uint64_t p_format, uint32_t *p_offsets, uint32_t p_vertex_stride, uint32_t p_normal_stride, uint32_t p_attrib_stride, uint32_t p_skin_stride, Vector<uint8_t> &r_vertex_array, Vector<uint8_t> &r_attrib_array, Vector<uint8_t> &r_skin_array, int p_vertex_array_len, Vector<uint8_t> &r_index_array, int p_index_array_len, AABB &r_aabb, Vector<AABB> &r_bone_aabb, Vector4 &r_uv_scale);
 	virtual void mesh_surface_make_offsets_from_format(uint64_t p_format, int p_vertex_len, int p_index_len, uint32_t *r_offsets, uint32_t &r_vertex_element_size, uint32_t &r_normal_element_size, uint32_t &r_attrib_element_size, uint32_t &r_skin_element_size) const;
 	
+
+
+	/* Reflection Probe*/
+
+	enum ReflectionProbeUpdateMode {
+		REFLECTION_PROBE_UPDATE_ONCE,
+		REFLECTION_PROBE_UPDATE_ALWAYS,
+	};
+	enum ReflectionProbeAmbientMode {
+		REFLECTION_PROBE_AMBIENT_DISABLED,
+		REFLECTION_PROBE_AMBIENT_ENVIRONMENT,
+		REFLECTION_PROBE_AMBIENT_COLOR,
+	};
+
+
 public:
  	virtual void draw(bool p_swap_buffers = true, double frame_step = 0.0) = 0;
 	virtual void sync() = 0;
@@ -856,6 +871,16 @@ public:
 	};
 	virtual Color get_default_clear_color() const = 0;
 	virtual void set_default_clear_color(const Color &p_color)  = 0;
+
+	enum DecalTexture {
+		DECAL_TEXTURE_ALBEDO,
+		DECAL_TEXTURE_NORMAL,
+		DECAL_TEXTURE_ORM,
+		DECAL_TEXTURE_EMISSION,
+		DECAL_TEXTURE_MAX
+	};
+
+
 
   virtual void free(RID p_rid) = 0;
 

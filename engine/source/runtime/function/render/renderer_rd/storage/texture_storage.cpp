@@ -1408,6 +1408,15 @@ RID TextureStorage::render_target_get_override_depth_slice(RID p_render_target, 
 // }
 
 
+void lain::RendererRD::TextureStorage::set_max_decals(uint32_t p_max_decals)
+{
+  	max_decals = p_max_decals;
+	uint32_t decal_buffer_size = max_decals * sizeof(DecalData);
+	decals = memnew_arr(DecalData, max_decals);
+	decal_sort = memnew_arr(DecalInstanceSort, max_decals);
+	decal_buffer = RD::get_singleton()->storage_buffer_create(decal_buffer_size);
+}
+
 // // 调用texture_update
 void lain::RendererRD::TextureStorage::_texture_2d_update(RID p_texture, const Ref<Image>& p_image, int p_layer, bool p_immediate) {
   ERR_FAIL_COND(p_image.is_null() || p_image->is_empty());

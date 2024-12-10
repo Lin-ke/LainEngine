@@ -5,5 +5,6 @@ namespace lain::RendererRD{
  void GI::init()
  {
 	default_voxel_gi_buffer = RD::get_singleton()->uniform_buffer_create(sizeof(VoxelGIData) * MAX_VOXEL_GI_INSTANCES);
+	sdfgi_ubo = RD::get_singleton()->uniform_buffer_create(sizeof(SDFGIData));
  }
 }

@@ -178,6 +178,155 @@ class LightStorage : public RendererLightStorage {
   DirectionalLightData* directional_lights = nullptr;
   RID directional_light_buffer;
 
+
+/* REFLECTION PROBE */
+
+	struct ReflectionProbe {
+		RS::ReflectionProbeUpdateMode update_mode = RS::REFLECTION_PROBE_UPDATE_ONCE;
+		int resolution = 256;
+		float intensity = 1.0;
+		RS::ReflectionProbeAmbientMode ambient_mode = RS::REFLECTION_PROBE_AMBIENT_ENVIRONMENT;
+		Color ambient_color;
+		float ambient_color_energy = 1.0;
+		float max_distance = 0;
+		Vector3 size = Vector3(20, 20, 20);
+		Vector3 origin_offset;
+		bool interior = false;
+		bool box_projection = false;
+		bool enable_shadows = false;
+		uint32_t cull_mask = (1 << 20) - 1;
+		uint32_t reflection_mask = (1 << 20) - 1;
+		float mesh_lod_threshold = 0.01;
+		float baked_exposure = 1.0;
+
+		Dependency dependency;
+	};
+	mutable RID_Owner<ReflectionProbe, true> reflection_probe_owner;
+
+	/* REFLECTION ATLAS */
+
+	// struct ReflectionAtlas {
+	// 	int count = 0;
+	// 	int size = 0;
+
+	// 	RID reflection;
+	// 	RID depth_buffer;
+	// 	RID depth_fb;
+
+	// 	struct Reflection {
+	// 		RID owner;
+	// 		RendererRD::SkyRD::ReflectionData data;
+	// 		RID fbs[6];
+	// 	};
+
+	// 	Vector<Reflection> reflections;
+
+	// 	Ref<RenderSceneBuffersRD> render_buffers; // Further render buffers used.
+
+	// 	ClusterBuilderRD *cluster_builder = nullptr; // only used if cluster builder is supported by the renderer.
+	// };
+
+	// mutable RID_Owner<ReflectionAtlas> reflection_atlas_owner;
+
+	/* REFLECTION PROBE INSTANCE */
+
+	struct ReflectionProbeInstance {
+		RID probe;
+		int atlas_index = -1;
+		RID atlas;
+
+		bool dirty = true;
+		bool rendering = false;
+		int processing_layer = 1;
+		int processing_side = 0;
+
+		uint64_t last_pass = 0;
+		uint32_t cull_mask = 0;
+
+		RendererRD::ForwardID forward_id = -1;
+
+		Transform3D transform;
+	};
+
+	mutable RID_Owner<ReflectionProbeInstance> reflection_probe_instance_owner;
+
+	/* REFLECTION DATA */
+
+	enum {
+		REFLECTION_AMBIENT_DISABLED = 0,
+		REFLECTION_AMBIENT_ENVIRONMENT = 1,
+		REFLECTION_AMBIENT_COLOR = 2,
+	};
+
+	struct ReflectionData {
+		float box_extents[3];
+		float index;
+		float box_offset[3];
+		uint32_t mask;
+		float ambient[3]; // ambient color,
+		float intensity;
+		uint32_t exterior;
+		uint32_t box_project;
+		uint32_t ambient_mode;
+		float exposure_normalization;
+		float local_matrix[16]; // up to here for spot and omni, rest is for directional
+	};
+
+	struct ReflectionProbeInstanceSort {
+		float depth;
+		ReflectionProbeInstance *probe_instance;
+		bool operator<(const ReflectionProbeInstanceSort &p_sort) const {
+			return depth < p_sort.depth;
+		}
+	};
+
+	uint32_t max_reflections;
+	uint32_t reflection_count = 0;
+	// uint32_t max_reflection_probes_per_instance = 0; // seems unused
+	ReflectionData *reflections = nullptr;
+	ReflectionProbeInstanceSort *reflection_sort = nullptr;
+	RID reflection_buffer;
+
+	/* LIGHTMAP */
+
+	struct Lightmap {
+		RID light_texture;
+		bool uses_spherical_harmonics = false;
+		bool interior = false;
+		AABB bounds = AABB(Vector3(), Vector3(1, 1, 1));
+		float baked_exposure = 1.0;
+		int32_t array_index = -1; //unassigned
+		PackedVector3Array points;
+		PackedColorArray point_sh;
+		PackedInt32Array tetrahedra;
+		PackedInt32Array bsp_tree;
+
+		struct BSP {
+			static const int32_t EMPTY_LEAF = INT32_MIN;
+			float plane[4];
+			int32_t over = EMPTY_LEAF, under = EMPTY_LEAF;
+		};
+
+		Dependency dependency;
+	};
+
+	bool using_lightmap_array;
+	Vector<RID> lightmap_textures;
+	uint64_t lightmap_array_version = 0;
+	float lightmap_probe_capture_update_speed = 4;
+
+	mutable RID_Owner<Lightmap, true> lightmap_owner;
+
+	/* LIGHTMAP INSTANCE */
+
+	struct LightmapInstance {
+		RID lightmap;
+		Transform3D transform;
+	};
+
+	mutable RID_Owner<LightmapInstance> lightmap_instance_owner;
+
+
   /* DIRECTIONAL SHADOW */
 
   struct DirectionalShadow {
@@ -496,7 +645,7 @@ class LightStorage : public RendererLightStorage {
   // settings
   void set_max_cluster_elements(const uint32_t p_max_cluster_elements) {
     max_cluster_elements = p_max_cluster_elements;
-    // set_max_reflection_probes(p_max_cluster_elements);
+    set_max_reflection_probes(p_max_cluster_elements);
     set_max_lights(p_max_cluster_elements);
   }
   uint32_t get_max_cluster_elements() const { return max_cluster_elements; }
@@ -518,6 +667,16 @@ class LightStorage : public RendererLightStorage {
   }
   void update_light_buffers(RenderDataRD* p_render_data, const PagedArray<RID>& p_lights, const Transform3D& p_camera_transform, RID p_shadow_atlas, bool p_using_shadows,
                             uint32_t& r_directional_light_count, uint32_t& r_positional_light_count, bool& r_directional_light_soft_shadows);
+
+
+	/* REFLECTION DATA */
+
+	void free_reflection_data();
+	void set_max_reflection_probes(const uint32_t p_max_reflection_probes);
+	RID get_reflection_probe_buffer() { return reflection_buffer; }
+	void update_reflection_probe_buffer(RenderDataRD *p_render_data, const PagedArray<RID> &p_reflections, const Transform3D &p_camera_inverse_transform, RID p_environment);
+
+
 
  private:
   void _light_initialize(RID p_rid, RS::LightType p_type);

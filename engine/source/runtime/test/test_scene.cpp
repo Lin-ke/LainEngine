@@ -10,6 +10,7 @@
 #include "scene/resources/io/resource_format_text.h"
 #include "core/scene/component/component.h"
 #include "core/scene/object/testnode.h"
+#include "function/render/rendering_system/light_storage_api.h"
 namespace lain {
 namespace test {
 void draw_tree(GObject* root) {
@@ -59,7 +60,12 @@ void test_scene() {
       cam->set_name("default_cam");
       cam->set_transform(
         Transform3D(Vector3(1,2,3), Vector3(1,2,3), Vector3(1,2,3), Vector3(1,2,3)));
+      
       light->set_color(Color(.5, .5, 1));
+      light->set_shadow(true);
+      scene->add_child(light);
+      light->set_owner(scene);
+      light->set_name("default_light");
       gobj1->set_name("hello");
 
       scene->add_child(gobj1);
@@ -93,6 +99,19 @@ void test_scene() {
       /// 这个get说明get set 方法都能正常被call
       L_PRINT((newscene->get_gobject_or_null(String("./default_cam"))->get("transform")).operator String());
       L_PRINT(subscene->data.instance_state.is_null(), CSTR(subscene->data.scene_file_path));
+      DirectionalLight3D* light =(DirectionalLight3D*) newscene->get_gobject_or_null(String("./default_light"));
+      auto mode = light->get_shadow_mode();
+      switch(mode){
+        case DirectionalLight3D::ShadowMode::SHADOW_ORTHOGONAL:
+          L_PRINT("SHADOW_ORTHOGONAL");
+          break;
+        case DirectionalLight3D::ShadowMode::SHADOW_PARALLEL_2_SPLITS:
+          L_PRINT("SHADOW_PARALLEL_2_SPLITS");
+          break;
+        case DirectionalLight3D::ShadowMode::SHADOW_PARALLEL_4_SPLITS:
+          L_PRINT("SHADOW_PARALLEL_4_SPLITS");
+          break;
+      }
       List<Ref<Resource>> resources;
       ResourceCache::get_cached_resources(&resources);
       for (Ref<Resource> i : resources) {

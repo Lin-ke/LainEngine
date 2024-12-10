@@ -6,6 +6,8 @@
 #include "register_scene_types.h"
 #include "core/meta/class_db.h"
 #include "scene/3d/camera_3d.h"
+#include "scene/3d/visual_instance_3d.h"
+#include "scene/3d/light_3d.h"
 // function types
 #include "function/shader/shader_types.h"
 
@@ -50,6 +52,8 @@ namespace lain{
 	GDREGISTER_CLASS(GObject);
 
 	GDREGISTER_CLASS(GObject3D);
+	GDREGISTER_VIRTUAL_CLASS(VisualInstance3D);
+	GDREGISTER_CLASS(DirectionalLight3D);
 	GDREGISTER_CLASS(Camera3D);
 	
 	

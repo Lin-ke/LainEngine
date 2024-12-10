@@ -70,6 +70,10 @@ void lain::Light3D::set_shadow(bool p_enable) {
   RS::get_singleton()->light_set_shadow(light, shadow);
 }
 
+bool lain::Light3D::has_shadow() const {
+  return shadow;
+}
+
 lain::Light3D::~Light3D() {
   ERR_FAIL_NULL(RS::get_singleton());
   RS::get_singleton()->instance_set_base(get_instance(), RID());
@@ -100,6 +104,11 @@ void lain::Light3D::_update_visibility() {
 void Light3D::_bind_methods() {
   ClassDB::bind_method(D_METHOD("set_color", "color"), &Light3D::set_color);
   ClassDB::bind_method(D_METHOD("get_color"), &Light3D::get_color);
+	ClassDB::bind_method(D_METHOD("set_shadow", "enabled"), &Light3D::set_shadow);
+	ClassDB::bind_method(D_METHOD("has_shadow"), &Light3D::has_shadow);
+
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "shadow_enabled"), "set_shadow", "has_shadow");
+
   ADD_PROPERTY(PropertyInfo(Variant::COLOR, "light_color", PROPERTY_HINT_COLOR_NO_ALPHA), "set_color", "get_color");
 }
 
@@ -116,6 +125,11 @@ void lain::Light3D::_notification(int p_what) {
 }
 
 void DirectionalLight3D::_bind_methods() {
+
+  ClassDB::bind_method(D_METHOD("set_shadow_mode", "mode"), &DirectionalLight3D::set_shadow_mode);
+	ClassDB::bind_method(D_METHOD("get_shadow_mode"), &DirectionalLight3D::get_shadow_mode);
+
+
   ADD_PROPERTY(PropertyInfo(Variant::INT, "directional_shadow_mode", PROPERTY_HINT_ENUM, "Orthogonal (Fast),PSSM 2 Splits (Average),PSSM 4 Splits (Slow)"), "set_shadow_mode",
                "get_shadow_mode");
 }

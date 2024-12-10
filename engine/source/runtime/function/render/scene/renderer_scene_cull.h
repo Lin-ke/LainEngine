@@ -411,6 +411,7 @@ class RendererSceneCull : public RenderingMethod {
     SelfList<Instance> update_item;  // 被初始化成this，用于将自己插入到 update_list中
 
     ObjectID object_id;
+		uint64_t pair_check;
 		SelfList<InstancePair>::List pairs; // 记录与其他instance的pair， 例如 light->geometry和geometry->light
     // 需要在unpair的时候从这些list中删除， 此外还要再BVH中删除
     /* light map */
@@ -419,6 +420,10 @@ class RendererSceneCull : public RenderingMethod {
 		int lightmap_slice_index;
 		uint32_t lightmap_cull_index;
 		Vector<Color> lightmap_sh; //spherical harmonic
+
+    uint64_t last_frame_pass;
+
+		uint64_t version; // changes to this, and changes to base increase version
 
     HashMap<StringName, InstanceShaderParameter> instance_shader_uniforms;
     bool instance_allocated_shader_uniforms = false;
@@ -446,13 +451,129 @@ class RendererSceneCull : public RenderingMethod {
     bool use_aabb_center = true;
 
     float transparency = 0.0;
+    
+    bool receive_shadows;
+    bool baked_light;
+    bool dynamic_gi;
+    bool redraw_if_visible;
     // dependency
     DependencyTracker dependency_tracker; // 每个instance 携带了一个 dependency tracker， 在 update_dependency 中加入需要管理的 dependency
+    		static void dependency_changed(Dependency::DependencyChangedNotification p_notification, DependencyTracker *tracker) {
+			Instance *instance = (Instance *)tracker->userdata;
+			switch (p_notification) {
+				case Dependency::DEPENDENCY_CHANGED_SKELETON_DATA:
+				case Dependency::DEPENDENCY_CHANGED_SKELETON_BONES:
+				case Dependency::DEPENDENCY_CHANGED_AABB: {
+					singleton->_instance_queue_update(instance, true, false);
+
+				} break;
+				case Dependency::DEPENDENCY_CHANGED_MULTIMESH_VISIBLE_INSTANCES:
+				case Dependency::DEPENDENCY_CHANGED_MATERIAL: {
+					singleton->_instance_queue_update(instance, false, true);
+				} break;
+				case Dependency::DEPENDENCY_CHANGED_MESH:
+				case Dependency::DEPENDENCY_CHANGED_PARTICLES:
+				case Dependency::DEPENDENCY_CHANGED_MULTIMESH:
+				case Dependency::DEPENDENCY_CHANGED_DECAL:
+				case Dependency::DEPENDENCY_CHANGED_LIGHT:
+				case Dependency::DEPENDENCY_CHANGED_REFLECTION_PROBE: {
+					singleton->_instance_queue_update(instance, true, true);
+				} break;
+				case Dependency::DEPENDENCY_CHANGED_LIGHT_SOFT_SHADOW_AND_PROJECTOR: {
+					//requires repairing
+					if (instance->indexer_id.is_valid()) {
+						singleton->_unpair_instance(instance);
+						singleton->_instance_queue_update(instance, true, true);
+					}
+
+				} break;
+				default: {
+					// Ignored notifications.
+				} break;
+			}
+		}
+
+    static void dependency_deleted(const RID &p_dependency, DependencyTracker *tracker) {
+			Instance *instance = (Instance *)tracker->userdata;
+
+			if (p_dependency == instance->base) {
+				singleton->instance_set_base(instance->self, RID());
+			} else if (p_dependency == instance->skeleton) {
+				singleton->instance_attach_skeleton(instance->self, RID());
+			} else {
+				// It's possible the same material is used in multiple slots,
+				// so we check whether we need to clear them all.
+				if (p_dependency == instance->material_override) {
+					singleton->instance_geometry_set_material_override(instance->self, RID());
+				}
+				if (p_dependency == instance->material_overlay) {
+					singleton->instance_geometry_set_material_overlay(instance->self, RID());
+				}
+				for (int i = 0; i < instance->materials.size(); i++) {
+					if (p_dependency == instance->materials[i]) {
+						singleton->instance_set_surface_override_material(instance->self, i, RID());
+					}
+				}
+				if (instance->base_type == RS::INSTANCE_PARTICLES) {
+					// RID particle_material = RSG::particles_storage->particles_get_process_material(instance->base);
+					// if (p_dependency == particle_material) {
+					// 	RSG::particles_storage->particles_set_process_material(instance->base, RID());
+					// }
+				}
+
+				// Even if no change is made we still need to call `_instance_queue_update`.
+				// This dependency could also be a result of the freed material being used
+				// by the mesh this mesh instance uses.
+				singleton->_instance_queue_update(instance, false, true);
+			}
+		}
+    
     Instance()
     :
 				scenario_item(this),
 				update_item(this) // 这个不能放到cpp里，需要调查一下为什么@todo
     {
+      base_type = RS::INSTANCE_NONE;
+			cast_shadows = RS::SHADOW_CASTING_SETTING_ON;
+			receive_shadows = true;
+			visible = true;
+			layer_mask = 1;
+			baked_light = true;
+			dynamic_gi = false;
+			redraw_if_visible = false;
+			lightmap_slice_index = 0;
+			lightmap = nullptr;
+			lightmap_cull_index = 0;
+			lod_bias = 1.0;
+			ignore_occlusion_culling = false;
+			ignore_all_culling = false;
+
+			scenario = nullptr;
+
+			update_aabb = false;
+			update_dependencies = false;
+
+			extra_margin = 0;
+
+			visible = true;
+
+			visibility_range_begin = 0;
+			visibility_range_end = 0;
+			visibility_range_begin_margin = 0;
+			visibility_range_end_margin = 0;
+
+			last_frame_pass = 0;
+			version = 1;
+			base_data = nullptr;
+
+			custom_aabb = nullptr;
+
+			pair_check = 0;
+			array_index = -1;
+
+			dependency_tracker.userdata = this;
+			dependency_tracker.changed_callback = dependency_changed;
+			dependency_tracker.deleted_callback = dependency_deleted;
 
     }
   };
@@ -495,6 +616,7 @@ class RendererSceneCull : public RenderingMethod {
     bool light_intersects_multiple_cameras;
     uint32_t light_intersects_multiple_cameras_timeout_frame_id;
     RS::LightBakeMode bake_mode;
+		uint32_t max_sdfgi_cascade = 2;
 		uint64_t last_version;
     // 通过这种方式保存了对链表整体的引用
     List<Instance*>::Element* D;  // 存到场景的directional_lights中的返回值
@@ -563,7 +685,9 @@ class RendererSceneCull : public RenderingMethod {
   };
   struct InstanceOccluderData : public InstanceBaseData {};
   struct InstanceVisibilityNotifierData : public InstanceBaseData {};
-  struct InstanceFogVolumeData : public InstanceBaseData {};
+  struct InstanceFogVolumeData : public InstanceBaseData {
+    RID instance;
+  };
   struct InstanceParticlesCollisionData : public InstanceBaseData {
     RID instance;
   };
@@ -714,6 +838,7 @@ class RendererSceneCull : public RenderingMethod {
   bool _visibility_parent_check(const CullData &p_cull_data, const InstanceData &p_instance_data);
 	bool _light_instance_update_shadow(Instance *p_instance, const Transform3D p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, bool p_cam_vaspect, RID p_shadow_atlas, Scenario *p_scenario, float p_scren_mesh_lod_threshold, uint32_t p_visible_layers = 0xFFFFFF);
   void _instance_unpair(Instance* , Instance*);
+  void _update_instance(Instance* p_instance);
 
 	virtual bool free(RID p_rid) override;
 

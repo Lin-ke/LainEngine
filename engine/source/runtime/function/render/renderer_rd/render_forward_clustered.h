@@ -618,7 +618,7 @@ class RenderForwardClustered : public RendererSceneRenderRD {
   // virtual int sdfgi_get_pending_region_count(const Ref<RenderSceneBuffers> &p_render_buffers) const override;
   // virtual AABB sdfgi_get_pending_region_bounds(const Ref<RenderSceneBuffers> &p_render_buffers, int p_region) const override;
   // virtual uint32_t sdfgi_get_pending_region_cascade(const Ref<RenderSceneBuffers> &p_render_buffers, int p_region) const override;
-  // RID sdfgi_get_ubo() const { return gi.sdfgi_ubo; }
+  RID sdfgi_get_ubo() const { return gi.sdfgi_ubo; }
 
   /* GEOMETRY INSTANCE */
 

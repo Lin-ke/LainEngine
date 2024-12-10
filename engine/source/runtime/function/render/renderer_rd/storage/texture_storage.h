@@ -1,6 +1,7 @@
 #ifndef TEXTURE_STORAGE_RD_H
 #define TEXTURE_STORAGE_RD_H
 #include "function/render/rendering_system/texture_storage_api.h"
+#include "function/render/renderer_rd/storage/forward_id.h"
 namespace lain::RendererRD {
 class LightStorage;
 class MaterialStorage;
@@ -174,6 +175,121 @@ class TextureStorage : public RendererTextureStorage {
   virtual RID texture_get_rd_texture(RID p_texture, bool p_srgb = false) const override;
   virtual uint64_t texture_get_native_handle(RID p_texture, bool p_srgb = false) const override;
 
+  /* DECAL API */
+
+  struct DecalAtlas {
+    struct Texture {
+      int panorama_to_dp_users;
+      int users;
+      Rect2 uv_rect;
+    };
+
+    struct SortItem {
+      RID texture;
+      Size2i pixel_size;
+      Size2i size;
+      Point2i pos;
+
+      bool operator<(const SortItem& p_item) const {
+        //sort larger to smaller
+        if (size.height() == p_item.size.height()) {
+          return size.width() > p_item.size.width();
+        } else {
+          return size.height() > p_item.size.height();
+        }
+      }
+    };
+
+    HashMap<RID, Texture> textures;
+    bool dirty = true;
+    int mipmaps = 5;
+
+    RID texture;
+    RID texture_srgb;
+    struct MipMap {
+      RID fb;
+      RID texture;
+      Size2i size;
+    };
+    Vector<MipMap> texture_mipmaps;
+
+    Size2i size;
+  } decal_atlas;
+
+  struct Decal {
+    Vector3 size = Vector3(2, 2, 2);
+    RID textures[RS::DECAL_TEXTURE_MAX];
+    float emission_energy = 1.0;
+    float albedo_mix = 1.0;
+    Color modulate = Color(1, 1, 1, 1);
+    uint32_t cull_mask = (1 << 20) - 1;
+    float upper_fade = 0.3;
+    float lower_fade = 0.3;
+    bool distance_fade = false;
+    float distance_fade_begin = 40.0;
+    float distance_fade_length = 10.0;
+    float normal_fade = 0.0;
+
+    Dependency dependency;
+  };
+
+  mutable RID_Owner<Decal, true> decal_owner;
+
+  /* DECAL INSTANCE */
+
+  struct DecalInstance {
+    RID decal;
+    Transform3D transform;
+    float sorting_offset = 0.0;
+    uint32_t cull_mask = 0;
+    RendererRD::ForwardID forward_id = -1;
+  };
+
+  mutable RID_Owner<DecalInstance> decal_instance_owner;
+  /* DECAL DATA (UBO) */
+  struct DecalData {
+    float xform[16];
+    float inv_extents[3];
+    float albedo_mix;
+    float albedo_rect[4];
+    float normal_rect[4];
+    float orm_rect[4];
+    float emission_rect[4];
+    float modulate[4];
+    float emission_energy;
+    uint32_t mask;
+    float upper_fade;
+    float lower_fade;
+    float normal_xform[12];
+    float normal[3];
+    float normal_fade;
+  };
+
+  struct DecalInstanceSort {
+    float depth;
+    DecalInstance* decal_instance;
+    Decal* decal;
+    bool operator<(const DecalInstanceSort& p_sort) const { return depth < p_sort.depth; }
+  };
+  uint32_t max_decals = 0;
+  uint32_t decal_count = 0;
+  DecalData* decals = nullptr;
+  DecalInstanceSort* decal_sort = nullptr;
+  RID decal_buffer; // 在RendererSceneRenderRD::init() 里 初始化
+  // 类似的light_storage 同
+
+  RID decal_atlas_get_texture() const { return decal_atlas.texture; }
+  RID decal_atlas_get_texture_srgb() const { return decal_atlas.texture_srgb; }
+  RID get_decal_buffer() const {return decal_buffer;}
+  void set_max_decals(uint32_t p_max_decals);
+    _FORCE_INLINE_ Rect2 decal_atlas_get_texture_rect(RID p_texture) {
+    DecalAtlas::Texture* t = decal_atlas.textures.getptr(p_texture);
+    if (!t) {
+      return Rect2();
+    }
+
+    return t->uv_rect;
+  }
   /* RENDER TARGET */
   /* RENDER TARGET */
   /* RENDER TARGET */
@@ -293,7 +409,7 @@ class TextureStorage : public RendererTextureStorage {
   RID render_target_get_override_color(RID p_render_target) const;
   RID render_target_get_override_depth(RID p_render_target) const;
   virtual RID render_target_get_override_velocity(RID p_render_target) const override;
-	RID render_target_get_override_velocity_slice(RID p_render_target, const uint32_t p_layer) const;
+  RID render_target_get_override_velocity_slice(RID p_render_target, const uint32_t p_layer) const;
 
   //  rt->overridden.depth
 
@@ -325,52 +441,6 @@ class TextureStorage : public RendererTextureStorage {
 
   RID render_target_get_rd_texture(RID p_render_target);
 
-  struct DecalAtlas {
-    struct Texture {
-      int panorama_to_dp_users;
-      int users;
-      Rect2 uv_rect;
-    };
-
-    struct SortItem {
-      RID texture;
-      Size2i pixel_size;
-      Size2i size;
-      Point2i pos;
-
-      bool operator<(const SortItem& p_item) const {
-        //sort larger to smaller
-        if (size.height() == p_item.size.height()) {
-          return size.width() > p_item.size.width();
-        } else {
-          return size.height() > p_item.size.height();
-        }
-      }
-    };
-
-    HashMap<RID, Texture> textures;
-    bool dirty = true;
-    int mipmaps = 5;
-
-    RID texture;
-    RID texture_srgb;
-    struct MipMap {
-      RID fb;
-      RID texture;
-      Size2i size;
-    };
-    Vector<MipMap> texture_mipmaps;
-
-    Size2i size;
-  } decal_atlas;
-  	_FORCE_INLINE_ Rect2 decal_atlas_get_texture_rect(RID p_texture) {
-		DecalAtlas::Texture *t = decal_atlas.textures.getptr(p_texture);
-		if (!t) {
-			return Rect2();
-		}
-
-		return t->uv_rect;
-	}
 
 };
 }  // namespace lain::RendererRD

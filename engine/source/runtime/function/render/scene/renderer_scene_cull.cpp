@@ -306,7 +306,104 @@ void lain::RendererSceneCull::instance_set_base(RID p_instance, RID p_base) {
   Scenario* scenario = instance->scenario;
   // already set
   if (instance->base_type != RS::INSTANCE_NONE) {
-    return;
+    	if (scenario && instance->indexer_id.is_valid()) {
+			_unpair_instance(instance);
+		}
+    if (instance->mesh_instance.is_valid()) {
+			RSG::mesh_storage->mesh_instance_free(instance->mesh_instance);
+			instance->mesh_instance = RID();
+			// no need to set instance data flag here, as it was freed above
+		}
+   	switch (instance->base_type) {
+			case RS::INSTANCE_MESH:
+			case RS::INSTANCE_MULTIMESH:
+			case RS::INSTANCE_PARTICLES: {
+				InstanceGeometryData *geom = static_cast<InstanceGeometryData *>(instance->base_data);
+				scene_render->geometry_instance_free(geom->geometry_instance);
+			} break;
+			case RS::INSTANCE_LIGHT: {
+				InstanceLightData *light = static_cast<InstanceLightData *>(instance->base_data);
+
+				if (scenario && instance->visible && RSG::light_storage->light_get_type(instance->base) != RS::LIGHT_DIRECTIONAL && light->bake_mode == RS::LIGHT_BAKE_DYNAMIC) {
+					scenario->dynamic_lights.erase(light->instance);
+				}
+
+#ifdef DEBUG_ENABLED
+				if (light->geometries.size()) {
+					ERR_PRINT("BUG, indexing did not unpair geometries from light.");
+				}
+#endif
+				if (scenario && light->D) {
+					scenario->directional_lights.erase(light->D);
+					light->D = nullptr;
+				}
+				RSG::light_storage->light_instance_free(light->instance);
+			} break;
+			case RS::INSTANCE_PARTICLES_COLLISION: {
+				InstanceParticlesCollisionData *collision = static_cast<InstanceParticlesCollisionData *>(instance->base_data);
+				RSG::utilities->free(collision->instance);
+			} break;
+			case RS::INSTANCE_FOG_VOLUME: {
+				InstanceFogVolumeData *volume = static_cast<InstanceFogVolumeData *>(instance->base_data);
+				scene_render->free(volume->instance);
+			} break;
+			case RS::INSTANCE_VISIBLITY_NOTIFIER: {
+				//none
+			} break;
+			case RS::INSTANCE_REFLECTION_PROBE: {
+				InstanceReflectionProbeData *reflection_probe = static_cast<InstanceReflectionProbeData *>(instance->base_data);
+				// RSG::light_storage->reflection_probe_instance_free(reflection_probe->instance);
+				// if (reflection_probe->update_list.in_list()) {
+				// 	reflection_probe_render_list.remove(&reflection_probe->update_list);
+				// }
+			} break;
+			case RS::INSTANCE_DECAL: {
+				InstanceDecalData *decal = static_cast<InstanceDecalData *>(instance->base_data);
+				// RSG::texture_storage->decal_instance_free(decal->instance);
+
+			} break;
+			case RS::INSTANCE_LIGHTMAP: {
+				InstanceLightmapData *lightmap_data = static_cast<InstanceLightmapData *>(instance->base_data);
+				//erase dependencies, since no longer a lightmap
+				while (lightmap_data->users.begin()) {
+					instance_geometry_set_lightmap((*lightmap_data->users.begin())->self, RID(), Rect2(), 0);
+				}
+				// RSG::light_storage->lightmap_instance_free(lightmap_data->instance);
+			} break;
+			case RS::INSTANCE_VOXEL_GI: {
+				InstanceVoxelGIData *voxel_gi = static_cast<InstanceVoxelGIData *>(instance->base_data);
+// #ifdef DEBUG_ENABLED
+// 				if (voxel_gi->geometries.size()) {
+// 					ERR_PRINT("BUG, indexing did not unpair geometries from VoxelGI.");
+// 				}
+// #endif
+// #ifdef DEBUG_ENABLED
+// 				if (voxel_gi->lights.size()) {
+// 					ERR_PRINT("BUG, indexing did not unpair lights from VoxelGI.");
+// 				}
+// #endif
+				if (voxel_gi->update_element.in_list()) {
+					voxel_gi_update_list.remove(&voxel_gi->update_element);
+				}
+
+				// scene_render->free(voxel_gi->probe_instance);
+
+			} break;
+			case RS::INSTANCE_OCCLUDER: {
+				if (scenario && instance->visible) {
+					// RendererSceneOcclusionCull::get_singleton()->scenario_remove_instance(instance->scenario->self, p_instance);
+				}
+			} break;
+			default: {
+			}
+		}
+
+		if (instance->base_data) {
+			memdelete(instance->base_data);
+			instance->base_data = nullptr;
+		}
+
+		instance->materials.clear(); 
   }
   instance->base_type = RS::INSTANCE_NONE;
   instance->base = RID();
@@ -315,11 +412,12 @@ void lain::RendererSceneCull::instance_set_base(RID p_instance, RID p_base) {
     _instance_queue_update(instance, true, true);
     return;
   }
+  // p_base is valid
   instance->base_type = RSG::utilities->get_base_type(p_base);
   // fix up a specific malfunctioning case before the switch, so it can be handled
-  // if (instance->base_type == RS::INSTANCE_NONE && RendererSceneOcclusionCull::get_singleton()->is_occluder(p_base)) {
-  // 	instance->base_type = RS::INSTANCE_OCCLUDER;
-  // }
+  if (instance->base_type == RS::INSTANCE_NONE && RendererSceneOcclusionCull::get_singleton()->is_occluder(p_base)) {
+  	instance->base_type = RS::INSTANCE_OCCLUDER;
+  }
   // new 并 填充basedata, 以及
   switch (instance->base_type) {
     case RS::INSTANCE_NONE: {
@@ -328,14 +426,44 @@ void lain::RendererSceneCull::instance_set_base(RID p_instance, RID p_base) {
     }
     case RS::INSTANCE_LIGHT: {
       InstanceLightData* light = memnew(InstanceLightData);
-      instance->base_data = light;
+      if (scenario && RSG::light_storage->light_get_type(p_base) == RS::LIGHT_DIRECTIONAL) {
+					light->D = scenario->directional_lights.push_back(instance);
+				}
+
+				light->instance = RSG::light_storage->light_instance_create(p_base);
+        instance->base_data = light;
     } break;
     case RS::INSTANCE_MESH:
     case RS::INSTANCE_MULTIMESH:
     case RS::INSTANCE_PARTICLES: {
       InstanceGeometryData* geom = memnew(InstanceGeometryData);
       instance->base_data = geom;
+      geom->geometry_instance = scene_render->geometry_instance_create(p_base);
+				ERR_FAIL_NULL(geom->geometry_instance);
+      	geom->geometry_instance->set_skeleton(instance->skeleton);
+				geom->geometry_instance->set_material_override(instance->material_override);
+				geom->geometry_instance->set_material_overlay(instance->material_overlay);
+				geom->geometry_instance->set_surface_materials(instance->materials);
+				geom->geometry_instance->set_transform(instance->transform, instance->aabb, instance->transformed_aabb);
+				geom->geometry_instance->set_layer_mask(instance->layer_mask);
+				geom->geometry_instance->set_pivot_data(instance->sorting_offset, instance->use_aabb_center);
+				geom->geometry_instance->set_lod_bias(instance->lod_bias);
+				geom->geometry_instance->set_transparency(instance->transparency);
+				geom->geometry_instance->set_use_baked_light(instance->baked_light);
+				geom->geometry_instance->set_use_dynamic_gi(instance->dynamic_gi);
+				geom->geometry_instance->set_use_lightmap(RID(), instance->lightmap_uv_scale, instance->lightmap_slice_index);
+				geom->geometry_instance->set_instance_shader_uniforms_offset(instance->instance_allocated_shader_uniforms_offset);
+				geom->geometry_instance->set_cast_double_sided_shadows(instance->cast_shadows == RS::SHADOW_CASTING_SETTING_DOUBLE_SIDED);
+				if (instance->lightmap_sh.size() == 9) {
+					geom->geometry_instance->set_lightmap_capture(instance->lightmap_sh.ptr());
+				}
 
+        for (Instance *E : instance->visibility_dependencies) {
+					Instance *dep_instance = E;
+					ERR_CONTINUE(dep_instance->array_index == -1);
+					ERR_CONTINUE(dep_instance->scenario->instance_data[dep_instance->array_index].vis_parent_array_index != -1);
+					dep_instance->scenario->instance_data[dep_instance->array_index].vis_parent_array_index = instance->array_index;
+				}
     } break;
     case RS::INSTANCE_PARTICLES_COLLISION: {
       InstanceParticlesCollisionData* collision = memnew(InstanceParticlesCollisionData);
@@ -1178,6 +1306,13 @@ void RendererSceneCull::_update_dirty_instance(Instance* p_instance) {
       geom->geometry_instance->set_surface_materials(p_instance->materials);
     }
   }
+
+  _instance_update_list.remove(&p_instance->update_item);
+
+	_update_instance(p_instance);
+
+	p_instance->update_aabb = false;
+	p_instance->update_dependencies = false;
 }
 
 void RendererSceneCull::_update_instance_aabb(Instance *p_instance) {
@@ -1474,63 +1609,91 @@ void RendererSceneCull::_instance_unpair(Instance *p_A, Instance *p_B) {
 	// 	RSG::particles_storage->particles_remove_collision(A->base, collision->instance);
 	// }
 }
-bool RendererSceneCull::free(RID p_rid) {
-	if (p_rid.is_null()) {
-		return true;
-	}
+// 根据instance信息更新
+void lain::RendererSceneCull::_update_instance(Instance* p_instance) {
+	p_instance->version++;
+if (p_instance->base_type == RS::INSTANCE_LIGHT) {
+		InstanceLightData *light = static_cast<InstanceLightData *>(p_instance->base_data);
 
-	if (scene_render->free(p_rid)) {
-		return true;
-	}
+		RSG::light_storage->light_instance_set_transform(light->instance, p_instance->transform);
+		RSG::light_storage->light_instance_set_aabb(light->instance, p_instance->transform.xform(p_instance->aabb));
+		light->make_shadow_dirty();
 
-	if (camera_owner.owns(p_rid)) {
-		camera_owner.free(p_rid);
+		RS::LightBakeMode bake_mode = RSG::light_storage->light_get_bake_mode(p_instance->base);
+		if (RSG::light_storage->light_get_type(p_instance->base) != RS::LIGHT_DIRECTIONAL && bake_mode != light->bake_mode) {
+			if (p_instance->visible && p_instance->scenario && light->bake_mode == RS::LIGHT_BAKE_DYNAMIC) {
+				p_instance->scenario->dynamic_lights.erase(light->instance);
+			}
 
-	} else if (scenario_owner.owns(p_rid)) {
-		Scenario *scenario = scenario_owner.get_or_null(p_rid);
+			light->bake_mode = bake_mode;
 
-		while (scenario->instances.first()) {
-			instance_set_scenario(scenario->instances.first()->self()->self, RID());
+			if (p_instance->visible && p_instance->scenario && light->bake_mode == RS::LIGHT_BAKE_DYNAMIC) {
+				p_instance->scenario->dynamic_lights.push_back(light->instance);
+			}
 		}
-		scenario->instance_aabbs.reset();
-		scenario->instance_data.reset();
-		scenario->instance_visibility.reset();
 
-		RSG::light_storage->shadow_atlas_free(scenario->reflection_probe_shadow_atlas);
-		RSG::light_storage->reflection_atlas_free(scenario->reflection_atlas);
-		scenario_owner.free(p_rid);
-		RendererSceneOcclusionCull::get_singleton()->remove_scenario(p_rid);
-
-	} else if (RendererSceneOcclusionCull::get_singleton() && RendererSceneOcclusionCull::get_singleton()->is_occluder(p_rid)) {
-		RendererSceneOcclusionCull::get_singleton()->free_occluder(p_rid);
-	} else if (instance_owner.owns(p_rid)) {
-		// delete the instance
-
-		update_dirty_instances();
-
-		Instance *instance = instance_owner.get_or_null(p_rid);
-
-		instance_geometry_set_lightmap(p_rid, RID(), Rect2(), 0);
-		instance_set_scenario(p_rid, RID());
-		instance_set_base(p_rid, RID());
-		instance_geometry_set_material_override(p_rid, RID());
-		instance_geometry_set_material_overlay(p_rid, RID());
-		instance_attach_skeleton(p_rid, RID());
-
-		if (instance->instance_allocated_shader_uniforms) {
-			//free the used shader parameters
-			RSG::material_storage->global_shader_parameters_instance_free(instance->self);
+		uint32_t max_sdfgi_cascade = RSG::light_storage->light_get_max_sdfgi_cascade(p_instance->base);
+		if (light->max_sdfgi_cascade != max_sdfgi_cascade) {
+			light->max_sdfgi_cascade = max_sdfgi_cascade; //should most likely make sdfgi dirty in scenario
 		}
-		update_dirty_instances(); //in case something changed this
-
-		instance_owner.free(p_rid);
-	} else {
-		return false;
 	}
-
-	return true;
 }
+bool RendererSceneCull::free(RID p_rid) {
+  if (p_rid.is_null()) {
+    return true;
+  }
 
+  if (scene_render->free(p_rid)) {
+    return true;
+  }
+
+  if (camera_owner.owns(p_rid)) {
+    camera_owner.free(p_rid);
+
+  } else if (scenario_owner.owns(p_rid)) {
+    Scenario* scenario = scenario_owner.get_or_null(p_rid);
+
+    while (scenario->instances.first()) {
+      instance_set_scenario(scenario->instances.first()->self()->self, RID());
+    }
+    scenario->instance_aabbs.reset();
+    scenario->instance_data.reset();
+    scenario->instance_visibility.reset();
+
+    RSG::light_storage->shadow_atlas_free(scenario->reflection_probe_shadow_atlas);
+    RSG::light_storage->reflection_atlas_free(scenario->reflection_atlas);
+    scenario_owner.free(p_rid);
+    RendererSceneOcclusionCull::get_singleton()->remove_scenario(p_rid);
+
+  } else if (RendererSceneOcclusionCull::get_singleton() && RendererSceneOcclusionCull::get_singleton()->is_occluder(p_rid)) {
+    RendererSceneOcclusionCull::get_singleton()->free_occluder(p_rid);
+  } else if (instance_owner.owns(p_rid)) {
+    // delete the instance
+
+    update_dirty_instances();
+
+    Instance* instance = instance_owner.get_or_null(p_rid);
+
+    instance_geometry_set_lightmap(p_rid, RID(), Rect2(), 0);
+    instance_set_scenario(p_rid, RID());
+    instance_set_base(p_rid, RID());
+    instance_geometry_set_material_override(p_rid, RID());
+    instance_geometry_set_material_overlay(p_rid, RID());
+    instance_attach_skeleton(p_rid, RID());
+
+    if (instance->instance_allocated_shader_uniforms) {
+      //free the used shader parameters
+      RSG::material_storage->global_shader_parameters_instance_free(instance->self);
+    }
+    update_dirty_instances();  //in case something changed this
+
+    instance_owner.free(p_rid);
+  } else {
+    return false;
+  }
+
+  return true;
+}
 
 /* HALTON SEQUENCE */
 

@@ -294,6 +294,7 @@ void RendererViewport::viewport_attach_camera(RID p_viewport, RID p_camera) {
   viewport->camera = p_camera;
 }
 
+
 void RendererViewport::viewport_set_scenario(RID p_viewport, RID p_scenario) {
   Viewport* viewport = viewport_owner.get_or_null(p_viewport);
   ERR_FAIL_NULL(viewport);

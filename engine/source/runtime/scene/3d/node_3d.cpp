@@ -34,6 +34,7 @@ void GObject3D::set_disable_scale(bool p_enabled) {
 
 void GObject3D::_notification(int p_what){
 	switch (p_what) {
+		// enter tree 那么肯定就enter world 啦
 		case NOTIFICATION_ENTER_TREE: {
 			ERR_MAIN_THREAD_GUARD;
 			ERR_FAIL_NULL(get_tree());
@@ -335,4 +336,5 @@ bool GObject3D::is_visible_in_tree() const {
 		}
 		n = n->data.parent;
 	}
+	return true;
 }

@@ -26,6 +26,7 @@ RendererSceneRenderRD* RendererSceneRenderRD::singleton  = nullptr;
 
 lain::RendererSceneRenderRD::RendererSceneRenderRD() {
   singleton = this;
+
   // init is called in scene->init()
 	directional_penumbra_shadow_kernel = memnew_arr(float, 129);
 	directional_soft_shadow_kernel = memnew_arr(float,129);
@@ -341,10 +342,12 @@ void lain::RendererSceneRenderRD::init() {
   /* SKY SHADER */
 	sky.init();
   gi.init(); // make defalut texture
-  // set max decals
+	{ //decals
+		RendererRD::TextureStorage::get_singleton()->set_max_decals(max_cluster_elements);
+	}
   // fog.init() 
 		bool can_use_storage = _render_buffers_can_be_storage();
-
+	  resolve_effects = memnew(RendererRD::Resolve);
 		copy_effects = memnew(RendererRD::CopyEffects(!can_use_storage));
   }
 

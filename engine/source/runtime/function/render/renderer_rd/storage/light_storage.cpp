@@ -858,6 +858,13 @@ void LightStorage::update_light_buffers(RenderDataRD *p_render_data, const Paged
 		RD::get_singleton()->buffer_update(directional_light_buffer, 0, sizeof(DirectionalLightData) * r_directional_light_count, directional_lights);
 	}
 }
+// 初始设定为 max_cluster
+void lain::RendererRD::LightStorage::set_max_reflection_probes(const uint32_t p_max_reflection_probes) {
+	max_reflections = p_max_reflection_probes;
+	reflections = memnew_arr(ReflectionData, max_reflections);
+	reflection_sort = memnew_arr(ReflectionProbeInstanceSort, max_reflections);
+	reflection_buffer = RD::get_singleton()->storage_buffer_create(sizeof(ReflectionData) * max_reflections);
+}
 
 void lain::RendererRD::LightStorage::_light_initialize(RID p_light, RS::LightType p_type) {
   Light light;
@@ -1249,7 +1256,7 @@ RS::LightOmniShadowMode LightStorage::light_omni_get_shadow_mode(RID p_light) {
 
 bool lain::RendererRD::LightStorage::light_has_shadow(RID p_light) const {
   const Light* light = light_owner.get_or_null(p_light);
-  ERR_FAIL_NULL_V(light, RS::LIGHT_DIRECTIONAL);
+  ERR_FAIL_NULL_V(light, false);
   return light->shadow;
 }
 
@@ -1398,7 +1405,7 @@ RID LightStorage::light_instance_create(RID p_light) {
   light_instance->light = p_light;
   light_instance->light_type = light_get_type(p_light);
   if (light_instance->light_type != RS::LIGHT_DIRECTIONAL) {
-    // light_instance->forward_id = ForwardIDStorage::get_singleton()->allocate_forward_id(light_instance->light_type == RS::LIGHT_OMNI ? FORWARD_ID_TYPE_OMNI_LIGHT : FORWARD_ID_TYPE_SPOT_LIGHT);
+    light_instance->forward_id = ForwardIDStorage::get_singleton()->allocate_forward_id(light_instance->light_type == RS::LIGHT_OMNI ? FORWARD_ID_TYPE_OMNI_LIGHT : FORWARD_ID_TYPE_SPOT_LIGHT);
   }
 
   return li;
