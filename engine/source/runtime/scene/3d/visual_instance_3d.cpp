@@ -43,3 +43,28 @@ void lain::VisualInstance3D::_bind_methods() {
 RID VisualInstance3D::get_instance() const {
   return instance;
 }
+
+AABB lain::VisualInstance3D::get_aabb() const {
+  return AABB();
+}
+
+void lain::VisualInstance3D::set_layer_mask(uint32_t p_mask) {
+		layers = p_mask;
+	RS::get_singleton()->instance_set_layer_mask(instance, p_mask);
+}
+
+uint32_t lain::VisualInstance3D::get_layer_mask() const {
+  return layers;
+}
+// visual instance ID (RID) <-> object ID <-> 实际的instance ID ，如灯的ID
+
+lain::VisualInstance3D::VisualInstance3D() {
+		instance = RS::get_singleton()->instance_create();
+	RS::get_singleton()->instance_attach_object_instance_id(instance, get_instance_id());
+	set_notify_transform(true);
+}
+
+lain::VisualInstance3D::~VisualInstance3D() {
+	ERR_FAIL_NULL(RS::get_singleton());
+	RS::get_singleton()->free(instance);
+}

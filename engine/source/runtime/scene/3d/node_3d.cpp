@@ -325,3 +325,14 @@ Vector3 lain::GObject3D::get_position() const {
 	ERR_READ_THREAD_GUARD_V(Vector3());
 	return data.local_transform.origin;
 }
+
+bool GObject3D::is_visible_in_tree() const {
+	ERR_READ_THREAD_GUARD_V(false); // Since visibility can only be changed from main thread, this is safe to call.
+  const GObject3D *n = this;
+	while (n) {
+		if (!n->data.visible) {
+			return false;
+		}
+		n = n->data.parent;
+	}
+}

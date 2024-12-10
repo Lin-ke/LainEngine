@@ -76,7 +76,6 @@ public:
 	void set_color(const Color &p_color);
 	Color get_color() const;
 
-  	Light3D();
 	~Light3D();
 
 };
@@ -90,14 +89,26 @@ class DirectionalLight3D : public Light3D {
 		SHADOW_PARALLEL_2_SPLITS,
 		SHADOW_PARALLEL_4_SPLITS,
 	};
+  enum SkyMode {
+		SKY_MODE_LIGHT_AND_SKY,
+		SKY_MODE_LIGHT_ONLY,
+		SKY_MODE_SKY_ONLY,
+	};
   private:
 	ShadowMode shadow_mode;
+  bool blend_splits;
+  SkyMode sky_mode;
   protected:
   static void _bind_methods();
   public:
 	void set_shadow_mode(ShadowMode p_mode);
 	ShadowMode get_shadow_mode() const;
   DirectionalLight3D();
+
+  
+	void set_sky_mode(SkyMode p_mode);
+	SkyMode get_sky_mode() const;
+
 };
 
 VARIANT_ENUM_CAST(DirectionalLight3D::ShadowMode)

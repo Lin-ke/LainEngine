@@ -1,7 +1,8 @@
 #ifndef GObject3D_H
 #define GObject3D_H
 #include "core/scene/object/gobject.h"
-#include "scene/resources/common/camera_attributes.h"
+#include "scene/resources/common/camera_attributes.h" // 需要在 world include之前include
+
 #include "scene/resources/common/world.h"
 #include "core/templates/self_list.h"
 namespace lain{
@@ -243,6 +244,7 @@ public:
 	void show();
 	void hide();
 	bool is_visible() const;
+	// 一路向上都可见。
 	bool is_visible_in_tree() const;
 
 	void force_update_transform();

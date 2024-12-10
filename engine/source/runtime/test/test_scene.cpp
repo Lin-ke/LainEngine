@@ -5,6 +5,7 @@
 #include "core/scene/packed_scene.h"
 #include "core/scene/scene_tree.h"
 #include "scene/3d/camera_3d.h"
+#include "scene/3d/light_3d.h"
 #include "scene/3d/camera_3d_data.h"
 #include "scene/resources/io/resource_format_text.h"
 #include "core/scene/component/component.h"
@@ -50,6 +51,7 @@ void test_scene() {
       GObject* gobj2 = memnew(TestNode);
       GObject* gobj1_1 = memnew(TestNode);
       Camera3D* cam = memnew(Camera3D);
+      DirectionalLight3D* light = memnew(DirectionalLight3D);
       scene->set_name("TestScene");
       scene->add_component(memnew(TestComponent));
       scene->add_child(cam);
@@ -57,6 +59,7 @@ void test_scene() {
       cam->set_name("default_cam");
       cam->set_transform(
         Transform3D(Vector3(1,2,3), Vector3(1,2,3), Vector3(1,2,3), Vector3(1,2,3)));
+      light->set_color(Color(.5, .5, 1));
       gobj1->set_name("hello");
 
       scene->add_child(gobj1);

@@ -564,6 +564,7 @@ void RendererSceneCull::instance_set_surface_override_material(RID p_instance, i
 
   _instance_queue_update(instance, false, true);
 }
+// scenario.pushback instance
 void RendererSceneCull::instance_set_visible(RID p_instance, bool p_visible) {
   Instance* instance = instance_owner.get_or_null(p_instance);
   ERR_FAIL_NULL(instance);
