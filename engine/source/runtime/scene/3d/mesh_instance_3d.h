@@ -8,6 +8,7 @@ class MeshInstance3D : public GeometryInstance3D {
   LCLASS(MeshInstance3D, GeometryInstance3D);
   protected:
   Ref<Mesh> mesh;
+  static void _bind_methods();
   public:
   void set_mesh(const Ref<Mesh> &p_mesh);
   Ref<Mesh> get_mesh() const;
@@ -15,10 +16,14 @@ class MeshInstance3D : public GeometryInstance3D {
   ~MeshInstance3D();
 
   virtual AABB get_aabb() const override;
-  void _from_data(void* p_data);
-  //收到， 下一步形成一个整体框架，将整体技术路线概括进去；然后再增加引入
-  // 的内容来详细说明意义；增加对实验的解释和实用性的实验，说明设置和意义 ；
-  // 突出增量的介绍
+  private:
+  void _mesh_changed();
+	Vector<Ref<Material>> surface_override_materials;
+	LocalVector<float> blend_shape_tracks;
+	HashMap<StringName, int> blend_shape_properties;
+	void set_blend_shape_value(int p_blend_shape, float p_value);
+	float get_blend_shape_value(int p_blend_shape) const;
+
 };
 }
 #endif // MESH_INSTANCE_3D_H

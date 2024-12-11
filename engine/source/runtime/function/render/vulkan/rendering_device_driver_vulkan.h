@@ -297,7 +297,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver {
     LocalVector<SwapChain*> image_semaphores_swap_chains;  // --- image semaphore的index 到 swap chain
     LocalVector<uint32_t> pending_semaphores_for_execute; // 下一次提交前需要等待
     LocalVector<uint32_t> pending_semaphores_for_fence;  // 需要给fence信号的信号量
-    LocalVector<uint32_t> free_image_semaphores;         // --- 空闲的
+    LocalVector<uint32_t> free_image_semaphores;         // --- 空闲的(可用的)
     LocalVector<Pair<Fence*, uint32_t>>
         image_semaphores_for_fences;  // fence to image_semaphores index，需要给fence的信号量加入这里
     uint32_t queue_family = 0;        // 通过这个索引到vkqueue

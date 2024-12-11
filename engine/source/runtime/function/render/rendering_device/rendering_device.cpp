@@ -937,6 +937,7 @@ void lain::RenderingDevice::_execute_frame(bool p_present) {
   swap_chains.clear();
 
   // Execute the setup command buffer.
+  // setup command buffer 给 setup_semaphore 信号
   driver->command_queue_execute_and_present(main_queue, {}, frames[frame].setup_command_buffer, frames[frame].setup_semaphore, {}, {});
 
   // Execute command buffers and use semaphores to wait on the execution of the previous one. Normally there's only one command buffer,
@@ -3104,9 +3105,11 @@ RID lain::RenderingDevice::uniform_set_create(const Vector<Uniform>& p_uniforms,
 
     const Uniform& uniform = uniforms[uniform_idx];
     // 验证 type
+    if(uniform.uniform_type != set_uniform.type){
     ERR_FAIL_COND_V_MSG(uniform.uniform_type != set_uniform.type, RID(),
                         "Mismatch uniform type for binding (" + itos(set_uniform.binding) + "), set (" + itos(p_shader_set) + "). Expected '" +
                             SHADER_UNIFORM_NAMES[set_uniform.type] + "', supplied: '" + SHADER_UNIFORM_NAMES[uniform.uniform_type] + "'.");
+    }
 
     RDD::BoundUniform& driver_uniform = driver_uniforms[i];
     driver_uniform.type = uniform.uniform_type;

@@ -149,7 +149,7 @@ bool ClassDB::get_property(Object* p_object, const StringName& p_property, Varia
 
 			if (psg->index >= 0) {
 				Variant index = psg->index;
-				const Variant *arg[1] = { &index };
+				const Variant *arg[1] = { &index }; // 加入一个index
 				Callable::CallError ce;
 				r_value = p_object->callp(psg->getter, arg, 1, ce);
 

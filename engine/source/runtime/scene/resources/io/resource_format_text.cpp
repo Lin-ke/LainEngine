@@ -297,8 +297,6 @@ Error ResourceLoaderText::load() {
     }
 
     //
-    // properties
-    packed_scene->get_state()->add_instance_res(gobject_id, gobject.m_instance_res);
     // 按他这个写法和python有啥区别，dict和variant装全部
     // 组件里面只有一些数据，所以也不是不行吧
 
@@ -431,7 +429,8 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
 
   relative_paths = p_flags & ResourceSaver::FLAG_RELATIVE_PATHS;
   skip_editor = p_flags & ResourceSaver::FLAG_OMIT_EDITOR_PROPERTIES;
-  bundle_resources = p_flags & ResourceSaver::FLAG_BUNDLE_RESOURCES;
+  // bundle_resources = p_flags & ResourceSaver::FLAG_BUNDLE_RESOURCES;
+	bundle_resources = false;
   takeover_paths = p_flags & ResourceSaver::FLAG_REPLACE_SUBRESOURCE_PATHS;
   if (!p_path.begins_with("res://")) {
     takeover_paths = false;
@@ -439,7 +438,19 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
 
   // Save resources.
   _find_resources(p_resource, true);
+	// 加入可以被实例化的资源为外部资源
 
+		if (packed_scene.is_valid()) {
+		// Add instances to external resources if saving a packed scene.
+		for (int i = 0; i < packed_scene->get_state()->get_gobject_count(); i++) {
+
+			Ref<PackedScene> instance = packed_scene->get_state()->get_gobject_instance(i);
+			if (instance.is_valid() && !external_resources.has(instance)) {
+				int index = external_resources.size() + 1;
+				external_resources[instance] = {index, Resource::generate_scene_unique_id()}; // Keep the order for improved thread loading performance.
+			}
+		}
+	}
   Dictionary title;
   title["tag"] = packed_scene.is_valid() ? "scene" : "resource";
   if (packed_scene.is_null()) {
@@ -517,6 +528,14 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
         prtw[idx++] = ext_res;
       }
     }
+		packed_res.sub_res.resize(internal_resources.size());
+		{
+			for(auto kv : internal_resources){
+				SubRes sub_res;
+				sub_res.m_id = kv.value;
+				sub_res.m_type = kv.key->get_class_name();
+			}
+		}
 
     if (packed_scene.is_valid()) {
       // If this is a scene, save gobjects and connections!
@@ -570,11 +589,22 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
         gires.m_variants["name"] = name;
         // variants
         for (int j = 0; j < state->get_gobject_property_count(i); j++) {
+					// if resource
+					Ref<Resource> res = state->get_gobject_property_value(i, j);
+					if(!res.is_valid()){
           gires.m_variants[state->get_gobject_property_name(i, j)] = state->get_gobject_property_value(i, j);
+					} else{
+						if (external_resources.has(res)) {
+							String kv = itos(external_resources[res].first) + "_" + external_resources[res].second;
+							 gires.ext_res[state->get_gobject_property_name(i, j)] = "ExtResource(\"" + kv  + "\")";
+						} else if(internal_resources.has(res)){
+							gires.sub_res[state->get_gobject_property_name(i, j)] = "SubResource(\"" + internal_resources[res] + "\")";
+						} else{
+							L_CORE_ERROR("bug? A resource is expected to be a sub resource or an external resource. OR BUILT IN ");
+						}
+					}
         }
-
         Vector<Component*> cmpts = state->get_gobject_components(i);
-        gires.m_instance_res = state->get_gobject_insres(i);
 
         using Reflection::ReflectionPtr;
         Vector<ReflectionPtr<Component>> cmpts_ref;
@@ -599,7 +629,7 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
   }
   return err;
 }
-
+// 递归获得resource
 void ResourceSaverText::_find_resources(const Variant& p_variant, bool p_main) {
   switch (p_variant.get_type()) {
     case Variant::OBJECT: {
@@ -627,7 +657,7 @@ void ResourceSaverText::_find_resources(const Variant& p_variant, bool p_main) {
 
       resource_set.insert(res);
       // property中可能有需要保存的Res
-      /*List<PropertyInfo> property_list;
+      List<PropertyInfo> property_list;
 
 			res->get_property_list(&property_list);
 			property_list.sort();
@@ -638,7 +668,7 @@ void ResourceSaverText::_find_resources(const Variant& p_variant, bool p_main) {
 				PropertyInfo pi = I->get();
 
 				if (pi.usage & PROPERTY_USAGE_STORAGE) {
-					Variant v = res->get(I->get().name); // 感觉这么写很不优雅啊
+					Variant v = res->get(I->get().name);
 
 					if (pi.usage & PROPERTY_USAGE_RESOURCE_NOT_PERSISTENT) {
 						NonPersistentKey npk;
@@ -661,7 +691,7 @@ void ResourceSaverText::_find_resources(const Variant& p_variant, bool p_main) {
 				}
 
 				I = I->next();
-			}*/
+			}
 
       saved_resources.push_back(res);  // Saved after, so the children it needs are available when loaded
 
@@ -680,6 +710,7 @@ void ResourceSaverText::_find_resources(const Variant& p_variant, bool p_main) {
       List<Variant> keys;
       d.get_key_list(&keys);
       for (const Variant& E : keys) {
+				L_PRINT(E.operator String());
         // Of course keys should also be cached, after all we can't prevent users from using resources as keys, right?
         // See also ResourceFormatSaverBinaryInstance::_find_resources (when p_variant is of type Variant::DICTIONARY)
         _find_resources(E);

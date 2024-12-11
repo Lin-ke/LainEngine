@@ -11,6 +11,8 @@
 #include "core/scene/component/component.h"
 #include "core/scene/object/testnode.h"
 #include "function/render/rendering_system/light_storage_api.h"
+#include "scene/3d/mesh_instance_3d.h"
+#include "scene/resources/common/primitive_meshes.h"
 namespace lain {
 namespace test {
 void draw_tree(GObject* root) {
@@ -53,6 +55,8 @@ void test_scene() {
       GObject* gobj1_1 = memnew(TestNode);
       Camera3D* cam = memnew(Camera3D);
       DirectionalLight3D* light = memnew(DirectionalLight3D);
+      OmniLight3D* omni = memnew(OmniLight3D);
+      
       scene->set_name("TestScene");
       scene->add_component(memnew(TestComponent));
       scene->add_child(cam);
@@ -60,7 +64,10 @@ void test_scene() {
       cam->set_name("default_cam");
       cam->set_transform(
         Transform3D(Vector3(1,2,3), Vector3(1,2,3), Vector3(1,2,3), Vector3(1,2,3)));
-      
+      omni->set_color(Color(.2, .1, 1));
+      scene->add_child(omni);
+      omni->set_owner(scene);
+      omni->set_name("default_omni");
       light->set_color(Color(.5, .5, 1));
       light->set_shadow(true);
       scene->add_child(light);
@@ -78,12 +85,26 @@ void test_scene() {
       gobj2->set_name("world");
       scene->add_child(gobj2);
       gobj2->set_owner(scene);
+      MeshInstance3D* cube = memnew(MeshInstance3D);
+      cube->set_name("cube");
+      scene->add_child(cube);
+      cube->set_owner(scene);
+      
+      Ref<Mesh> mesh = memnew(CapsuleMesh);
+      cube->set_mesh(mesh);
+      
       /*SceneTree::get_singleton()->get_root()->add_child(gobj1);
 					SceneTree::get_singleton()->get_root()->add_child(gobj2);*/
       gobj1_1->add_component(memnew(TestComponent));
       Ref<PackedScene> s;
       s.instantiate();
+      List<PropertyInfo> props;
+      (s->get_property_list(&props));
+      for (auto&& i : props) {
+        L_PRINT(i.name);
+      }
       s->pack(scene);
+      
       ResourceSaver::save(s, "1.tscn");
       s->pack(scene);
       ResourceSaver::save(s, "2.tscn");

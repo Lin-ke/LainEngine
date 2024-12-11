@@ -77,12 +77,23 @@ void Object::initialize_class() {
 }
 
 Variant Object::callp(const StringName& p_method, const Variant** p_args, int p_argcount, Callable::CallError& r_error) {
+	r_error.error = Callable::CallError::CALL_OK;
   // 处理free
 
   // 如果是脚本调用
 
   // 通过反射获得类的方法并调用
-  return Variant();
+	Variant ret;
+
+	MethodBind *method = ClassDB::get_method(get_class_name(), p_method);
+
+	if (method) {
+		ret = method->call(this, p_args, p_argcount, r_error);
+	} else {
+		r_error.error = Callable::CallError::CALL_ERROR_INVALID_METHOD;
+	}
+
+	return ret;
 }
 // @todo classdb 需要提供 get_property, 这是怎么实现的呢
 Variant Object::get(const StringName& p_name, bool* r_valid) const {

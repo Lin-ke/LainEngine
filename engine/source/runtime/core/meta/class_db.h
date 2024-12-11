@@ -84,7 +84,7 @@ class ClassDB {
   }
 
   struct PropertySetGet {
-    int index;
+    int index; // 为列表型的属性所设置的
     StringName setter;
     StringName getter;
     MethodBind* _setptr = nullptr;

@@ -21,6 +21,35 @@
 #define RB_TEX_VOXEL_GI_MSAA SNAME("voxel_gi_msaa")
 #define RB_TEX_NORMAL_ROUGHNESS SNAME("normal_roughness")
 #define RB_TEX_NORMAL_ROUGHNESS_MSAA SNAME("normal_roughness_msaa")
+
+#define RB_SCOPE_SSDS SNAME("rb_ssds")
+#define RB_SCOPE_SSIL SNAME("rb_ssil")
+#define RB_SCOPE_SSAO SNAME("rb_ssao")
+#define RB_SCOPE_SSR SNAME("rb_ssr")
+
+#define RB_LINEAR_DEPTH SNAME("linear_depth")
+#define RB_FINAL SNAME("final")
+#define RB_LAST_FRAME SNAME("last_frame")
+#define RB_DEINTERLEAVED SNAME("deinterleaved")
+#define RB_DEINTERLEAVED_PONG SNAME("deinterleaved_pong")
+#define RB_EDGES SNAME("edges")
+#define RB_IMPORTANCE_MAP SNAME("importance_map")
+#define RB_IMPORTANCE_PONG SNAME("importance_pong")
+
+#define RB_DEPTH_SCALED SNAME("depth_scaled")
+#define RB_NORMAL_SCALED SNAME("normal_scaled")
+#define RB_BLUR_RADIUS SNAME("blur_radius")
+#define RB_INTERMEDIATE SNAME("intermediate")
+#define RB_OUTPUT SNAME("output")
+
+
+#define RB_SCOPE_GI SNAME("rbgi")
+#define RB_SCOPE_SDFGI SNAME("sdfgi")
+
+#define RB_TEX_AMBIENT SNAME("ambient")
+#define RB_TEX_REFLECTION SNAME("reflection")
+
+
 namespace lain::RendererSceneRenderImplementation {
 // _render_scene
 class RenderForwardClustered : public RendererSceneRenderRD {

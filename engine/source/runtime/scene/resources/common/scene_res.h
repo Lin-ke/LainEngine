@@ -12,6 +12,7 @@ namespace lain {
 public:
         Dictionary head;
         Vector<ExtRes> ext_res;
+        Vector<SubRes> sub_res;
         Vector<GObjectInstanceRes> gobjects;
 
     };

@@ -16,7 +16,7 @@ class PrimitiveMesh : public Mesh {
 	bool add_uv2 = false;
 	float uv2_padding = 2.0;
 	void _update() const;
-	mutable bool pending_request = true;
+	mutable bool pending_request = true; // dirty, need update
 
 protected:
   Mesh::PrimitiveType primitive_type = Mesh::PRIMITIVE_TRIANGLES;

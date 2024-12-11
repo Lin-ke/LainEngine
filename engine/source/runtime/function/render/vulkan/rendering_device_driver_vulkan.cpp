@@ -944,9 +944,9 @@ RDD::CommandQueueID RenderingDeviceDriverVulkan::command_queue_create(CommandQue
 /// 提交commandqueue execute和present
 /// </summary>
 /// <param name="p_cmd_queue"></param>
-/// <param name="p_wait_semaphores"></param>
+/// <param name="p_wait_semaphores">这里的信号量会被放入wait_semaphores</param>
 /// <param name="p_cmd_buffers"></param>
-/// <param name="p_cmd_semaphores"></param>
+/// <param name="p_cmd_semaphores">这里的信号量会被放入signal_semaphores</param>
 /// <param name="p_cmd_fence"></param>
 /// <param name="p_swap_chains"></param>
 /// 执行完毕后， command buffer 变为executable状态，除非VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT ，则为invalid
@@ -974,6 +974,8 @@ Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueu
 
   thread_local LocalVector<VkSemaphore> wait_semaphores;  // 为什么这个是thread local的？@？
   thread_local LocalVector<VkPipelineStageFlags> wait_semaphores_stages;
+  wait_semaphores.clear(); // 不clear下一次来还会用之前的，造成 no way to signal 等问题
+	wait_semaphores_stages.clear();
   if (!command_queue->pending_semaphores_for_execute.is_empty()) {
     for (uint32_t i = 0; i < command_queue->pending_semaphores_for_execute.size(); i++) {
       VkSemaphore wait_semaphore = command_queue->image_semaphores[command_queue->pending_semaphores_for_execute[i]];
@@ -981,7 +983,7 @@ Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueu
       wait_semaphores_stages.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
     }
 
-    command_queue->pending_semaphores_for_execute.clear();  // 这里不是加到free吗@？
+    command_queue->pending_semaphores_for_execute.clear();  
   }
   for (uint32_t i = 0; i < p_wait_semaphores.size(); i++) {
     // FIXME: Allow specifying the stage mask in more detail.
@@ -1038,7 +1040,7 @@ Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueu
     device_queue.submit_mutex.lock();                                    // 要submit时
     err = vkQueueSubmit(device_queue.queue, 1, &submit_info, vk_fence);  // 传入的fence
     device_queue.submit_mutex.unlock();
-    ERR_FAIL_COND_V(err != VK_SUCCESS, FAILED);
+    ERR_FAIL_COND_V(err != VK_SUCCESS, FAILED); 
 
     // 有fence且command-queue有出发semaphore的
     if (fence != nullptr && !command_queue->pending_semaphores_for_fence.is_empty()) {
@@ -2453,7 +2455,7 @@ RDD::FramebufferID RenderingDeviceDriverVulkan::swap_chain_acquire_framebuffer(C
     return FramebufferID();
   }
 
-  VkResult err;
+  VkResult err = VK_NOT_READY;
   VkSemaphore semaphore = VK_NULL_HANDLE;
   uint32_t semaphore_index = 0;
   if (command_queue->free_image_semaphores.is_empty()) {
@@ -2478,8 +2480,8 @@ RDD::FramebufferID RenderingDeviceDriverVulkan::swap_chain_acquire_framebuffer(C
   // Store in the swap chain the acquired semaphore.
   swap_chain->command_queues_acquired.push_back(command_queue);
   swap_chain->command_queues_acquired_semaphores.push_back(semaphore_index);
-
-  err = device_functions.AcquireNextImageKHR(vk_device, swap_chain->vk_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &swap_chain->image_index);
+  err = VK_NOT_READY;
+  err = vkAcquireNextImageKHR(vk_device, swap_chain->vk_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &swap_chain->image_index);
   if (err == VK_ERROR_OUT_OF_DATE_KHR) {
     // Out of date leaves the semaphore in a signaled state that will never finish, so it's necessary to recreate it.
     bool semaphore_recreated = _recreate_image_semaphore(command_queue, semaphore_index, true);

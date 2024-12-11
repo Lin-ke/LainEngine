@@ -79,6 +79,8 @@ public:
 	~Light3D();
 
 };
+VARIANT_ENUM_CAST(Light3D::Param);
+VARIANT_ENUM_CAST(Light3D::BakeMode);
 
 
 class DirectionalLight3D : public Light3D {
@@ -112,6 +114,30 @@ class DirectionalLight3D : public Light3D {
 };
 
 VARIANT_ENUM_CAST(DirectionalLight3D::ShadowMode)
+
+class OmniLight3D : public Light3D{
+  LCLASS(OmniLight3D, Light3D);
+  public:
+  	// omni light
+	enum ShadowMode {
+		SHADOW_DUAL_PARABOLOID,
+		SHADOW_CUBE,
+	};
+  
+private:
+	ShadowMode shadow_mode;
+  protected:
+	static void _bind_methods();
+
+public:
+	void set_shadow_mode(ShadowMode p_mode);
+	ShadowMode get_shadow_mode() const;
+
+	// PackedStringArray get_configuration_warnings() const override;
+
+	OmniLight3D();
+};
+VARIANT_ENUM_CAST(OmniLight3D::ShadowMode)
 
 }
 #endif

@@ -1,14 +1,114 @@
 #include "primitive_meshes.h"
 using namespace lain;
+#define PADDING_REF_SIZE 1024.0
+
+Vector2 PrimitiveMesh::get_uv2_scale(Vector2 p_margin_scale) const {
+	Vector2 uv2_scale;
+	Vector2 lightmap_size = get_lightmap_size_hint();
+
+	// Calculate it as a margin, if no lightmap size hint is given we assume "PADDING_REF_SIZE" as our texture size.
+	uv2_scale.x = p_margin_scale.x * uv2_padding / (lightmap_size.x == 0.0 ? PADDING_REF_SIZE : lightmap_size.x);
+	uv2_scale.y = p_margin_scale.y * uv2_padding / (lightmap_size.y == 0.0 ? PADDING_REF_SIZE : lightmap_size.y);
+
+	// Inverse it to turn our margin into a scale
+	uv2_scale = Vector2(1.0, 1.0) - uv2_scale;
+
+	return uv2_scale;
+}
 
 float PrimitiveMesh::get_lightmap_texel_size() const {
-	float texel_size = GLOBAL_GET("rendering/lightmapping/primitive_meshes/texel_size");
+  float texel_size = GLOBAL_GET("rendering/lightmapping/primitive_meshes/texel_size");
 
-	if (texel_size <= 0.0) {
-		texel_size = 0.2;
+  if (texel_size <= 0.0) {
+    texel_size = 0.2;
+  }
+
+  return texel_size;
+}
+int lain::PrimitiveMesh::get_surface_count() const {
+	if (pending_request) {
+		_update();
+	}
+	return 1;
+}
+
+int PrimitiveMesh::surface_get_array_len(int p_idx) const {
+	ERR_FAIL_INDEX_V(p_idx, 1, -1);
+	if (pending_request) {
+		_update();
 	}
 
-	return texel_size;
+	return array_len;
+}
+
+int lain::PrimitiveMesh::surface_get_array_index_len(int p_idx) const {
+	ERR_FAIL_INDEX_V(p_idx, 1, -1);
+	if (pending_request) {
+		_update();
+	}
+
+	return index_array_len;
+}
+
+Dictionary lain::PrimitiveMesh::surface_get_lods(int p_surface) const {
+	return Dictionary(); //not really supported
+}
+
+BitField<Mesh::ArrayFormat> lain::PrimitiveMesh::surface_get_format(int p_idx) const {
+	ERR_FAIL_INDEX_V(p_idx, 1, 0);
+
+	uint64_t mesh_format = RS::ARRAY_FORMAT_VERTEX | RS::ARRAY_FORMAT_NORMAL | RS::ARRAY_FORMAT_TANGENT | RS::ARRAY_FORMAT_TEX_UV | RS::ARRAY_FORMAT_INDEX;
+	if (add_uv2) {
+		mesh_format |= RS::ARRAY_FORMAT_TEX_UV2;
+	}
+
+	return mesh_format;
+}
+Mesh::PrimitiveType PrimitiveMesh::surface_get_primitive_type(int p_idx) const {
+	return primitive_type;
+}
+
+void PrimitiveMesh::surface_set_material(int p_idx, const Ref<Material> &p_material) {
+	ERR_FAIL_INDEX(p_idx, 1);
+
+	set_material(p_material);
+}
+
+Ref<Material> PrimitiveMesh::surface_get_material(int p_idx) const {
+	ERR_FAIL_INDEX_V(p_idx, 1, nullptr);
+
+	return material;
+}
+StringName PrimitiveMesh::get_blend_shape_name(int p_index) const {
+	return StringName();
+}
+
+void PrimitiveMesh::set_blend_shape_name(int p_index, const StringName &p_name) {
+}
+
+AABB PrimitiveMesh::get_aabb() const {
+	if (pending_request) {
+		_update();
+	}
+
+	return aabb;
+}
+RID PrimitiveMesh::GetRID() const {
+	if (pending_request) {
+		_update();
+	}
+	return mesh;
+}
+int PrimitiveMesh::get_blend_shape_count() const {
+	return 0;
+}
+Array PrimitiveMesh::surface_get_arrays(int p_surface) const {
+	ERR_FAIL_INDEX_V(p_surface, 1, Array());
+	if (pending_request) {
+		_update();
+	}
+	return Array(); // @todo
+	// return RS::get_singleton()->mesh_surface_get_arrays(mesh, 0);
 }
 void lain::PrimitiveMesh::set_material(const Ref<Material>& p_material) {
   material = p_material;
@@ -19,6 +119,11 @@ void lain::PrimitiveMesh::set_material(const Ref<Material>& p_material) {
 		emit_changed();
 	}
 }
+
+Ref<Material> PrimitiveMesh::get_material() const {
+	return material;
+}
+
 lain::PrimitiveMesh::PrimitiveMesh() {
 
   mesh = RS::get_singleton()->mesh_create();

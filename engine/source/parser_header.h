@@ -259,6 +259,7 @@
 #include  "C:/LainEngine/engine/source/runtime/scene/3d/camera_3d.h"
 #include  "C:/LainEngine/engine/source/runtime/scene/3d/camera_3d_data.h"
 #include  "C:/LainEngine/engine/source/runtime/scene/3d/geometry_instance_3d_data.h"
+#include  "C:/LainEngine/engine/source/runtime/scene/3d/light_3d.h"
 #include  "C:/LainEngine/engine/source/runtime/scene/3d/mesh_instance_3d.h"
 #include  "C:/LainEngine/engine/source/runtime/scene/3d/mesh_instance_3d_data.h"
 #include  "C:/LainEngine/engine/source/runtime/scene/3d/node_3d.h"

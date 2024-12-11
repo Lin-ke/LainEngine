@@ -8,6 +8,7 @@
 #include "scene/3d/camera_3d.h"
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/3d/light_3d.h"
+#include "scene/3d/mesh_instance_3d.h"
 // function types
 #include "function/shader/shader_types.h"
 
@@ -55,6 +56,9 @@ namespace lain{
 	GDREGISTER_VIRTUAL_CLASS(VisualInstance3D);
 	GDREGISTER_CLASS(DirectionalLight3D);
 	GDREGISTER_CLASS(Camera3D);
+	GDREGISTER_CLASS(OmniLight3D);
+	GDREGISTER_CLASS(MeshInstance3D);
+	
 	
 	
 	}

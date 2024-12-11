@@ -1,5 +1,6 @@
 #include "texture_storage.h"
 #include "function/render/rendering_device/rendering_device.h"
+#include "framebuffer_cache_rd.h"
 using namespace lain::RendererRD;
 using namespace lain;
 TextureStorage* TextureStorage::singleton = nullptr;
@@ -2285,7 +2286,14 @@ Image::Format lain::RendererRD::TextureStorage::texture_get_format(RID p_texture
 }
 
 RID lain::RendererRD::TextureStorage::RenderTarget::get_framebuffer() {
-  return RID();  // @todo
+	// Note that if we're using an overridden color buffer, we're likely cycling through a texture chain.
+	// this is where our framebuffer cache comes in clutch..
+
+	if (msaa != RS::VIEWPORT_MSAA_DISABLED) {
+		return FramebufferCacheRD::get_singleton()->get_cache_multiview(view_count, color_multisample, overridden.color.is_valid() ? overridden.color : color);
+	} else {
+		return FramebufferCacheRD::get_singleton()->get_cache_multiview(view_count, overridden.color.is_valid() ? overridden.color : color);
+	}
 }
 
 void TextureStorage::texture_rd_initialize(RID p_texture, const RID &p_rd_texture, const RS::TextureLayeredType p_layer_type) {

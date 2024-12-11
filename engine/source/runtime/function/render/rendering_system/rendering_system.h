@@ -689,6 +689,8 @@ class RenderingSystem : public Object {
 	virtual void mesh_surface_make_offsets_from_format(uint64_t p_format, int p_vertex_len, int p_index_len, uint32_t *r_offsets, uint32_t &r_vertex_element_size, uint32_t &r_normal_element_size, uint32_t &r_attrib_element_size, uint32_t &r_skin_element_size) const;
 	
 
+	Array mesh_surface_get_arrays(RID p_mesh, int p_surface) const;
+	Dictionary mesh_surface_get_lods(RID p_mesh, int p_surface) const;
 
 	/* Reflection Probe*/
 

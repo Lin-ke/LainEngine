@@ -510,6 +510,59 @@ String SceneState::get_path() const {
   return path;
 }
 
+void SceneState::set_bundled_scene(const Dictionary& p_dictionary) {
+  
+}
+
+Dictionary SceneState::get_bundled_scene() const {
+	Vector<String> rnames;
+	rnames.resize(names.size());
+
+	if (names.size()) {
+		String *r = rnames.ptrw();
+
+		for (int i = 0; i < names.size(); i++) {
+			r[i] = names[i];
+		}
+	}
+
+	Dictionary d;
+	d["names"] = rnames;
+	d["variants"] = variants;
+	Vector<int> rnodes;
+	d["node_count"] = gobjects.size();
+
+	for (int i = 0; i < gobjects.size(); i++) {
+		const GObjectData &nd = gobjects[i];
+		rnodes.push_back(nd.parent);
+		rnodes.push_back(nd.owner);
+		rnodes.push_back(nd.type);
+		uint32_t name_index = nd.name;
+		if (nd.index < (1 << (32 - NAME_INDEX_BITS)) - 1) { //save if less than 16k children
+			name_index |= uint32_t(nd.index + 1) << NAME_INDEX_BITS; //for backwards compatibility, index 0 is no index
+		}
+		rnodes.push_back(name_index);
+		rnodes.push_back(nd.instance);
+		rnodes.push_back(nd.properties.size());
+		for (int j = 0; j < nd.properties.size(); j++) {
+			rnodes.push_back(nd.properties[j].name);
+			rnodes.push_back(nd.properties[j].value);
+		}
+		rnodes.push_back(nd.groups.size());
+		for (int j = 0; j < nd.groups.size(); j++) {
+			rnodes.push_back(nd.groups[j]);
+		}
+	}
+	d["nodes"] = rnodes;
+	Array rnode_paths;
+	rnode_paths.resize(gobject_paths.size());
+	for (int i = 0; i < gobject_paths.size(); i++) {
+		rnode_paths[i] = gobject_paths[i];
+	}
+	d["node_paths"] = rnode_paths;
+  return d;
+}
+
 Error SceneState::pack(GObject* p_scene) {
   ERR_FAIL_NULL_V(p_scene, ERR_INVALID_PARAMETER);
 
@@ -1011,5 +1064,11 @@ Vector<SceneState::PackState> SceneState::_get_gobject_states_stack(const GObjec
   }
   return states_stack_ret;
 }
+  void PackedScene::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("_set_bundled_scene", "scene"), &PackedScene::_set_bundled_scene);
+	ClassDB::bind_method(D_METHOD("_get_bundled_scene"), &PackedScene::_get_bundled_scene);
+	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "_bundled"), "_set_bundled_scene", "_get_bundled_scene");
+  }
+
 
 }  // namespace lain

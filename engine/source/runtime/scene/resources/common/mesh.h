@@ -15,6 +15,9 @@ class Mesh : public Resource {
 
 	mutable Ref<TriangleMesh> triangle_mesh; //cached
 	mutable Vector<Ref<TriangleMesh>> surface_triangle_meshes; //cached 
+	mutable Vector<Vector3> debug_lines;
+	Size2i lightmap_size_hint;
+
 public:
 	enum PrimitiveType {
 		PRIMITIVE_POINTS = RS::PRIMITIVE_POINTS,

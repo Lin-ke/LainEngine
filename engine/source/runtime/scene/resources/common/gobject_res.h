@@ -37,6 +37,12 @@ namespace lain
         String  m_def_path = "";
         String  m_id = "";
     };
+
+    struct SubRes{
+        META(Fields)
+        String m_type = "";
+        String m_id = "";
+    };
        
 
 
@@ -49,6 +55,8 @@ namespace lain
         HashMap<String, Variant> m_variants; // type parent name owner 
         //Groups 
         Vector <Reflection::ReflectionPtr<Component>> m_instanced_components;
-        String m_instance_res;
+        HashMap<String, String> sub_res; // 
+        HashMap<String, String> ext_res; //
+
     };
 } // namespace Piccolo

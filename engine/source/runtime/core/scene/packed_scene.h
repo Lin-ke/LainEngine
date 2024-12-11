@@ -7,283 +7,283 @@
 #include "core/templates/hash_set.h"
 namespace lain {
 
-	
-	// 引擎内部的场景数据结构
-	class PackedScene;
-	class Component; 
-	class GObject;
+// 引擎内部的场景数据结构
+class PackedScene;
+class Component;
+class GObject;
 class SceneState : public RefCounted {
-	LCLASS(SceneState, RefCounted);
+  LCLASS(SceneState, RefCounted);
 
-	Vector<StringName> names;
-	Vector<Variant> variants;
-	Vector<GObjectPath> gobject_paths;
-	Vector<GObjectPath> editable_instances;
-	mutable HashMap<GObjectPath, int> gobject_path_cache;
-	mutable HashMap<int, int> base_scene_gobject_remap;
+  Vector<StringName> names;
+  Vector<Variant> variants;
+  Vector<GObjectPath> gobject_paths;
+  Vector<GObjectPath> editable_instances;
+  mutable HashMap<GObjectPath, int> gobject_path_cache;
+  mutable HashMap<int, int> base_scene_gobject_remap;
 
-	int base_scene_idx = -1;
+  int base_scene_idx = -1;
 
-	enum {
-		NO_PARENT_SAVED = 0x7FFFFFFF,
-		NAME_INDEX_BITS = 18,
-		NAME_MASK = (1 << NAME_INDEX_BITS) - 1,
-	};
-	
+  enum {
+    NO_PARENT_SAVED = 0x7FFFFFFF,
+    NAME_INDEX_BITS = 18,
+    NAME_MASK = (1 << NAME_INDEX_BITS) - 1,
+  };
 
-	struct GObjectData {
-		int parent = 0;
-		int owner = 0;
-		int type = 0;
-		int name = 0;
-		int instance = 0;
-		int index = 0;
+  struct GObjectData {
+    int parent = 0;
+    int owner = 0;
+    int type = 0;
+    int name = 0;
+    int instance = 0;
+    int index = 0;
 
-		// 暂时不管
-		struct Property {
-			int name = 0;
-			int value = 0;
-		};
+    // 暂时不管
+    struct Property {
+      int name = 0;
+      int value = 0;
+    };
 
-		/*struct ComponentData {
+    /*struct ComponentData {
 			int parent = 0;
 			int type = 0;
 			int index = 0;
 			int instance = 0;
 		};*/
-		Vector<Component*> components;
-		Vector<Property> properties; // 
-		Vector<int> groups;
-		String node_ins_res;
-	};
+    Vector<Component*> components;
+    Vector<Property> properties;  //
+    Vector<int> groups;
+    String node_ins_res;
+  };
 
-	
+  struct DeferredGObjectPathProperties {
+    GObject* base = nullptr;
+    StringName property;
+    Variant value;
+  };
 
-	struct DeferredGObjectPathProperties {
-		GObject* base = nullptr;
-		StringName property;
-		Variant value;
-	};
+  Vector<SceneState::GObjectData> gobjects;
 
-	Vector<SceneState::GObjectData> gobjects;
+  struct ConnectionData {
+    int from = 0;
+    int to = 0;
+    int signal = 0;
+    int method = 0;
+    int flags = 0;
+    int unbinds = 0;
+    Vector<int> binds;
+  };
 
-	struct ConnectionData {
-		int from = 0;
-		int to = 0;
-		int signal = 0;
-		int method = 0;
-		int flags = 0;
-		int unbinds = 0;
-		Vector<int> binds;
-	};
+  Vector<ConnectionData> connections;
 
-	Vector<ConnectionData> connections;
+  Error _parse_gobject(GObject* p_owner, GObject* p_gobject, int p_parent_idx, HashMap<StringName, int>& name_map,
+                       HashMap<Variant, int, VariantHasher, VariantComparator>& variant_map, HashMap<GObject*, int>& gobject_map, HashMap<GObject*, int>& gobjectpath_map);
+  Error _parse_connections(GObject* p_owner, GObject* p_gobject, HashMap<StringName, int>& name_map, HashMap<Variant, int, VariantHasher, VariantComparator>& variant_map,
+                           HashMap<GObject*, int>& gobject_map, HashMap<GObject*, int>& gobjectpath_map);
 
-	Error _parse_gobject(GObject* p_owner, GObject* p_gobject, int p_parent_idx, HashMap<StringName, int>& name_map, HashMap<Variant, int, VariantHasher, VariantComparator>& variant_map, HashMap<GObject*, int>& gobject_map, HashMap<GObject*, int>& gobjectpath_map);
-	Error _parse_connections(GObject* p_owner, GObject* p_gobject, HashMap<StringName, int>& name_map, HashMap<Variant, int, VariantHasher, VariantComparator>& variant_map, HashMap<GObject*, int>& gobject_map, HashMap<GObject*, int>& gobjectpath_map);
+  String path;  // 这个路径是什么路径？
 
-	String path; // 这个路径是什么路径？
+  uint64_t last_modified_time = 0;
 
-	uint64_t last_modified_time = 0;
+  static bool disable_placeholders;
 
-	static bool disable_placeholders;
+  Vector<String> _get_gobject_groups(int p_idx) const;
 
-	Vector<String> _get_gobject_groups(int p_idx) const;
-
-	int _find_base_scene_gobject_remap_key(int p_idx) const;
-
-#ifdef TOOLS_ENABLED
-public:
-	typedef void (*InstantiationWarningNotify)(const String& p_warning);
-
-private:
-	static InstantiationWarningNotify instantiation_warn_notify;
-#endif
-
-protected:
-	static void _bind_methods();
-
-public:
-	enum { // 标记资源位置，在variant中
-		FLAG_ID_IS_PATH = (1 << 30),
-		TYPE_INSTANTIATED = 0x7FFFFFFF, // 已经实例化
-		FLAG_INSTANCE_IS_PLACEHOLDER = (1 << 30), // placeholder示例
-		FLAG_PATH_PROPERTY_IS_gobject = (1 << 30),
-		FLAG_PROP_NAME_MASK = FLAG_PATH_PROPERTY_IS_gobject - 1,
-		FLAG_MASK = (1 << 24) - 1,
-	};
-
-	enum GenEditState {
-		GEN_EDIT_STATE_DISABLED,
-		GEN_EDIT_STATE_INSTANCE,
-		GEN_EDIT_STATE_MAIN,
-		GEN_EDIT_STATE_MAIN_INHERITED,
-	};
-
-	struct PackState {
-		Ref<SceneState> state;
-		int gobject = -1;
-	};
-
-	static void set_disable_placeholders(bool p_disable);
-	static Ref<Resource> get_remap_resource(const Ref<Resource>& p_resource, HashMap<Ref<Resource>, Ref<Resource>>& remap_cache, const Ref<Resource>& p_fallback, GObject* p_for_scene);
-
-	int find_gobject_by_path(const GObjectPath& p_gobject) const;
-	Variant get_property_value(int p_gobject, const StringName& p_property, bool& r_found, bool& r_gobject_deferred) const;
-	bool is_gobject_in_group(int p_gobject, const StringName& p_group) const;
-	bool is_connection(int p_gobject, const StringName& p_signal, int p_to_gobject, const StringName& p_to_method) const;
-
-	void set_bundled_scene(const Dictionary& p_dictionary);
-	Dictionary get_bundled_scene() const;
-
-	Error pack(GObject* p_scene);
-
-	void set_path(const String& p_path) { path = path; }
-	String get_path() const;
-
-	void clear();
-	Error copy_from(const Ref<SceneState>& p_scene_state);
-
-	bool can_instantiate() const;
-	GObject* instantiate(GenEditState p_edit_state) const;
-
-
-	Array setup_resources_in_array(Array& array_to_scan, const SceneState::GObjectData& n, HashMap<Ref<Resource>, Ref<Resource>>& resources_local_to_sub_scene, GObject* gobject, const StringName sname, HashMap<Ref<Resource>, Ref<Resource>>& resources_local_to_scene, int i, GObject** ret_gobjects, SceneState::GenEditState p_edit_state) const;
-	Variant make_local_resource(Variant& value, const SceneState::GObjectData& p_gobject_data, HashMap<Ref<Resource>, Ref<Resource>>& p_resources_local_to_sub_scene, GObject* p_gobject, const StringName p_sname, HashMap<Ref<Resource>, Ref<Resource>>& p_resources_local_to_scene, int p_i, GObject** p_ret_gobjects, SceneState::GenEditState p_edit_state) const;
-	bool has_local_resource(const Array& p_array) const;
-
-	Ref<SceneState> get_base_scene_state() const;
-
-	void update_instance_resource(String p_path, Ref<PackedScene> p_packed_scene);
-
-	//unbuild API
-
-	int get_gobject_count() const;
-	StringName get_gobject_type(int p_idx) const;
-	StringName get_gobject_name(int p_idx) const;
-	GObjectPath get_gobject_path(int p_idx, bool p_for_parent = false) const;
-	GObjectPath get_gobject_owner_path(int p_idx) const;
-	Ref<PackedScene> get_gobject_instance(int p_idx) const;
-	String get_gobject_instance_placeholder(int p_idx) const;
-	bool is_gobject_instance_placeholder(int p_idx) const;
-	Vector<StringName> get_gobject_groups(int p_idx) const;
-	int get_gobject_index(int p_idx) const;
-
-	int get_gobject_property_count(int p_idx) const;
-	StringName get_gobject_property_name(int p_idx, int p_prop) const;
-	Variant get_gobject_property_value(int p_idx, int p_prop) const;
-	Vector<String> get_gobject_deferred_gobjectpath_properties(int p_idx) const;
-
-	int get_connection_count() const;
-	GObjectPath get_connection_source(int p_idx) const;
-	StringName get_connection_signal(int p_idx) const;
-	GObjectPath get_connection_target(int p_idx) const;
-	StringName get_connection_method(int p_idx) const;
-	int get_connection_flags(int p_idx) const;
-	int get_connection_unbinds(int p_idx) const;
-	Array get_connection_binds(int p_idx) const;
-
-	bool has_connection(const GObjectPath& p_gobject_from, const StringName& p_signal, const GObjectPath& p_gobject_to, const StringName& p_method, bool p_no_inheritance = false);
-
-	Vector<GObjectPath> get_editable_instances() const { return editable_instances; }
-	static Vector<PackState> _get_gobject_states_stack(const GObject* p_node, const GObject* p_owner, bool* r_instantiated_by_owner);
-
-	//build API
-
-	int add_name(const StringName& p_name);
-	int add_value(const Variant& p_value);
-	int add_gobject_path(const GObjectPath& p_path);
-	int add_gobject(int p_parent, int p_owner, int p_type, int p_name, int p_instance, int p_index);
-	void add_gobject_property(int p_gobject, int p_name, int p_value, bool p_deferred_gobject_path = false);
-	void add_gobject_group(int p_gobject, int p_group);
-	void set_base_scene(int p_idx);
-	void add_connection(int p_from, int p_to, int p_signal, int p_method, int p_flags, int p_unbinds, const Vector<int>& p_binds);
-	void add_editable_instance(const GObjectPath& p_path);
-
-	bool remove_group_references(const StringName& p_name);
-	bool rename_group_references(const StringName& p_old_name, const StringName& p_new_name);
-	void add_components(int p_index, const Vector<Component*>&);
-	void add_instance_res(int p_index, const String&);
-
-	Vector<Component*> get_gobject_components(int p_index);
-	String get_gobject_insres(int p_index);
-
-	HashSet<StringName> get_all_groups();
-
-	virtual void set_last_modified_time(uint64_t p_time) { last_modified_time = p_time; }
-	uint64_t get_last_modified_time() const { return last_modified_time; }
-
-	// Used when saving pointers (saves a path property instead).
-	static String get_meta_pointer_property(const String& p_property);
+  int _find_base_scene_gobject_remap_key(int p_idx) const;
 
 #ifdef TOOLS_ENABLED
-	static void set_instantiation_warning_notify_func(InstantiationWarningNotify p_warn_notify) { instantiation_warn_notify = p_warn_notify; }
+ public:
+  typedef void (*InstantiationWarningNotify)(const String& p_warning);
+
+ private:
+  static InstantiationWarningNotify instantiation_warn_notify;
 #endif
 
-	SceneState() {}
+ protected:
+  static void _bind_methods();
+
+ public:
+  enum {  // 标记资源位置，在variant中
+    FLAG_ID_IS_PATH = (1 << 30),
+    TYPE_INSTANTIATED = 0x7FFFFFFF,            // 已经实例化
+    FLAG_INSTANCE_IS_PLACEHOLDER = (1 << 30),  // placeholder示例
+    FLAG_PATH_PROPERTY_IS_gobject = (1 << 30),
+    FLAG_PROP_NAME_MASK = FLAG_PATH_PROPERTY_IS_gobject - 1,
+    FLAG_MASK = (1 << 24) - 1,
+  };
+
+  enum GenEditState {
+    GEN_EDIT_STATE_DISABLED,
+    GEN_EDIT_STATE_INSTANCE,
+    GEN_EDIT_STATE_MAIN,
+    GEN_EDIT_STATE_MAIN_INHERITED,
+  };
+
+  struct PackState {
+    Ref<SceneState> state;
+    int gobject = -1;
+  };
+
+  static void set_disable_placeholders(bool p_disable);
+  static Ref<Resource> get_remap_resource(const Ref<Resource>& p_resource, HashMap<Ref<Resource>, Ref<Resource>>& remap_cache, const Ref<Resource>& p_fallback,
+                                          GObject* p_for_scene);
+
+  int find_gobject_by_path(const GObjectPath& p_gobject) const;
+  Variant get_property_value(int p_gobject, const StringName& p_property, bool& r_found, bool& r_gobject_deferred) const;
+  bool is_gobject_in_group(int p_gobject, const StringName& p_group) const;
+  bool is_connection(int p_gobject, const StringName& p_signal, int p_to_gobject, const StringName& p_to_method) const;
+
+  void set_bundled_scene(const Dictionary& p_dictionary);
+  Dictionary get_bundled_scene() const;
+
+  Error pack(GObject* p_scene);
+
+  void set_path(const String& p_path) { path = path; }
+  String get_path() const;
+
+  void clear();
+  Error copy_from(const Ref<SceneState>& p_scene_state);
+
+  bool can_instantiate() const;
+  GObject* instantiate(GenEditState p_edit_state) const;
+
+  Array setup_resources_in_array(Array& array_to_scan, const SceneState::GObjectData& n, HashMap<Ref<Resource>, Ref<Resource>>& resources_local_to_sub_scene, GObject* gobject,
+                                 const StringName sname, HashMap<Ref<Resource>, Ref<Resource>>& resources_local_to_scene, int i, GObject** ret_gobjects,
+                                 SceneState::GenEditState p_edit_state) const;
+  Variant make_local_resource(Variant& value, const SceneState::GObjectData& p_gobject_data, HashMap<Ref<Resource>, Ref<Resource>>& p_resources_local_to_sub_scene,
+                              GObject* p_gobject, const StringName p_sname, HashMap<Ref<Resource>, Ref<Resource>>& p_resources_local_to_scene, int p_i,
+                              GObject** p_ret_gobjects, SceneState::GenEditState p_edit_state) const;
+  bool has_local_resource(const Array& p_array) const;
+
+  Ref<SceneState> get_base_scene_state() const;
+
+  void update_instance_resource(String p_path, Ref<PackedScene> p_packed_scene);
+
+  //unbuild API
+
+  int get_gobject_count() const;
+  StringName get_gobject_type(int p_idx) const;
+  StringName get_gobject_name(int p_idx) const;
+  GObjectPath get_gobject_path(int p_idx, bool p_for_parent = false) const;
+  GObjectPath get_gobject_owner_path(int p_idx) const;
+  Ref<PackedScene> get_gobject_instance(int p_idx) const;
+  String get_gobject_instance_placeholder(int p_idx) const;
+  bool is_gobject_instance_placeholder(int p_idx) const;
+  Vector<StringName> get_gobject_groups(int p_idx) const;
+  int get_gobject_index(int p_idx) const;
+
+  int get_gobject_property_count(int p_idx) const;
+  StringName get_gobject_property_name(int p_idx, int p_prop) const;
+  Variant get_gobject_property_value(int p_idx, int p_prop) const;
+  Vector<String> get_gobject_deferred_gobjectpath_properties(int p_idx) const;
+
+  int get_connection_count() const;
+  GObjectPath get_connection_source(int p_idx) const;
+  StringName get_connection_signal(int p_idx) const;
+  GObjectPath get_connection_target(int p_idx) const;
+  StringName get_connection_method(int p_idx) const;
+  int get_connection_flags(int p_idx) const;
+  int get_connection_unbinds(int p_idx) const;
+  Array get_connection_binds(int p_idx) const;
+
+  bool has_connection(const GObjectPath& p_gobject_from, const StringName& p_signal, const GObjectPath& p_gobject_to, const StringName& p_method,
+                      bool p_no_inheritance = false);
+
+  Vector<GObjectPath> get_editable_instances() const { return editable_instances; }
+  static Vector<PackState> _get_gobject_states_stack(const GObject* p_node, const GObject* p_owner, bool* r_instantiated_by_owner);
+
+  //build API
+
+  int add_name(const StringName& p_name);
+  int add_value(const Variant& p_value);
+  int add_gobject_path(const GObjectPath& p_path);
+  int add_gobject(int p_parent, int p_owner, int p_type, int p_name, int p_instance, int p_index);
+  void add_gobject_property(int p_gobject, int p_name, int p_value, bool p_deferred_gobject_path = false);
+  void add_gobject_group(int p_gobject, int p_group);
+  void set_base_scene(int p_idx);
+  void add_connection(int p_from, int p_to, int p_signal, int p_method, int p_flags, int p_unbinds, const Vector<int>& p_binds);
+  void add_editable_instance(const GObjectPath& p_path);
+
+  bool remove_group_references(const StringName& p_name);
+  bool rename_group_references(const StringName& p_old_name, const StringName& p_new_name);
+  void add_components(int p_index, const Vector<Component*>&);
+  void add_instance_res(int p_index, const String&);
+
+  Vector<Component*> get_gobject_components(int p_index);
+  String get_gobject_insres(int p_index);
+
+  HashSet<StringName> get_all_groups();
+
+  virtual void set_last_modified_time(uint64_t p_time) { last_modified_time = p_time; }
+  uint64_t get_last_modified_time() const { return last_modified_time; }
+
+  // Used when saving pointers (saves a path property instead).
+  static String get_meta_pointer_property(const String& p_property);
+
+#ifdef TOOLS_ENABLED
+  static void set_instantiation_warning_notify_func(InstantiationWarningNotify p_warn_notify) { instantiation_warn_notify = p_warn_notify; }
+#endif
+
+  SceneState() {}
 };
 
 //VARIANT_ENUM_CAST(SceneState::GenEditState)
-
+// 调用 在获得属性 _bundle时调用的 get_bundle 进行打包
 class PackedScene : public Resource {
-	LCLASS(PackedScene, Resource);
-	RES_BASE_EXTENSION("scn");
+  LCLASS(PackedScene, Resource);
+  RES_BASE_EXTENSION("scn");
 
-	Ref<SceneState> state;
+  Ref<SceneState> state;
+ protected:
+  //virtual bool editor_can_reload_from_file() override { return false; } // this is handled by editor better
+  static void _bind_methods();
+  //virtual void reset_state() override;
 
-	void _set_bundled_scene(const Dictionary& p_scene);
-	Dictionary _get_bundled_scene() const;
+ public:
+  enum GenEditState {
+    GEN_EDIT_STATE_DISABLED,
+    GEN_EDIT_STATE_INSTANCE,
+    GEN_EDIT_STATE_MAIN,
+    GEN_EDIT_STATE_MAIN_INHERITED,
+  };
+  enum {
+    FLAG_ID_IS_PATH = (1 << 30),
+    TYPE_INSTANTIATED = 0x7FFFFFFF,
+    FLAG_INSTANCE_IS_PLACEHOLDER = (1 << 30),
+    FLAG_PATH_PROPERTY_IS_NODE = (1 << 30),
+    FLAG_PROP_NAME_MASK = FLAG_PATH_PROPERTY_IS_NODE - 1,
+    FLAG_MASK = (1 << 24) - 1,
+  };
 
-protected:
-	//virtual bool editor_can_reload_from_file() override { return false; } // this is handled by editor better
-	//static void _bind_methods();
-	//virtual void reset_state() override;
+  Error pack(GObject* p_scene) { return state->pack(p_scene); }
 
-public:
-	enum GenEditState {
-		GEN_EDIT_STATE_DISABLED,
-		GEN_EDIT_STATE_INSTANCE,
-		GEN_EDIT_STATE_MAIN,
-		GEN_EDIT_STATE_MAIN_INHERITED,
-	};
-	enum {
-		FLAG_ID_IS_PATH = (1 << 30),
-		TYPE_INSTANTIATED = 0x7FFFFFFF,
-		FLAG_INSTANCE_IS_PLACEHOLDER = (1 << 30),
-		FLAG_PATH_PROPERTY_IS_NODE = (1 << 30),
-		FLAG_PROP_NAME_MASK = FLAG_PATH_PROPERTY_IS_NODE - 1,
-		FLAG_MASK = (1 << 24) - 1,
-	};
+  void clear() { state->clear(); }
 
-	Error pack(GObject* p_scene) { return state->pack(p_scene); }
+  bool can_instantiate() const;
+  GObject* instantiate(GenEditState p_edit_state = GEN_EDIT_STATE_DISABLED) const;
+  Dictionary _get_bundled_scene() const { return state->get_bundled_scene(); }
+  void _set_bundled_scene(const Dictionary& p_scene) { state->set_bundled_scene(p_scene); }
 
-	void clear() { state->clear(); }
+  void recreate_state();
+  void replace_state(Ref<SceneState> p_by);
+  /// @TODO
+  virtual void reload_from_file() override {}
 
-	bool can_instantiate() const;
-	GObject* instantiate(GenEditState p_edit_state = GEN_EDIT_STATE_DISABLED) const;
+  virtual void set_path(const String& p_path, bool p_take_over = false) override;
+  virtual void set_pathCache(const String& p_path) override;
 
-	void recreate_state();
-	void replace_state(Ref<SceneState> p_by);
-	/// @TODO
-	virtual void reload_from_file() override {}
-
-	virtual void set_path(const String& p_path, bool p_take_over = false) override;
-	virtual void set_pathCache(const String& p_path) override;
-	
-	
 #ifdef TOOLS_ENABLED
-	virtual void set_last_modified_time(uint64_t p_time) override {
-		Resource::set_last_modified_time(p_time);
-		state->set_last_modified_time(p_time);
-	}
+  virtual void set_last_modified_time(uint64_t p_time) override {
+    Resource::set_last_modified_time(p_time);
+    state->set_last_modified_time(p_time);
+  }
 
 #endif
-	Ref<SceneState> get_state() const { return state; }
+  Ref<SceneState> get_state() const { return state; }
 
-	PackedScene();
+  PackedScene();
 };
 
 //VARIANT_ENUM_CAST(PackedScene::GenEditState)
-}
+}  // namespace lain
 
-#endif // PACKED_SCENE_H
+#endif  // PACKED_SCENE_H

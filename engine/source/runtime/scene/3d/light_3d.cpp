@@ -65,6 +65,11 @@ void lain::Light3D::set_param(Param p_param, real_t p_value) {
   }
 }
 
+real_t lain::Light3D::get_param(Param p_param) const {
+	ERR_FAIL_INDEX_V(p_param, PARAM_MAX, 0);
+	return param[p_param];
+}
+
 void lain::Light3D::set_shadow(bool p_enable) {
   shadow = p_enable;
   RS::get_singleton()->light_set_shadow(light, shadow);
@@ -106,6 +111,8 @@ void Light3D::_bind_methods() {
   ClassDB::bind_method(D_METHOD("get_color"), &Light3D::get_color);
 	ClassDB::bind_method(D_METHOD("set_shadow", "enabled"), &Light3D::set_shadow);
 	ClassDB::bind_method(D_METHOD("has_shadow"), &Light3D::has_shadow);
+	ClassDB::bind_method(D_METHOD("set_param", "param", "value"), &Light3D::set_param);
+	ClassDB::bind_method(D_METHOD("get_param", "param"), &Light3D::get_param);
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "shadow_enabled"), "set_shadow", "has_shadow");
 
@@ -164,4 +171,30 @@ void DirectionalLight3D::set_sky_mode(SkyMode p_mode) {
 
 DirectionalLight3D::SkyMode DirectionalLight3D::get_sky_mode() const {
 	return sky_mode;
+}
+
+void OmniLight3D::set_shadow_mode(ShadowMode p_mode) {
+	shadow_mode = p_mode;
+	RS::get_singleton()->light_omni_set_shadow_mode(light, RS::LightOmniShadowMode(p_mode));
+}
+
+OmniLight3D::ShadowMode OmniLight3D::get_shadow_mode() const {
+	return shadow_mode;
+}
+OmniLight3D::OmniLight3D() :
+		Light3D(RS::LIGHT_OMNI) {
+	set_shadow_mode(SHADOW_CUBE);
+}
+
+void OmniLight3D::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_shadow_mode", "mode"), &OmniLight3D::set_shadow_mode);
+	ClassDB::bind_method(D_METHOD("get_shadow_mode"), &OmniLight3D::get_shadow_mode);
+
+	// ADD_GROUP("Omni", "omni_");
+	ADD_PROPERTYI(PropertyInfo(Variant::FLOAT, "omni_range", PROPERTY_HINT_RANGE, "0,4096,0.001,or_greater,exp"), "set_param", "get_param", PARAM_RANGE);
+	ADD_PROPERTYI(PropertyInfo(Variant::FLOAT, "omni_attenuation", PROPERTY_HINT_RANGE, "-10,10,0.001,or_greater,or_less"), "set_param", "get_param", PARAM_ATTENUATION);
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "omni_shadow_mode", PROPERTY_HINT_ENUM, "Dual Paraboloid,Cube"), "set_shadow_mode", "get_shadow_mode");
+
+	// BIND_ENUM_CONSTANT(SHADOW_DUAL_PARABOLOID);
+	// BIND_ENUM_CONSTANT(SHADOW_CUBE);
 }

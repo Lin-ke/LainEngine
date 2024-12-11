@@ -83,6 +83,9 @@ namespace lain {
 		GDREGISTER_CLASS(TestNode);
 		GDREGISTER_CLASS(TestComponent);
 
+	GDREGISTER_CLASS(PackedScene);
+	// GDREGISTER_ABSTRACT_CLASS(SceneState);
+
 
 
 	}
