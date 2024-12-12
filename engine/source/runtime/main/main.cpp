@@ -198,11 +198,11 @@ Error Main::Initialize(int argc, char* argv[]) {
   // 无scene
   if (!main_scene.is_empty()) {
     // load scene
-    Ref<PackedScene> ps = ResourceLoader::load(main_scene);
-    if (ps.is_valid()) {
-      GObject* newscene = ps->instantiate();
-      SceneTree::get_singleton()->get_root()->add_child(newscene);
-    }
+    // Ref<PackedScene> ps = ResourceLoader::load(main_scene);
+    // if (ps.is_valid()) {
+    //   GObject* newscene = ps->instantiate();
+    //   SceneTree::get_singleton()->get_root()->add_child(newscene);
+    // }
 
   }
   }

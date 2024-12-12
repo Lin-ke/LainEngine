@@ -289,6 +289,9 @@ void Mesh::generate_debug_mesh_indices(Vector<Vector3> &r_points) {
 
 
 }
+void Mesh::set_lightmap_size_hint(const Size2i &p_size) {
+	lightmap_size_hint = p_size;
+}
 
 Size2i lain::Mesh::get_lightmap_size_hint() const {
   return lightmap_size_hint;

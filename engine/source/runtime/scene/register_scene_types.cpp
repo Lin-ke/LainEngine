@@ -12,6 +12,11 @@
 // function types
 #include "function/shader/shader_types.h"
 
+
+// resource types
+#include "scene/resources/common/mesh.h"
+#include "scene/resources/common/material.h"
+#include "scene/resources/common/primitive_meshes.h"
 namespace lain{
 	static Ref<ResourceFormatLoaderText> resource_format_loader_text;
 	static Ref<ResourceFormatSaverText> resource_format_saver_text;
@@ -58,8 +63,15 @@ namespace lain{
 	GDREGISTER_CLASS(Camera3D);
 	GDREGISTER_CLASS(OmniLight3D);
 	GDREGISTER_CLASS(MeshInstance3D);
+
+	GDREGISTER_VIRTUAL_CLASS(Mesh);
+	GDREGISTER_VIRTUAL_CLASS(PrimitiveMesh);
+	GDREGISTER_CLASS(CapsuleMesh);
 	
-	
+	GDREGISTER_VIRTUAL_CLASS(Material);
+	GDREGISTER_ABSTRACT_CLASS(BaseMaterial3D);
+	GDREGISTER_CLASS(StandardMaterial3D);
+	GDREGISTER_CLASS(ORMMaterial3D);
 	
 	}
 

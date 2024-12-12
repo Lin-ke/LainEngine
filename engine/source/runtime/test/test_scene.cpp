@@ -90,8 +90,9 @@ void test_scene() {
       scene->add_child(cube);
       cube->set_owner(scene);
       
-      Ref<Mesh> mesh = memnew(CapsuleMesh);
+      Ref<CapsuleMesh> mesh = memnew(CapsuleMesh);
       cube->set_mesh(mesh);
+      mesh->set_radius(1);
       
       /*SceneTree::get_singleton()->get_root()->add_child(gobj1);
 					SceneTree::get_singleton()->get_root()->add_child(gobj2);*/

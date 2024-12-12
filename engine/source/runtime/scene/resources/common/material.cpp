@@ -1542,11 +1542,12 @@ void BaseMaterial3D::_queue_shader_change() {
 	}
 }
 
+void lain::BaseMaterial3D::_bind_methods() {}
 
-void BaseMaterial3D::set_albedo(const Color &p_albedo) {
-	albedo = p_albedo;
+void BaseMaterial3D::set_albedo(const Color& p_albedo) {
+  albedo = p_albedo;
 
-	RS::get_singleton()->material_set_param(_get_material(), shader_names->albedo, p_albedo);
+  RS::get_singleton()->material_set_param(_get_material(), shader_names->albedo, p_albedo);
 }
 
 Color BaseMaterial3D::get_albedo() const {
@@ -2365,3 +2366,5 @@ BaseMaterial3D::~BaseMaterial3D() {
 		RS::get_singleton()->material_set_shader(_get_material(), RID());
 	}
 }
+
+void lain::ShaderMaterial::_get_property_list(List<PropertyInfo>* p_list) const {}

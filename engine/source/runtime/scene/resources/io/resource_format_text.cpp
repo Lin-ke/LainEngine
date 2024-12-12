@@ -4,6 +4,7 @@
 #include "core/io/dir_access.h"
 #include "core/meta/reflection/reflection.h"
 #include "core/meta/serializer/serializer.h"
+#include "core/scene/property_utils.h"
 #include "core/templates/tuple.h"
 #include "scene/resources/common/scene_res.h"
 //#define _printerr() ERR_PRINT(String(res_path + ":" + itos(lines) + " - Parse Error: " + error_text).utf8().get_data());
@@ -149,7 +150,87 @@ Error ResourceLoaderText::load() {
   resources_total -= resource_current;
   resource_current = 0;
   //
-  // @TODO:sub_resource
+  // subresource
+  for (auto&& sub_file : packed_res.sub_res) {
+    String type = sub_file.m_type;
+    String id = sub_file.m_id;
+    String path = local_path + "::" + id;
+    Ref<Resource> res;
+    bool do_assign = false;
+
+    if (cache_mode == ResourceFormatLoader::CACHE_MODE_REPLACE && ResourceCache::has(path)) {
+      //reuse existing
+      Ref<Resource> cache = ResourceCache::get_ref(path);
+      if (cache.is_valid() && cache->get_class() == type) {
+        res = cache;
+        res->ResetState();
+        do_assign = true;
+      }
+    }
+    if (res.is_null()) {  //not reuse
+      Ref<Resource> cache = ResourceCache::get_ref(path);
+      if (cache_mode != ResourceFormatLoader::CACHE_MODE_IGNORE && cache.is_valid()) {  //only if it doesn't exist
+        //cached, do not assign
+        res = cache;
+      } else {
+        //create
+        Object* obj = ClassDB::instantiate(type);
+        if (!obj) {
+          L_CORE_ERROR("Can't create sub resource of type: " + type);
+          return ERR_FILE_CORRUPT;
+        }
+        Resource* r = Object::cast_to<Resource>(obj);
+        if (!r) {
+          L_CORE_ERROR("Can't create sub resource of type, because not a resource: " + type);
+          return ERR_FILE_CORRUPT;
+        }
+        res = Ref<Resource>(r);
+        do_assign = true;
+      }
+    }
+    resource_current++;
+    if (progress && resources_total > 0) {
+      *progress = resource_current / float(resources_total);
+    }
+    int_resources[id] = res;  // Always assign int resources. // 这里加入的
+    if (do_assign) {
+      if (cache_mode != ResourceFormatLoader::CACHE_MODE_IGNORE) {
+        res->set_path(path, cache_mode == ResourceFormatLoader::CACHE_MODE_REPLACE);
+      } else {
+        res->set_pathCache(path);
+      }
+      res->set_scene_unique_id(id);
+      for (auto kv : sub_file.m_variants) {
+        res->set(kv.key, kv.value);  // subresource 的 一些 property (variant)分配
+      }
+    }
+  }
+  for (auto&& sub_file : packed_res.sub_res) {
+    // 处理Subresource 的 subresource 和 extresource
+    for (auto kv : sub_file.sub_res) {
+      String prop_name = kv.key;
+      Ref<Resource> res = int_resources[sub_file.m_id];  // self
+      ERR_CONTINUE_MSG(res.is_null(), "Can't load sub-resource id: " + kv.value);
+      res->set(prop_name, res);
+    }
+    for (auto kv : sub_file.ext_res) {
+      String key = kv.key;
+      String id = kv.value;
+      ERR_CONTINUE_MSG(!ext_resources.has(id), "Can't load cached ext-resource id: " + id);
+      Error err;
+      Ref<ResourceLoader::LoadToken>& load_token = ext_resources[id].load_token;
+      Ref<Resource> ext_res;
+      if (load_token.is_valid()) {
+        Ref<Resource> _res = ResourceLoader::_load_complete(*load_token.ptr(), &err);
+        ERR_CONTINUE_MSG(_res.is_null(), "Can't load cached ext-resource id: " + id);
+        ext_res = _res;
+      }
+      Ref<Resource> res = int_resources[sub_file.m_id];  // self
+      ERR_CONTINUE_MSG(res.is_null(), "Can't load sub-resource id: " + kv.value);
+      res->set(key, ext_res);
+    }
+  }
+
   // @TODO:resource
 
   if (!is_scene && packed_res.gobjects.size() > 0) {
@@ -188,20 +269,10 @@ Error ResourceLoaderText::load() {
         parent = packed_scene->get_state()->add_gobject_path(np);
         continue;
       }
+      // lazy load instance对应的外部资源
+
       if (key == "instance") {
-        String type_id = dict["instance"];
-        int start_pos = 0;
-        int end_pos = 0;
-        for (int i = 0; i < type_id.length(); i++) {
-          if (type_id[i] == '\"') {
-            if (!start_pos)
-              start_pos = i;
-            else
-              end_pos = i;
-          }
-        }
-        String id = type_id.substr(start_pos + 1, end_pos - start_pos - 1);
-        String type = type_id.substr(0, start_pos - 1);  // without (
+        String id = dict["instance"];
         Ref<ResourceLoader::LoadToken>& load_token = ext_resources[id].load_token;
         Error err = OK;
         Ref<Resource> r_res;
@@ -294,10 +365,32 @@ Error ResourceLoaderText::load() {
       }
       packed_scene->get_state()->add_components(gobject_id, cmpts);  //ref
     }
-
     //
-    // 按他这个写法和python有啥区别，dict和variant装全部
-    // 组件里面只有一些数据，所以也不是不行吧
+    for (auto kv : gobject.ext_res) {
+      String key = kv.key;
+      String id = kv.value;
+      ERR_CONTINUE_MSG(!ext_resources.has(id), "Can't load cached ext-resource id: " + id);
+      Error err;
+      Ref<ResourceLoader::LoadToken>& load_token = ext_resources[id].load_token;
+      Ref<Resource> res;
+      if (load_token.is_valid()) {
+        Ref<Resource> _res = ResourceLoader::_load_complete(*load_token.ptr(), &err);
+        ERR_CONTINUE_MSG(_res.is_null(), "Can't load cached ext-resource id: " + id);
+        res = _res;
+      }
+      int nameidx = packed_scene->get_state()->add_name(key);
+      int valueidx = packed_scene->get_state()->add_value(res);
+      packed_scene->get_state()->add_gobject_property(gobject_id, nameidx, valueidx, path_properties.has(key));
+    }
+    for (auto kv : gobject.sub_res) {
+      String key = kv.key;
+      String id = kv.value;
+      Ref<Resource> res = int_resources[id];
+      ERR_CONTINUE_MSG(res.is_null(), "Can't load sub-resource id: " + id);
+      int nameidx = packed_scene->get_state()->add_name(key);
+      int valueidx = packed_scene->get_state()->add_value(res);
+      packed_scene->get_state()->add_gobject_property(gobject_id, nameidx, valueidx, path_properties.has(key));
+    }
 
   }  // exit parsing gobject
   /*if (!packed_scene.is_valid()) {
@@ -527,15 +620,8 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
         prtw[idx++] = ext_res;
       }
     }
-    packed_res.sub_res.resize(internal_resources.size());
-    {
-      for (auto kv : internal_resources) {
-        SubRes sub_res;
-        sub_res.m_id = kv.value;
-        sub_res.m_type = kv.key->get_class_name();
-      }
-    }
-		HashSet<String> used_unique_ids;
+    // 处理资源id和填 internal_resource
+    HashSet<String> used_unique_ids;
 
     for (List<Ref<Resource>>::Element* E = saved_resources.front(); E; E = E->next()) {
       Ref<Resource> res = E->get();
@@ -544,20 +630,59 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
       if (main && packed_scene.is_valid()) {
         break;  // Save as a scene.
       }
-			if (res->get_scene_unique_id().is_empty()) {
-				String new_id;
-				while (true) {
-					new_id = res->get_class() + "_" + Resource::generate_scene_unique_id();
+      if (res->get_scene_unique_id().is_empty()) {
+        String new_id;
+        while (true) {
+          new_id = res->get_class() + "_" + Resource::generate_scene_unique_id();
 
-					if (!used_unique_ids.has(new_id)) {
-						break;
-					}
-				}
-				res->set_scene_unique_id(new_id);
-				used_unique_ids.insert(new_id);
-			}
-			String id = res->get_scene_unique_id();
+          if (!used_unique_ids.has(new_id)) {
+            break;
+          }
+        }
+        res->set_scene_unique_id(new_id);
+        used_unique_ids.insert(new_id);
+      }
+      String id = res->get_scene_unique_id();
       internal_resources[res] = id;
+    }
+
+    packed_res.sub_res.resize(internal_resources.size());
+    {
+      auto&& prtw = packed_res.sub_res.ptrw();
+      int idx = 0;
+      for (auto kv : internal_resources) {
+        SubRes sub_res;
+        Ref<Resource> res = kv.key;
+        sub_res.m_id = kv.value;
+        sub_res.m_type = res->get_class_name();
+				/// 这里的逻辑和 packed_scene 那里保存的是一致的
+        List<PropertyInfo> property_list;
+        res->get_property_list(&property_list);
+        for (List<PropertyInfo>::Element* PE = property_list.front(); PE; PE = PE->next()) {
+          if (PE->get().usage & PROPERTY_USAGE_STORAGE) {
+            String name = PE->get().name;
+            Variant value;
+            if (PE->get().usage & PROPERTY_USAGE_RESOURCE_NOT_PERSISTENT) {
+              NonPersistentKey npk;
+              npk.base = res;
+              npk.property = name;
+              if (non_persistent_map.has(npk)) {
+                value = non_persistent_map[npk];
+              }
+            } else {
+              value = res->get(name);
+            }
+						bool is_valid_default = false;
+						Variant default_value = PropertyUtils::get_property_default_value(res,  name, &is_valid_default);
+						if (is_valid_default && !PropertyUtils::is_property_value_different(res, value, default_value)) {
+							continue;
+						}
+		// save
+						sub_res.m_variants[name] = value;
+          }
+        }
+        prtw[idx++] = sub_res;
+      }
     }
 
     if (packed_scene.is_valid()) {
@@ -589,10 +714,10 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
           Ref<Resource> res = instance;
           String p;
           if (external_resources.has(res)) {
-            p = "ExtResource(\"" + itos(external_resources[res].first) + String("_") + external_resources[res].second + "\")";
+            p = itos(external_resources[res].first) + String("_") + external_resources[res].second;
           } else {
             if (internal_resources.has(res)) {
-              p = "SubResource(\"" + internal_resources[res] + "\")";
+              p = internal_resources[res];
             } else if (!res->IsBuiltIn()) {
               if (res->GetPath() == local_path) {  //circular reference attempt
                 p = "null";
@@ -619,11 +744,11 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
           } else {
             if (external_resources.has(res)) {
               String kv = itos(external_resources[res].first) + "_" + external_resources[res].second;
-              gires.ext_res[state->get_gobject_property_name(i, j)] = "ExtResource(\"" + kv + "\")";
-							L_CORE_PRINT("external resource");
+              gires.ext_res[state->get_gobject_property_name(i, j)] = kv;
+              L_CORE_PRINT("external resource");
             } else if (internal_resources.has(res)) {
-              gires.sub_res[state->get_gobject_property_name(i, j)] = "SubResource(\"" + internal_resources[res] + "\")";
-							L_CORE_PRINT("internal resource");
+              gires.sub_res[state->get_gobject_property_name(i, j)] = internal_resources[res];
+              L_CORE_PRINT("internal resource");
             } else {
               L_CORE_ERROR("bug? A resource is expected to be a sub resource or an external resource. OR BUILT IN ");
             }
@@ -650,7 +775,7 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
     packed_res.head = title;
 
     auto&& json = Serializer::write(packed_res);
-		L_JSON(packed_res.gobjects)
+    L_JSON(packed_res.gobjects)
     f->store_string(json.dump());
   }
   return err;

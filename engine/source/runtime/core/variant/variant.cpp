@@ -3082,6 +3082,9 @@ bool Variant::hash_compare(const Variant& p_variant, int recursion_count, bool s
   }
 
   switch (type) {
+    case NIL:{
+      return true;
+    } break;
     case INT: {
       return _data._int == p_variant._data._int;
     } break;

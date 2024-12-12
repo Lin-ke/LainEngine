@@ -165,6 +165,19 @@ class ClassDB {
     // t->api = current_api;
     // T::register_custom_data_to_otdb();
   }
+  	template <typename T>
+	static void register_abstract_class() {
+		GLOBAL_LOCK_FUNCTION;
+		static_assert(std::is_same_v<typename T::self_type, T>, "Class not declared properly, please use GDCLASS.");
+		T::initialize_class();
+		ClassInfo *t = classes.getptr(T::get_class_static());
+		ERR_FAIL_NULL(t);
+		t->exposed = true;
+		t->class_ptr = T::get_class_ptr_static();
+		// t->api = current_api;
+		//nothing
+	}
+
   template <typename T>
   static void _add_class() {
     _add_class2(T::get_class_static(), T::get_parent_class_static());

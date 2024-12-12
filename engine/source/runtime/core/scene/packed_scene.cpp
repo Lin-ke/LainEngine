@@ -776,7 +776,6 @@ Error SceneState::_parse_gobject(GObject* p_owner, GObject* p_node, int p_parent
   	if (!pinned_props.has(name)) {
   		bool is_valid_default = false;
   		Variant default_value = PropertyUtils::get_property_default_value(p_node, name, &is_valid_default);
-
   		if (is_valid_default && !PropertyUtils::is_property_value_different(p_node, value, default_value)) {
   			if (value.get_type() == Variant::ARRAY && has_local_resource(value)) {
   				// Save anyway

@@ -23,6 +23,7 @@ protected:
 	Vector2 get_uv2_scale(Vector2 p_margin_scale = Vector2(1.0, 1.0)) const;
 	virtual void _create_mesh_array(Array &p_arr) const {}
 	float get_lightmap_texel_size() const;
+	virtual void _update_lightmap_size(){};
 
 public:
 	virtual int get_surface_count() const override;
@@ -46,6 +47,7 @@ public:
 
 	void set_material(const Ref<Material> &p_material);
 	Ref<Material> get_material() const;
+	void request_update();
 
   
 	PrimitiveMesh();
@@ -63,10 +65,10 @@ private:
 	int rings = 8;
 
 protected:
-	// static void _bind_methods();
+	static void _bind_methods();
 	// virtual void _create_mesh_array(Array &p_arr) const override;
 
-	// virtual void _update_lightmap_size() override;
+	virtual void _update_lightmap_size() override;
 	virtual void _create_mesh_array(Array &p_arr) const override;
 
 public:
@@ -85,6 +87,7 @@ public:
 	int get_rings() const;
 
 	CapsuleMesh() {}
+
 };
 
 }

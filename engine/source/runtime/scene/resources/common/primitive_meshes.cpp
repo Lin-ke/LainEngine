@@ -124,10 +124,23 @@ Ref<Material> PrimitiveMesh::get_material() const {
 	return material;
 }
 
+void lain::PrimitiveMesh::request_update()
+{	if (pending_request) {
+		return;
+	}
+	_update();
+}
+
 lain::PrimitiveMesh::PrimitiveMesh() {
 
   mesh = RS::get_singleton()->mesh_create();
 }
+
+PrimitiveMesh::~PrimitiveMesh() {
+	ERR_FAIL_NULL(RS::get_singleton());
+	RS::get_singleton()->free(mesh);
+}
+
 
 void CapsuleMesh::_create_mesh_array(Array &p_arr) const {
 	bool _add_uv2 = get_add_uv2();
@@ -304,6 +317,36 @@ void CapsuleMesh::create_mesh_array(Array& p_arr, const float radius, const floa
 	p_arr[RS::ARRAY_INDEX] = indices;
 }
 
+void CapsuleMesh::set_radius(const float p_radius) {
+	radius = p_radius;
+	if (radius > height * 0.5) {
+		height = radius * 2.0;
+	}
+	_update_lightmap_size();
+	request_update();
+}
+
+float lain::CapsuleMesh::get_radius() const {
+return radius;
+}
+
+void CapsuleMesh::_update_lightmap_size() {
+	if (get_add_uv2()) {
+		// size must have changed, update lightmap size hint
+		Size2i _lightmap_size_hint;
+		float texel_size = get_lightmap_texel_size();
+		float padding = get_uv2_padding();
+
+		float radial_length = radius * Math_PI * 0.5; // circumference of 90 degree bend
+		float vertical_length = radial_length * 2 + (height - 2.0 * radius); // total vertical length
+
+		_lightmap_size_hint.x = MAX(1.0, 4.0 * radial_length / texel_size) + padding;
+		_lightmap_size_hint.y = MAX(1.0, vertical_length / texel_size) + padding;
+
+		set_lightmap_size_hint(_lightmap_size_hint);
+	}
+}
+
 void PrimitiveMesh::_update() const {
 	Array arr;
 	// if (GDVIRTUAL_CALL(_create_mesh_array, arr)) {
@@ -390,4 +433,10 @@ void PrimitiveMesh::_update() const {
 	clear_cache();
 
 	const_cast<PrimitiveMesh *>(this)->emit_changed();
+}
+
+void CapsuleMesh::_bind_methods(){
+	ClassDB::bind_method(D_METHOD("set_radius", "radius"), &CapsuleMesh::set_radius);
+	ClassDB::bind_method(D_METHOD("get_radius"), &CapsuleMesh::get_radius);
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius", PROPERTY_HINT_RANGE, "0.001,100.0,0.001,or_greater,suffix:m"), "set_radius", "get_radius");
 }

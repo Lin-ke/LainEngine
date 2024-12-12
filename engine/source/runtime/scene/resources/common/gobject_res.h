@@ -42,6 +42,9 @@ namespace lain
         META(Fields)
         String m_type = "";
         String m_id = "";
+        HashMap<String, String> sub_res; // 资源也有可以保存的东西
+        HashMap<String, String> ext_res;
+        HashMap<String, Variant> m_variants;
     };
        
 
