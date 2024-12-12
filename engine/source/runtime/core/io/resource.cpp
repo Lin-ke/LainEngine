@@ -188,7 +188,11 @@ namespace lain {
 		scene_unique_id = p_id;
 	}
 
-	RID Resource::GetRID() const { return RID(); }
+    String Resource::get_scene_unique_id() const {
+      return scene_unique_id;
+    }
+
+    RID Resource::GetRID() const { return RID(); }
     void Resource::emit_changed() {
 			// emit_signal();
 		}

@@ -87,6 +87,10 @@ Variant PropertyUtils::get_property_default_value(const Object *p_object, const 
 	if (r_is_valid) {
 		*r_is_valid = true;
 	}
+	if(p_property == "material_override"){
+		L_PRINT("material_override")
+		L_PRINT(ret.operator lain::String());
+	}
 	return ret;
 }
 

@@ -92,7 +92,6 @@ Error ResourceLoaderText::load() {
   Dictionary p = packed_res.head;
   String name = p["tag"];
 
-
   if (name == "scene") {
     is_scene = true;
   } else if (name == "resource") {
@@ -170,11 +169,11 @@ Error ResourceLoaderText::load() {
     int name = -1;
     int instance = -1;
     int index = -1;
-		
+
     for (auto kv : dict) {
-			// L_PRINT("resource dict key: " + kv.key);
-			// L_PRINT("resource dict value: " + kv.value.operator String());
-			String key = kv.key;
+      // L_PRINT("resource dict key: " + kv.key);
+      // L_PRINT("resource dict value: " + kv.value.operator String());
+      String key = kv.key;
       if (key == "name") {
         name = packed_scene->get_state()->add_name(dict["name"]);
         continue;
@@ -246,26 +245,26 @@ Error ResourceLoaderText::load() {
           packed_scene->get_state()->set_base_scene(instance);  //int
           instance = -1;
         }
-				continue;
+        continue;
       }
-			if(key == "owner"){
-  	    owner = packed_scene->get_state()->add_gobject_path(dict["owner"]);
-				continue;
-			}
-			if(key == "index"){
-				index = dict["index"];
-				continue;
-			}
+      if (key == "owner") {
+        owner = packed_scene->get_state()->add_gobject_path(dict["owner"]);
+        continue;
+      }
+      if (key == "index") {
+        index = dict["index"];
+        continue;
+      }
     }
 
-		if (type == -1){
-     type = SceneState::TYPE_INSTANTIATED; //no type? assume this was instantiated
-		}
-		if(owner == -1){
-			if (parent != -1 && !(type == SceneState::TYPE_INSTANTIATED && instance == -1)) {
+    if (type == -1) {
+      type = SceneState::TYPE_INSTANTIATED;  //no type? assume this was instantiated
+    }
+    if (owner == -1) {
+      if (parent != -1 && !(type == SceneState::TYPE_INSTANTIATED && instance == -1)) {
         owner = 0;  //if no owner, owner is root
       }
-		}
+    }
     int gobject_id = packed_scene->get_state()->add_gobject(parent, owner, type, name, instance, index);
     if (dict.has("groups")) {
       Array groups = dict["groups"];
@@ -273,18 +272,18 @@ Error ResourceLoaderText::load() {
         packed_scene->get_state()->add_gobject_group(gobject_id, packed_scene->get_state()->add_name(groups[i]));
       }
     }
-		HashSet<StringName> path_properties;
+    HashSet<StringName> path_properties;
 
-		for(auto kv : dict){
-			String key = kv.key;
-			if(key == "name" || key == "type" || key == "parent" || key == "instance" || key == "owner" || key == "index" || key == "groups"){
-				continue;
-			}
-			// 一般情况
-				int nameidx = packed_scene->get_state()->add_name(key);
-				int valueidx = packed_scene->get_state()->add_value(dict[key]);
-				packed_scene->get_state()->add_gobject_property(gobject_id, nameidx, valueidx, path_properties.has(key));
-		}
+    for (auto kv : dict) {
+      String key = kv.key;
+      if (key == "name" || key == "type" || key == "parent" || key == "instance" || key == "owner" || key == "index" || key == "groups") {
+        continue;
+      }
+      // 一般情况
+      int nameidx = packed_scene->get_state()->add_name(key);
+      int valueidx = packed_scene->get_state()->add_value(dict[key]);
+      packed_scene->get_state()->add_gobject_property(gobject_id, nameidx, valueidx, path_properties.has(key));
+    }
 
     if (gobject.m_instanced_components.size() > 0) {
       Vector<Component*> cmpts;
@@ -430,7 +429,7 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
   relative_paths = p_flags & ResourceSaver::FLAG_RELATIVE_PATHS;
   skip_editor = p_flags & ResourceSaver::FLAG_OMIT_EDITOR_PROPERTIES;
   // bundle_resources = p_flags & ResourceSaver::FLAG_BUNDLE_RESOURCES;
-	bundle_resources = false;
+  bundle_resources = false;
   takeover_paths = p_flags & ResourceSaver::FLAG_REPLACE_SUBRESOURCE_PATHS;
   if (!p_path.begins_with("res://")) {
     takeover_paths = false;
@@ -438,19 +437,19 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
 
   // Save resources.
   _find_resources(p_resource, true);
-	// 加入可以被实例化的资源为外部资源
+  // 加入可以被实例化的资源为外部资源
 
-		if (packed_scene.is_valid()) {
-		// Add instances to external resources if saving a packed scene.
-		for (int i = 0; i < packed_scene->get_state()->get_gobject_count(); i++) {
+  if (packed_scene.is_valid()) {
+    // Add instances to external resources if saving a packed scene.
+    for (int i = 0; i < packed_scene->get_state()->get_gobject_count(); i++) {
 
-			Ref<PackedScene> instance = packed_scene->get_state()->get_gobject_instance(i);
-			if (instance.is_valid() && !external_resources.has(instance)) {
-				int index = external_resources.size() + 1;
-				external_resources[instance] = {index, Resource::generate_scene_unique_id()}; // Keep the order for improved thread loading performance.
-			}
-		}
-	}
+      Ref<PackedScene> instance = packed_scene->get_state()->get_gobject_instance(i);
+      if (instance.is_valid() && !external_resources.has(instance)) {
+        int index = external_resources.size() + 1;
+        external_resources[instance] = {index, Resource::generate_scene_unique_id()};  // Keep the order for improved thread loading performance.
+      }
+    }
+  }
   Dictionary title;
   title["tag"] = packed_scene.is_valid() ? "scene" : "resource";
   if (packed_scene.is_null()) {
@@ -528,14 +527,38 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
         prtw[idx++] = ext_res;
       }
     }
-		packed_res.sub_res.resize(internal_resources.size());
-		{
-			for(auto kv : internal_resources){
-				SubRes sub_res;
-				sub_res.m_id = kv.value;
-				sub_res.m_type = kv.key->get_class_name();
+    packed_res.sub_res.resize(internal_resources.size());
+    {
+      for (auto kv : internal_resources) {
+        SubRes sub_res;
+        sub_res.m_id = kv.value;
+        sub_res.m_type = kv.key->get_class_name();
+      }
+    }
+		HashSet<String> used_unique_ids;
+
+    for (List<Ref<Resource>>::Element* E = saved_resources.front(); E; E = E->next()) {
+      Ref<Resource> res = E->get();
+      ERR_CONTINUE(!resource_set.has(res));
+      bool main = (E->next() == nullptr);
+      if (main && packed_scene.is_valid()) {
+        break;  // Save as a scene.
+      }
+			if (res->get_scene_unique_id().is_empty()) {
+				String new_id;
+				while (true) {
+					new_id = res->get_class() + "_" + Resource::generate_scene_unique_id();
+
+					if (!used_unique_ids.has(new_id)) {
+						break;
+					}
+				}
+				res->set_scene_unique_id(new_id);
+				used_unique_ids.insert(new_id);
 			}
-		}
+			String id = res->get_scene_unique_id();
+      internal_resources[res] = id;
+    }
 
     if (packed_scene.is_valid()) {
       // If this is a scene, save gobjects and connections!
@@ -589,20 +612,22 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
         gires.m_variants["name"] = name;
         // variants
         for (int j = 0; j < state->get_gobject_property_count(i); j++) {
-					// if resource
-					Ref<Resource> res = state->get_gobject_property_value(i, j);
-					if(!res.is_valid()){
-          gires.m_variants[state->get_gobject_property_name(i, j)] = state->get_gobject_property_value(i, j);
-					} else{
-						if (external_resources.has(res)) {
-							String kv = itos(external_resources[res].first) + "_" + external_resources[res].second;
-							 gires.ext_res[state->get_gobject_property_name(i, j)] = "ExtResource(\"" + kv  + "\")";
-						} else if(internal_resources.has(res)){
-							gires.sub_res[state->get_gobject_property_name(i, j)] = "SubResource(\"" + internal_resources[res] + "\")";
-						} else{
-							L_CORE_ERROR("bug? A resource is expected to be a sub resource or an external resource. OR BUILT IN ");
-						}
-					}
+          // if resource
+          Ref<Resource> res = state->get_gobject_property_value(i, j);
+          if (!res.is_valid()) {
+            gires.m_variants[state->get_gobject_property_name(i, j)] = state->get_gobject_property_value(i, j);
+          } else {
+            if (external_resources.has(res)) {
+              String kv = itos(external_resources[res].first) + "_" + external_resources[res].second;
+              gires.ext_res[state->get_gobject_property_name(i, j)] = "ExtResource(\"" + kv + "\")";
+							L_CORE_PRINT("external resource");
+            } else if (internal_resources.has(res)) {
+              gires.sub_res[state->get_gobject_property_name(i, j)] = "SubResource(\"" + internal_resources[res] + "\")";
+							L_CORE_PRINT("internal resource");
+            } else {
+              L_CORE_ERROR("bug? A resource is expected to be a sub resource or an external resource. OR BUILT IN ");
+            }
+          }
         }
         Vector<Component*> cmpts = state->get_gobject_components(i);
 
@@ -625,6 +650,7 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
     packed_res.head = title;
 
     auto&& json = Serializer::write(packed_res);
+		L_JSON(packed_res.gobjects)
     f->store_string(json.dump());
   }
   return err;
@@ -659,39 +685,37 @@ void ResourceSaverText::_find_resources(const Variant& p_variant, bool p_main) {
       // property中可能有需要保存的Res
       List<PropertyInfo> property_list;
 
-			res->get_property_list(&property_list);
-			property_list.sort();
+      res->get_property_list(&property_list);
+      property_list.sort();
 
-			List<PropertyInfo>::Element* I = property_list.front();
+      List<PropertyInfo>::Element* I = property_list.front();
 
-			while (I) {
-				PropertyInfo pi = I->get();
+      while (I) {
+        PropertyInfo pi = I->get();
 
-				if (pi.usage & PROPERTY_USAGE_STORAGE) {
-					Variant v = res->get(I->get().name);
+        if (pi.usage & PROPERTY_USAGE_STORAGE) {
+          Variant v = res->get(I->get().name);
 
-					if (pi.usage & PROPERTY_USAGE_RESOURCE_NOT_PERSISTENT) {
-						NonPersistentKey npk;
-						npk.base = res;
-						npk.property = pi.name;
-						non_persistent_map[npk] = v;
+          if (pi.usage & PROPERTY_USAGE_RESOURCE_NOT_PERSISTENT) {
+            NonPersistentKey npk;
+            npk.base = res;
+            npk.property = pi.name;
+            non_persistent_map[npk] = v;
 
-						Ref<Resource> sres = v;
-						if (sres.is_valid()) {
-							resource_set.insert(sres);
-							saved_resources.push_back(sres);
-						}
-						else {
-							_find_resources(v);
-						}
-					}
-					else {
-						_find_resources(v);
-					}
-				}
+            Ref<Resource> sres = v;
+            if (sres.is_valid()) {
+              resource_set.insert(sres);
+              saved_resources.push_back(sres);
+            } else {
+              _find_resources(v);
+            }
+          } else {
+            _find_resources(v);
+          }
+        }
 
-				I = I->next();
-			}
+        I = I->next();
+      }
 
       saved_resources.push_back(res);  // Saved after, so the children it needs are available when loaded
 
@@ -710,7 +734,7 @@ void ResourceSaverText::_find_resources(const Variant& p_variant, bool p_main) {
       List<Variant> keys;
       d.get_key_list(&keys);
       for (const Variant& E : keys) {
-				L_PRINT(E.operator String());
+        L_PRINT(E.operator String());
         // Of course keys should also be cached, after all we can't prevent users from using resources as keys, right?
         // See also ResourceFormatSaverBinaryInstance::_find_resources (when p_variant is of type Variant::DICTIONARY)
         _find_resources(E);

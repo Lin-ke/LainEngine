@@ -145,7 +145,6 @@ void test_scene() {
       s->pack(newscene);
       draw_tree(newscene);
       // 查看是否reuse 可以
-
       ResourceSaver::save(s, "3.tscn");
     }
     List<Ref<Resource>> resources;

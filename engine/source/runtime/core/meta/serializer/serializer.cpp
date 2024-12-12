@@ -140,8 +140,9 @@ Json Serializer::write(const Variant& instance) {
     case Variant::OBJECT: {
 
       Object* obj = instance.operator Object*();
-      Reflection::ReflectionPtr rptr = Reflection::ReflectionPtr(obj->get_c_class(), obj);
-      return Serializer::write(rptr);
+      // Reflection::ReflectionPtr rptr = Reflection::ReflectionPtr(obj->get_c_class(), obj);
+      // return Serializer::write(rptr);
+      return Json::object{{"$typeName", Json{"Object"}}, {"$context", "nil"}};
     }
     // 特制的指针(_ptr)
 
