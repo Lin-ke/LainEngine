@@ -198,11 +198,11 @@ Error Main::Initialize(int argc, char* argv[]) {
   // 无scene
   if (!main_scene.is_empty()) {
     // load scene
-    // Ref<PackedScene> ps = ResourceLoader::load(main_scene);
-    // if (ps.is_valid()) {
-    //   GObject* newscene = ps->instantiate();
-    //   SceneTree::get_singleton()->get_root()->add_child(newscene);
-    // }
+    Ref<PackedScene> ps = ResourceLoader::load(main_scene);
+    if (ps.is_valid()) {
+      GObject* newscene = ps->instantiate();
+      SceneTree::get_singleton()->get_root()->add_child(newscene);
+    }
 
   }
   }
@@ -225,6 +225,8 @@ bool Main::Loop() {
   last_ticks = ticks;
   frame += ticks_elapsed;
 
+	bool exit = false;
+
   // update engine
 	const double time_scale = Engine::GetSingleton()->get_time_scale();
   const int physics_ticks_per_second = Engine::GetSingleton()->get_physics_ticks_per_second();
@@ -240,7 +242,11 @@ bool Main::Loop() {
 
   ui64 delta_time_usec = ticks - last_ticks;
 	uint64_t process_begin = OS::GetSingleton()->GetTicksUsec();
- 	// RS::get_singleton()->sync(); //sync if still drawing from previous frames.
+  if (OS::GetSingleton()->GetMainLoop()->process(process_step * time_scale)) {
+		exit = true;
+	}
+
+ 	RS::get_singleton()->sync(); //sync if still drawing from previous frames.
 
   if (window_system->CanAnyWindowDraw() && render_system->is_render_loop_enabled()) {
 				RenderingSystem::get_singleton()->draw(true, scaled_step); // flush visual commands
@@ -253,7 +259,6 @@ bool Main::Loop() {
 
   // sever's sending message
   // render server sending to windows
-  window_system->SwapBuffers();
-  return true;
+  return exit;
 }
 }  // namespace lain

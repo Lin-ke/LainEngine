@@ -227,9 +227,8 @@ static_component("Renderer", "Core")
     add_includedirs("$(env VULKAN_SDK)/Include", {public = true})
     add_linkdirs("$(env VULKAN_SDK)/Lib", {public = true})
     add_defines(
-    "_CRT_SECURE_NO_WARNINGS",
-     "PRINT_NATIVE_COMMANDS"
-    )
+    "_CRT_SECURE_NO_WARNINGS")
+    --  "PRINT_NATIVE_COMMANDS"
     add_defines("VULKAN_ENABLED", {public = true})
     -- 
 static_component("Shader", "Renderer")

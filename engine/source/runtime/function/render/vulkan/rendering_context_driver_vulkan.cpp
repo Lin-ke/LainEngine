@@ -392,7 +392,7 @@ Error RenderingContextDriverVulkan::_find_validation_layers(TightLocalVector<con
 #if USE_ANY_VALIDATION_LAYER
 						layers_found = true;
 #endif 
-						L_PRINT("Found validation layer: " + String(layer_name));
+						// L_PRINT("Found validation layer: " + String(layer_name));
 						break;
 					}
 				}

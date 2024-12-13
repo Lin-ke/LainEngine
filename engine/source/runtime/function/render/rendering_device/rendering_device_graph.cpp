@@ -3,8 +3,8 @@
 #ifdef PRINT_RESOURCE_TRACKER_TOTAL
 #include "core/string/print_string.h"
 #endif
-#define PRINT_RENDER_GRAPH 1
-#define PRINT_COMMAND_RECORDING 1
+#define PRINT_RENDER_GRAPH 0
+#define PRINT_COMMAND_RECORDING 0
 using namespace lain;
 // 主要分为read和write两种
 RenderingDeviceGraph::RenderingDeviceGraph() {}
@@ -327,8 +327,8 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
         resource_has_parent ? resource_tracker->parent : resource_tracker;
 
     bool diff_usage = resource_tracker->usage != new_resource_usage;
-    bool diff_layout = _usage_to_image_layout(resource_tracker->usage) !=
-                       _usage_to_image_layout(new_resource_usage);
+    bool diff_layout = resource_tracker->is_texture() ?  _usage_to_image_layout(resource_tracker->usage) !=
+                       _usage_to_image_layout(new_resource_usage) : false;
     bool write_usage_after_write = (write_usage && search_tracker->write_cmd_idx >= 0);
     // 如果需要transition 以及 write后write 添加barrier
     if (diff_layout || write_usage_after_write) {
@@ -1879,7 +1879,6 @@ void RenderingDeviceGraph::end(bool p_reorder_commands, bool p_full_barriers,
 
     for (int32_t i = 0; i < command_count; i++) {
       const RecordedCommand* recorded_command = _get_command(i);
-      L_PRINT("Type:", recorded_command->type);
       int32_t adjcent_list_idx = recorded_command->adjacent_command_list_index;
       while (adjcent_list_idx >= 0) {
         const RecordedCommandListNode& command_list_node = command_list_nodes[adjcent_list_idx];

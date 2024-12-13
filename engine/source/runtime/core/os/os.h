@@ -32,7 +32,7 @@ public:
 	virtual void Finialize() = 0;
 	virtual void Initialize() = 0;
 	virtual void SetMainLoop(MainLoop *p_main_loop) = 0;
-
+	virtual MainLoop *GetMainLoop() const = 0;
 	// logger default
 
 	virtual void Addlogger() {}

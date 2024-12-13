@@ -12,10 +12,10 @@ class TestNode : public GObject {
   void _notification(int p_notification) {
     switch (p_notification) {
       case NOTIFICATION_PROCESS:
-        L_PRINT("hello, my name is " + data.name + ", my father is " + (data.parent ? data.parent->get_name() : String("None")) + " I'm ticking in thread",
-                Thread::get_caller_id());
-        OS::GetSingleton()->DelayUsec(1000 * 3000);
-        L_PRINT("------------------");
+        // L_PRINT("hello, my name is " + data.name + ", my father is " + (data.parent ? data.parent->get_name() : String("None")) + " I'm ticking in thread",
+        //         Thread::get_caller_id());
+        // OS::GetSingleton()->DelayUsec(1000 * 3000);
+        // L_PRINT("------------------");
       default:
         return;
     }
@@ -34,9 +34,9 @@ class TestNode : public GObject {
 		void _notification(int p_notification) {
 			switch (p_notification) {
 			case GObject::NOTIFICATION_PROCESS:
-				L_PRINT("hello, my name is " + get_class() + ", my father is " + (m_parent ? m_parent->get_name() : String("None")) + " I'm ticking in thread", Thread::get_caller_id());
-				OS::GetSingleton()->DelayUsec(1000 * 3000);
-				L_PRINT("------------------");
+				// L_PRINT("hello, my name is " + get_class() + ", my father is " + (m_parent ? m_parent->get_name() : String("None")) + " I'm ticking in thread", Thread::get_caller_id());
+				// OS::GetSingleton()->DelayUsec(1000 * 3000);
+				// L_PRINT("------------------");
 			default:
 				return;
 			}

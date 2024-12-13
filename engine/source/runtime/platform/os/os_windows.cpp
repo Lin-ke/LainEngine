@@ -63,8 +63,8 @@ namespace lain {
 			// display.send_events;
 			bool exit = WindowSystem::GetSingleton()->ShouldClose();
 
-
-			if (!Main::Loop() || exit) {
+			// main_loop returns exit
+			if (Main::Loop() || exit) {
 				break;
 			}
 			WindowSystem::GetSingleton()->PollEvents();
@@ -78,8 +78,11 @@ namespace lain {
 	void OSWindows::SetMainLoop(MainLoop* p_main_loop) {
 		main_loop = p_main_loop;
 	}
-	// 填必要的环境变量、文件操作
-	void OSWindows::Initialize() {
+    MainLoop* OSWindows::GetMainLoop() const {
+      return main_loop;
+    }
+    // 填必要的环境变量、文件操作
+    void OSWindows::Initialize() {
 		
 		// 在这里初始化，将FileAccess类的create_function函数数组放入make_default(memnew)<T> 工厂
 		// 这样以后在fileaccess里执行create()得到的就是对应的子类

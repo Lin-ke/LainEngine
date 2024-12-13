@@ -27,9 +27,13 @@ void lain::GObject3D::set_notify_transform(bool p_enabled) {
 		ERR_THREAD_GUARD;
 	data.notify_transform = p_enabled;
 }
+void lain::GObject3D::set_notify_local_transform(bool p_enabled) {
+		ERR_THREAD_GUARD;
+	data.notify_local_transform = p_enabled;
+}
 void GObject3D::set_disable_scale(bool p_enabled) {
-	ERR_THREAD_GUARD;
-	data.disable_scale = p_enabled;
+  ERR_THREAD_GUARD;
+  data.disable_scale = p_enabled;
 }
 
 void GObject3D::_notification(int p_what){
@@ -288,10 +292,9 @@ void GObject3D::set_transform(const Transform3D &p_transform) {
 	ERR_THREAD_GUARD;
 	data.local_transform = p_transform;
 	_replace_dirty_mask(DIRTY_EULER_ROTATION_AND_SCALE); // Make rot/scale dirty.
-
 	_propagate_transform_changed(this);
 	if (data.notify_local_transform) {
-		notification(NOTIFICATION_LOCAL_TRANSFORM_CHANGED);
+		notification(NOTIFICATION_LOCAL_TRANSFORM_CHANGED); // 用这种方式通知一些有 类似于set_transform 回调的类，如camera（要调用 RS::camera_set_transform)， 感觉这种方式确实不如unity
 	}
 }
 

@@ -244,7 +244,7 @@ void WorkerThreadPool::_thread_function(void *p_user) {
 				// 获得任务
 			} else { // 没有任务，等待
 				thread_data->cond_var.wait(lock);
-				L_PRINT("notified", Thread::get_caller_id(), thread_data->index, thread_data->thread.get_id());
+				// L_PRINT("notified", Thread::get_caller_id(), thread_data->index, thread_data->thread.get_id());
 				DEV_ASSERT(singleton->exit_threads || thread_data->signaled); // 虚假唤醒
 			}
 		}

@@ -72,6 +72,9 @@ namespace lain{
 	GDREGISTER_ABSTRACT_CLASS(BaseMaterial3D);
 	GDREGISTER_CLASS(StandardMaterial3D);
 	GDREGISTER_CLASS(ORMMaterial3D);
+
+	BaseMaterial3D::init_shaders();
+
 	
 	}
 

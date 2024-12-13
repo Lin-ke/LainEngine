@@ -462,7 +462,9 @@ void RendererViewport::draw_viewports(bool p_swap_buffers) {
 	total_objects_drawn = objects_drawn;
 	total_vertices_drawn = vertices_drawn;
 	total_draw_calls_used = draw_calls_used;
-
+	// L_PRINT("Total objects drawn: " + itos(total_objects_drawn));
+	// L_PRINT("Total vertices drawn: " + itos(total_vertices_drawn));
+	// L_PRINT("Total draw calls used: " + itos(total_draw_calls_used));
 	RENDER_TIMESTAMP("< Render Viewports");
 
 	if (p_swap_buffers && !blit_to_screen_list.is_empty()) {

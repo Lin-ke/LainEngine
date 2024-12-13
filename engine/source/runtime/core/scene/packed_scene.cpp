@@ -346,7 +346,6 @@ GObject* SceneState::instantiate(GenEditState p_edit_state) const {
     } else {
       // GObject belongs to this scene and must be created. @TODO
       Object* obj = ClassDB::instantiate(snames[n.type]);
-
       gobj = Object::cast_to<GObject>(obj);
       if (!gobj) {
         if (obj) {

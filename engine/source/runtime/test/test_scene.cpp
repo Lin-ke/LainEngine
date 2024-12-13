@@ -74,7 +74,7 @@ void test_scene() {
       light->set_owner(scene);
       light->set_name("default_light");
       gobj1->set_name("hello");
-
+      
       scene->add_child(gobj1);
       gobj1->set_owner(scene);
 
@@ -93,7 +93,8 @@ void test_scene() {
       Ref<CapsuleMesh> mesh = memnew(CapsuleMesh);
       cube->set_mesh(mesh);
       mesh->set_radius(1);
-      
+      Ref<StandardMaterial3D> mat = memnew(StandardMaterial3D);
+      mesh->surface_set_material(0, mat);
       /*SceneTree::get_singleton()->get_root()->add_child(gobj1);
 					SceneTree::get_singleton()->get_root()->add_child(gobj2);*/
       gobj1_1->add_component(memnew(TestComponent));
@@ -134,12 +135,16 @@ void test_scene() {
           L_PRINT("SHADOW_PARALLEL_4_SPLITS");
           break;
       }
+      MeshInstance3D* cube = (MeshInstance3D*)newscene->get_gobject_or_null(String("./cube"));
+      Ref<Resource> mesh = cube->get_mesh();
+      L_PRINT(mesh->get_class());
+      Ref<PrimitiveMesh > pm = mesh;
+      Ref<Resource> mat = pm->get_material();
+      L_PRINT(mat->get_class())
+            
+      
       List<Ref<Resource>> resources;
       ResourceCache::get_cached_resources(&resources);
-      for (Ref<Resource> i : resources) {
-        L_JSON(i->GetPath());
-        L_JSON(i->GetName());
-      }
 
       newscene->add_child(subscene);
       subscene->set_owner(newscene);

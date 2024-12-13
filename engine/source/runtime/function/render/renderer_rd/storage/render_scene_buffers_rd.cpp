@@ -10,7 +10,6 @@ void RenderSceneBuffersRD::configure(const RenderSceneBuffersConfiguration *p_co
 	target_size = p_config->get_target_size();
 	internal_size = p_config->get_internal_size();
 	view_count = p_config->get_view_count();
-	L_PRINT(texture_storage->owns_render_target(render_target))
 
 	scaling_3d_mode = p_config->get_scaling_3d_mode();
 	msaa_3d = p_config->get_msaa_3d();

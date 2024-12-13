@@ -211,7 +211,8 @@ Error ResourceLoaderText::load() {
       String prop_name = kv.key;
       Ref<Resource> res = int_resources[sub_file.m_id];  // self
       ERR_CONTINUE_MSG(res.is_null(), "Can't load sub-resource id: " + kv.value);
-      res->set(prop_name, res);
+      Ref<Resource> value = int_resources[kv.value]; // resource to add 
+      res->set(prop_name, value);
     }
     for (auto kv : sub_file.ext_res) {
       String key = kv.key;
@@ -655,7 +656,7 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
         Ref<Resource> res = kv.key;
         sub_res.m_id = kv.value;
         sub_res.m_type = res->get_class_name();
-				/// 这里的逻辑和 packed_scene 那里保存的是一致的
+        /// 这里的逻辑和 packed_scene 那里保存的是一致的
         List<PropertyInfo> property_list;
         res->get_property_list(&property_list);
         for (List<PropertyInfo>::Element* PE = property_list.front(); PE; PE = PE->next()) {
@@ -672,13 +673,28 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
             } else {
               value = res->get(name);
             }
-						bool is_valid_default = false;
-						Variant default_value = PropertyUtils::get_property_default_value(res,  name, &is_valid_default);
-						if (is_valid_default && !PropertyUtils::is_property_value_different(res, value, default_value)) {
-							continue;
-						}
-		// save
-						sub_res.m_variants[name] = value;
+            bool is_valid_default = false;
+            Variant default_value = PropertyUtils::get_property_default_value(res, name, &is_valid_default);
+            if (is_valid_default && !PropertyUtils::is_property_value_different(res, value, default_value)) {
+              continue;
+            }
+            // save
+            Ref<Resource> res = value;
+            if (!res.is_valid()) {
+              // default
+              sub_res.m_variants[name] = value;
+            } else {
+              if (external_resources.has(res)) {
+                // ext_res
+                String kv = itos(external_resources[res].first) + "_" + external_resources[res].second;
+                sub_res.ext_res[name] = kv;
+              } else if (internal_resources.has(res)) {
+                // sub_res
+                sub_res.sub_res[name] = internal_resources[res];
+              } else {
+                ERR_PRINT("resource is not found in _find_resource for the subresource, Type: " + sub_res.m_type + " ID: " + sub_res.m_id);
+              }
+            }
           }
         }
         prtw[idx++] = sub_res;
@@ -775,7 +791,6 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
     packed_res.head = title;
 
     auto&& json = Serializer::write(packed_res);
-    L_JSON(packed_res.gobjects)
     f->store_string(json.dump());
   }
   return err;
@@ -859,7 +874,6 @@ void ResourceSaverText::_find_resources(const Variant& p_variant, bool p_main) {
       List<Variant> keys;
       d.get_key_list(&keys);
       for (const Variant& E : keys) {
-        L_PRINT(E.operator String());
         // Of course keys should also be cached, after all we can't prevent users from using resources as keys, right?
         // See also ResourceFormatSaverBinaryInstance::_find_resources (when p_variant is of type Variant::DICTIONARY)
         _find_resources(E);

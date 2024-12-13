@@ -25,11 +25,16 @@ float PrimitiveMesh::get_lightmap_texel_size() const {
 
   return texel_size;
 }
+void lain::PrimitiveMesh::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_material", "material"), &PrimitiveMesh::set_material);
+	ClassDB::bind_method(D_METHOD("get_material"), &PrimitiveMesh::get_material);
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "material", PROPERTY_HINT_RESOURCE_TYPE, "BaseMaterial3D,ShaderMaterial"), "set_material", "get_material");
+}
 int lain::PrimitiveMesh::get_surface_count() const {
-	if (pending_request) {
-		_update();
-	}
-	return 1;
+  if (pending_request) {
+    _update();
+  }
+  return 1;
 }
 
 int PrimitiveMesh::surface_get_array_len(int p_idx) const {

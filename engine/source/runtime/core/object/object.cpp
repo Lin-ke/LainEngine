@@ -112,6 +112,7 @@ Variant Object::get(const StringName& p_name, bool* r_valid) const {
 
 void Object::set(const StringName& p_name, const Variant& p_value, bool* r_valid) {
   // Try built-in setter.
+  L_PRINT(this->get_class())
   if (ClassDB::set_property(this, p_name, p_value)) {
     return;
   }

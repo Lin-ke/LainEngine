@@ -24,6 +24,7 @@ protected:
 	virtual void _create_mesh_array(Array &p_arr) const {}
 	float get_lightmap_texel_size() const;
 	virtual void _update_lightmap_size(){};
+	static void _bind_methods();
 
 public:
 	virtual int get_surface_count() const override;

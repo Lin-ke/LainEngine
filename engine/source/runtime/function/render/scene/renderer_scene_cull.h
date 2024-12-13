@@ -18,8 +18,8 @@ class RendererSceneCull : public RenderingMethod {
 
  public:
   enum { SDFGI_MAX_CASCADES = 8, SDFGI_MAX_REGIONS_PER_CASCADE = 3, MAX_INSTANCE_PAIRS = 32, MAX_UPDATE_SHADOWS = 512 };
-	RendererSceneCull();
-	virtual ~RendererSceneCull();
+  RendererSceneCull();
+  virtual ~RendererSceneCull();
   RendererSceneRender* scene_render = nullptr;
 
   static RendererSceneCull* singleton;
@@ -196,7 +196,7 @@ class RendererSceneCull : public RenderingMethod {
       FLAG_VISIBILITY_DEPENDENCY_NEEDS_CHECK = (3 << 20),  // 2 bits, overlaps with the other vis. dependency flags
       FLAG_VISIBILITY_DEPENDENCY_HIDDEN_CLOSE_RANGE = (1 << 20),
       FLAG_VISIBILITY_DEPENDENCY_HIDDEN = (1 << 21),
-      FLAG_VISIBILITY_DEPENDENCY_FADE_CHILDREN = (1 << 22), // 设置这标志位即parent 会设置好children_fade_alpha
+      FLAG_VISIBILITY_DEPENDENCY_FADE_CHILDREN = (1 << 22),  // 设置这标志位即parent 会设置好children_fade_alpha
       FLAG_GEOM_PROJECTOR_SOFTSHADOW_DIRTY = (1 << 23),
       FLAG_IGNORE_ALL_CULLING = (1 << 24),
     };
@@ -208,31 +208,31 @@ class RendererSceneCull : public RenderingMethod {
     int32_t visibility_index = -1;
     union {
       // 如果light
-			uint64_t instance_data_rid;
+      uint64_t instance_data_rid;
       // 如果geometry instance
       RenderGeometryInstance* instance_geometry = nullptr;
     };
     int32_t vis_parent_array_index = -1;
     // Each time occlusion culling determines an instance is visible,
-		// set this to occlusion_frame plus some delay.
-		// Once the timeout is reached, allow the instance to be occlusion culled.
-		// This creates a delay for occlusion culling, which prevents flickering
-		// when jittering the raster occlusion projection.
-		uint64_t occlusion_timeout = 0;
+    // set this to occlusion_frame plus some delay.
+    // Once the timeout is reached, allow the instance to be occlusion culled.
+    // This creates a delay for occlusion culling, which prevents flickering
+    // when jittering the raster occlusion projection.
+    uint64_t occlusion_timeout = 0;
   };
 
   LocalVector<Vector2> camera_jitter_array;
 
   struct Cull {
-    struct Shadow { // 方向光阴影
+    struct Shadow {  // 方向光阴影
       RID light_instance;
       struct Cascade {
-        Frustum frustum; // 正好装下相机视锥体
+        Frustum frustum;  // 正好装下相机视锥体
 
-        Projection projection; // 正交相机，包括了frustum里的范围，因为是方向光所以是正交的
-        Transform3D transform; // 原点在frustum最上方，fov 90
+        Projection projection;  // 正交相机，包括了frustum里的范围，因为是方向光所以是正交的
+        Transform3D transform;  // 原点在frustum最上方，fov 90
 
-        real_t zfar; // z的长度
+        real_t zfar;  // z的长度
         real_t split;
         real_t shadow_texel_size;
         real_t bias_scale;
@@ -244,7 +244,7 @@ class RendererSceneCull : public RenderingMethod {
 
     } shadows[RendererSceneRender::MAX_DIRECTIONAL_LIGHTS];
 
-    uint32_t shadow_count;
+    uint32_t shadow_count; // 方向光阴影的数量
 
     struct SDFGI {
       //have arrays here because SDFGI functions expects this, plus regions can have areas
@@ -355,16 +355,14 @@ class RendererSceneCull : public RenderingMethod {
   /* INSTANCING API */
   /* INSTANCING API */
   struct Instance;
-	struct InstancePair {
-		Instance *a = nullptr;
-		Instance *b = nullptr;
-		SelfList<InstancePair> list_a;
-		SelfList<InstancePair> list_b;
-		InstancePair() :
-				list_a(this), list_b(this) {}
-	};
-	PagedAllocator<InstancePair> pair_allocator;
-
+  struct InstancePair {
+    Instance* a = nullptr;
+    Instance* b = nullptr;
+    SelfList<InstancePair> list_a;
+    SelfList<InstancePair> list_b;
+    InstancePair() : list_a(this), list_b(this) {}
+  };
+  PagedAllocator<InstancePair> pair_allocator;
 
   struct InstanceBaseData;
   struct Instance {
@@ -388,7 +386,7 @@ class RendererSceneCull : public RenderingMethod {
 
     float extra_margin = 0.0;  // extra visibility margin
 
-		float lod_bias;
+    float lod_bias;
 
     bool ignore_occlusion_culling = false;
     bool ignore_all_culling = false;
@@ -402,8 +400,8 @@ class RendererSceneCull : public RenderingMethod {
       PropertyInfo info;
     };
 
-    RID self;  // 标识自己的RID
-    DynamicBVH::ID indexer_id; // BVH
+    RID self;                          // 标识自己的RID
+    DynamicBVH::ID indexer_id;         // BVH
     Scenario* scenario;                // 属于的场景
     SelfList<Instance> scenario_item;  // 将这个add到场景的instances SelfList中
     bool update_aabb = false;
@@ -411,19 +409,19 @@ class RendererSceneCull : public RenderingMethod {
     SelfList<Instance> update_item;  // 被初始化成this，用于将自己插入到 update_list中
 
     ObjectID object_id;
-		uint64_t pair_check;
-		SelfList<InstancePair>::List pairs; // 记录与其他instance的pair， 例如 light->geometry和geometry->light
+    uint64_t pair_check;
+    SelfList<InstancePair>::List pairs;  // 记录与其他instance的pair， 例如 light->geometry和geometry->light
     // 需要在unpair的时候从这些list中删除， 此外还要再BVH中删除
     /* light map */
-		Instance *lightmap = nullptr;
-		Rect2 lightmap_uv_scale;
-		int lightmap_slice_index;
-		uint32_t lightmap_cull_index;
-		Vector<Color> lightmap_sh; //spherical harmonic
+    Instance* lightmap = nullptr;
+    Rect2 lightmap_uv_scale;
+    int lightmap_slice_index;
+    uint32_t lightmap_cull_index;
+    Vector<Color> lightmap_sh;  //spherical harmonic
 
     uint64_t last_frame_pass;
 
-		uint64_t version; // changes to this, and changes to base increase version
+    uint64_t version;  // changes to this, and changes to base increase version
 
     HashMap<StringName, InstanceShaderParameter> instance_shader_uniforms;
     bool instance_allocated_shader_uniforms = false;
@@ -445,168 +443,167 @@ class RendererSceneCull : public RenderingMethod {
     // @todo DAG能否抽象一个模板类
     // 提供一个 DAG<Instance>::Node, 有root, 还有depth
 
-
     // sort
     float sorting_offset = 0.0;
     bool use_aabb_center = true;
 
     float transparency = 0.0;
-    
+
     bool receive_shadows;
     bool baked_light;
     bool dynamic_gi;
     bool redraw_if_visible;
     // dependency
-    DependencyTracker dependency_tracker; // 每个instance 携带了一个 dependency tracker， 在 update_dependency 中加入需要管理的 dependency
-    		static void dependency_changed(Dependency::DependencyChangedNotification p_notification, DependencyTracker *tracker) {
-			Instance *instance = (Instance *)tracker->userdata;
-			switch (p_notification) {
-				case Dependency::DEPENDENCY_CHANGED_SKELETON_DATA:
-				case Dependency::DEPENDENCY_CHANGED_SKELETON_BONES:
-				case Dependency::DEPENDENCY_CHANGED_AABB: {
-					singleton->_instance_queue_update(instance, true, false);
+    DependencyTracker dependency_tracker;  // 每个instance 携带了一个 dependency tracker， 在 update_dependency 中加入需要管理的 dependency
+    static void dependency_changed(Dependency::DependencyChangedNotification p_notification, DependencyTracker* tracker) {
+      Instance* instance = (Instance*)tracker->userdata;
+      switch (p_notification) {
+        case Dependency::DEPENDENCY_CHANGED_SKELETON_DATA:
+        case Dependency::DEPENDENCY_CHANGED_SKELETON_BONES:
+        case Dependency::DEPENDENCY_CHANGED_AABB: {
+          singleton->_instance_queue_update(instance, true, false);
 
-				} break;
-				case Dependency::DEPENDENCY_CHANGED_MULTIMESH_VISIBLE_INSTANCES:
-				case Dependency::DEPENDENCY_CHANGED_MATERIAL: {
-					singleton->_instance_queue_update(instance, false, true);
-				} break;
-				case Dependency::DEPENDENCY_CHANGED_MESH:
-				case Dependency::DEPENDENCY_CHANGED_PARTICLES:
-				case Dependency::DEPENDENCY_CHANGED_MULTIMESH:
-				case Dependency::DEPENDENCY_CHANGED_DECAL:
-				case Dependency::DEPENDENCY_CHANGED_LIGHT:
-				case Dependency::DEPENDENCY_CHANGED_REFLECTION_PROBE: {
-					singleton->_instance_queue_update(instance, true, true);
-				} break;
-				case Dependency::DEPENDENCY_CHANGED_LIGHT_SOFT_SHADOW_AND_PROJECTOR: {
-					//requires repairing
-					if (instance->indexer_id.is_valid()) {
-						singleton->_unpair_instance(instance);
-						singleton->_instance_queue_update(instance, true, true);
-					}
+        } break;
+        case Dependency::DEPENDENCY_CHANGED_MULTIMESH_VISIBLE_INSTANCES:
+        case Dependency::DEPENDENCY_CHANGED_MATERIAL: {
+          singleton->_instance_queue_update(instance, false, true);
+        } break;
+        case Dependency::DEPENDENCY_CHANGED_MESH:
+        case Dependency::DEPENDENCY_CHANGED_PARTICLES:
+        case Dependency::DEPENDENCY_CHANGED_MULTIMESH:
+        case Dependency::DEPENDENCY_CHANGED_DECAL:
+        case Dependency::DEPENDENCY_CHANGED_LIGHT:
+        case Dependency::DEPENDENCY_CHANGED_REFLECTION_PROBE: {
+          singleton->_instance_queue_update(instance, true, true);
+        } break;
+        case Dependency::DEPENDENCY_CHANGED_LIGHT_SOFT_SHADOW_AND_PROJECTOR: {
+          //requires repairing
+          if (instance->indexer_id.is_valid()) {
+            singleton->_unpair_instance(instance);
+            singleton->_instance_queue_update(instance, true, true);
+          }
 
-				} break;
-				default: {
-					// Ignored notifications.
-				} break;
-			}
-		}
+        } break;
+        default: {
+          // Ignored notifications.
+        } break;
+      }
+    }
 
-    static void dependency_deleted(const RID &p_dependency, DependencyTracker *tracker) {
-			Instance *instance = (Instance *)tracker->userdata;
+    static void dependency_deleted(const RID& p_dependency, DependencyTracker* tracker) {
+      Instance* instance = (Instance*)tracker->userdata;
 
-			if (p_dependency == instance->base) {
-				singleton->instance_set_base(instance->self, RID());
-			} else if (p_dependency == instance->skeleton) {
-				singleton->instance_attach_skeleton(instance->self, RID());
-			} else {
-				// It's possible the same material is used in multiple slots,
-				// so we check whether we need to clear them all.
-				if (p_dependency == instance->material_override) {
-					singleton->instance_geometry_set_material_override(instance->self, RID());
-				}
-				if (p_dependency == instance->material_overlay) {
-					singleton->instance_geometry_set_material_overlay(instance->self, RID());
-				}
-				for (int i = 0; i < instance->materials.size(); i++) {
-					if (p_dependency == instance->materials[i]) {
-						singleton->instance_set_surface_override_material(instance->self, i, RID());
-					}
-				}
-				if (instance->base_type == RS::INSTANCE_PARTICLES) {
-					// RID particle_material = RSG::particles_storage->particles_get_process_material(instance->base);
-					// if (p_dependency == particle_material) {
-					// 	RSG::particles_storage->particles_set_process_material(instance->base, RID());
-					// }
-				}
+      if (p_dependency == instance->base) {
+        singleton->instance_set_base(instance->self, RID());
+      } else if (p_dependency == instance->skeleton) {
+        singleton->instance_attach_skeleton(instance->self, RID());
+      } else {
+        // It's possible the same material is used in multiple slots,
+        // so we check whether we need to clear them all.
+        if (p_dependency == instance->material_override) {
+          singleton->instance_geometry_set_material_override(instance->self, RID());
+        }
+        if (p_dependency == instance->material_overlay) {
+          singleton->instance_geometry_set_material_overlay(instance->self, RID());
+        }
+        for (int i = 0; i < instance->materials.size(); i++) {
+          if (p_dependency == instance->materials[i]) {
+            singleton->instance_set_surface_override_material(instance->self, i, RID());
+          }
+        }
+        if (instance->base_type == RS::INSTANCE_PARTICLES) {
+          // RID particle_material = RSG::particles_storage->particles_get_process_material(instance->base);
+          // if (p_dependency == particle_material) {
+          // 	RSG::particles_storage->particles_set_process_material(instance->base, RID());
+          // }
+        }
 
-				// Even if no change is made we still need to call `_instance_queue_update`.
-				// This dependency could also be a result of the freed material being used
-				// by the mesh this mesh instance uses.
-				singleton->_instance_queue_update(instance, false, true);
-			}
-		}
-    
+        // Even if no change is made we still need to call `_instance_queue_update`.
+        // This dependency could also be a result of the freed material being used
+        // by the mesh this mesh instance uses.
+        singleton->_instance_queue_update(instance, false, true);
+      }
+    }
+
     Instance()
-    :
-				scenario_item(this),
-				update_item(this) // 这个不能放到cpp里，需要调查一下为什么@todo
+        : scenario_item(this),
+          update_item(this)  // 这个不能放到cpp里，需要调查一下为什么@todo
     {
       base_type = RS::INSTANCE_NONE;
-			cast_shadows = RS::SHADOW_CASTING_SETTING_ON;
-			receive_shadows = true;
-			visible = true;
-			layer_mask = 1;
-			baked_light = true;
-			dynamic_gi = false;
-			redraw_if_visible = false;
-			lightmap_slice_index = 0;
-			lightmap = nullptr;
-			lightmap_cull_index = 0;
-			lod_bias = 1.0;
-			ignore_occlusion_culling = false;
-			ignore_all_culling = false;
+      cast_shadows = RS::SHADOW_CASTING_SETTING_ON;
+      receive_shadows = true;
+      visible = true;
+      layer_mask = 1;
+      baked_light = true;
+      dynamic_gi = false;
+      redraw_if_visible = false;
+      lightmap_slice_index = 0;
+      lightmap = nullptr;
+      lightmap_cull_index = 0;
+      lod_bias = 1.0;
+      ignore_occlusion_culling = false;
+      ignore_all_culling = false;
 
-			scenario = nullptr;
+      scenario = nullptr;
 
-			update_aabb = false;
-			update_dependencies = false;
+      update_aabb = false;
+      update_dependencies = false;
 
-			extra_margin = 0;
+      extra_margin = 0;
 
-			visible = true;
+      visible = true;
 
-			visibility_range_begin = 0;
-			visibility_range_end = 0;
-			visibility_range_begin_margin = 0;
-			visibility_range_end_margin = 0;
+      visibility_range_begin = 0;
+      visibility_range_end = 0;
+      visibility_range_begin_margin = 0;
+      visibility_range_end_margin = 0;
 
-			last_frame_pass = 0;
-			version = 1;
-			base_data = nullptr;
+      last_frame_pass = 0;
+      version = 1;
+      base_data = nullptr;
 
-			custom_aabb = nullptr;
+      custom_aabb = nullptr;
 
-			pair_check = 0;
-			array_index = -1;
+      pair_check = 0;
+      array_index = -1;
 
-			dependency_tracker.userdata = this;
-			dependency_tracker.changed_callback = dependency_changed;
-			dependency_tracker.deleted_callback = dependency_deleted;
-
+      dependency_tracker.userdata = this;
+      dependency_tracker.changed_callback = dependency_changed;
+      dependency_tracker.deleted_callback = dependency_deleted;
     }
   };
 
   struct CullData {
-		Cull *cull = nullptr;
-		Scenario *scenario = nullptr;
-		RID shadow_atlas;
-		Transform3D cam_transform;
-		uint32_t visible_layers;
-		Instance *render_reflection_probe = nullptr;
-		const RendererSceneOcclusionCull::HZBuffer *occlusion_buffer;
-		const Projection *camera_matrix;
-		uint64_t visibility_viewport_mask;
-	};
+    Cull* cull = nullptr;
+    Scenario* scenario = nullptr;
+    RID shadow_atlas;
+    Transform3D cam_transform;
+    uint32_t visible_layers;
+    Instance* render_reflection_probe = nullptr;
+    const RendererSceneOcclusionCull::HZBuffer* occlusion_buffer;
+    const Projection* camera_matrix;
+    uint64_t visibility_viewport_mask;
+  };
   struct InstanceBaseData {
     virtual ~InstanceBaseData() {}
   };
   struct InstanceGeometryData : public InstanceBaseData {
-    RenderGeometryInstance* geometry_instance = nullptr; 
+    RenderGeometryInstance* geometry_instance = nullptr;
     bool can_cast_shadows = false;
-    		uint32_t projector_count = 0;
-		uint32_t softshadow_count = 0;
+    uint32_t projector_count = 0;
+    uint32_t softshadow_count = 0;
     HashSet<Instance*> lights;  // 照射该instance的灯光
     bool material_is_animated = false;
   };
-  struct InstanceReflectionProbeData : public InstanceBaseData {};
+  struct InstanceReflectionProbeData : public InstanceBaseData {
+    RID instance;
+  };
   struct InstanceLightData : public InstanceBaseData {
 
     RID instance;
-		HashSet<Instance *> geometries; // 光所照射的geometry
-    		bool uses_projector = false;
-		bool uses_softshadow = false;
+    HashSet<Instance*> geometries;  // 光所照射的geometry
+    bool uses_projector = false;
+    bool uses_softshadow = false;
 
     // Instead of a single dirty flag, we maintain a count
     // so that we can detect lights that are being made dirty
@@ -616,56 +613,59 @@ class RendererSceneCull : public RenderingMethod {
     bool light_intersects_multiple_cameras;
     uint32_t light_intersects_multiple_cameras_timeout_frame_id;
     RS::LightBakeMode bake_mode;
-		uint32_t max_sdfgi_cascade = 2;
-		uint64_t last_version;
+    uint32_t max_sdfgi_cascade = 2;
+    uint64_t last_version;
     // 通过这种方式保存了对链表整体的引用
     List<Instance*>::Element* D;  // 存到场景的directional_lights中的返回值
-		bool is_shadow_dirty() const { return shadow_dirty_count != 0; }
-    
+    bool is_shadow_dirty() const { return shadow_dirty_count != 0; }
+
     void make_shadow_dirty() { shadow_dirty_count = light_intersects_multiple_cameras ? 1 : 2; }
-		bool is_shadow_update_full() const { return shadow_dirty_count == 0; }
+    bool is_shadow_update_full() const { return shadow_dirty_count == 0; }
 
     // 一个light在p_frame_id帧中是否被多个camera看到（调用该函数）
     // 多线程？
     void detect_light_intersects_multiple_cameras(uint32_t p_frame_id) {
-			// We need to detect the case where shadow updates are occurring
-			// more than once per frame. In this case, we need to turn off
-			// tighter caster culling, so situation reverts to one full shadow update
-			// per frame (light_intersects_multiple_cameras is set).
-			if (p_frame_id == light_update_frame_id) {
-				light_intersects_multiple_cameras = true;
-				light_intersects_multiple_cameras_timeout_frame_id = p_frame_id + 60;
-			} else {
-				// When shadow_volume_intersects_multiple_cameras is set, we
-				// want to detect the situation this is no longer the case, via a timeout.
-				// The system can go back to tighter caster culling in this situation.
-				// Having a long-ish timeout prevents rapid cycling.
-				if (light_intersects_multiple_cameras && (p_frame_id >= light_intersects_multiple_cameras_timeout_frame_id)) {
-					light_intersects_multiple_cameras = false;
-					light_intersects_multiple_cameras_timeout_frame_id = UINT32_MAX;
-				}
-			}
-			light_update_frame_id = p_frame_id;
-		}
+      // We need to detect the case where shadow updates are occurring
+      // more than once per frame. In this case, we need to turn off
+      // tighter caster culling, so situation reverts to one full shadow update
+      // per frame (light_intersects_multiple_cameras is set).
+      if (p_frame_id == light_update_frame_id) {
+        light_intersects_multiple_cameras = true;
+        light_intersects_multiple_cameras_timeout_frame_id = p_frame_id + 60;
+      } else {
+        // When shadow_volume_intersects_multiple_cameras is set, we
+        // want to detect the situation this is no longer the case, via a timeout.
+        // The system can go back to tighter caster culling in this situation.
+        // Having a long-ish timeout prevents rapid cycling.
+        if (light_intersects_multiple_cameras && (p_frame_id >= light_intersects_multiple_cameras_timeout_frame_id)) {
+          light_intersects_multiple_cameras = false;
+          light_intersects_multiple_cameras_timeout_frame_id = UINT32_MAX;
+        }
+      }
+      light_update_frame_id = p_frame_id;
+    }
     void decrement_shadow_dirty() {
-			shadow_dirty_count--;
-			DEV_ASSERT(shadow_dirty_count >= 0);
-		}
+      shadow_dirty_count--;
+      DEV_ASSERT(shadow_dirty_count >= 0);
+    }
     InstanceLightData() {
-			bake_mode = RS::LIGHT_BAKE_DISABLED;
-			D = nullptr;
-			last_version = 0;
-			// baked_light = nullptr;
+      bake_mode = RS::LIGHT_BAKE_DISABLED;
+      D = nullptr;
+      last_version = 0;
+      // baked_light = nullptr;
 
-			shadow_dirty_count = 1;
-			light_update_frame_id = UINT32_MAX;
-			light_intersects_multiple_cameras_timeout_frame_id = UINT32_MAX;
-			light_intersects_multiple_cameras = false;
-		}
+      shadow_dirty_count = 1;
+      light_update_frame_id = UINT32_MAX;
+      light_intersects_multiple_cameras_timeout_frame_id = UINT32_MAX;
+      light_intersects_multiple_cameras = false;
+    }
   };
-  struct InstanceDecalData : public InstanceBaseData {};
+  struct InstanceDecalData : public InstanceBaseData {
+    RID instance;
+  };
 
   struct InstanceVoxelGIData : public InstanceBaseData {
+    RID probe_instance;
     bool invalid;
     uint32_t base_version;
     SelfList<InstanceVoxelGIData> update_element;
@@ -677,11 +677,10 @@ class RendererSceneCull : public RenderingMethod {
   SelfList<InstanceVoxelGIData>::List voxel_gi_update_list;
 
   struct InstanceLightmapData : public InstanceBaseData {
-    		RID instance;
-		HashSet<Instance *> geometries;
-		HashSet<Instance *> users;
-    InstanceLightmapData() {
-		}
+    RID instance;
+    HashSet<Instance*> geometries;
+    HashSet<Instance*> users;
+    InstanceLightmapData() {}
   };
   struct InstanceOccluderData : public InstanceBaseData {};
   struct InstanceVisibilityNotifierData : public InstanceBaseData {};
@@ -691,11 +690,76 @@ class RendererSceneCull : public RenderingMethod {
   struct InstanceParticlesCollisionData : public InstanceBaseData {
     RID instance;
   };
-  	PagedArrayPool<Instance *> instance_cull_page_pool;
-	PagedArrayPool<RenderGeometryInstance *> geometry_instance_cull_page_pool;
-	PagedArrayPool<RID> rid_cull_page_pool;
-  	PagedArray<Instance *> instance_cull_result;
-	PagedArray<Instance *> instance_shadow_cull_result;
+
+  uint64_t pair_pass = 1;
+
+  struct PairInstances {
+    Instance* instance = nullptr;
+    PagedAllocator<InstancePair>* pair_allocator = nullptr;
+    SelfList<InstancePair>::List pairs_found;
+    DynamicBVH* bvh = nullptr;
+    DynamicBVH* bvh2 = nullptr;  //some may need to cull in two
+    uint32_t pair_mask;
+    uint64_t pair_pass;
+    uint32_t cull_mask = 0xFFFFFFFF;  // Needed for decals and lights in the mobile and compatibility renderers.
+
+    _FORCE_INLINE_ bool operator()(void* p_data) {
+      Instance* p_instance = (Instance*)p_data;
+
+      if (instance != p_instance && instance->transformed_aabb.intersects(p_instance->transformed_aabb) && (pair_mask & (1 << p_instance->base_type)) &&
+          (cull_mask & p_instance->layer_mask)) {
+        //test is more coarse in indexer
+        p_instance->pair_check = pair_pass;
+        InstancePair* pair = pair_allocator->alloc();
+        pair->a = instance;
+        pair->b = p_instance;
+        pairs_found.add(&pair->list_a);
+      }
+      return false;
+    }
+
+    void pair() {
+      if (bvh) {
+        bvh->aabb_query(instance->transformed_aabb, *this);
+      }
+      if (bvh2) {
+        bvh2->aabb_query(instance->transformed_aabb, *this);
+      }
+      while (instance->pairs.first()) {
+        InstancePair* pair = instance->pairs.first()->self();
+        Instance* other_instance = instance == pair->a ? pair->b : pair->a;
+        if (other_instance->pair_check != pair_pass) {
+          //unpaired
+          _instance_unpair(instance, other_instance);
+        } else {
+          //kept
+          other_instance->pair_check = 0;  // if kept, then put pair check to zero, so we can distinguish with the newly added ones
+        }
+
+        pair_allocator->free(pair);
+      }
+      while (pairs_found.first()) {
+        InstancePair* pair = pairs_found.first()->self();
+        pairs_found.remove(pairs_found.first());
+
+        if (pair->b->pair_check == pair_pass) {
+          //paired
+          _instance_pair(instance, pair->b);
+        }
+        pair->a->pairs.add(&pair->list_a);
+        pair->b->pairs.add(&pair->list_b);
+      }
+    }
+  };
+
+  static void _instance_pair(Instance *p_A, Instance *p_B);
+	static void _instance_unpair(Instance *p_A, Instance *p_B);
+
+  PagedArrayPool<Instance*> instance_cull_page_pool;
+  PagedArrayPool<RenderGeometryInstance*> geometry_instance_cull_page_pool;
+  PagedArrayPool<RID> rid_cull_page_pool;
+  PagedArray<Instance*> instance_cull_result;
+  PagedArray<Instance*> instance_shadow_cull_result;
   struct InstanceCullResult {  // 这里全用RID，感觉PageArray就很没意义。。
     PagedArray<RenderGeometryInstance*> geometry_instances;
     PagedArray<Instance*> lights;
@@ -721,14 +785,12 @@ class RendererSceneCull : public RenderingMethod {
 
   InstanceCullResult scene_cull_result;
   LocalVector<InstanceCullResult> scene_cull_result_threads;
-  RendererSceneRender::RenderShadowData render_shadow_data[MAX_UPDATE_SHADOWS]; // 这里填写所有的shadow数据（在render_scene里）
-	RendererSceneRender::RenderSDFGIData render_sdfgi_data[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE];
-	RendererSceneRender::RenderSDFGIUpdateData sdfgi_update_data;
+  RendererSceneRender::RenderShadowData render_shadow_data[MAX_UPDATE_SHADOWS];  // 这里填写所有的shadow数据（在render_scene里）
+  RendererSceneRender::RenderSDFGIData render_sdfgi_data[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE];
+  RendererSceneRender::RenderSDFGIUpdateData sdfgi_update_data;
 
   uint32_t max_shadows_used = 0;
   uint32_t thread_cull_threshold = 200;  // 多线程cull
-
-
 
   // RendererSceneRender::RenderSDFGIData render_sdfgi_data[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE];
   // RendererSceneRender::RenderSDFGIUpdateData sdfgi_update_data;
@@ -751,11 +813,11 @@ class RendererSceneCull : public RenderingMethod {
   virtual void instance_set_ignore_culling(RID p_instance, bool p_enabled) override;
   virtual void instance_attach_skeleton(RID p_instance, RID p_skeleton) override;
   virtual void instance_set_visibility_parent(RID p_instance, RID p_parent_instance) override;
-	virtual void instance_geometry_set_material_override(RID p_instance, RID p_material);
-	virtual void instance_geometry_set_material_overlay(RID p_instance, RID p_material);
-	virtual void instance_geometry_set_cast_shadows_setting(RID p_instance, RS::ShadowCastingSetting p_shadow_casting_setting);
-	virtual void instance_geometry_set_lightmap(RID p_instance, RID p_lightmap, const Rect2 &p_lightmap_uv_scale, int p_slice_index);
-	virtual void instance_geometry_set_lod_bias(RID p_instance, float p_lod_bias);
+  virtual void instance_geometry_set_material_override(RID p_instance, RID p_material);
+  virtual void instance_geometry_set_material_overlay(RID p_instance, RID p_material);
+  virtual void instance_geometry_set_cast_shadows_setting(RID p_instance, RS::ShadowCastingSetting p_shadow_casting_setting);
+  virtual void instance_geometry_set_lightmap(RID p_instance, RID p_lightmap, const Rect2& p_lightmap_uv_scale, int p_slice_index);
+  virtual void instance_geometry_set_lod_bias(RID p_instance, float p_lod_bias);
 
   // 直接memnew()
   RendererSceneOcclusionCull* dummy_occlusion_culling = nullptr;
@@ -765,15 +827,14 @@ class RendererSceneCull : public RenderingMethod {
 #endif
 
 #define PASSBASE scene_render
-  	// Compositor effect
-	PASS0R(RID, compositor_effect_allocate)
-	PASS1(compositor_effect_initialize, RID)
-	PASS1RC(bool, is_compositor_effect, RID)
-  	// Compositor
-	PASS0R(RID, compositor_allocate)
-	PASS1(compositor_initialize, RID)
-	PASS1RC(bool, is_compositor, RID)
-
+  // Compositor effect
+  PASS0R(RID, compositor_effect_allocate)
+  PASS1(compositor_effect_initialize, RID)
+  PASS1RC(bool, is_compositor_effect, RID)
+  // Compositor
+  PASS0R(RID, compositor_allocate)
+  PASS1(compositor_initialize, RID)
+  PASS1RC(bool, is_compositor, RID)
 
   PASS0R(RID, environment_allocate)
   PASS1(environment_initialize, RID)
@@ -782,15 +843,15 @@ class RendererSceneCull : public RenderingMethod {
   PASS1RC(int, environment_get_canvas_max_layer, RID)
   PASS0R(Ref<RenderSceneBuffers>, render_buffers_create)
 
-  	// Background
-	PASS2(environment_set_background, RID, RS::EnvironmentBG)
-	PASS2(environment_set_sky, RID, RID)
-	PASS2(environment_set_sky_custom_fov, RID, float)
-	PASS2(environment_set_sky_orientation, RID, const Basis &)
-	PASS2(environment_set_bg_color, RID, const Color &)
-	PASS3(environment_set_bg_energy, RID, float, float)
-	PASS2(environment_set_canvas_max_layer, RID, int)
-	PASS6(environment_set_ambient_light, RID, const Color &, RS::EnvironmentAmbientSource, float, float, RS::EnvironmentReflectionSource)
+  // Background
+  PASS2(environment_set_background, RID, RS::EnvironmentBG)
+  PASS2(environment_set_sky, RID, RID)
+  PASS2(environment_set_sky_custom_fov, RID, float)
+  PASS2(environment_set_sky_orientation, RID, const Basis&)
+  PASS2(environment_set_bg_color, RID, const Color&)
+  PASS3(environment_set_bg_energy, RID, float, float)
+  PASS2(environment_set_canvas_max_layer, RID, int)
+  PASS6(environment_set_ambient_light, RID, const Color&, RS::EnvironmentAmbientSource, float, float, RS::EnvironmentReflectionSource)
 
 #undef PASSBASE
 
@@ -823,25 +884,23 @@ class RendererSceneCull : public RenderingMethod {
   RID _render_get_environment(RID camera, RID p_scenario);
   RID _render_get_compositor(RID camera, RID p_scenario);
 
-  void _render_scene(const RendererSceneRender::CameraData* p_camera_data, const Ref<RenderSceneBuffers>& p_render_buffers, RID p_environment,
-                                        RID p_force_camera_attributes, RID p_compositor, uint32_t p_visible_layers, RID p_scenario, RID p_viewport, RID p_shadow_atlas,
-                                        RID p_reflection_probe, int p_reflection_probe_pass, float p_screen_mesh_lod_threshold, bool p_using_shadows,
-                                        RenderingMethod::RenderInfo* r_render_info);
+  void _render_scene(const RendererSceneRender::CameraData* p_camera_data, const Ref<RenderSceneBuffers>& p_render_buffers, RID p_environment, RID p_force_camera_attributes,
+                     RID p_compositor, uint32_t p_visible_layers, RID p_scenario, RID p_viewport, RID p_shadow_atlas, RID p_reflection_probe, int p_reflection_probe_pass,
+                     float p_screen_mesh_lod_threshold, bool p_using_shadows, RenderingMethod::RenderInfo* r_render_info);
   void _visibility_cull_threaded(uint32_t p_thread, VisibilityCullData* cull_data);
   void _visibility_cull(const VisibilityCullData& cull_data, uint64_t p_from, uint64_t p_to);
   template <bool p_fade_check>
   _FORCE_INLINE_ int _visibility_range_check(InstanceVisibilityData& r_vis_data, const Vector3& p_camera_pos, uint64_t p_viewport_mask);
   void _light_instance_setup_directional_shadow(int p_shadow_index, Instance* p_instance, const Transform3D p_cam_transform, const Projection& p_cam_projection,
                                                 bool p_cam_orthogonal, bool p_cam_vaspect);
-  void _scene_cull_threaded(uint32_t p_thread, CullData *cull_data);
-	void _scene_cull(CullData &cull_data, InstanceCullResult &cull_result, uint64_t p_from, uint64_t p_to);
-  bool _visibility_parent_check(const CullData &p_cull_data, const InstanceData &p_instance_data);
-	bool _light_instance_update_shadow(Instance *p_instance, const Transform3D p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, bool p_cam_vaspect, RID p_shadow_atlas, Scenario *p_scenario, float p_scren_mesh_lod_threshold, uint32_t p_visible_layers = 0xFFFFFF);
-  void _instance_unpair(Instance* , Instance*);
+  void _scene_cull_threaded(uint32_t p_thread, CullData* cull_data);
+  void _scene_cull(CullData& cull_data, InstanceCullResult& cull_result, uint64_t p_from, uint64_t p_to);
+  bool _visibility_parent_check(const CullData& p_cull_data, const InstanceData& p_instance_data);
+  bool _light_instance_update_shadow(Instance* p_instance, const Transform3D p_cam_transform, const Projection& p_cam_projection, bool p_cam_orthogonal, bool p_cam_vaspect,
+                                     RID p_shadow_atlas, Scenario* p_scenario, float p_scren_mesh_lod_threshold, uint32_t p_visible_layers = 0xFFFFFF);
   void _update_instance(Instance* p_instance);
 
-	virtual bool free(RID p_rid) override;
-
+  virtual bool free(RID p_rid) override;
 };
 }  // namespace lain
 #endif

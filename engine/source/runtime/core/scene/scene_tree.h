@@ -82,7 +82,7 @@ namespace lain {
 		void _remove_node_from_process_group(TickObject* p_node, TickObject* p_owner);
 		void _add_node_to_process_group(TickObject* p_node, TickObject* p_owner);
 
-
+		void flush_transform_notifications(); // flush
 	public:
 		SceneTree();
 		~SceneTree();

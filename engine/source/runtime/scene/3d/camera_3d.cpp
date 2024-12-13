@@ -58,7 +58,13 @@ void Camera3D::_validate_property(PropertyInfo &p_property) const {
 	// GObject3D::_validate_property(p_property);
 }
 
-void lain::Camera3D::_bind_methods() {}
+void lain::Camera3D::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_current", "enabled"), &Camera3D::set_current);
+	ClassDB::bind_method(D_METHOD("is_current"), &Camera3D::is_current);
+
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "current"), "set_current", "is_current");
+
+}
 
 void Camera3D::_update_camera() {
 	if (!is_inside_tree()) {
@@ -494,87 +500,7 @@ Camera3D::DopplerTracking Camera3D::get_doppler_tracking() const {
 	return doppler_tracking;
 }
 
-// void Camera3D::_bind_methods() {
-// 	ClassDB::bind_method(D_METHOD("project_ray_normal", "screen_point"), &Camera3D::project_ray_normal);
-// 	ClassDB::bind_method(D_METHOD("project_local_ray_normal", "screen_point"), &Camera3D::project_local_ray_normal);
-// 	ClassDB::bind_method(D_METHOD("project_ray_origin", "screen_point"), &Camera3D::project_ray_origin);
-// 	ClassDB::bind_method(D_METHOD("unproject_position", "world_point"), &Camera3D::unproject_position);
-// 	ClassDB::bind_method(D_METHOD("is_position_behind", "world_point"), &Camera3D::is_position_behind);
-// 	ClassDB::bind_method(D_METHOD("project_position", "screen_point", "z_depth"), &Camera3D::project_position);
-// 	ClassDB::bind_method(D_METHOD("set_perspective", "fov", "z_near", "z_far"), &Camera3D::set_perspective);
-// 	ClassDB::bind_method(D_METHOD("set_orthogonal", "size", "z_near", "z_far"), &Camera3D::set_orthogonal);
-// 	ClassDB::bind_method(D_METHOD("set_frustum", "size", "offset", "z_near", "z_far"), &Camera3D::set_frustum);
-// 	ClassDB::bind_method(D_METHOD("make_current"), &Camera3D::make_current);
-// 	ClassDB::bind_method(D_METHOD("clear_current", "enable_next"), &Camera3D::clear_current, DEFVAL(true));
-// 	ClassDB::bind_method(D_METHOD("set_current", "enabled"), &Camera3D::set_current);
-// 	ClassDB::bind_method(D_METHOD("is_current"), &Camera3D::is_current);
-// 	ClassDB::bind_method(D_METHOD("get_camera_transform"), &Camera3D::get_camera_transform);
-// 	ClassDB::bind_method(D_METHOD("get_camera_projection"), &Camera3D::get_camera_projection);
-// 	ClassDB::bind_method(D_METHOD("get_fov"), &Camera3D::get_fov);
-// 	ClassDB::bind_method(D_METHOD("get_frustum_offset"), &Camera3D::get_frustum_offset);
-// 	ClassDB::bind_method(D_METHOD("get_size"), &Camera3D::get_size);
-// 	ClassDB::bind_method(D_METHOD("get_far"), &Camera3D::get_far);
-// 	ClassDB::bind_method(D_METHOD("get_near"), &Camera3D::get_near);
-// 	ClassDB::bind_method(D_METHOD("set_fov", "fov"), &Camera3D::set_fov);
-// 	ClassDB::bind_method(D_METHOD("set_frustum_offset", "offset"), &Camera3D::set_frustum_offset);
-// 	ClassDB::bind_method(D_METHOD("set_size", "size"), &Camera3D::set_size);
-// 	ClassDB::bind_method(D_METHOD("set_far", "far"), &Camera3D::set_far);
-// 	ClassDB::bind_method(D_METHOD("set_near", "near"), &Camera3D::set_near);
-// 	ClassDB::bind_method(D_METHOD("get_projection"), &Camera3D::get_projection);
-// 	ClassDB::bind_method(D_METHOD("set_projection", "mode"), &Camera3D::set_projection);
-// 	ClassDB::bind_method(D_METHOD("set_h_offset", "offset"), &Camera3D::set_h_offset);
-// 	ClassDB::bind_method(D_METHOD("get_h_offset"), &Camera3D::get_h_offset);
-// 	ClassDB::bind_method(D_METHOD("set_v_offset", "offset"), &Camera3D::set_v_offset);
-// 	ClassDB::bind_method(D_METHOD("get_v_offset"), &Camera3D::get_v_offset);
-// 	ClassDB::bind_method(D_METHOD("set_cull_mask", "mask"), &Camera3D::set_cull_mask);
-// 	ClassDB::bind_method(D_METHOD("get_cull_mask"), &Camera3D::get_cull_mask);
-// 	ClassDB::bind_method(D_METHOD("set_environment", "env"), &Camera3D::set_environment);
-// 	ClassDB::bind_method(D_METHOD("get_environment"), &Camera3D::get_environment);
-// 	ClassDB::bind_method(D_METHOD("set_attributes", "env"), &Camera3D::set_attributes);
-// 	ClassDB::bind_method(D_METHOD("get_attributes"), &Camera3D::get_attributes);
-// 	ClassDB::bind_method(D_METHOD("set_compositor", "compositor"), &Camera3D::set_compositor);
-// 	ClassDB::bind_method(D_METHOD("get_compositor"), &Camera3D::get_compositor);
-// 	ClassDB::bind_method(D_METHOD("set_keep_aspect_mode", "mode"), &Camera3D::set_keep_aspect_mode);
-// 	ClassDB::bind_method(D_METHOD("get_keep_aspect_mode"), &Camera3D::get_keep_aspect_mode);
-// 	ClassDB::bind_method(D_METHOD("set_doppler_tracking", "mode"), &Camera3D::set_doppler_tracking);
-// 	ClassDB::bind_method(D_METHOD("get_doppler_tracking"), &Camera3D::get_doppler_tracking);
-// 	ClassDB::bind_method(D_METHOD("get_frustum"), &Camera3D::_get_frustum);
-// 	ClassDB::bind_method(D_METHOD("is_position_in_frustum", "world_point"), &Camera3D::is_position_in_frustum);
-// 	ClassDB::bind_method(D_METHOD("get_camera_rid"), &Camera3D::get_camera);
-// 	ClassDB::bind_method(D_METHOD("get_pyramid_shape_rid"), &Camera3D::get_pyramid_shape_rid);
 
-// 	ClassDB::bind_method(D_METHOD("set_cull_mask_value", "layer_number", "value"), &Camera3D::set_cull_mask_value);
-// 	ClassDB::bind_method(D_METHOD("get_cull_mask_value", "layer_number"), &Camera3D::get_cull_mask_value);
-
-// 	//ClassDB::bind_method(D_METHOD("_camera_make_current"),&Camera::_camera_make_current );
-
-// 	ADD_PROPERTY(PropertyInfo(Variant::INT, "keep_aspect", PROPERTY_HINT_ENUM, "Keep Width,Keep Height"), "set_keep_aspect_mode", "get_keep_aspect_mode");
-// 	ADD_PROPERTY(PropertyInfo(Variant::INT, "cull_mask", PROPERTY_HINT_LAYERS_3D_RENDER), "set_cull_mask", "get_cull_mask");
-// 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "environment", PROPERTY_HINT_RESOURCE_TYPE, "Environment"), "set_environment", "get_environment");
-// 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "attributes", PROPERTY_HINT_RESOURCE_TYPE, "CameraAttributesPractical,CameraAttributesPhysical"), "set_attributes", "get_attributes");
-// 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "compositor", PROPERTY_HINT_RESOURCE_TYPE, "Compositor"), "set_compositor", "get_compositor");
-// 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "h_offset", PROPERTY_HINT_NONE, "suffix:m"), "set_h_offset", "get_h_offset");
-// 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "v_offset", PROPERTY_HINT_NONE, "suffix:m"), "set_v_offset", "get_v_offset");
-// 	ADD_PROPERTY(PropertyInfo(Variant::INT, "doppler_tracking", PROPERTY_HINT_ENUM, "Disabled,Idle,Physics"), "set_doppler_tracking", "get_doppler_tracking");
-// 	ADD_PROPERTY(PropertyInfo(Variant::INT, "projection", PROPERTY_HINT_ENUM, "Perspective,Orthogonal,Frustum"), "set_projection", "get_projection");
-// 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "current"), "set_current", "is_current");
-// 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "fov", PROPERTY_HINT_RANGE, "1,179,0.1,degrees"), "set_fov", "get_fov");
-// 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "size", PROPERTY_HINT_RANGE, "0.001,100,0.001,or_greater,suffix:m"), "set_size", "get_size");
-// 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "frustum_offset", PROPERTY_HINT_NONE, "suffix:m"), "set_frustum_offset", "get_frustum_offset");
-// 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "near", PROPERTY_HINT_RANGE, "0.001,10,0.001,or_greater,exp,suffix:m"), "set_near", "get_near");
-// 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "far", PROPERTY_HINT_RANGE, "0.01,4000,0.01,or_greater,exp,suffix:m"), "set_far", "get_far");
-
-// 	BIND_ENUM_CONSTANT(PROJECTION_PERSPECTIVE);
-// 	BIND_ENUM_CONSTANT(PROJECTION_ORTHOGONAL);
-// 	BIND_ENUM_CONSTANT(PROJECTION_FRUSTUM);
-
-// 	BIND_ENUM_CONSTANT(KEEP_WIDTH);
-// 	BIND_ENUM_CONSTANT(KEEP_HEIGHT);
-
-// 	BIND_ENUM_CONSTANT(DOPPLER_TRACKING_DISABLED);
-// 	BIND_ENUM_CONSTANT(DOPPLER_TRACKING_IDLE_STEP);
-// 	BIND_ENUM_CONSTANT(DOPPLER_TRACKING_PHYSICS_STEP);
-// }
 
 real_t Camera3D::get_fov() const {
 	return fov;

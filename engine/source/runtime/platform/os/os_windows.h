@@ -17,6 +17,7 @@ public:
 	virtual void Finialize() {}
 	virtual void Run();
 	virtual void SetMainLoop(MainLoop* p_main_loop) override;
+	virtual MainLoop* GetMainLoop() const override;
 	MainLoop* main_loop = nullptr;
 
 

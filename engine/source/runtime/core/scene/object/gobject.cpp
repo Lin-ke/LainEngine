@@ -1195,7 +1195,7 @@ GObject::~GObject() {
 }
 
 void GObject::_notification(int p_notification) {
-  L_PRINT("[Node notification]", "name", CSTR(data.name.operator lain::String()), p_notification);
+  // L_PRINT("[Node notification]", "name", CSTR(data.name.operator lain::String()), p_notification);
   switch (p_notification) {
       // 这里去调用脚本了
       // 在unity中，脚本也是component的一部分
