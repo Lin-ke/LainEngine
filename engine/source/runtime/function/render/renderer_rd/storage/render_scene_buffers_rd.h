@@ -1,6 +1,13 @@
 #ifndef RENDER_SCENE_BUFFERS_RD_H
 #define RENDER_SCENE_BUFFERS_RD_H
 #define RB_SCOPE_BUFFERS SNAME("render_buffers")
+// buffers 默认了有RB_TEX_COLOR, RB_TEX_DEPTH, RB_TEX_COLOR_MSAA, RB_TEX_DEPTH_MSAA, 
+// see : configure
+
+// 还包括data_buffers，是 RenderBufferCustomDataRD 类
+// cluster的 RenderBufferCustomDataRD 里面包括了 voxelgi等等 在调用ensurexx的时候会加入到 render_buffer 里面
+// 具有不同的scope
+// 
 
 #define RB_SCOPE_VRS SNAME("VRS")
 
@@ -194,6 +201,9 @@ class RenderSceneBuffersRD : public RenderSceneBuffers {
 	}
 	_FORCE_INLINE_ RID get_internal_texture() const {
 		return get_texture(RB_SCOPE_BUFFERS, RB_TEX_COLOR);
+	}
+  	_FORCE_INLINE_ RID get_upscaled_texture() const {
+		return get_texture(RB_SCOPE_BUFFERS, RB_TEX_COLOR_UPSCALED);
 	}
 	_FORCE_INLINE_ RID get_internal_texture(const uint32_t p_layer) {
 		return get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_COLOR, p_layer, 0);

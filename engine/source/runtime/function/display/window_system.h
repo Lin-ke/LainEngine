@@ -19,20 +19,20 @@ namespace lain
     // @ TODO 把他做成接口和实现的类型
 
     struct WindowCreateInfo;
-
-    typedef std::function<void()>                   onResetFunc;
-    typedef std::function<void(int, int, int, int)> onKeyFunc;
-    typedef std::function<void(unsigned int)>       onCharFunc;
-    typedef std::function<void(int, unsigned int)>  onCharModsFunc;
-    typedef std::function<void(int, int, int)>      onMouseButtonFunc;
-    typedef std::function<void(double, double)>     onCursorPosFunc;
-    typedef std::function<void(int)>                onCursorEnterFunc;
-    typedef std::function<void(double, double)>     onScrollFunc;
-    typedef std::function<void(int, const char**)>  onDropFunc;
-    typedef std::function<void(int, int)>           onWindowSizeFunc;
-    typedef std::function<void()>                   onWindowCloseFunc;
+    // int : window id
+    typedef std::function<void(int)>                   onResetFunc;
+    typedef std::function<void(int, int, int, int, int)> onKeyFunc;
+    typedef std::function<void(int, unsigned int)>       onCharFunc;
+    typedef std::function<void(int, int, unsigned int)>  onCharModsFunc;
+    typedef std::function<void(int, int, int, int)>      onMouseButtonFunc;
+    typedef std::function<void(int, double, double)>     onCursorPosFunc;
+    typedef std::function<void(int, int)>                onCursorEnterFunc;
+    typedef std::function<void(int, double, double)>     onScrollFunc;
+    typedef std::function<void(int, int, const char**)>  onDropFunc;
+    typedef std::function<void(int, int, int)>           onWindowSizeFunc;
+    typedef std::function<void(int)>                   onWindowCloseFunc;
     struct WindowData {
-
+        int id = -1;
         HWND hWnd = nullptr; // do not modify the window by HWND, using GLFW
         GLFWwindow* p_window = nullptr;
 
@@ -81,16 +81,13 @@ namespace lain
 
 
         // IME
-      /*  HIMC im_himc;
+         /*  HIMC im_himc;
         Vector2 im_position;
         bool ime_active = false;
         bool ime_in_progress = false;
         bool ime_suppress_next_keyup = false;
 
         bool layered_window = false;*/
-        // 把这里变成vector的可以降低耦合
-        // 这样不同的函数可以承担不同的任务
-        // 执行列表
         Vector<onResetFunc>       m_onResetFunc;
         Vector < onKeyFunc>        m_onKeyFunc;
         Vector < onCharFunc>     m_onCharFunc;
@@ -146,6 +143,13 @@ namespace lain
             SCREEN_PRIMARY = -2,
             SCREEN_OF_MAIN_WINDOW = -1, // Note: for the main window, determine screen from position.
         };
+    enum MouseMode {
+		MOUSE_MODE_VISIBLE,
+		MOUSE_MODE_HIDDEN,
+		MOUSE_MODE_CAPTURED,
+		MOUSE_MODE_CONFINED,
+		MOUSE_MODE_CONFINED_HIDDEN,
+	};
 
         WindowSystem(const String& p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i* p_position, const Vector2i& p_resolution, int p_screen, Error& r_error);
         ~WindowSystem();
@@ -168,14 +172,33 @@ namespace lain
         int get_primary_screen() const;
         int window_get_current_screen(WindowID) const;
         VSyncMode window_get_vsync_mode(WindowID p_window) const;
-
+        void process_events();
+    struct KeyEvent {
+		WindowID window_id;
+		bool alt, shift, control, meta, altgr;
+		UINT uMsg;
+		WPARAM wParam;
+		LPARAM lParam;
+	};
+        // default call backs
+        void on_window_reset(int id);
+         void on_key(int id,int key, int scancode, int action, int mods);
+         void on_char(int id,unsigned int codepoint);
+         void on_char_mods(int id,unsigned int codepoint, int mods);
+         void on_mouse_button(int id,int button, int action, int mods);
+         void on_cursor_pos(int id,double xpos, double ypos);
+        void on_cursor_enter(int id,int entered);
+        void on_scroll(int id,double xoffset, double yoffset);
+        void on_drop(int id,int count, const char** paths);
+        void on_window_size(int id,int width, int height);
+        void on_window_close(int id);
     private:
-        
-
-
         Point2i _get_screens_origin() const;
         Rect2i  screen_get_usable_rect(int p_screen) const;
         int     _get_screen_index(int p_screen) const;
+        MouseMode mouse_get_mode() const { return m_mouse_mode; }
+        void     mouse_set_mode(MouseMode p_mode);
+        MouseMode m_mouse_mode = MOUSE_MODE_CAPTURED;
     public:
         void registerOnResetFunc(onResetFunc func, int wid) {
             ERR_FAIL_COND(!m_windows.has(wid));
@@ -271,7 +294,7 @@ namespace lain
             if (app)
             {
                 for (auto& func : app->m_onKeyFunc) {
-                    func(key, scancode, action, mods);
+                    func(app->id, key, scancode, action, mods);
                 }
 
             }
@@ -281,7 +304,7 @@ namespace lain
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                for (auto& func : app->m_onCharFunc) { func(codepoint); }
+                for (auto& func : app->m_onCharFunc) { func(app->id,codepoint); }
             }
         }
         static void charModsCallback(GLFWwindow* window, unsigned int codepoint, int mods)
@@ -289,7 +312,7 @@ namespace lain
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                for (auto& func : app->m_onCharModsFunc) { func(codepoint, mods); }
+                for (auto& func : app->m_onCharModsFunc) { func(app->id,codepoint, mods); }
             }
         }
         static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
@@ -297,7 +320,7 @@ namespace lain
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                for (auto& func : app->m_onMouseButtonFunc) { func(button, action, mods); }
+                for (auto& func : app->m_onMouseButtonFunc) { func(app->id,button, action, mods); }
             }
         }
         static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
@@ -305,7 +328,7 @@ namespace lain
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                for (auto& func : app->m_onCursorPosFunc) { func(xpos, ypos); }
+                for (auto& func : app->m_onCursorPosFunc) { func(app->id,xpos, ypos); }
             }
         }
         static void cursorEnterCallback(GLFWwindow* window, int entered)
@@ -313,7 +336,7 @@ namespace lain
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                for (auto& func : app->m_onCursorEnterFunc) { func(entered); }
+                for (auto& func : app->m_onCursorEnterFunc) { func(app->id,entered); }
             }
         }
         static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
@@ -321,7 +344,7 @@ namespace lain
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                for (auto& func : app->m_onScrollFunc) { func(xoffset, yoffset); }
+                for (auto& func : app->m_onScrollFunc) { func(app->id,xoffset, yoffset); }
             }
         }
         static void dropCallback(GLFWwindow* window, int count, const char** paths)
@@ -329,7 +352,7 @@ namespace lain
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                for (auto& func : app->m_onDropFunc) { func(count, paths); }
+                for (auto& func : app->m_onDropFunc) { func(app->id,count, paths); }
             }
         }
         static void windowSizeCallback(GLFWwindow* window, int width, int height)
@@ -339,7 +362,7 @@ namespace lain
             {
                 app->width = width;
                 app->height =height ;
-                for (auto& func : app->m_onWindowSizeFunc) { func(width, height); }
+                for (auto& func : app->m_onWindowSizeFunc) { func(app->id,width, height); }
             }
 
         }
@@ -348,7 +371,7 @@ namespace lain
             WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
             if (app)
             {
-                for (auto& func : app->m_onWindowCloseFunc) { func(); }
+                for (auto& func : app->m_onWindowCloseFunc) { func(app->id); }
             }
             //L_PRINT("close callback called", window);
         }
@@ -369,6 +392,13 @@ namespace lain
         static WindowSystem* p_singleton;
         static int m_windowid; // windows_counter
     public:
+        enum class WinKeyModifierMask {
+            ALT_GR = (1 << 1),
+            SHIFT = (1 << 2),
+            ALT = (1 << 3),
+            META = (1 << 4),
+            CTRL = (1 << 5),
+        };
         enum {
             MAIN_WINDOW_ID = 0,
             INVALID_WINDOW_ID = -1

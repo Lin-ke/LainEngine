@@ -194,7 +194,7 @@ namespace lain {
 
     RID Resource::GetRID() const { return RID(); }
     void Resource::emit_changed() {
-			// emit_signal();
+			// emit_signal("changed");
 		}
     void Resource::ResetState() {}
     // resourceCache static:

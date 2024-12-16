@@ -2083,7 +2083,7 @@ void lain::RendererSceneCull::_render_scene(const RendererSceneRender::CameraDat
     cull_data.cam_transform = p_camera_data->main_transform;
     cull_data.visible_layers = p_visible_layers;
     // cull_data.render_reflection_probe = render_reflection_probe;
-    // cull_data.occlusion_buffer = RendererSceneOcclusionCull::get_singleton()->buffer_get_ptr(p_viewport);
+    cull_data.occlusion_buffer = RendererSceneOcclusionCull::get_singleton()->buffer_get_ptr(p_viewport);
     cull_data.camera_matrix = &p_camera_data->main_projection;
     cull_data.visibility_viewport_mask = scenario->viewport_visibility_masks.has(p_viewport) ? scenario->viewport_visibility_masks[p_viewport] : 0;
 // #define DEBUG_CULL_TIME

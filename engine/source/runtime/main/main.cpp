@@ -19,9 +19,13 @@
 #include "core/scene/scene_tree.h"
 #include "core/scene/object/gobject.h"
 #include "scene/main/viewport.h"
+#include "core/input/input.h"
+#include "core/input/input_map.h"
 //  initialization part
 namespace lain {
+static InputMap *input_map = nullptr;
 
+static Input *input = nullptr;
 static Engine* engine = nullptr;
 static WindowSystem* window_system = nullptr;
 static RenderingSystem* render_system = nullptr;
@@ -75,6 +79,8 @@ Error Main::Initialize(int argc, char* argv[]) {
   Reflection::TypeMetaRegister::metaRegister();
   Reflection::TypeMetaRegister::EnumMetaRegister();
 
+	input_map = memnew(InputMap);
+
   globals = memnew(ProjectSettings);
   EditorPaths::create();  // editor需要在global之后，在ProjectManager之前
   //L_PRINT(EditorPaths::GetSingleton()->GetDataDir(), EditorPaths::GetSingleton()->GetConfigDir());
@@ -117,6 +123,7 @@ Error Main::Initialize(int argc, char* argv[]) {
 
   Ref<DirAccess> da = DirAccess::create_for_path(project_path);
  
+  input = memnew(Input);
 
   // note this is the desired rendering driver, it doesn't mean we will get it.
 	// TODO - make sure this is updated in the case of fallbacks, so that the user interface
@@ -209,6 +216,9 @@ Error Main::Initialize(int argc, char* argv[]) {
 
   OS::GetSingleton()->SetMainLoop(main_loop);
 
+	main_timer_sync.init(OS::GetSingleton()->GetTicksUsec());
+
+
   return OK;
 }
 /// <summary>
@@ -221,6 +231,9 @@ bool Main::Loop() {
   // get-set time and last ticks
   ui64 ticks = OS::GetSingleton()->GetTimeUsec();
   Engine::GetSingleton()->set_frame_ticks(ticks);
+  main_timer_sync.set_cpu_ticks_usec(ticks);
+	main_timer_sync.set_fixed_fps(-1);
+
 	const uint64_t ticks_elapsed = ticks - last_ticks;
   last_ticks = ticks;
   frame += ticks_elapsed;
@@ -241,6 +254,11 @@ bool Main::Loop() {
 	double scaled_step = process_step * time_scale;
 
   ui64 delta_time_usec = ticks - last_ticks;
+  if (Input::get_singleton()->is_agile_input_event_flushing()) {
+		Input::get_singleton()->flush_buffered_events();
+	}
+
+
 	uint64_t process_begin = OS::GetSingleton()->GetTicksUsec();
   if (OS::GetSingleton()->GetMainLoop()->process(process_step * time_scale)) {
 		exit = true;

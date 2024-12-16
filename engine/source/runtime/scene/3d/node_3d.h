@@ -145,6 +145,7 @@ public:
 	Ref<World3D> get_world_3d() const;
 
 	void set_position(const Vector3 &p_position);
+	Vector3 get_position() const;
 
 	void set_rotation_edit_mode(RotationEditMode p_mode);
 	RotationEditMode get_rotation_edit_mode() const;
@@ -159,7 +160,6 @@ public:
 	void set_global_rotation(const Vector3 &p_euler_rad);
 	void set_global_rotation_degrees(const Vector3 &p_euler_degrees);
 
-	Vector3 get_position() const;
 
 	EulerOrder get_rotation_order() const;
 	Vector3 get_rotation() const;

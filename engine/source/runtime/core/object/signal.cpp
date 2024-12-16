@@ -50,3 +50,4 @@ Signal::operator String() const {
 		return "null::[signal]" + String(name);
 	}
 }
+

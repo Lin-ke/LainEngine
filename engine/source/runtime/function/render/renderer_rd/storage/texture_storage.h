@@ -440,7 +440,8 @@ class TextureStorage : public RendererTextureStorage {
   virtual void render_target_do_clear_request(RID p_render_target) override;
 
   RID render_target_get_rd_texture(RID p_render_target);
-
+  RID render_target_get_rd_texture_msaa(RID p_render_target);
+  RID render_target_get_rd_framebuffer(RID p_render_target);
 
 };
 }  // namespace lain::RendererRD

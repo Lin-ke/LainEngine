@@ -14,6 +14,7 @@ Ref<World3D> GObject3D::get_world_3d() const {
 	return data.viewport->find_world_3d();
 }
 
+
 void lain::GObject3D::set_position(const Vector3& p_position) {
 		ERR_THREAD_GUARD;
 	data.local_transform.origin = p_position;
@@ -22,6 +23,7 @@ void lain::GObject3D::set_position(const Vector3& p_position) {
 		notification(NOTIFICATION_LOCAL_TRANSFORM_CHANGED);
 	}
 }
+
 
 void lain::GObject3D::set_notify_transform(bool p_enabled) {
 		ERR_THREAD_GUARD;

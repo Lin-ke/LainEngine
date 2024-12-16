@@ -190,10 +190,12 @@ class GObject : public TickObject {
   GObject();
   ~GObject();
 
+
   // notification机制
   // notification机制可以用来解耦，并不需要在意
   // 就用这个notification作为所有的notification吧
  
+  double get_process_delta_time() const;
 
   virtual String get_description() const { 
     return is_inside_tree()? get_path() : String(get_name()) + "/"+get_class(); }
@@ -251,6 +253,7 @@ class GObject : public TickObject {
 
   // GObject needed in register
   static void init_gobj_hrcr();
+
 
  protected:
   void _block() { data.blocked++; }

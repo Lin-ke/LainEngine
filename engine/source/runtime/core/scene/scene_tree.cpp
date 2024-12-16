@@ -64,7 +64,7 @@ bool SceneTree::process(double p_time) {
   if (MainLoop::process(p_time)) {
     _quit = true;
   }
-
+  
   process_time = p_time;
 
   /*if (multiplayer_poll) {

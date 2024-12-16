@@ -414,6 +414,10 @@ class Object {
   }
 
 	bool _is_gpl_reversed() const { return false; }
+	virtual String to_string(){
+    return "<" + get_class() + "#" + itos(get_instance_id()) + ">";
+  }
+
 
 };
 
@@ -435,11 +439,50 @@ struct MethodInfo {
   int id = 0;
   List<PropertyInfo> arguments;
   Vector<Variant> default_arguments;
+
+	MethodInfo(const String &p_name) { name = p_name; }
+	MethodInfo(Variant::Type ret) { return_val.type = ret; }
+  // 无参数
+	MethodInfo(const PropertyInfo &p_ret, const String &p_name) {
+		return_val = p_ret;
+		name = p_name;
+	}
+	void _push_params(const PropertyInfo &p_param) {
+		arguments.push_back(p_param);
+	}
+
+	MethodInfo() {}
+	template <typename... VarArgs>
+	void _push_params(const PropertyInfo &p_param, VarArgs... p_params) {
+		arguments.push_back(p_param);
+		_push_params(p_params...);
+	}
+  // 有返回值，有参数
+  	template <typename... VarArgs>
+	MethodInfo(Variant::Type ret, const String &p_name, VarArgs... p_params) {
+		name = p_name;
+		return_val.type = ret;
+		_push_params(p_params...);
+	}
+	template <typename... VarArgs>
+	MethodInfo(const PropertyInfo &p_ret, const String &p_name, VarArgs... p_params) {
+		return_val = p_ret;
+		name = p_name;
+		_push_params(p_params...);
+	}
+  // 无返回值
+  	template <typename... VarArgs>
+	MethodInfo(const String &p_name, VarArgs... p_params) {
+		name = p_name;
+		_push_params(p_params...);
+	}
+
 };
 
 }  // namespace lain
 #define ADD_PROPERTY(m_property, m_setter, m_getter) lain::ClassDB::add_property(get_class_static(), m_property, _scs_create(m_setter), _scs_create(m_getter))
 #define ADD_PROPERTYI(m_property, m_setter, m_getter, m_index) lain::ClassDB::add_property(get_class_static(), m_property, _scs_create(m_setter), _scs_create(m_getter), m_index)
+#define ADD_SIGNAL(m_signal) lain::ClassDB::add_signal(get_class_static(), m_signal)
 
 // const 限定符是必要的，因为const对象拒绝调用非const方法
 

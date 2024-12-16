@@ -1193,6 +1193,13 @@ GObject::~GObject() {
 
   orphan_node_count--;
 }
+double GObject::get_process_delta_time() const {
+	if (data.tree) {
+		return data.tree->get_process_time();
+	} else {
+		return 0;
+	}
+}
 
 void GObject::_notification(int p_notification) {
   // L_PRINT("[Node notification]", "name", CSTR(data.name.operator lain::String()), p_notification);

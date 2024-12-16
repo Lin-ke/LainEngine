@@ -855,6 +855,12 @@ void lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_sc
   }
   RD::get_singleton()->draw_command_end_label();
   // screen space effects
+
+  // post process
+  if(rb_data.is_valid()){
+    RENDER_TIMESTAMP("Tonemap and Post Process");
+    _render_buffers_post_process_and_tonemap(p_render_data); // Tonemap 是必做的，把RB内部的纹理写到 render target 的纹理里面
+  }
 }
 
 RenderGeometryInstance* lain::RendererSceneRenderImplementation::RenderForwardClustered::geometry_instance_create(RID p_base) {

@@ -1,7 +1,6 @@
 #include "component.h"
 namespace lain {
     void Component::_notification(int p_notification) {
-        // L_PRINT("[component notification]", "parent", CSTR(m_parent->get_name().operator lain::String()), p_notification);
         switch (p_notification) {
         case GObject::NOTIFICATION_PROCESS: {
         }break;

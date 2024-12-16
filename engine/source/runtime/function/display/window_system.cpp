@@ -4,10 +4,13 @@
 #include "function/render/rendering_device/rendering_device.h"
 #include "platform/render/rendering_context_driver_vulkan_windows.h"
 #include "function/render/renderer_rd/renderer_compositor_rd.h"
-namespace lain {
+#include "core/input/input_event.h"
+#include "platform/os/key_mapping_windows.h"
+#include "core/input/input.h"
 
+namespace lain {
 WindowSystem *WindowSystem::p_singleton = nullptr;
-int WindowSystem::m_windowid = WindowSystem::MAIN_WINDOW_ID; // counter
+int WindowSystem::m_windowid = WindowSystem::INVALID_WINDOW_ID;
 
 WindowSystem::~WindowSystem() {
 	p_singleton = nullptr;
@@ -48,6 +51,21 @@ typedef struct {
 	Rect2i rect;
 } EnumRectData;
 
+static int _mouse_mode_to_glfw(WindowSystem::MouseMode p_mode){
+	switch (p_mode) {
+	case WindowSystem::MOUSE_MODE_VISIBLE:
+		return GLFW_CURSOR_NORMAL;
+	case WindowSystem::MOUSE_MODE_HIDDEN:
+		return GLFW_CURSOR_HIDDEN;
+	case WindowSystem::MOUSE_MODE_CAPTURED:
+		return GLFW_CURSOR_DISABLED;
+	case WindowSystem::MOUSE_MODE_CONFINED:
+		return GLFW_CURSOR_DISABLED;
+	case WindowSystem::MOUSE_MODE_CONFINED_HIDDEN:	
+		return GLFW_CURSOR_HIDDEN;
+	}
+	return GLFW_CURSOR_NORMAL;
+}
 static BOOL CALLBACK _MonitorEnumProcOrigin(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData) {
 	EnumPosData *data = (EnumPosData *)dwData;
 	data->pos = data->pos.min(Point2(lprcMonitor->left, lprcMonitor->top));
@@ -108,10 +126,11 @@ WindowSystem::WindowID WindowSystem::NewWindow(const WindowCreateInfo *create_in
 	glfwSetWindowSizeCallback(window, windowSizeCallback);
 	glfwSetWindowCloseCallback(window, windowCloseCallback);
 	glfwSetWindowIconifyCallback(window, windowIconifyCallback);
+
 	glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
 
 	int id = WindowSystem::m_windowid;
-
+	id += 1; // start from 0
 	auto p_mode = create_info->mode;
 
 	{
@@ -140,6 +159,7 @@ WindowSystem::WindowID WindowSystem::NewWindow(const WindowCreateInfo *create_in
 		// get windows handle;
 		wd.p_window = window;
 		wd.hWnd = hwnd;
+		wd.id = id;
 
 		// 注意这里传入windowdata信息到context driver
 		if (rendering_context) {
@@ -203,8 +223,31 @@ WindowSystem::WindowID WindowSystem::NewWindow(const WindowCreateInfo *create_in
 		glfwSetWindowUserPointer(iter->value.p_window, &iter->value);
 		//L_PRINT("bind window user pointer", iter->value.p_window, &iter->value);
 	}
-	m_windowid += 1;
 
+		// 注册回调
+
+		// 这样做肯定有些不对，因为不一定每个窗口都是这样的
+		// registerOnResetFunc(std::bind(&WindowSystem::on_window_reset, this, std::placeholders::_1), id);
+		registerOnCursorPosFunc(
+				std::bind(&WindowSystem::on_cursor_pos, this, std::placeholders::_1, std::placeholders::_2,std::placeholders::_3),id);
+		registerOnCursorEnterFunc(
+				std::bind(&WindowSystem::on_cursor_enter, this, std::placeholders::_1,std::placeholders::_2),id);
+		registerOnScrollFunc(
+				std::bind(&WindowSystem::on_scroll, this, std::placeholders::_1, std::placeholders::_2,std::placeholders::_3),id);
+		registerOnMouseButtonFunc(
+				std::bind(&WindowSystem::on_mouse_button, this, std::placeholders::_1, std::placeholders::_2,std::placeholders::_3,std::placeholders::_4),id);
+		registerOnWindowCloseFunc(
+				std::bind(&WindowSystem::on_window_close, this,std::placeholders::_1),id);
+		registerOnKeyFunc(std::bind(&WindowSystem::on_key,
+				this,
+				std::placeholders::_1,
+				std::placeholders::_2,
+				std::placeholders::_3,
+				std::placeholders::_4,
+				std::placeholders::_5),id);
+
+		m_windowid += 1;
+	mouse_set_mode(m_mouse_mode);
 	return id;
 }
 static BOOL CALLBACK _MonitorEnumProcCount(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData) {
@@ -268,8 +311,11 @@ Vector<int> WindowSystem::get_window_list() const {
 	return ret;
 }
 
+
 WindowSystem::WindowSystem(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Error &r_error) {
 	p_singleton = this;
+	KeyMappingWindows::initialize();
+
 
 	rendering_driver = p_rendering_driver;
 	// 这个define应该在premake那里
@@ -337,6 +383,7 @@ WindowSystem::WindowSystem(const String &p_rendering_driver, WindowMode p_mode, 
 		// 因此要求先进行 DisplayServer的初始化，再进行RenderingServer的构造
 
 	}
+
 }
 
 Point2i WindowSystem::mouse_get_position() const {
@@ -438,24 +485,82 @@ WindowSystem::VSyncMode WindowSystem::window_get_vsync_mode(WindowID p_window) c
 	}
 	return VSYNC_DISABLED;
 }
+
+void WindowSystem::process_events() {
+	_THREAD_SAFE_METHOD_
+	
+	Input::get_singleton()->flush_buffered_events();
+	glfwPollEvents(); // 看起来是没buffer的，来一个回调一个，这里不知道什么
+
+}
+
+void WindowSystem::on_key(int id, int key, int scancode, int action, int p_mods) {
+	GLFWwindow* window = m_windows[id].p_window;
+	Ref<InputEventKey> k;
+	k.instantiate();
+	k->set_window_id(id);
+	Key keycode = KeyMappingWindows::get_scansym(scancode,false);
+
+	// scancode = (HIWORD(lParam) & (KF_EXTENDED | 0xff));
+	if (keycode != Key::SHIFT) {
+		int state = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) | glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT);
+		k->set_shift_pressed(state);
+	}
+	if (keycode != Key::ALT) {
+		int state = glfwGetKey(window, GLFW_KEY_LEFT_ALT) | glfwGetKey(window, GLFW_KEY_RIGHT_ALT);
+		k->set_alt_pressed(state);
+	}
+	if (keycode != Key::CTRL) {
+		int state = glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) | glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL);
+		k->set_ctrl_pressed(state);
+	}
+	if (keycode != Key::META) {
+		int state = glfwGetKey(window, GLFW_KEY_LEFT_SUPER) | glfwGetKey(window, GLFW_KEY_RIGHT_SUPER);
+		k->set_meta_pressed(state);
+	}
+	k->set_keycode(keycode);
+	if(action == GLFW_PRESS) {
+		k->set_pressed(true);
+	} else if(action == GLFW_RELEASE) {
+		k->set_pressed(false);
+	}
+	Input::get_singleton()->parse_input_event(k);
+	// 解决shift 的问题
+}
+
+
 int WindowSystem::_get_screen_index(int p_screen) const {
-	switch (p_screen) {
-		case SCREEN_WITH_MOUSE_FOCUS: {
-			const Rect2i rect = Rect2i(mouse_get_position(), Vector2i(1, 1));
-			return get_screen_from_rect(rect);
-		} break;
-		case SCREEN_WITH_KEYBOARD_FOCUS: {
-			return get_keyboard_focus_screen();
-		} break;
-		case SCREEN_PRIMARY: {
-			return get_primary_screen();
-		} break;
-		case SCREEN_OF_MAIN_WINDOW: {
-			return window_get_current_screen(MAIN_WINDOW_ID);
-		} break;
-		default: {
-			return p_screen;
-		} break;
+  switch (p_screen) {
+    case SCREEN_WITH_MOUSE_FOCUS: {
+      const Rect2i rect = Rect2i(mouse_get_position(), Vector2i(1, 1));
+      return get_screen_from_rect(rect);
+    } break;
+    case SCREEN_WITH_KEYBOARD_FOCUS: {
+      return get_keyboard_focus_screen();
+    } break;
+    case SCREEN_PRIMARY: {
+      return get_primary_screen();
+    } break;
+    case SCREEN_OF_MAIN_WINDOW: {
+      return window_get_current_screen(MAIN_WINDOW_ID);
+    } break;
+    default: {
+      return p_screen;
+    } break;
+  }
+}
+
+void WindowSystem::mouse_set_mode(MouseMode p_mode) {
+	_THREAD_SAFE_METHOD_
+
+	if (m_mouse_mode == p_mode) {
+		return;
+	}
+
+	m_mouse_mode = p_mode;
+	int mode = _mouse_mode_to_glfw(p_mode);
+	for (const KeyValue<WindowID, WindowData> &E : m_windows) {
+		glfwSetInputMode(E.value.p_window, GLFW_CURSOR, mode);
 	}
 }
 
@@ -497,7 +602,91 @@ Size2i WindowSystem::window_get_size(WindowSystem::WindowID p_window) const {
 	}
 	return Size2();
 }
+// keyboard godot的处理是送到缓存区里，再在 process_event 里处理
+static BitField<WindowSystem::WinKeyModifierMask> _get_mods() {
+	BitField<WindowSystem::WinKeyModifierMask> mask;
+	static unsigned char keyboard_state[256];
+	if (GetKeyboardState((PBYTE)&keyboard_state)) {
+		if ((keyboard_state[VK_LSHIFT] & 0x80) || (keyboard_state[VK_RSHIFT] & 0x80)) {
+			mask.set_flag(WindowSystem::WinKeyModifierMask::SHIFT);
+		}
+		if ((keyboard_state[VK_LCONTROL] & 0x80) || (keyboard_state[VK_RCONTROL] & 0x80)) {
+			mask.set_flag(WindowSystem::WinKeyModifierMask::CTRL);
+		}
+		if ((keyboard_state[VK_LMENU] & 0x80) || (keyboard_state[VK_RMENU] & 0x80)) {
+			mask.set_flag(WindowSystem::WinKeyModifierMask::ALT);
+		}
+		if ((keyboard_state[VK_RMENU] & 0x80)) {
+			mask.set_flag(WindowSystem::WinKeyModifierMask::ALT_GR);
+		}
+		if ((keyboard_state[VK_LWIN] & 0x80) || (keyboard_state[VK_RWIN] & 0x80)) {
+			mask.set_flag(WindowSystem::WinKeyModifierMask::META);
+		}
+	}
+
+	return mask;
+}
+void WindowSystem::on_cursor_pos(int id, double xpos, double ypos) {
+	
+
+}
+
+void WindowSystem::on_cursor_enter(int id, int entered) {
+
+}
+
+void WindowSystem::on_scroll(int id, double xoffset, double yoffset) {}
+
+void WindowSystem::on_drop(int id, int count, const char** paths) {}
+
+void WindowSystem::on_window_size(int id, int width, int height) {}
+
+void WindowSystem::on_window_close(int id) {}
+
+void WindowSystem::on_char(int id, unsigned int codepoint) {}
+
+void WindowSystem::on_char_mods(int id, unsigned int codepoint, int mods) {}
+
+static BitField<MouseButtonMask> _get_button_mask(int button) {
+	BitField<MouseButtonMask> mask;
+	if(button & GLFW_MOUSE_BUTTON_LEFT) {
+		mask.set_flag(MouseButtonMask::LEFT);
+	}
+	if(button & GLFW_MOUSE_BUTTON_RIGHT) {
+		mask.set_flag(MouseButtonMask::RIGHT);
+	}
+	if(button & GLFW_MOUSE_BUTTON_MIDDLE) {
+		mask.set_flag(MouseButtonMask::MIDDLE);
+	}
+	if(button & GLFW_MOUSE_BUTTON_LAST) {
+		mask.set_flag(MouseButtonMask::MB_XBUTTON2);
+	}
+	return mask;
+}
+void WindowSystem::on_mouse_button(int id, int button, int action, int mod)
+{ // 按下鼠标
+// 左上角是(0,0)
+
+	if(m_mouse_mode == MOUSE_MODE_CAPTURED){
+		Ref<InputEventMouseMotion> mm;
+		mm.instantiate();
+		mm->set_window_id(id);
+		mm->set_ctrl_pressed(mod & int32_t(WinKeyModifierMask::CTRL));
+		mm->set_shift_pressed(mod & int32_t(WinKeyModifierMask::SHIFT));
+		mm->set_alt_pressed(mod& int32_t(WinKeyModifierMask::ALT));
+		mm->set_meta_pressed(mod& int32_t(WinKeyModifierMask::META));
+
+		mm->set_pressure(1);
+		mm->set_button_mask(_get_button_mask(button));
+		double x, y;
+		glfwGetCursorPos(m_windows[id].p_window, &x, &y);
+		mm->set_position(Point2(x, y));
+		Input::get_singleton()->parse_input_event(mm);
+		L_PRINT(mm->to_string())
+	}
+	// 无事发生
+}
 
 
 
-} // namespace lain
+}  // namespace lain

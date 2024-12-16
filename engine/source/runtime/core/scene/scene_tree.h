@@ -40,6 +40,8 @@ namespace lain {
 		enum {
 		NOTIFICATION_TRANSFORM_CHANGED = 2000
 	};
+	_FORCE_INLINE_ double get_process_time() const { return process_time; }
+
 	private:
 		uint64_t process_last_pass = 1;
 		struct ProcessGroup {

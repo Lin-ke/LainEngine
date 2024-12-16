@@ -303,16 +303,18 @@ Vector2 Vector3::octahedron_tangent_encode(float p_sign) const {
         @returns The previous length of the vector.
         */
 
-  void normalise() {
-    real_t length = std::hypot(x, y, z);
-    if (length == 0.f)
-      return;
+void Vector3::normalise() {
+	real_t lengthsq = length_squared();
+	if (lengthsq == 0) {
+		x = y = z = 0;
+	} else {
+		real_t length = Math::sqrt(lengthsq);
+		x /= length;
+		y /= length;
+		z /= length;
+	}
+}
 
-    real_t inv_lengh = 1.0f / length;
-    x *= inv_lengh;
-    y *= inv_lengh;
-    z *= inv_lengh;
-  }
   L_INLINE void normalize() { normalise(); }
   Vector3 normalized() const {
     Vector3 v = *this;

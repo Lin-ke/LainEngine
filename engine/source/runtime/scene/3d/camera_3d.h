@@ -158,6 +158,23 @@ class Camera3D : public GObject3D {
 	};
 	void _from_data(void* p_data);
 };
+
+class Camera3DMove : public Camera3D {
+	LCLASS(Camera3DMove, Camera3D);
+	const float MOVE_SPEED = 1.5;
+	const float MOUSE_SENSITIVITY = 0.002;
+	private:
+	Vector3 velocity;
+	Vector3 _rotation;
+	protected:
+	static void _bind_methods();
+	void _notification(int p_what);
+	public:
+	void _set_velocity(const Vector3 &p_velocity){velocity = p_velocity;}
+	Vector3 _get_velocity() const {return velocity;}
+	void _set_rotation(const Vector3 &p_rotation){_rotation = p_rotation;}
+	Vector3 _get_rotation() const {return _rotation;}
+};
 }
 
 #endif

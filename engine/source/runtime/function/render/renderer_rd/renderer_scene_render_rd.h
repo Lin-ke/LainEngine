@@ -9,6 +9,7 @@
 #include "environment/renderer_gi.h"
 #include "effects/copy_effects.h"
 #include "effects/resolve.h"
+#include "effects/tone_mapper.h"
 namespace lain {
 class RendererSceneRenderRD : public RendererSceneRender {
   static RendererSceneRenderRD* singleton;
@@ -25,6 +26,7 @@ protected:
 	RendererRD::GI gi;
 	RendererRD::CopyEffects* copy_effects; 
 	RendererRD::Resolve* resolve_effects;
+	RendererRD::ToneMapper *tone_mapper = nullptr;
  public:
   static RendererSceneRenderRD* get_singleton() { return singleton; }
   virtual RendererRD::ForwardIDStorage *create_forward_id_storage() { return memnew(RendererRD::ForwardIDStorage); };

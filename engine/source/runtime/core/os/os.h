@@ -83,6 +83,7 @@ public:
 	virtual Error GetEntropy(uint8_t *r_buffer, size_t p_bytes) const = 0;
 
 	virtual void SetEnvironment(const String &, const String &) const = 0;
+	virtual String GetEnvironment(const String &) const = 0;
 	String GetSafeDirName(const String &p_dir_name, bool p_allow_paths) const;
 	int GetProcessorCount() const;
 	int GetDefaultThreadPoolSize() const { return GetProcessorCount(); }

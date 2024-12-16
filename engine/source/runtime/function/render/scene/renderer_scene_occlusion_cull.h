@@ -176,7 +176,9 @@ class RendererSceneOcclusionCull {
   virtual void buffer_update(RID p_buffer, const Transform3D& p_cam_transform, const Projection& p_cam_projection, bool p_cam_orthogonal) {}
 	virtual void remove_scenario(RID p_scenario) {}
 	virtual void buffer_set_scenario(RID p_buffer, RID p_scenario) {  }
-  
+	virtual HZBuffer *buffer_get_ptr(RID p_buffer) {
+		return nullptr;
+	}
 	RendererSceneOcclusionCull() {
 		singleton = this;
 	};

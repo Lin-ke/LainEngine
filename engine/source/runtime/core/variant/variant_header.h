@@ -2,7 +2,7 @@
 #define __VARIANT_HEADER_H__
 
 #include "core/math/math_defs.h"
-//#include "core/input/input_enums.h"
+#include "core/input/input_enums.h"
 #include "core/io/ip_address.h"
 #include "core/math/aabb.h"
 #include "core/math/basis.h"
@@ -22,7 +22,7 @@
 #include "core/math/vector4.h"
 #include "core/math/vector4i.h"
 #include "core/object/object_id.h"
-//#include "core/os/keyboard.h"
+#include "core/input/keyboard.h"
 #include "core/scene/object/gobject_path.h"
 #include "core/string/ustring.h"
 #include "core/templates/paged_allocator.h"

@@ -6,6 +6,8 @@
 #include "core/engine/engine.h"
 
 #include "camera_3d_data.h"
+#include "core/input/input_map.h"
+#include "core/input/input.h"
 using namespace lain;
 
 void Camera3D::_update_audio_listener_state() {
@@ -675,4 +677,58 @@ Camera3D::~Camera3D() {
 	// 	ERR_FAIL_NULL(PhysicsServer3D::get_singleton());
 	// 	PhysicsServer3D::get_singleton()->free(pyramid_shape);
 	// }
+}
+
+void lain::Camera3DMove::_bind_methods() {
+	// velocity
+	// ClassDB::bind_method(D_METHOD("_set_velocity", "velocity"), &Camera3DMove::_set_velocity);
+	// ClassDB::bind_method(D_METHOD("_get_velocity"), &Camera3DMove::_get_velocity);
+	// ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "_velocity"), "_set_velocity", "_get_velocity");
+	// // rotation
+	// ClassDB::bind_method(D_METHOD("_set_rotation", "rotation"), &Camera3DMove::_set_rotation);
+	// ClassDB::bind_method(D_METHOD("_get_rotation"), &Camera3DMove::_get_rotation);
+	// ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "_rotation"), "_set_rotation", "_get_rotation");
+}
+
+void lain::Camera3DMove::_notification(int p_what) {
+  switch (p_what) {
+	case NOTIFICATION_READY:{
+	// mouse mode
+		InputMap* input_map = InputMap::get_singleton();
+	input_map->add_action("move_left");
+	input_map->add_action("move_right");
+	input_map->add_action("move_forward");
+	input_map->add_action("move_back");
+	input_map->action_add_event("move_left", InputEventKey::create_reference(Key::A));
+	input_map->action_add_event("move_right", InputEventKey::create_reference(Key::D));
+	input_map->action_add_event("move_forward", InputEventKey::create_reference(Key::W));
+	input_map->action_add_event("move_back", InputEventKey::create_reference(Key::S));
+	set_process(true);
+	} break;
+	case NOTIFICATION_ENTER_TREE:{
+	
+	} break;
+	case NOTIFICATION_PROCESS:
+	{
+		double delta = get_process_delta_time();
+		
+		Vector3 motion = Vector3(0, 0, 0);
+		motion = Vector3(
+			Input::get_singleton()->get_axis("move_left", "move_right"),
+			0,
+			Input::get_singleton()->get_axis("move_forward", "move_back")
+		);
+		motion.normalise();
+		
+		velocity += MOVE_SPEED * delta * (get_transform().basis.xform(motion));
+		velocity *= 0.85;
+		Vector3 postion = get_position();
+		set_position(postion+velocity);
+		L_PRINT(postion)
+	}
+	break;
+	
+	default:
+	break;
+	};
 }

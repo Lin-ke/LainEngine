@@ -298,7 +298,24 @@ MethodBind *ClassDB::get_method(const StringName &p_class, const StringName &p_n
 	return nullptr;
 }
 
+void ClassDB::add_signal(const StringName& p_class, const MethodInfo& p_signal) {
+		OBJTYPE_WLOCK;
 
+	ClassInfo *type = classes.getptr(p_class);
+	ERR_FAIL_NULL(type);
+
+	StringName sname = p_signal.name;
+
+#ifdef DEBUG_METHODS_ENABLED
+	ClassInfo *check = type;
+	while (check) {
+		ERR_FAIL_COND_MSG(check->signal_map.has(sname), "Class '" + String(p_class) + "' already has signal '" + String(sname) + "'.");
+		check = check->inherits_ptr;
+	}
+#endif
+
+	type->signal_map[sname] = p_signal;
+}
 
 void ClassDB::add_property(const StringName& p_class, const PropertyInfo& p_pinfo, const StringName& p_setter, const StringName& p_getter, int p_index) {
   	lock.read_lock();

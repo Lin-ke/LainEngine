@@ -61,6 +61,8 @@ namespace lain{
 	GDREGISTER_VIRTUAL_CLASS(VisualInstance3D);
 	GDREGISTER_CLASS(DirectionalLight3D);
 	GDREGISTER_CLASS(Camera3D);
+	GDREGISTER_CLASS(Camera3DMove);
+
 	GDREGISTER_CLASS(OmniLight3D);
 	GDREGISTER_CLASS(MeshInstance3D);
 

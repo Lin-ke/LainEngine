@@ -660,6 +660,16 @@ class Variant {
 
 	// helper
   L_INLINE bool booleanize() const { return !is_zero(); }
+#define VARIANT_ENUM_CLASS_CONSTRUCTOR(m_enum) \
+	Variant(m_enum p_value) :                  \
+			type(INT) {                        \
+		_data._int = (int64_t)p_value;         \
+	}
+	VARIANT_ENUM_CLASS_CONSTRUCTOR(MouseButton)
+	VARIANT_ENUM_CLASS_CONSTRUCTOR(JoyButton)
+	VARIANT_ENUM_CLASS_CONSTRUCTOR(JoyAxis)
+	VARIANT_ENUM_CLASS_CONSTRUCTOR(Key)
+	VARIANT_ENUM_CLASS_CONSTRUCTOR(KeyLocation)
 
 };
 
@@ -706,9 +716,6 @@ Variant Callable::call(VarArgs... p_args) const {
 	callp(sizeof...(p_args) == 0 ? nullptr : (const Variant **)argptrs, sizeof...(p_args), ret, ce);
 	return ret;
 }
-
-
-
 
 
 };  // namespace lain

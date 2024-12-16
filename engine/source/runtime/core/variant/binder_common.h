@@ -1,10 +1,12 @@
 #ifndef VARIANT_BINDER_COMMON_H
 #define VARIANT_BINDER_COMMON_H
+#include "core/input/input_enums.h"
 #include "core/object/object.h"
 #include "core/typedefs.h"
 #include "core/variant/method_ptrcall.h"
 #include "core/meta/type_info.h"
 #include "variant.h"
+#include "core/input/keyboard.h"
 #include "variant_internal.h"
 
 namespace lain {
@@ -931,9 +933,46 @@ void call_with_variant_args_static_dv(void (*p_method)(P...), const Variant **p_
 	call_with_variant_args_static(p_method, args, r_error, BuildIndexSequence<sizeof...(P)>{});
 }
 
+// Key
 
+VARIANT_ENUM_CAST(Key);
+VARIANT_BITFIELD_CAST(KeyModifierMask);
+VARIANT_ENUM_CAST(KeyLocation);
+
+static inline Key &operator|=(Key &a, BitField<KeyModifierMask> b) {
+	a = static_cast<Key>(static_cast<int>(a) | static_cast<int>(b.operator int64_t()));
+	return a;
+}
+
+static inline Key &operator&=(Key &a, BitField<KeyModifierMask> b) {
+	a = static_cast<Key>(static_cast<int>(a) & static_cast<int>(b.operator int64_t()));
+	return a;
+}
+
+static inline Key operator|(Key a, BitField<KeyModifierMask> b) {
+	return (Key)((int)a | (int)b.operator int64_t());
+}
+
+static inline Key operator&(Key a, BitField<KeyModifierMask> b) {
+	return (Key)((int)a & (int)b.operator int64_t());
+}
+
+static inline Key operator+(BitField<KeyModifierMask> a, Key b) {
+	return (Key)((int)a.operator int64_t() + (int)b);
+}
+
+static inline Key operator|(BitField<KeyModifierMask> a, Key b) {
+	return (Key)((int)a.operator int64_t() | (int)b);
+}
+VARIANT_ENUM_CAST(MouseButton);
+VARIANT_BITFIELD_CAST(MouseButtonMask);
+VARIANT_ENUM_CAST(JoyAxis);
+VARIANT_ENUM_CAST(JoyButton);
 }  // namespace lain
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
+
+
+
 #endif
