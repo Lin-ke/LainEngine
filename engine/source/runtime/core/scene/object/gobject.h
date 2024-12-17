@@ -239,12 +239,18 @@ class GObject : public TickObject {
   void _propagate_after_exit_tree();
   virtual void _propagate_process_owner(TickObject* owner, int, int);
 
+  void _call_input(const Ref<InputEvent> &p_event);
   void _add_component_nocheck(Component*);
 
   /*LocalVector<Component*> & _get_components() const {
             return data.components_cache;
         }*/
   // 排序接口
+  
+	struct Comparator {
+		bool operator()(const GObject *p_a, const GObject *p_b) const { return p_b->is_greater_than(p_a); }
+	};
+
   struct ComparatorByIndex {
     bool operator()(const GObject* p_left, const GObject* p_right) const {
       static const uint32_t order[3] = {1, 0, 2};

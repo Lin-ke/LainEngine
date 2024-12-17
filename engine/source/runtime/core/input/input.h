@@ -17,7 +17,7 @@ class Input : public Object {
 	static Input *singleton;
 
 	static constexpr uint64_t MAX_EVENT = 32;
-
+  friend class WindowSystem;
 public:
 	enum MouseMode {
 		MOUSE_MODE_VISIBLE,

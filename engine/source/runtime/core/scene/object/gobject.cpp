@@ -251,6 +251,13 @@ void GObject::add_component(Component* p_component) {
   ERR_FAIL_COND_MSG(data.components[p_component->get_class_name()] == p_component, vformat("Already have component instance '%d'.", p_component));
   _add_component_nocheck(p_component);
 }
+void GObject::_call_input(const Ref<InputEvent>& p_event)
+{
+  if (!is_inside_tree() || !get_viewport() || get_viewport()->is_input_handled()) {
+		return;
+	}
+	input(p_event);
+}
 void GObject::_add_component_nocheck(Component* p_component) {
   data.components.insert(p_component->get_class_name(), p_component);
   p_component->m_parent = this;
@@ -1310,7 +1317,7 @@ void GObject::_notification(int p_notification) {
       if (data.input) {
 				remove_from_group("_vp_input" + itos(get_viewport()->get_instance_id()));
 			}
-      
+
       // Remove from processing first.
       if (is_any_processing()) {
         _remove_from_process_thread_group();

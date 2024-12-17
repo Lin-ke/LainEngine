@@ -699,11 +699,17 @@ void lain::Camera3DMove::_notification(int p_what) {
 	input_map->add_action("move_right");
 	input_map->add_action("move_forward");
 	input_map->add_action("move_back");
+	input_map->add_action("toggle_mouse_capture");
+
 	input_map->action_add_event("move_left", InputEventKey::create_reference(Key::A));
 	input_map->action_add_event("move_right", InputEventKey::create_reference(Key::D));
 	input_map->action_add_event("move_forward", InputEventKey::create_reference(Key::W));
 	input_map->action_add_event("move_back", InputEventKey::create_reference(Key::S));
+	input_map->action_add_event("toggle_mouse_capture", InputEventKey::create_reference(Key::ESCAPE));
+
+
 	set_process(true);
+	set_process_input(true);
 	} break;
 	case NOTIFICATION_ENTER_TREE:{
 	
@@ -724,11 +730,29 @@ void lain::Camera3DMove::_notification(int p_what) {
 		velocity *= 0.85;
 		Vector3 postion = get_position();
 		set_position(postion+velocity);
-		L_PRINT(postion)
+
 	} 
 	break;
 	
 	default:
 	break;
 	};
+}
+
+void lain::Camera3DMove::input(const Ref<InputEvent>& p_event) {
+	Ref<InputEventMouseMotion> motion = p_event;
+	if(motion.is_valid() && WindowSystem::GetSingleton()->mouse_get_mode() == Input::MouseMode::MOUSE_MODE_CAPTURED ){ 
+		_rotation.y -= motion->get_relative().x * MOUSE_SENSITIVITY;
+		_rotation.x = Math::clamp(_rotation.x - motion->get_relative().y * MOUSE_SENSITIVITY, -Math_PI / 2, Math_PI / 2);
+		Basis bas = Basis::from_euler(_rotation);
+		set_transform({bas, get_transform().origin});
+	}
+	if(Input::get_singleton()->is_action_pressed("toggle_mouse_capture")){
+		if(Input::get_singleton()->get_mouse_mode() == Input::MouseMode::MOUSE_MODE_CAPTURED){
+			Input::get_singleton()->set_mouse_mode(Input::MouseMode::MOUSE_MODE_VISIBLE);
+		} else{
+			Input::get_singleton()->set_mouse_mode(Input::MouseMode::MOUSE_MODE_CAPTURED);
+
+		}
+	}
 }

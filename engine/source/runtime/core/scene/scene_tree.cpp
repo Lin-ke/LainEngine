@@ -3,7 +3,7 @@
 #include "core/scene/object/gobject.h"
 #include "core/scene/packed_scene.h"
 #include "core/thread/worker_thread_pool.h"
-#include "scene/main/viewport.h"
+#include "scene/main/window.h"
 namespace lain {
 SceneTree* SceneTree::singleton = nullptr;
 SceneTree::SceneTree() {
@@ -11,7 +11,7 @@ SceneTree::SceneTree() {
     singleton = this;
   }
   current_scene = nullptr;
-  root = memnew(Viewport);  // 这是个window
+  root = memnew(Window);  // 这是个window
   root->set_name("root");
   root->set_process_mode(TickObject::PROCESS_MODE_ALWAYS);
   if (!root->get_world_3d().is_valid()) {
@@ -44,18 +44,17 @@ SceneTree::Group* SceneTree::add_to_group(const StringName& p_group, GObject* p_
   E->value.changed = true;
   return &E->value;
 }
-void SceneTree::remove_from_group(const StringName &p_group, GObject *p_node) {
-	_THREAD_SAFE_METHOD_
+void SceneTree::remove_from_group(const StringName& p_group, GObject* p_node) {
+  _THREAD_SAFE_METHOD_
 
-	HashMap<StringName, Group>::Iterator E = group_map.find(p_group);
-	ERR_FAIL_COND(!E);
+  HashMap<StringName, Group>::Iterator E = group_map.find(p_group);
+  ERR_FAIL_COND(!E);
 
-	E->value.nodes.erase(p_node);
-	if (E->value.nodes.is_empty()) {
-		group_map.remove(E);
-	}
+  E->value.nodes.erase(p_node);
+  if (E->value.nodes.is_empty()) {
+    group_map.remove(E);
+  }
 }
-
 
 void SceneTree::finalize() {
   if (root) {
@@ -77,7 +76,7 @@ bool SceneTree::process(double p_time) {
   if (MainLoop::process(p_time)) {
     _quit = true;
   }
-  
+
   process_time = p_time;
 
   /*if (multiplayer_poll) {
@@ -426,4 +425,105 @@ void SceneTree::node_removed(GObject* p_node) {
     current_scene = nullptr;
   }
 }
+
+void SceneTree::_update_group_order(Group& g) {
+  if (!g.changed) {
+    return;
+  }
+  if (g.nodes.is_empty()) {
+    return;
+  }
+
+  GObject** gr_nodes = g.nodes.ptrw();
+  int gr_node_count = g.nodes.size();
+
+  SortArray<GObject*, GObject::Comparator> node_sort;
+  node_sort.sort(gr_nodes, gr_node_count);
+
+  g.changed = false;
+}
+
+void SceneTree::_call_input_pause(const StringName& p_group, CallInputType p_call_type, const Ref<InputEvent>& p_input, Viewport* p_vp) {
+  Vector<GObject*> nodes_copy;
+  {
+    _THREAD_SAFE_METHOD_
+
+    HashMap<StringName, Group>::Iterator E = group_map.find(p_group);
+    if (!E) {
+      return;
+    }
+    Group& g = E->value;
+    if (g.nodes.is_empty()) {
+      return;
+    }
+
+    _update_group_order(g);
+
+    //copy, so copy on write happens in case something is removed from process while being called
+    //performance is not lost because only if something is added/removed the vector is copied.
+    nodes_copy = g.nodes;
+  }
+
+  int gr_node_count = nodes_copy.size();
+  GObject** gr_nodes = nodes_copy.ptrw();
+
+  {
+    _THREAD_SAFE_METHOD_
+    nodes_removed_on_group_call_lock++;
+  }
+
+  Vector<ObjectID> no_context_node_ids;
+  for (int i = gr_node_count - 1; i >= 0; i--) {
+    if (p_vp->is_input_handled()) {
+      break;
+    }
+
+    GObject* n = gr_nodes[i];
+    if (nodes_removed_on_group_call.has(n)) {
+      continue;
+    }
+
+    if (!n->can_process()) {
+      continue;
+    }
+
+    switch (p_call_type) {
+      case CALL_INPUT_TYPE_INPUT:
+        n->_call_input(p_input);
+        break;
+      // case CALL_INPUT_TYPE_SHORTCUT_INPUT: {
+      //   const Control* c = Object::cast_to<Control>(n);
+      //   if (c) {
+      //     // If calling shortcut input on a control, ensure it respects the shortcut context.
+      //     // Shortcut context (based on focus) only makes sense for controls (UI), so don't need to worry about it for nodes
+      //     if (c->get_shortcut_context() == nullptr) {
+      //       no_context_node_ids.append(n->get_instance_id());
+      //       continue;
+      //     }
+      //     if (!c->is_focus_owner_in_shortcut_context()) {
+      //       continue;
+      //     }
+      //   }
+      //   n->_call_shortcut_input(p_input);
+      //   break;
+      // }
+      // case CALL_INPUT_TYPE_UNHANDLED_INPUT:
+      //   n->_call_unhandled_input(p_input);
+      //   break;
+      // case CALL_INPUT_TYPE_UNHANDLED_KEY_INPUT:
+      //   n->_call_unhandled_key_input(p_input);
+      //   break;
+    }
+
+  }
+  {
+		_THREAD_SAFE_METHOD_
+		nodes_removed_on_group_call_lock--;
+		if (nodes_removed_on_group_call_lock == 0) {
+			nodes_removed_on_group_call.clear();
+		}
+	}
+
+}
+
 }  // namespace lain

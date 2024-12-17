@@ -3,65 +3,64 @@
 #define __WINDOW_SYSTEM_H__
 
 #define GLFW_EXPOSE_NATIVE_WIN32
-#include "function/render/vulkan/vulkan_header.h"
-#include "core/math/vector2i.h"
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
-#include "window.h"
 #include <array>
 #include <functional>
-#include "core/templates/vector.h"
-#include "core/templates/rb_map.h"
-#include "core/os/thread_safe.h"
-#include "core/math/rect2i.h"
 #include "core/input/input.h"
-namespace lain
-{
-    // @ TODO 把他做成接口和实现的类型
+#include "core/math/rect2i.h"
+#include "core/math/vector2i.h"
+#include "core/os/thread_safe.h"
+#include "core/templates/rb_map.h"
+#include "core/templates/vector.h"
+#include "function/render/vulkan/vulkan_header.h"
+namespace lain {
+// @ TODO 把他做成接口和实现的类型
 
-    struct WindowCreateInfo;
-    // int : window id
-    typedef std::function<void(int)>                   onResetFunc;
-    typedef std::function<void(int, int, int, int, int)> onKeyFunc;
-    typedef std::function<void(int, unsigned int)>       onCharFunc;
-    typedef std::function<void(int, int, unsigned int)>  onCharModsFunc;
-    typedef std::function<void(int, int, int, int)>      onMouseButtonFunc;
-    typedef std::function<void(int, double, double)>     onCursorPosFunc;
-    typedef std::function<void(int, int)>                onCursorEnterFunc;
-    typedef std::function<void(int, double, double)>     onScrollFunc;
-    typedef std::function<void(int, int, const char**)>  onDropFunc;
-    typedef std::function<void(int, int, int)>           onWindowSizeFunc;
-    typedef std::function<void(int)>                   onWindowCloseFunc;
-    struct WindowData {
-        int id = -1;
-        HWND hWnd = nullptr; // do not modify the window by HWND, using GLFW
-        GLFWwindow* p_window = nullptr;
+struct WindowCreateInfo;
+// int : window id
+typedef std::function<void(int)> onResetFunc;
+typedef std::function<void(int, int, int, int, int)> onKeyFunc;
+typedef std::function<void(int, unsigned int)> onCharFunc;
+typedef std::function<void(int, int, unsigned int)> onCharModsFunc;
+typedef std::function<void(int, int, int, int)> onMouseButtonFunc;
+typedef std::function<void(int, double, double)> onCursorPosFunc;
+typedef std::function<void(int, int)> onCursorEnterFunc;
+typedef std::function<void(int, double, double)> onScrollFunc;
+typedef std::function<void(int, int, const char**)> onDropFunc;
+typedef std::function<void(int, int, int)> onWindowSizeFunc;
+typedef std::function<void(int)> onWindowCloseFunc;
+typedef std::function<void(Ref<InputEvent>)> inputEventFunc;
+struct WindowData {
+  int id = -1;
+  HWND hWnd = nullptr;  // do not modify the window by HWND, using GLFW
+  GLFWwindow* p_window = nullptr;
 
-        bool maximized = false;
-        bool minimized = false;
-        bool fullscreen = false;
-        bool multiwindow_fs = false;
-        bool borderless = false;
-        bool resizable = true;
-        bool window_focused = false;
-        bool was_maximized = false;
-        bool always_on_top = false;
-        bool no_focus = false;
-        bool window_has_focus = false;
-        bool exclusive = false;
-        bool context_created = false;
-        bool mpass = false;
-        bool m_is_focus_mode = true;
+  bool maximized = false;
+  bool minimized = false;
+  bool fullscreen = false;
+  bool multiwindow_fs = false;
+  bool borderless = false;
+  bool resizable = true;
+  bool window_focused = false;
+  bool was_maximized = false;
+  bool always_on_top = false;
+  bool no_focus = false;
+  bool window_has_focus = false;
+  bool exclusive = false;
+  bool context_created = false;
+  bool mpass = false;
+  bool m_is_focus_mode = true;
 
-        // Used to transfer data between events using timer.
-        //WPARAM saved_wparam;
-        //LPARAM saved_lparam;
+  // Used to transfer data between events using timer.
+  //WPARAM saved_wparam;
+  //LPARAM saved_lparam;
 
-        // Timers.
-        uint32_t move_timer_id = 0U;
-        uint32_t focus_timer_id = 0U;
+  // Timers.
+  uint32_t move_timer_id = 0U;
+  uint32_t focus_timer_id = 0U;
 
-       /* HANDLE wtctx;
+  /* HANDLE wtctx;
         int min_pressure;
         int max_pressure;
         bool tilt_supported;
@@ -73,360 +72,350 @@ namespace lain
         Vector2 last_tilt;
         bool last_pen_inverted = false;*/
 
-        Size2i min_size;
-        Size2i max_size;
+  Size2i min_size;
+  Size2i max_size;
 
-        Size2i window_rect;
-        Point2i last_pos;
-        int width = 0, height = 0;
+  Size2i window_rect;
+  Point2i last_pos;
+  int width = 0, height = 0;
 
-
-        // IME
-         /*  HIMC im_himc;
+  // IME
+  /*  HIMC im_himc;
         Vector2 im_position;
         bool ime_active = false;
         bool ime_in_progress = false;
         bool ime_suppress_next_keyup = false;
 
         bool layered_window = false;*/
-        Vector<onResetFunc>       m_onResetFunc;
-        Vector < onKeyFunc>        m_onKeyFunc;
-        Vector < onCharFunc>     m_onCharFunc;
-        Vector < onCharModsFunc >   m_onCharModsFunc;
-        Vector < onMouseButtonFunc >m_onMouseButtonFunc;
-        Vector < onCursorPosFunc >  m_onCursorPosFunc;
-        Vector < onCursorEnterFunc> m_onCursorEnterFunc;
-        Vector < onScrollFunc  >    m_onScrollFunc;
-        Vector < onDropFunc   >     m_onDropFunc;
-        Vector < onWindowSizeFunc>  m_onWindowSizeFunc;
-        Vector < onWindowCloseFunc> m_onWindowCloseFunc;
+  // 这段就不太行，没有考虑将事件封装
+  Vector<onResetFunc> m_onResetFunc;
+  Vector<onKeyFunc> m_onKeyFunc;
+  Vector<onCharFunc> m_onCharFunc;
+  Vector<onCharModsFunc> m_onCharModsFunc;
+  Vector<onMouseButtonFunc> m_onMouseButtonFunc;
+  Vector<onCursorPosFunc> m_onCursorPosFunc;
+  Vector<onCursorEnterFunc> m_onCursorEnterFunc;
+  Vector<onScrollFunc> m_onScrollFunc;
+  Vector<onDropFunc> m_onDropFunc;
+  Vector<onWindowSizeFunc> m_onWindowSizeFunc;
+  Vector<onWindowCloseFunc> m_onWindowCloseFunc;
 
-        //WindowID transient_parent = INVALID_WINDOW_ID;
-        //HashSet<WindowID> transient_children;
+  // 这段是godot的
+  inputEventFunc m_input_event_func;
 
-        //bool is_popup = false;
-        //Rect2i parent_safe_rect;
-    };
+  //WindowID transient_parent = INVALID_WINDOW_ID;
+  //HashSet<WindowID> transient_children;
 
+  //bool is_popup = false;
+  //Rect2i parent_safe_rect;
+};
 
+class RenderingContextDriver;
+class RenderingDevice;
+class WindowSystem {
 
-    class RenderingContextDriver;
-    class RenderingDevice;
-    class WindowSystem
-    {
+  _THREAD_SAFE_CLASS_
+  String rendering_driver;
+  RenderingContextDriver* rendering_context = nullptr;
+  RenderingDevice* rendering_device = nullptr;
 
-        _THREAD_SAFE_CLASS_
-        String rendering_driver;
-        RenderingContextDriver* rendering_context = nullptr;
-        RenderingDevice* rendering_device = nullptr;
+ public:
+  typedef int WindowID;
 
-    public:
-        typedef int WindowID;
+  enum VSyncMode { VSYNC_DISABLED, VSYNC_ENABLED, VSYNC_ADAPTIVE, VSYNC_MAILBOX };
 
-        enum VSyncMode {
-            VSYNC_DISABLED,
-            VSYNC_ENABLED,
-            VSYNC_ADAPTIVE,
-            VSYNC_MAILBOX
-        };
+  enum WindowMode {
+    WINDOW_MODE_WINDOWED,
+    WINDOW_MODE_MINIMIZED,
+    WINDOW_MODE_MAXIMIZED,
+    WINDOW_MODE_FULLSCREEN,
+    WINDOW_MODE_EXCLUSIVE_FULLSCREEN,
+  };
 
-        enum WindowMode {
-            WINDOW_MODE_WINDOWED,
-            WINDOW_MODE_MINIMIZED,
-            WINDOW_MODE_MAXIMIZED,
-            WINDOW_MODE_FULLSCREEN,
-            WINDOW_MODE_EXCLUSIVE_FULLSCREEN,
-        };
+  enum {
+    SCREEN_WITH_MOUSE_FOCUS = -4,
+    SCREEN_WITH_KEYBOARD_FOCUS = -3,
+    SCREEN_PRIMARY = -2,
+    SCREEN_OF_MAIN_WINDOW = -1,  // Note: for the main window, determine screen from position.
+  };
 
-        enum {
-            SCREEN_WITH_MOUSE_FOCUS = -4,
-            SCREEN_WITH_KEYBOARD_FOCUS = -3,
-            SCREEN_PRIMARY = -2,
-            SCREEN_OF_MAIN_WINDOW = -1, // Note: for the main window, determine screen from position.
-        };
-    enum MouseMode {
-		MOUSE_MODE_VISIBLE,
-		MOUSE_MODE_HIDDEN,
-		MOUSE_MODE_CAPTURED,
-		MOUSE_MODE_CONFINED,
-		MOUSE_MODE_CONFINED_HIDDEN,
-	};
+  WindowSystem(const String& p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i* p_position, const Vector2i& p_resolution,
+               int p_screen, Error& r_error);
+  ~WindowSystem();
+  L_INLINE static WindowSystem* GetSingleton() { return p_singleton; }
+  void Initialize();
+  void PollEvents() const;
+  bool ShouldClose() const;
+  void window_set_vsync_mode(VSyncMode p_vsync_mode, WindowID p_window);
+  GLFWwindow* getWindow() const {};
+  Size2i window_get_size(WindowSystem::WindowID p_id = MAIN_WINDOW_ID) const;
+  Size2i window_get_position(WindowSystem::WindowID p_id = MAIN_WINDOW_ID) const;
+  bool window_is_focused(WindowSystem::WindowID p_id = MAIN_WINDOW_ID) const;
 
-        WindowSystem(const String& p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i* p_position, const Vector2i& p_resolution, int p_screen, Error& r_error);
-        ~WindowSystem();
-        L_INLINE static WindowSystem* GetSingleton() {
-            return p_singleton;
-        }
-        void               Initialize();
-        void               PollEvents() const;
-        bool               ShouldClose() const;
-        void window_set_vsync_mode(VSyncMode p_vsync_mode, WindowID p_window);
-        GLFWwindow* getWindow() const {};
-        Size2i window_get_size(WindowSystem::WindowID p_id = MAIN_WINDOW_ID) const;
+  Point2i mouse_get_position() const;
+  int get_screen_count() const;
+  Point2i screen_get_position(int p_screen) const;
+  int get_screen_from_rect(const Rect2& p_rect) const;
+  Size2i screen_get_size(int p_screen) const;
+  int get_keyboard_focus_screen() const;
+  int get_primary_screen() const;
+  int window_get_current_screen(WindowID) const;
+  VSyncMode window_get_vsync_mode(WindowID p_window) const;
+  void process_events();
+  struct KeyEvent {
+    WindowID window_id;
+    bool alt, shift, control, meta, altgr;
+    UINT uMsg;
+    WPARAM wParam;
+    LPARAM lParam;
+  };
+  // default call backs
+  void on_window_reset(int id);
+  void on_key(int id, int key, int scancode, int action, int mods);
+  void on_char(int id, unsigned int codepoint);
+  void on_char_mods(int id, unsigned int codepoint, int mods);
+  void on_mouse_button(int id, int button, int action, int mods);
+  void on_cursor_pos(int id, double xpos, double ypos);
+  void on_cursor_enter(int id, int entered);
+  void on_scroll(int id, double xoffset, double yoffset);
+  void on_drop(int id, int count, const char** paths);
+  void on_window_size(int id, int width, int height);
+  void on_window_close(int id);
+  WindowID get_window_at_pos(const Point2i& point) const;
+  void cursor_set_shape(Input::CursorShape p_shape);
+  Input::MouseMode mouse_get_mode() const { return m_mouse_mode; }
+  Rect2i screen_get_usable_rect(int p_screen) const;
+  void mouse_set_mode(Input::MouseMode p_mode);
+  static void _set_mouse(Input::MouseMode p_mode);
+  static Input::MouseMode  _get_mouse();
+ private:
+  Point2i _get_screens_origin() const;
+  int _get_screen_index(int p_screen) const;
+  Input::MouseMode m_mouse_mode = Input::MOUSE_MODE_CAPTURED;
+  WindowID window_mouseover_id = INVALID_WINDOW_ID;  // 记录 鼠标悬停的窗口
+  Input::CursorShape cursor_shape = Input::CURSOR_MAX;
+  HINSTANCE hInstance;      // Holds The Instance Of The Application
+  bool old_invalid = true;  // 记录鼠标上一个位置
+  int old_x, old_y = 0;
+  bool in_dispatch_input_event = false;
+  Point2i center;
 
-        Point2i mouse_get_position() const;
-        int get_screen_count() const;
-        Point2i screen_get_position(int p_screen) const;
-        int get_screen_from_rect(const Rect2& p_rect) const;
-        Size2i screen_get_size(int p_screen) const;
-        int get_keyboard_focus_screen() const;
-        int get_primary_screen() const;
-        int window_get_current_screen(WindowID) const;
-        VSyncMode window_get_vsync_mode(WindowID p_window) const;
-        void process_events();
-    struct KeyEvent {
-		WindowID window_id;
-		bool alt, shift, control, meta, altgr;
-		UINT uMsg;
-		WPARAM wParam;
-		LPARAM lParam;
-	};
-        // default call backs
-        void on_window_reset(int id);
-         void on_key(int id,int key, int scancode, int action, int mods);
-         void on_char(int id,unsigned int codepoint);
-         void on_char_mods(int id,unsigned int codepoint, int mods);
-         void on_mouse_button(int id,int button, int action, int mods);
-         void on_cursor_pos(int id,double xpos, double ypos);
-        void on_cursor_enter(int id,int entered);
-        void on_scroll(int id,double xoffset, double yoffset);
-        void on_drop(int id,int count, const char** paths);
-        void on_window_size(int id,int width, int height);
-        void on_window_close(int id);
-        WindowID get_window_at_pos(const Point2i& point) const;
-        void cursor_set_shape(Input::CursorShape p_shape);
-    private:
-        Point2i _get_screens_origin() const;
-        Rect2i  screen_get_usable_rect(int p_screen) const;
-        int     _get_screen_index(int p_screen) const;
-        MouseMode mouse_get_mode() const { return m_mouse_mode; }
-        void     mouse_set_mode(MouseMode p_mode);
-        MouseMode m_mouse_mode = MOUSE_MODE_CAPTURED;
-        WindowID window_mouseover_id = INVALID_WINDOW_ID; // 记录 鼠标悬停的窗口
-        Input::CursorShape cursor_shape = Input::CURSOR_MAX;
-    	HINSTANCE hInstance; // Holds The Instance Of The Application
+ public:
+  void registerOnResetFunc(onResetFunc func, int wid) {
+    ERR_FAIL_COND(!m_windows.has(wid));
+    m_windows[wid].m_onResetFunc.push_back(func);
+  }
+  void registerOnKeyFunc(onKeyFunc func, int wid) {
+    ERR_FAIL_COND(!m_windows.has(wid));
+    m_windows[wid].m_onKeyFunc.push_back(func);
+  }
+  void registerOnCharFunc(onCharFunc func, int wid) {
+    ERR_FAIL_COND(!m_windows.has(wid));
+    m_windows[wid].m_onCharFunc.push_back(func);
+  }
+  void registerOnCharModsFunc(onCharModsFunc func, int wid) {
+    ERR_FAIL_COND(!m_windows.has(wid));
+    m_windows[wid].m_onCharModsFunc.push_back(func);
+  }
+  void registerOnMouseButtonFunc(onMouseButtonFunc func, int wid) {
+    ERR_FAIL_COND(!m_windows.has(wid));
+    m_windows[wid].m_onMouseButtonFunc.push_back(func);
+  }
+  void registerOnCursorPosFunc(onCursorPosFunc func, int wid) {
+    ERR_FAIL_COND(!m_windows.has(wid));
+    m_windows[wid].m_onCursorPosFunc.push_back(func);
+  }
+  void registerOnCursorEnterFunc(onCursorEnterFunc func, int wid) {
+    ERR_FAIL_COND(!m_windows.has(wid));
+    m_windows[wid].m_onCursorEnterFunc.push_back(func);
+  }
+  void registerOnScrollFunc(onScrollFunc func, int wid) {
+    ERR_FAIL_COND(!m_windows.has(wid));
+    m_windows[wid].m_onScrollFunc.push_back(func);
+  }
+  void registerOnDropFunc(onDropFunc func, int wid) {
+    ERR_FAIL_COND(!m_windows.has(wid));
+    m_windows[wid].m_onDropFunc.push_back(func);
+  }
+  void registerOnWindowSizeFunc(onWindowSizeFunc func, int wid) {
+    ERR_FAIL_COND(!m_windows.has(wid));
+    m_windows[wid].m_onWindowSizeFunc.push_back(func);
+  }
+  void registerOnWindowCloseFunc(onWindowCloseFunc func, int wid) {
+    ERR_FAIL_COND(!m_windows.has(wid));
+    m_windows[wid].m_onWindowCloseFunc.push_back(func);
+  }
+  void registerInputEventCallback(inputEventFunc func, int wid) {
+    ERR_FAIL_COND(!m_windows.has(wid));
+    m_windows[wid].m_input_event_func = func;
+  }
 
-    public:
-        void registerOnResetFunc(onResetFunc func, int wid) {
-            ERR_FAIL_COND(!m_windows.has(wid));
-            m_windows[wid].m_onResetFunc.push_back(func);
-        }
-        void registerOnKeyFunc(onKeyFunc func, int wid) {
-            ERR_FAIL_COND(!m_windows.has(wid));
-            m_windows[wid].m_onKeyFunc.push_back(func);
-        }
-        void registerOnCharFunc(onCharFunc func, int wid) {
-            ERR_FAIL_COND(!m_windows.has(wid));
-            m_windows[wid].m_onCharFunc.push_back(func);
-        }
-        void registerOnCharModsFunc(onCharModsFunc func, int wid) {
-            ERR_FAIL_COND(!m_windows.has(wid));
-            m_windows[wid].m_onCharModsFunc.push_back(func);
-        }
-        void registerOnMouseButtonFunc(onMouseButtonFunc func, int wid) {
-            ERR_FAIL_COND(!m_windows.has(wid));
-            m_windows[wid].m_onMouseButtonFunc.push_back(func);
-        }
-        void registerOnCursorPosFunc(onCursorPosFunc func, int wid) {
-            ERR_FAIL_COND(!m_windows.has(wid));
-            m_windows[wid].m_onCursorPosFunc.push_back(func);
-        }
-        void registerOnCursorEnterFunc(onCursorEnterFunc func, int wid) {
-            ERR_FAIL_COND(!m_windows.has(wid));
-            m_windows[wid].m_onCursorEnterFunc.push_back(func);
-        }
-        void registerOnScrollFunc(onScrollFunc func, int wid) {
-            ERR_FAIL_COND(!m_windows.has(wid));
-            m_windows[wid].m_onScrollFunc.push_back(func);
-        }
-        void registerOnDropFunc(onDropFunc func, int wid) {
-            ERR_FAIL_COND(!m_windows.has(wid));
-            m_windows[wid].m_onDropFunc.push_back(func);
-        }
-        void registerOnWindowSizeFunc(onWindowSizeFunc func, int wid) {
-            ERR_FAIL_COND(!m_windows.has(wid));
-            m_windows[wid].m_onWindowSizeFunc.push_back(func);
-        }
-        void registerOnWindowCloseFunc(onWindowCloseFunc func, int wid) {
-            ERR_FAIL_COND(!m_windows.has(wid));
-            m_windows[wid].m_onWindowCloseFunc.push_back(func);
-        }
-        WindowID NewWindow(const WindowCreateInfo* create_info);
+  WindowID NewWindow(const WindowCreateInfo* create_info);
 
-        bool isMouseButtonDown(int button, int wid = MAIN_WINDOW_ID) const
-        {
-            ERR_FAIL_COND(!m_windows.has(wid));
-            if (button < GLFW_MOUSE_BUTTON_1 || button > GLFW_MOUSE_BUTTON_LAST)
-            {
-                return false;
-            }
-            return glfwGetMouseButton(m_windows[wid].p_window, button) == GLFW_PRESS;
-        }
-        bool getFocusMode(int wid) const {
-            ERR_FAIL_COND(!m_windows.has(wid));
-            return m_windows[wid].m_is_focus_mode;
-        }
-        void setFocusMode(bool mode) {};
+  bool isMouseButtonDown(int button, int wid = MAIN_WINDOW_ID) const {
+    ERR_FAIL_COND(!m_windows.has(wid));
+    if (button < GLFW_MOUSE_BUTTON_1 || button > GLFW_MOUSE_BUTTON_LAST) {
+      return false;
+    }
+    return glfwGetMouseButton(m_windows[wid].p_window, button) == GLFW_PRESS;
+  }
+  bool getFocusMode(int wid) const {
+    ERR_FAIL_COND(!m_windows.has(wid));
+    return m_windows[wid].m_is_focus_mode;
+  }
+  void setFocusMode(bool mode) {};
 
-        WindowID GetWindowAtPos(const Point2i& point) const;
+  WindowID GetWindowAtPos(const Point2i& point) const;
 
-        bool CanAnyWindowDraw() {
-            for (const KeyValue<WindowID, WindowData>& E : m_windows) {
-                if (!E.value.minimized) {
-                    return true;
-                }
-            }
-            return false;
-        }
+  bool CanAnyWindowDraw() {
+    for (const KeyValue<WindowID, WindowData>& E : m_windows) {
+      if (!E.value.minimized) {
+        return true;
+      }
+    }
+    return false;
+  }
 
-        void SwapBuffers() {
-            for (const KeyValue<WindowID, WindowData>& E : m_windows) {
-                auto p_window = E.value.p_window;
-                glfwMakeContextCurrent(p_window);
-                // do the rendering
-                // 这样设计合理吗？
-                glfwSwapBuffers(p_window);
+  void SwapBuffers() {
+    for (const KeyValue<WindowID, WindowData>& E : m_windows) {
+      auto p_window = E.value.p_window;
+      glfwMakeContextCurrent(p_window);
+      // do the rendering
+      // 这样设计合理吗？
+      glfwSwapBuffers(p_window);
+    }
+  }
 
-            }
-        }
+  // window event callbacks
+  // 这些glfw绑定keycallback，然后发生这一事件后调用在vector里的callback。
+  // TODO：满足多窗口
+  // 需要static来绑定。
+  static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
+    if (app) {
+      for (auto& func : app->m_onKeyFunc) {
+        func(app->id, key, scancode, action, mods);
+      }
+    }
+  }
+  static void charCallback(GLFWwindow* window, unsigned int codepoint) {
+    WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
+    if (app) {
+      for (auto& func : app->m_onCharFunc) {
+        func(app->id, codepoint);
+      }
+    }
+  }
+  static void charModsCallback(GLFWwindow* window, unsigned int codepoint, int mods) {
+    WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
+    if (app) {
+      for (auto& func : app->m_onCharModsFunc) {
+        func(app->id, codepoint, mods);
+      }
+    }
+  }
+  static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
+    if (app) {
+      for (auto& func : app->m_onMouseButtonFunc) {
+        func(app->id, button, action, mods);
+      }
+    }
+  }
+  static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
+    WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
+    if (app) {
+      for (auto& func : app->m_onCursorPosFunc) {
+        func(app->id, xpos, ypos);
+      }
+    }
+  }
+  static void cursorEnterCallback(GLFWwindow* window, int entered) {
+    WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
+    if (app) {
+      for (auto& func : app->m_onCursorEnterFunc) {
+        func(app->id, entered);
+      }
+    }
+  }
+  static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
+    WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
+    if (app) {
+      for (auto& func : app->m_onScrollFunc) {
+        func(app->id, xoffset, yoffset);
+      }
+    }
+  }
+  static void dropCallback(GLFWwindow* window, int count, const char** paths) {
+    WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
+    if (app) {
+      for (auto& func : app->m_onDropFunc) {
+        func(app->id, count, paths);
+      }
+    }
+  }
+  static void windowSizeCallback(GLFWwindow* window, int width, int height) {
+    WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
+    if (app) {
+      app->width = width;
+      app->height = height;
+      for (auto& func : app->m_onWindowSizeFunc) {
+        func(app->id, width, height);
+      }
+    }
+  }
+  static void windowCloseCallback(GLFWwindow* window) {
+    glfwSetWindowShouldClose(window, true);
+    WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
+    if (app) {
+      for (auto& func : app->m_onWindowCloseFunc) {
+        func(app->id);
+      }
+    }
+    //L_PRINT("close callback called", window);
+  }
 
+  static void windowIconifyCallback(GLFWwindow* window, int flag) {
 
-        // window event callbacks
-        // 这些glfw绑定keycallback，然后发生这一事件后调用在vector里的callback。
-        // TODO：满足多窗口
-        // 需要static来绑定。
-        static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-        {
-            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
-            if (app)
-            {
-                for (auto& func : app->m_onKeyFunc) {
-                    func(app->id, key, scancode, action, mods);
-                }
+    WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
+    if (app) {
+      if (flag)  // GL_TRUE, iconified
+        app->minimized = true;
+      else {
+        app->minimized = false;
+      }
+    }
+  }
+  Vector<int> get_window_list() const;
+  void _dispatch_input_event(const Ref<InputEvent>& p_event);
+  static void _dispatch_input_events(const Ref<InputEvent>& p_event); 
+ 
 
-            }
-        }
-        static void charCallback(GLFWwindow* window, unsigned int codepoint)
-        {
-            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
-            if (app)
-            {
-                for (auto& func : app->m_onCharFunc) { func(app->id,codepoint); }
-            }
-        }
-        static void charModsCallback(GLFWwindow* window, unsigned int codepoint, int mods)
-        {
-            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
-            if (app)
-            {
-                for (auto& func : app->m_onCharModsFunc) { func(app->id,codepoint, mods); }
-            }
-        }
-        static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
-        {
-            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
-            if (app)
-            {
-                for (auto& func : app->m_onMouseButtonFunc) { func(app->id,button, action, mods); }
-            }
-        }
-        static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
-        {
-            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
-            if (app)
-            {
-                for (auto& func : app->m_onCursorPosFunc) { func(app->id,xpos, ypos); }
-            }
-        }
-        static void cursorEnterCallback(GLFWwindow* window, int entered)
-        {
-            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
-            if (app)
-            {
-                for (auto& func : app->m_onCursorEnterFunc) { func(app->id,entered); }
-            }
-        }
-        static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
-        {
-            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
-            if (app)
-            {
-                for (auto& func : app->m_onScrollFunc) { func(app->id,xoffset, yoffset); }
-            }
-        }
-        static void dropCallback(GLFWwindow* window, int count, const char** paths)
-        {
-            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
-            if (app)
-            {
-                for (auto& func : app->m_onDropFunc) { func(app->id,count, paths); }
-            }
-        }
-        static void windowSizeCallback(GLFWwindow* window, int width, int height)
-        {
-            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
-            if (app)
-            {
-                app->width = width;
-                app->height =height ;
-                for (auto& func : app->m_onWindowSizeFunc) { func(app->id,width, height); }
-            }
+ private:
+  RBMap<int, WindowData> m_windows;
+  static WindowSystem* p_singleton;
+  static int m_windowid;  // windows_counter
+ public:
+  enum class WinKeyModifierMask {
+    ALT_GR = (1 << 1),
+    SHIFT = (1 << 2),
+    ALT = (1 << 3),
+    META = (1 << 4),
+    CTRL = (1 << 5),
+  };
+  enum { MAIN_WINDOW_ID = 0, INVALID_WINDOW_ID = -1 };
+};
 
-        }
-        static void windowCloseCallback(GLFWwindow* window) {
-            glfwSetWindowShouldClose(window, true);
-            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
-            if (app)
-            {
-                for (auto& func : app->m_onWindowCloseFunc) { func(app->id); }
-            }
-            //L_PRINT("close callback called", window);
-        }
+struct WindowCreateInfo {
+  Rect2i rect{{0, 0}, {720, 640}};
+  String title{"Window"};
+  WindowSystem::WindowMode mode = WindowSystem::WindowMode::WINDOW_MODE_WINDOWED;
+  WindowSystem::VSyncMode vsync = WindowSystem::VSyncMode::VSYNC_ADAPTIVE;
+  uint32_t flags = 0;  // flags: 在哪个屏幕；是否全屏
 
-        static void windowIconifyCallback(GLFWwindow* window,int flag) {
-            
-            WindowData* app = (WindowData*)glfwGetWindowUserPointer(window);
-            if (app) {
-                if (flag) // GL_TRUE, iconified
-                    app->minimized = true;
-                else{ app->minimized = false; }
-            }
-        }
-        Vector<int> get_window_list() const;
-       
-    private:
-        RBMap<int, WindowData> m_windows;
-        static WindowSystem* p_singleton;
-        static int m_windowid; // windows_counter
-    public:
-        enum class WinKeyModifierMask {
-            ALT_GR = (1 << 1),
-            SHIFT = (1 << 2),
-            ALT = (1 << 3),
-            META = (1 << 4),
-            CTRL = (1 << 5),
-        };
-        enum {
-            MAIN_WINDOW_ID = 0,
-            INVALID_WINDOW_ID = -1
-        };
+  WindowCreateInfo() {}
+};
 
-    };
-
-
-    struct WindowCreateInfo
-    {
-        Rect2i      rect{ {0,0}, {720,640} };
-        String      title{ "Window" };
-        WindowSystem::WindowMode mode  = WindowSystem::WindowMode::WINDOW_MODE_WINDOWED;
-        WindowSystem::VSyncMode  vsync = WindowSystem::VSyncMode::VSYNC_ADAPTIVE;
-        uint32_t    flags = 0; // flags: 在哪个屏幕；是否全屏
-
-        WindowCreateInfo() {}
-    };
-
-
-
-} // namespace lain
+}  // namespace lain
 
 #endif

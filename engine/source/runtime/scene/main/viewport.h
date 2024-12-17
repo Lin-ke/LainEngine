@@ -209,6 +209,8 @@ class Viewport : public GObject {
   // 该视口下的节点的input
 	StringName input_group;
 	Ref<InputEvent> _make_input_local(const Ref<InputEvent> &ev);
+	bool handle_input_locally = true;
+	bool local_input_handled = false;
 
  protected:
   void _set_size(const Size2i& p_size, const Size2i& p_size_2d_override, bool p_allocated);
@@ -229,6 +231,8 @@ class Viewport : public GObject {
   void set_positional_shadow_atlas_size(int p_size);
   Transform2D get_final_transform() const;
   void push_input(const Ref<InputEvent> &p_event, bool p_local_coords = false);
+  bool is_input_handled() const;
+
 };
 }  // namespace lain
 #endif

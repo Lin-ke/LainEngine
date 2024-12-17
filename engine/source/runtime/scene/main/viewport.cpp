@@ -124,7 +124,43 @@ void lain::Viewport::push_input(const Ref<InputEvent>& p_event, bool p_local_coo
   ERR_MAIN_THREAD_GUARD;
 	ERR_FAIL_COND(!is_inside_tree());
 	ERR_FAIL_COND(p_event.is_null());
-  
+  // handle local 
+  {
+
+  }
+	Ref<InputEvent> ev;
+  ev = p_event;
+
+
+	Ref<InputEventMouse> me = ev;
+
+  if (!is_input_handled()) {
+		ERR_FAIL_COND(!is_inside_tree());
+		get_tree()->_call_input_pause(input_group, SceneTree::CALL_INPUT_TYPE_INPUT, ev, this); //not a bug, must happen before GUI, order is _input -> gui input -> _unhandled input
+	}
+  // gui call
+}
+
+bool lain::Viewport::is_input_handled() const
+{
+ERR_READ_THREAD_GUARD_V(false);
+	if (!handle_input_locally) {
+		ERR_FAIL_COND_V(!is_inside_tree(), false);
+		const Viewport *vp = this;
+		while (true) {
+			// if (Object::cast_to<Window>(vp)) {
+			// 	break;
+			// }
+			if (!vp->get_parent()) {
+				break;
+			}
+			vp = vp->get_parent()->get_viewport();
+		}
+		if (vp != this) {
+			return vp->is_input_handled();
+		}
+	}
+	return local_input_handled;
 }
 
 void Viewport::_notification(int p_what) {

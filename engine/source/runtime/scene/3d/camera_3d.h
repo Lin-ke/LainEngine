@@ -174,6 +174,7 @@ class Camera3DMove : public Camera3D {
 	Vector3 _get_velocity() const {return velocity;}
 	void _set_rotation(const Vector3 &p_rotation){_rotation = p_rotation;}
 	Vector3 _get_rotation() const {return _rotation;}
+	virtual void input(const Ref<InputEvent> &p_event) override;
 };
 }
 

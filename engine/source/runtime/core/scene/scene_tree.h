@@ -6,6 +6,7 @@
 #include "core/templates/local_vector.h"
 #include "core/templates/hash_set.h"
 #include "core/templates/self_list.h"
+#include "core/input/input_event.h"
 namespace lain {
 	// 需要一个main viewport
 	// viewport只保存渲染信息
@@ -104,6 +105,14 @@ namespace lain {
 		/// signal method
 		void node_removed(GObject* node);
 
+	enum CallInputType {
+		CALL_INPUT_TYPE_INPUT,
+		CALL_INPUT_TYPE_SHORTCUT_INPUT,
+		CALL_INPUT_TYPE_UNHANDLED_INPUT,
+		CALL_INPUT_TYPE_UNHANDLED_KEY_INPUT,
+	};
+		void _call_input_pause(const StringName& p_group, CallInputType p_call_type, const Ref<InputEvent>& p_input, Viewport* p_vp);
+		void _update_group_order(Group& g);
 		// state
 		bool is_paused() const { return paused; }
 	};
