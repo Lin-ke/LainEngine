@@ -58,7 +58,7 @@ static int _mouse_mode_to_glfw(WindowSystem::MouseMode p_mode){
 	case WindowSystem::MOUSE_MODE_HIDDEN:
 		return GLFW_CURSOR_HIDDEN;
 	case WindowSystem::MOUSE_MODE_CAPTURED:
-		return GLFW_RAW_MOUSE_MOTION;
+		return GLFW_CURSOR_DISABLED;
 	case WindowSystem::MOUSE_MODE_CONFINED:
 		return GLFW_CURSOR_DISABLED;
 	case WindowSystem::MOUSE_MODE_CONFINED_HIDDEN:	
