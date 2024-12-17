@@ -96,6 +96,7 @@ namespace lain {
 		void tree_changed() {}
 		L_INLINE Viewport* get_root() const { return root; }
 		Group* add_to_group(const StringName&, GObject*);
+		void remove_from_group(const StringName& p_name, GObject* p_obj);
 		virtual bool process(double p_time) override;
 		L_INLINE int get_node_count() {
 			return nodes_in_tree_count;

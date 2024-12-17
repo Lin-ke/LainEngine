@@ -676,14 +676,7 @@ void WindowSystem::on_cursor_pos(int id, double xpos, double ypos) {
 	mm->set_shift_pressed(mods.has_flag(WinKeyModifierMask::SHIFT));
 	mm->set_alt_pressed(mods.has_flag(WinKeyModifierMask::ALT));
 	mm->set_meta_pressed(mods.has_flag(WinKeyModifierMask::META));
-	const BitField<WinKeyModifierMask> &mods = _get_mods();
-	Ref<InputEventMouseMotion> mm;
-	mm.instantiate();
-	mm->set_window_id(receiving_window_id);
-	mm->set_ctrl_pressed(mods.has_flag(WinKeyModifierMask::CTRL));
-	mm->set_shift_pressed(mods.has_flag(WinKeyModifierMask::SHIFT));
-	mm->set_alt_pressed(mods.has_flag(WinKeyModifierMask::ALT));
-	mm->set_meta_pressed(mods.has_flag(WinKeyModifierMask::META));
+	
 	mm->set_button_mask(mouse_get_button_state());
 	mm->set_position(Point2(xpos, ypos));
 	mm->set_global_position(Point2(xpos, ypos));
