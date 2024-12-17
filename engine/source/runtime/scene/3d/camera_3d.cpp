@@ -725,7 +725,7 @@ void lain::Camera3DMove::_notification(int p_what) {
 		Vector3 postion = get_position();
 		set_position(postion+velocity);
 		L_PRINT(postion)
-	}
+	} 
 	break;
 	
 	default:

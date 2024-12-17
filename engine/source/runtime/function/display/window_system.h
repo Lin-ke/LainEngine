@@ -14,6 +14,7 @@
 #include "core/templates/rb_map.h"
 #include "core/os/thread_safe.h"
 #include "core/math/rect2i.h"
+#include "core/input/input.h"
 namespace lain
 {
     // @ TODO 把他做成接口和实现的类型
@@ -192,6 +193,8 @@ namespace lain
         void on_drop(int id,int count, const char** paths);
         void on_window_size(int id,int width, int height);
         void on_window_close(int id);
+        WindowID get_window_at_pos(const Point2i& point) const;
+        void cursor_set_shape(Input::CursorShape p_shape);
     private:
         Point2i _get_screens_origin() const;
         Rect2i  screen_get_usable_rect(int p_screen) const;
@@ -199,6 +202,10 @@ namespace lain
         MouseMode mouse_get_mode() const { return m_mouse_mode; }
         void     mouse_set_mode(MouseMode p_mode);
         MouseMode m_mouse_mode = MOUSE_MODE_CAPTURED;
+        WindowID window_mouseover_id = INVALID_WINDOW_ID; // 记录 鼠标悬停的窗口
+        Input::CursorShape cursor_shape = Input::CURSOR_MAX;
+    	HINSTANCE hInstance; // Holds The Instance Of The Application
+
     public:
         void registerOnResetFunc(onResetFunc func, int wid) {
             ERR_FAIL_COND(!m_windows.has(wid));

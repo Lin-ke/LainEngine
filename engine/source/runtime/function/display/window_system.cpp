@@ -58,7 +58,7 @@ static int _mouse_mode_to_glfw(WindowSystem::MouseMode p_mode){
 	case WindowSystem::MOUSE_MODE_HIDDEN:
 		return GLFW_CURSOR_HIDDEN;
 	case WindowSystem::MOUSE_MODE_CAPTURED:
-		return GLFW_CURSOR_DISABLED;
+		return GLFW_RAW_MOUSE_MOTION;
 	case WindowSystem::MOUSE_MODE_CONFINED:
 		return GLFW_CURSOR_DISABLED;
 	case WindowSystem::MOUSE_MODE_CONFINED_HIDDEN:	
@@ -174,7 +174,7 @@ WindowSystem::WindowID WindowSystem::NewWindow(const WindowCreateInfo *create_in
 #ifdef VULKAN_ENABLED
 			if (rendering_driver == "vulkan") {
 				wpd.vulkan.window = wd.hWnd;
-				//wpd.vulkan.instance = GetModuleHandleA(NULL);
+				wpd.vulkan.instance = GetModuleHandleA(NULL);
 			}
 #endif
 #ifdef D3D12_ENABLED
@@ -315,7 +315,7 @@ Vector<int> WindowSystem::get_window_list() const {
 WindowSystem::WindowSystem(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Error &r_error) {
 	p_singleton = this;
 	KeyMappingWindows::initialize();
-
+	hInstance = GetModuleHandle(NULL);
 
 	rendering_driver = p_rendering_driver;
 	// 这个define应该在premake那里
@@ -626,8 +626,71 @@ static BitField<WindowSystem::WinKeyModifierMask> _get_mods() {
 
 	return mask;
 }
+
+static BitField<MouseButtonMask> mouse_get_button_state() {
+	BitField<MouseButtonMask> last_button_state = 0;
+
+	if (GetKeyState(VK_LBUTTON) & (1 << 15)) {
+		last_button_state.set_flag(MouseButtonMask::LEFT);
+	}
+	if (GetKeyState(VK_RBUTTON) & (1 << 15)) {
+		last_button_state.set_flag(MouseButtonMask::RIGHT);
+	}
+	if (GetKeyState(VK_MBUTTON) & (1 << 15)) {
+		last_button_state.set_flag(MouseButtonMask::MIDDLE);
+	}
+	if (GetKeyState(VK_XBUTTON1) & (1 << 15)) {
+		last_button_state.set_flag(MouseButtonMask::MB_XBUTTON1);
+	}
+	if (GetKeyState(VK_XBUTTON2) & (1 << 15)) {
+		last_button_state.set_flag(MouseButtonMask::MB_XBUTTON2);
+	}
+
+	return last_button_state;
+}
+
+
 void WindowSystem::on_cursor_pos(int id, double xpos, double ypos) {
-	
+	WindowID over_id = get_window_at_pos(mouse_get_position());
+	if(window_mouseover_id != over_id)
+	{	// mouse enter
+				Input::CursorShape c = cursor_shape;
+				cursor_shape = Input::CURSOR_ARROW;
+				cursor_set_shape(c);
+				window_mouseover_id = over_id;
+
+				// Once-off notification, must call again.
+				// track_mouse_leave_event(hWnd);
+	}	
+	if(m_mouse_mode == MOUSE_MODE_CAPTURED){
+		return ;
+	}
+	const BitField<WinKeyModifierMask> &mods = _get_mods();
+	// receiving_window_id 应该是最近一个被focus的窗口
+	// 但是这里没有实现 @todo
+	WindowID receiving_window_id = id;
+	Ref<InputEventMouseMotion> mm;
+	mm.instantiate();
+	mm->set_window_id(receiving_window_id);
+	mm->set_ctrl_pressed(mods.has_flag(WinKeyModifierMask::CTRL));
+	mm->set_shift_pressed(mods.has_flag(WinKeyModifierMask::SHIFT));
+	mm->set_alt_pressed(mods.has_flag(WinKeyModifierMask::ALT));
+	mm->set_meta_pressed(mods.has_flag(WinKeyModifierMask::META));
+	const BitField<WinKeyModifierMask> &mods = _get_mods();
+	Ref<InputEventMouseMotion> mm;
+	mm.instantiate();
+	mm->set_window_id(receiving_window_id);
+	mm->set_ctrl_pressed(mods.has_flag(WinKeyModifierMask::CTRL));
+	mm->set_shift_pressed(mods.has_flag(WinKeyModifierMask::SHIFT));
+	mm->set_alt_pressed(mods.has_flag(WinKeyModifierMask::ALT));
+	mm->set_meta_pressed(mods.has_flag(WinKeyModifierMask::META));
+	mm->set_button_mask(mouse_get_button_state());
+	mm->set_position(Point2(xpos, ypos));
+	mm->set_global_position(Point2(xpos, ypos));
+	// 如果是hidden模式，glfw做了管理
+
+	mm->set_velocity(Input::get_singleton()->get_last_mouse_velocity());
+	mm->set_screen_velocity(mm->get_velocity());
 
 }
 
@@ -642,6 +705,62 @@ void WindowSystem::on_drop(int id, int count, const char** paths) {}
 void WindowSystem::on_window_size(int id, int width, int height) {}
 
 void WindowSystem::on_window_close(int id) {}
+
+WindowSystem::WindowID WindowSystem::get_window_at_pos(const Point2i& p_position) const {
+	Point2i offset = _get_screens_origin();
+	POINT p;
+	p.x = p_position.x + offset.x;
+	p.y = p_position.y + offset.y;
+	HWND hwnd = WindowFromPoint(p);
+	for (const KeyValue<WindowID, WindowData> &E : m_windows) {
+		if (E.value.hWnd == hwnd) {
+			return E.key;
+		}
+	}
+
+	return INVALID_WINDOW_ID;
+}
+
+void WindowSystem::cursor_set_shape(Input::CursorShape p_shape)
+{
+		_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_INDEX(p_shape, Input::CURSOR_MAX);
+
+	if (cursor_shape == p_shape) {
+		return;
+	}
+
+	if (m_mouse_mode != MOUSE_MODE_VISIBLE && m_mouse_mode != MOUSE_MODE_CONFINED) {
+		cursor_shape = p_shape;
+		return;
+	}
+
+	static const LPCTSTR win_cursors[Input::CURSOR_MAX] = {
+		IDC_ARROW,
+		IDC_IBEAM,
+		IDC_HAND, // Finger.
+		IDC_CROSS,
+		IDC_WAIT,
+		IDC_APPSTARTING,
+		IDC_SIZEALL,
+		IDC_ARROW,
+		IDC_NO,
+		IDC_SIZENS,
+		IDC_SIZEWE,
+		IDC_SIZENESW,
+		IDC_SIZENWSE,
+		IDC_SIZEALL,
+		IDC_SIZENS,
+		IDC_SIZEWE,
+		IDC_HELP
+	};
+
+
+	SetCursor(LoadCursor(hInstance, win_cursors[p_shape]));
+
+	cursor_shape = p_shape;
+}
 
 void WindowSystem::on_char(int id, unsigned int codepoint) {}
 

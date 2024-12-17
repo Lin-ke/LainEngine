@@ -91,6 +91,42 @@ void lain::Viewport::_propagate_enter_world_3d(GObject* p_node) {
   }
 }
 
+void lain::Viewport::_propagate_exit_world_3d(GObject* p_node) {
+  	if (p_node != this) {
+		if (!p_node->is_inside_tree()) { //may have exited scene already
+			return;
+		}
+
+		if (Object::cast_to<GObject3D>(p_node) || Object::cast_to<WorldEnvironment>(p_node)) {
+			p_node->notification(GObject3D::NOTIFICATION_EXIT_WORLD);
+		} else {
+			Viewport *v = Object::cast_to<Viewport>(p_node);
+			if (v) {
+				if (v->world_3d.is_valid() || v->own_world_3d.is_valid()) {
+					return;
+				}
+			}
+		}
+	}
+
+	for (int i = 0; i < p_node->get_child_count(); i++) {
+		_propagate_exit_world_3d(p_node->get_child(i));
+	}
+}
+
+Transform2D lain::Viewport::get_final_transform() const
+{
+ERR_READ_THREAD_GUARD_V(Transform2D());
+	return stretch_transform * global_canvas_transform;
+}
+
+void lain::Viewport::push_input(const Ref<InputEvent>& p_event, bool p_local_coords) {
+  ERR_MAIN_THREAD_GUARD;
+	ERR_FAIL_COND(!is_inside_tree());
+	ERR_FAIL_COND(p_event.is_null());
+  
+}
+
 void Viewport::_notification(int p_what) {
   ERR_MAIN_THREAD_GUARD;
   switch (p_what) {
@@ -148,6 +184,10 @@ Viewport::Viewport() {
 	RS::get_singleton()->viewport_attach_to_screen(get_viewport_rid(), attach_to_screen_rect, WindowSystem::MAIN_WINDOW_ID);
 	// sub viewport
 	RS::get_singleton()->viewport_set_size(get_viewport_rid(), WindowSystem::GetSingleton()->window_get_size().width(), WindowSystem::GetSingleton()->window_get_size().height());
+
+  String id = itos(get_instance_id());
+	input_group = "_vp_input" + id;
+
 }
 
 Ref<World3D> Viewport::get_world_3d() const {
@@ -162,7 +202,7 @@ void Viewport::set_world_3d(const Ref<World3D>& p_world_3d) {
   }
 
   if (is_inside_tree()) {
-    // _propagate_exit_world_3d(this);
+    _propagate_exit_world_3d(this);
   }
 
   if (own_world_3d.is_valid() && world_3d.is_valid()) {
@@ -402,4 +442,21 @@ void Viewport::set_positional_shadow_atlas_size(int p_size) {
 	ERR_MAIN_THREAD_GUARD;
 	positional_shadow_atlas_size = p_size;
 	// RS::get_singleton()->viewport_set_positional_shadow_atlas_size(viewport, p_size, positional_shadow_atlas_16_bits);
+}
+
+
+Ref<InputEvent> Viewport::_make_input_local(const Ref<InputEvent> &ev) {
+	if (ev.is_null()) {
+		return ev; // No transformation defined for null event
+	}
+
+	Transform2D ai = get_final_transform().affine_inverse();
+	Ref<InputEventMouse> me = ev;
+	if (me.is_valid()) {
+		me = me->xformed_by(ai);
+		// For InputEventMouse, the global position is not adjusted by ev->xformed_by() and needs to be set separately.
+		me->set_global_position(me->get_position());
+		return me;
+	}
+	return ev->xformed_by(ai);
 }

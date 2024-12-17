@@ -8,6 +8,7 @@
 #include "core/scene/tick_object.h"
 #include "core/templates/local_vector.h"
 #include "gobject_path.h"
+#include "core/input/input.h"
 namespace lain {
 class Component;
 class Viewport;
@@ -167,6 +168,8 @@ class GObject : public TickObject {
   L_INLINE bool is_ready() const { return !data.ready_first; }
   GObjectPath get_path_to(const GObject*, bool use_unique_path = false) const;
   void add_to_group(const StringName&, bool p_persistent = false);
+	void remove_from_group(const StringName &p_identifier);
+
   int get_child_count(bool p_include_internal = true) const;
   void move_child(GObject* p_child, int p_index);
 
@@ -200,6 +203,9 @@ class GObject : public TickObject {
   virtual String get_description() const { 
     return is_inside_tree()? get_path() : String(get_name()) + "/"+get_class(); }
 
+  // input
+  bool is_processing_input() const {return data.input;}
+  void set_process_input(bool p_enable);
  private:
   _FORCE_INLINE_ void _update_children_cache() const {
     if (unlikely(data.children_cache_dirty)) {
@@ -256,6 +262,7 @@ class GObject : public TickObject {
 
 
  protected:
+  virtual void input(const Ref<InputEvent> &p_event);
   void _block() { data.blocked++; }
   void _unblock() { data.blocked--; }
 

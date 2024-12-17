@@ -23,6 +23,8 @@ class ViewportTexture : public Texture2D {
   mutable RID proxy_ph;
   mutable RID proxy;
 
+
+
  protected:
   static void _bind_methods();
 
@@ -204,6 +206,9 @@ class Viewport : public GObject {
 
 	void _propagate_enter_world_3d(GObject *p_node);
 	void _propagate_exit_world_3d(GObject *p_node);
+  // 该视口下的节点的input
+	StringName input_group;
+	Ref<InputEvent> _make_input_local(const Ref<InputEvent> &ev);
 
  protected:
   void _set_size(const Size2i& p_size, const Size2i& p_size_2d_override, bool p_allocated);
@@ -222,6 +227,8 @@ class Viewport : public GObject {
 	Vector2 get_camera_rect_size() const;
   RID get_viewport_rid() const;
   void set_positional_shadow_atlas_size(int p_size);
+  Transform2D get_final_transform() const;
+  void push_input(const Ref<InputEvent> &p_event, bool p_local_coords = false);
 };
 }  // namespace lain
 #endif

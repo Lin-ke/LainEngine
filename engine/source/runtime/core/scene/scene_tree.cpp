@@ -44,6 +44,19 @@ SceneTree::Group* SceneTree::add_to_group(const StringName& p_group, GObject* p_
   E->value.changed = true;
   return &E->value;
 }
+void SceneTree::remove_from_group(const StringName &p_group, GObject *p_node) {
+	_THREAD_SAFE_METHOD_
+
+	HashMap<StringName, Group>::Iterator E = group_map.find(p_group);
+	ERR_FAIL_COND(!E);
+
+	E->value.nodes.erase(p_node);
+	if (E->value.nodes.is_empty()) {
+		group_map.remove(E);
+	}
+}
+
+
 void SceneTree::finalize() {
   if (root) {
     root->_set_tree(nullptr);

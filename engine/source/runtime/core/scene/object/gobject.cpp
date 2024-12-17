@@ -299,6 +299,10 @@ void GObject::init_gobj_hrcr() {
   gobj_hrcr_count.init(1);
 }
 
+void GObject::input(const Ref<InputEvent>& p_event) {
+
+}
+
 void GObject::reparent(GObject* p_parent, bool p_keep_global_transform) {
   // ERR_THREAD_GUARD
 	ERR_FAIL_NULL(p_parent);
@@ -523,7 +527,7 @@ void GObject::_propagate_enter_tree() {
   // enter groups
 }
 void GObject::add_to_group(const StringName& p_identifier, bool p_persistent) {
-  //ERR_THREAD_GUARD
+  ERR_THREAD_GUARD
   ERR_FAIL_COND(!p_identifier.operator String().length());
 
   if (data.grouped.has(p_identifier)) {
@@ -541,6 +545,21 @@ void GObject::add_to_group(const StringName& p_identifier, bool p_persistent) {
   gd.persistent = p_persistent;
 
   data.grouped[p_identifier] = gd;
+}
+
+void GObject::remove_from_group(const StringName& p_identifier) {
+  ERR_THREAD_GUARD
+	HashMap<StringName, GroupData>::Iterator E = data.grouped.find(p_identifier);
+
+	if (!E) {
+		return;
+	}
+
+	if (data.tree) {
+		data.tree->remove_from_group(E->key, this);
+	}
+
+	data.grouped.remove(E);
 }
 
 int GObject::get_child_count(bool p_include_internal) const {
@@ -1201,6 +1220,25 @@ double GObject::get_process_delta_time() const {
 	}
 }
 
+void GObject::set_process_input(bool p_enable)
+{
+  ERR_THREAD_GUARD
+	if (p_enable == data.input) {
+		return;
+	}
+
+	data.input = p_enable;
+	if (!is_inside_tree()) {
+		return;
+	}
+
+	if (p_enable) {
+		add_to_group("_vp_input" + itos(get_viewport()->get_instance_id()));
+	} else {
+		remove_from_group("_vp_input" + itos(get_viewport()->get_instance_id()));
+	}
+}
+
 void GObject::_notification(int p_notification) {
   // L_PRINT("[Node notification]", "name", CSTR(data.name.operator lain::String()), p_notification);
   switch (p_notification) {
@@ -1248,7 +1286,10 @@ void GObject::_notification(int p_notification) {
           _add_to_process_thread_group();
         }
       }
-
+      // @todo other input
+      if (data.input) {
+				add_to_group("_vp_input" + itos(get_viewport()->get_instance_id()));
+			}
       //if (data.physics_interpolation_mode == PHYSICS_INTERPOLATION_MODE_INHERIT) {
       //	bool interpolate = true; // Root node default is for interpolation to be on.
       //	if (data.parent) {
@@ -1266,6 +1307,10 @@ void GObject::_notification(int p_notification) {
       ERR_FAIL_NULL(get_tree());
       get_tree()->nodes_in_tree_count--;
       orphan_node_count++;
+      if (data.input) {
+				remove_from_group("_vp_input" + itos(get_viewport()->get_instance_id()));
+			}
+      
       // Remove from processing first.
       if (is_any_processing()) {
         _remove_from_process_thread_group();
@@ -1276,7 +1321,7 @@ void GObject::_notification(int p_notification) {
       }
       tickdata.process_thread_group_owner = nullptr;
       tickdata.process_owner = nullptr;
-
+      
       if (data.path_cache) {
         memdelete(data.path_cache);
         data.path_cache = nullptr;
