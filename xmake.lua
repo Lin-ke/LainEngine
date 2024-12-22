@@ -264,7 +264,8 @@ target("main")
     add_includedirs("engine/source/runtime", {public = true})
     add_deps("Core")
     -- functions
-    add_deps("Renderer", "Display", "Scene", "Shader", "lglslang") -- @todo 给lglslang 这一步以后做成自动的 add_deps �? Module中的 xmake 项目
+    add_deps("Renderer", "Display", "Scene", "Shader") -- @todo 给lglslang 这一步以后做成自动的 add_deps �? Module中的 xmake 项目
+    add_deps("lglslang")
     -- editor
     add_deps("Editor")
     -- modules?

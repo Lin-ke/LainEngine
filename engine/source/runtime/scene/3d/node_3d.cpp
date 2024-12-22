@@ -196,9 +196,7 @@ xform_change(this)
 {}
 
 void GObject3D::_from_data(void* p_data) {
-	GObject3DData* data = (GObject3DData*)p_data;
-	if(data->is_transform_used)
-		set_transform(data->transform);
+
 }
 
 Transform3D GObject3D::get_transform() const {

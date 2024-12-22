@@ -2,6 +2,7 @@
 // scene
 #include "scene/resources/io/resource_format_text.h"
 #include "scene/resources/io/resource_format_shader.h"
+#include "scene/resources/io/resource_importer_obj.h"
 #include "scene/resources/common/shader_include.h"
 #include "register_scene_types.h"
 #include "core/meta/class_db.h"
@@ -22,6 +23,8 @@ namespace lain{
 	static Ref<ResourceFormatSaverText> resource_format_saver_text;
 	static Ref<ResourceFormatLoaderShader> resource_format_loader_shader;
 	static Ref<ResourceFormatSaverShader> resource_format_saver_shader;
+	static Ref<ResourceFormatLoaderOBJ> resource_format_loader_obj;
+
 	static Ref<ResourceFormatLoaderShaderInclude> resource_format_loader_shader_include;
 	static Ref<ResourceFormatSaverShaderInclude> resource_format_saver_shader_include;
 	
@@ -48,6 +51,8 @@ namespace lain{
 
 		auto& importers = ResourceLoader::ext_to_loader_idx;
 		// L_JSON(importers);
+		resource_format_loader_obj.instantiate();
+		ResourceLoader::add_resource_format_loader(resource_format_loader_obj);
 		
   }
 	shader::ShaderTypes *shader_types = nullptr;

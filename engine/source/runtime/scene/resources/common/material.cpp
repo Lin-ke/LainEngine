@@ -1912,10 +1912,25 @@ void BaseMaterial3D::set_feature(Feature p_feature, bool p_enabled) {
 	_queue_shader_change();
 }
 
+void BaseMaterial3D::set_texture(TextureParam p_param, const Ref<Texture2D> &p_texture) {
+	ERR_FAIL_INDEX(p_param, TEXTURE_MAX);
+
+	textures[p_param] = p_texture;
+	Variant rid = p_texture.is_valid() ? Variant(p_texture->GetRID()) : Variant();
+	RS::get_singleton()->material_set_param(_get_material(), shader_names->texture_names[p_param], rid);
+
+	if (p_texture.is_valid() && p_param == TEXTURE_ALBEDO) {
+		RS::get_singleton()->material_set_param(_get_material(), shader_names->albedo_texture_size,
+				Vector2i(p_texture->get_width(), p_texture->get_height()));
+	}
+
+	notify_property_list_changed();
+	_queue_shader_change();
+}
 
 Ref<Texture2D> BaseMaterial3D::get_texture(TextureParam p_param) const {
-	ERR_FAIL_INDEX_V(p_param, TEXTURE_MAX, Ref<Texture2D>());
-	return textures[p_param];
+  ERR_FAIL_INDEX_V(p_param, TEXTURE_MAX, Ref<Texture2D>());
+  return textures[p_param];
 }
 
 Ref<Texture2D> BaseMaterial3D::get_texture_by_name(const StringName &p_name) const {
@@ -2365,6 +2380,37 @@ BaseMaterial3D::~BaseMaterial3D() {
 
 		RS::get_singleton()->material_set_shader(_get_material(), RID());
 	}
+}
+
+bool lain::ShaderMaterial::_set(const StringName& p_name, const Variant& p_value) {
+	if (shader.is_valid()) {
+		const StringName *sn = remap_cache.getptr(p_name);
+		if (sn) {
+			set_shader_parameter(*sn, p_value);
+			return true;
+		}
+		String s = p_name;
+		if (s.begins_with("shader_parameter/")) {
+			String param = s.replace_first("shader_parameter/", "");
+			remap_cache[s] = param;
+			set_shader_parameter(param, p_value);
+			return true;
+		}
+	}
+	return false;
+}
+
+bool ShaderMaterial::_get(const StringName &p_name, Variant &r_ret) const {
+	if (shader.is_valid()) {
+		const StringName *sn = remap_cache.getptr(p_name);
+		if (sn) {
+			// Only return a parameter if it was previously set.
+			r_ret = get_shader_parameter(*sn);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void lain::ShaderMaterial::_get_property_list(List<PropertyInfo>* p_list) const {}

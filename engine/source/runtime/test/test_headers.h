@@ -10,4 +10,5 @@
 #include "test_vulkan.h"
 #include "test_draw_triangle.h"
 #include "test_shader.h"
+#include "test_mesh.h"
 #endif // !TEST_HEADERS_H

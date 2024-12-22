@@ -88,7 +88,29 @@ namespace lain {
       m_inherits::_from_datav(p_data, p_reversed);                                                                                      \
     }                                                                                                                                   \
   }                                                                                                                                     \
-                                                                                                                                        \
+  _FORCE_INLINE_ bool (Object::*_get_get() const)(const StringName& p_name, Variant&) const {                                           \
+    return (bool(Object::*)(const StringName&, Variant&) const) & m_class::_get;                                                        \
+  }                                                                                                                                     \
+  virtual bool _getv(const StringName& p_name, Variant& r_ret) const override {                                                         \
+    if (m_class::_get_get() != m_inherits::_get_get()) {                                                                                \
+      if (_get(p_name, r_ret)) {                                                                                                        \
+        return true;                                                                                                                    \
+      }                                                                                                                                 \
+    }                                                                                                                                   \
+    return m_inherits::_getv(p_name, r_ret);                                                                                            \
+  }                                                                                                                                     \
+  _FORCE_INLINE_ bool (Object::*_get_set() const)(const StringName& p_name, const Variant& p_property) {                                \
+    return (bool(Object::*)(const StringName&, const Variant&)) & m_class::_set;                                                        \
+  }                                                                                                                                     \
+  virtual bool _setv(const StringName& p_name, const Variant& p_property) override {                                                    \
+    if (m_inherits::_setv(p_name, p_property)) {                                                                                        \
+      return true;                                                                                                                      \
+    }                                                                                                                                   \
+    if (m_class::_get_set() != m_inherits::_get_set()) {                                                                                \
+      return _set(p_name, p_property);                                                                                                  \
+    }                                                                                                                                   \
+    return false;                                                                                                                       \
+  }                                                                                                                                     \
   _FORCE_INLINE_ void (Object::*_get_get_property_list() const)(List<PropertyInfo> * p_list) const {                                    \
     return (void(Object::*)(List<PropertyInfo>*) const) & m_class::_get_property_list;                                                  \
   }                                                                                                                                     \
@@ -98,13 +120,13 @@ namespace lain {
     }                                                                                                                                   \
     p_list->push_back(PropertyInfo(Variant::NIL, get_class_static(), PROPERTY_HINT_NONE, get_class_static(), PROPERTY_USAGE_CATEGORY)); \
     if (!_is_gpl_reversed()) {                                                                                                          \
-      lain::ClassDB::get_property_list(#m_class, p_list, true, this);                                                                       \
+      lain::ClassDB::get_property_list(#m_class, p_list, true, this);                                                                   \
     }                                                                                                                                   \
     if (m_class::_get_get_property_list() != m_inherits::_get_get_property_list()) {                                                    \
       _get_property_list(p_list);                                                                                                       \
     }                                                                                                                                   \
     if (_is_gpl_reversed()) {                                                                                                           \
-      lain::ClassDB::get_property_list(#m_class, p_list, true, this);                                                                       \
+      lain::ClassDB::get_property_list(#m_class, p_list, true, this);                                                                   \
     }                                                                                                                                   \
     if (p_reversed) {                                                                                                                   \
       m_inherits::_get_property_listv(p_list, p_reversed);                                                                              \
@@ -351,30 +373,37 @@ class Object {
   // 其目的是允许对象响应可能与其相关的各种引擎级回调
   void notification(int p_notification, bool p_reversed = false);
   virtual void _notificationv(int p_notification, bool p_reversed) {}
-	virtual void _get_property_listv(List<PropertyInfo> *p_list, bool p_reversed) const {};
-  void _get_property_list(List<PropertyInfo> *p_list) const {};
+  virtual void _get_property_listv(List<PropertyInfo>* p_list, bool p_reversed) const {};
+  void _get_property_list(List<PropertyInfo>* p_list) const {};
   void _notification(int p_notification) {}  // 用这个写，不virtual的重载
   _FORCE_INLINE_ void (Object::*_get_notification() const)(int) { return &Object::_notification; }
   static void _bind_methods() {}
   static void _bind_compatibility_methods() {}
   static void initialize_class();
-
+	bool _set(const StringName &p_name, const Variant &p_property) { return false; };
+	bool _get(const StringName &p_name, Variant &r_property) const { return false; };
+  _FORCE_INLINE_ bool (Object::*_get_get() const)(const StringName &p_name, Variant &r_ret) const {
+		return &Object::_get;
+	}
+	_FORCE_INLINE_ bool (Object::*_get_set() const)(const StringName &p_name, const Variant &p_property) {
+		return &Object::_set;
+	}
   _FORCE_INLINE_ static void (*_get_bind_methods())() { return &Object::_bind_methods; }
   _FORCE_INLINE_ static void (*_get_bind_compatibility_methods())() { return &Object::_bind_compatibility_methods; }
 
   Variant callp(const StringName& p_method, const Variant** p_args, int p_argcount, Callable::CallError& r_error);
   L_INLINE virtual String to_string() const { return "<" + get_class() + "#" + itos(get_instance_id()) + ">"; }
 
-  Variant get(const StringName& p_name, bool* r_valid= nullptr) const;
+  Variant get(const StringName& p_name, bool* r_valid = nullptr) const;
   void set(const StringName& p_name, const Variant& p_value, bool* r_valid = nullptr);
-	virtual bool _setv(const StringName &p_name, const Variant &p_property) { return false; };
-	virtual bool _getv(const StringName &p_name, Variant &r_property) const { return false; };
-  void get_property_list(List<PropertyInfo> *p_list, bool p_reversed = false) const;
+  virtual bool _setv(const StringName& p_name, const Variant& p_property) { return false; };
+  virtual bool _getv(const StringName& p_name, Variant& r_property) const { return false; };
+  void get_property_list(List<PropertyInfo>* p_list, bool p_reversed = false) const;
 
-  _FORCE_INLINE_ void (Object::*_get_get_property_list() const)(List<PropertyInfo> *p_list) const {
-		return &Object::_get_property_list;
-	} 
-  private : ObjectID m_instance_id;
+  _FORCE_INLINE_ void (Object::*_get_get_property_list() const)(List<PropertyInfo>* p_list) const { return &Object::_get_property_list; }
+
+ private:
+  ObjectID m_instance_id;
   bool m_type_is_reference = false;
 
   void _construct_object(bool p_reference);
@@ -413,12 +442,8 @@ class Object {
     return &ptr;
   }
 
-	bool _is_gpl_reversed() const { return false; }
-	virtual String to_string(){
-    return "<" + get_class() + "#" + itos(get_instance_id()) + ">";
-  }
-
-
+  bool _is_gpl_reversed() const { return false; }
+  virtual String to_string() { return "<" + get_class() + "#" + itos(get_instance_id()) + ">"; }
 };
 
 enum MethodFlags {
@@ -440,48 +465,46 @@ struct MethodInfo {
   List<PropertyInfo> arguments;
   Vector<Variant> default_arguments;
 
-	MethodInfo(const String &p_name) { name = p_name; }
-	MethodInfo(Variant::Type ret) { return_val.type = ret; }
+  MethodInfo(const String& p_name) { name = p_name; }
+  MethodInfo(Variant::Type ret) { return_val.type = ret; }
   // 无参数
-	MethodInfo(const PropertyInfo &p_ret, const String &p_name) {
-		return_val = p_ret;
-		name = p_name;
-	}
-	void _push_params(const PropertyInfo &p_param) {
-		arguments.push_back(p_param);
-	}
+  MethodInfo(const PropertyInfo& p_ret, const String& p_name) {
+    return_val = p_ret;
+    name = p_name;
+  }
+  void _push_params(const PropertyInfo& p_param) { arguments.push_back(p_param); }
 
-	MethodInfo() {}
-	template <typename... VarArgs>
-	void _push_params(const PropertyInfo &p_param, VarArgs... p_params) {
-		arguments.push_back(p_param);
-		_push_params(p_params...);
-	}
+  MethodInfo() {}
+  template <typename... VarArgs>
+  void _push_params(const PropertyInfo& p_param, VarArgs... p_params) {
+    arguments.push_back(p_param);
+    _push_params(p_params...);
+  }
   // 有返回值，有参数
-  	template <typename... VarArgs>
-	MethodInfo(Variant::Type ret, const String &p_name, VarArgs... p_params) {
-		name = p_name;
-		return_val.type = ret;
-		_push_params(p_params...);
-	}
-	template <typename... VarArgs>
-	MethodInfo(const PropertyInfo &p_ret, const String &p_name, VarArgs... p_params) {
-		return_val = p_ret;
-		name = p_name;
-		_push_params(p_params...);
-	}
+  template <typename... VarArgs>
+  MethodInfo(Variant::Type ret, const String& p_name, VarArgs... p_params) {
+    name = p_name;
+    return_val.type = ret;
+    _push_params(p_params...);
+  }
+  template <typename... VarArgs>
+  MethodInfo(const PropertyInfo& p_ret, const String& p_name, VarArgs... p_params) {
+    return_val = p_ret;
+    name = p_name;
+    _push_params(p_params...);
+  }
   // 无返回值
-  	template <typename... VarArgs>
-	MethodInfo(const String &p_name, VarArgs... p_params) {
-		name = p_name;
-		_push_params(p_params...);
-	}
-
+  template <typename... VarArgs>
+  MethodInfo(const String& p_name, VarArgs... p_params) {
+    name = p_name;
+    _push_params(p_params...);
+  }
 };
 
 }  // namespace lain
 #define ADD_PROPERTY(m_property, m_setter, m_getter) lain::ClassDB::add_property(get_class_static(), m_property, _scs_create(m_setter), _scs_create(m_getter))
-#define ADD_PROPERTYI(m_property, m_setter, m_getter, m_index) lain::ClassDB::add_property(get_class_static(), m_property, _scs_create(m_setter), _scs_create(m_getter), m_index)
+#define ADD_PROPERTYI(m_property, m_setter, m_getter, m_index) \
+  lain::ClassDB::add_property(get_class_static(), m_property, _scs_create(m_setter), _scs_create(m_getter), m_index)
 #define ADD_SIGNAL(m_signal) lain::ClassDB::add_signal(get_class_static(), m_signal)
 
 // const 限定符是必要的，因为const对象拒绝调用非const方法

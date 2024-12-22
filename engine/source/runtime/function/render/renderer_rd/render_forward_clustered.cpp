@@ -2211,7 +2211,7 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
     }
 
     RendererRD::PipelineCacheRD* pipeline = nullptr;
-
+    // 在这里获得pipeline cache
     if constexpr (p_pass_mode == PASS_MODE_COLOR) {
       pipeline = &shader->color_pipelines[cull_variant][primitive][pipeline_color_pass_flags];
     } else {

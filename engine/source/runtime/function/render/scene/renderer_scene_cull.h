@@ -795,7 +795,7 @@ class RendererSceneCull : public RenderingMethod {
   // RendererSceneRender::RenderSDFGIData render_sdfgi_data[SDFGI_MAX_CASCADES * SDFGI_MAX_REGIONS_PER_CASCADE];
   // RendererSceneRender::RenderSDFGIUpdateData sdfgi_update_data;
 
-  RID_Owner<Instance, true> instance_owner;
+  mutable RID_Owner<Instance, true> instance_owner;
   virtual RID instance_allocate();
   virtual void instance_initialize(RID p_rid);
   virtual void instance_set_base(RID p_instance, RID p_base);
@@ -818,6 +818,11 @@ class RendererSceneCull : public RenderingMethod {
   virtual void instance_geometry_set_cast_shadows_setting(RID p_instance, RS::ShadowCastingSetting p_shadow_casting_setting);
   virtual void instance_geometry_set_lightmap(RID p_instance, RID p_lightmap, const Rect2& p_lightmap_uv_scale, int p_slice_index);
   virtual void instance_geometry_set_lod_bias(RID p_instance, float p_lod_bias);
+
+	virtual void instance_geometry_set_shader_parameter(RID p_instance, const StringName &p_parameter, const Variant &p_value);
+	virtual void instance_geometry_get_shader_parameter_list(RID p_instance, List<PropertyInfo> *p_parameters) const;
+	virtual Variant instance_geometry_get_shader_parameter(RID p_instance, const StringName &p_parameter) const;
+	virtual Variant instance_geometry_get_shader_parameter_default_value(RID p_instance, const StringName &p_parameter) const;
 
   // 直接memnew()
   RendererSceneOcclusionCull* dummy_occlusion_culling = nullptr;

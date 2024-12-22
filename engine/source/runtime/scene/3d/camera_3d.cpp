@@ -63,8 +63,13 @@ void Camera3D::_validate_property(PropertyInfo &p_property) const {
 void lain::Camera3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_current", "enabled"), &Camera3D::set_current);
 	ClassDB::bind_method(D_METHOD("is_current"), &Camera3D::is_current);
+	ClassDB::bind_method(D_METHOD("set_fov", "fov"), &Camera3D::set_fov);
+	ClassDB::bind_method(D_METHOD("set_size", "size"), &Camera3D::set_size);
+	ClassDB::bind_method(D_METHOD("get_size"), &Camera3D::get_size);
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "current"), "set_current", "is_current");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "fov", PROPERTY_HINT_RANGE, "1,179,0.1,degrees"), "set_fov", "get_fov");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "size", PROPERTY_HINT_RANGE, "0.001,100,0.001,or_greater,suffix:m"), "set_size", "get_size");
 
 }
 
@@ -173,10 +178,7 @@ Projection Camera3D::_get_camera_projection(real_t p_near) const {
 }
 
 void Camera3D::_from_data(void* p_data) {
-	Camera3DData *data = (Camera3DData *)p_data;
-	if(data->is_fov_used){
-		set_fov(data->fov);
-	}
+
 }
 
 

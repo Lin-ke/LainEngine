@@ -15,9 +15,9 @@ Error ResourceFormatImporter::_get_path_and_type(const String& p_path, ImportPat
 		return err;
 	}
 	String json_err = "";
-    Json json = Json::parse(f->get_as_text(), json_err);
+    // Json json = Json::parse(f->get_as_text(), json_err);
     ERR_FAIL_COND_V_MSG(!json_err.is_empty(), ERR_PARSE_ERROR, json_err);
-	Serializer::read(json, r_path_and_type);
+	// Serializer::read(json, r_path_and_type);
     return OK;
 }
 

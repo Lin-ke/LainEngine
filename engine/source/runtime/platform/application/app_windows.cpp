@@ -24,6 +24,7 @@ int main() {
 	// test::test_shader();
 	// test::test_scene();
 	os.Run();
+	// test::test_mesh();
 
 }
 #endif // _TEST_

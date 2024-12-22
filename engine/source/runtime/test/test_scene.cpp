@@ -90,14 +90,17 @@ void test_scene() {
       scene->add_child(cube);
       cube->set_owner(scene);
       
-      Ref<CapsuleMesh> mesh = memnew(CapsuleMesh);
+      // Ref<CapsuleMesh> mesh = memnew(CapsuleMesh);
+      // cube->set_mesh(mesh);
+      // mesh->set_radius(1);
+      // Ref<StandardMaterial3D> mat = memnew(StandardMaterial3D);
+      // mesh->surface_set_material(0, mat);
+      Ref<ArrayMesh> mesh = ResourceLoader::load("res://robot.obj");
       cube->set_mesh(mesh);
-      mesh->set_radius(1);
-      Ref<StandardMaterial3D> mat = memnew(StandardMaterial3D);
-      mesh->surface_set_material(0, mat);
       /*SceneTree::get_singleton()->get_root()->add_child(gobj1);
 					SceneTree::get_singleton()->get_root()->add_child(gobj2);*/
       gobj1_1->add_component(memnew(TestComponent));
+      
       Ref<PackedScene> s;
       s.instantiate();
       List<PropertyInfo> props;
@@ -108,67 +111,65 @@ void test_scene() {
       s->pack(scene);
       
       ResourceSaver::save(s, "1.tscn");
-      s->pack(scene);
-      ResourceSaver::save(s, "2.tscn");
     }
-    Ref<PackedScene> s2 = ResourceLoader::load("2.tscn");
-    GObject* subscene = s2->instantiate();
-    {
-      Ref<PackedScene> s;
-      s.instantiate();
-      Ref<PackedScene> s1 = ResourceLoader::load("1.tscn");
-      GObject* newscene = s1->instantiate();
-      L_JSON(newscene->get_components());
-      /// 这个get说明get set 方法都能正常被call
-      L_PRINT((newscene->get_gobject_or_null(String("./default_cam"))->get("transform")).operator String());
-      L_PRINT(subscene->data.instance_state.is_null(), CSTR(subscene->data.scene_file_path));
-      DirectionalLight3D* light =(DirectionalLight3D*) newscene->get_gobject_or_null(String("./default_light"));
-      auto mode = light->get_shadow_mode();
-      switch(mode){
-        case DirectionalLight3D::ShadowMode::SHADOW_ORTHOGONAL:
-          L_PRINT("SHADOW_ORTHOGONAL");
-          break;
-        case DirectionalLight3D::ShadowMode::SHADOW_PARALLEL_2_SPLITS:
-          L_PRINT("SHADOW_PARALLEL_2_SPLITS");
-          break;
-        case DirectionalLight3D::ShadowMode::SHADOW_PARALLEL_4_SPLITS:
-          L_PRINT("SHADOW_PARALLEL_4_SPLITS");
-          break;
-      }
-      MeshInstance3D* cube = (MeshInstance3D*)newscene->get_gobject_or_null(String("./cube"));
-      Ref<Resource> mesh = cube->get_mesh();
-      L_PRINT(mesh->get_class());
-      Ref<PrimitiveMesh > pm = mesh;
-      Ref<Resource> mat = pm->get_material();
-      L_PRINT(mat->get_class())
+    // Ref<PackedScene> s2 = ResourceLoader::load("2.tscn");
+    // GObject* subscene = s2->instantiate();
+    // {
+    //   Ref<PackedScene> s;
+    //   s.instantiate();
+    //   Ref<PackedScene> s1 = ResourceLoader::load("1.tscn");
+    //   GObject* newscene = s1->instantiate();
+    //   L_JSON(newscene->get_components());
+    //   /// 这个get说明get set 方法都能正常被call
+    //   L_PRINT((newscene->get_gobject_or_null(String("./default_cam"))->get("transform")).operator String());
+    //   L_PRINT(subscene->data.instance_state.is_null(), CSTR(subscene->data.scene_file_path));
+    //   DirectionalLight3D* light =(DirectionalLight3D*) newscene->get_gobject_or_null(String("./default_light"));
+    //   auto mode = light->get_shadow_mode();
+    //   switch(mode){
+    //     case DirectionalLight3D::ShadowMode::SHADOW_ORTHOGONAL:
+    //       L_PRINT("SHADOW_ORTHOGONAL");
+    //       break;
+    //     case DirectionalLight3D::ShadowMode::SHADOW_PARALLEL_2_SPLITS:
+    //       L_PRINT("SHADOW_PARALLEL_2_SPLITS");
+    //       break;
+    //     case DirectionalLight3D::ShadowMode::SHADOW_PARALLEL_4_SPLITS:
+    //       L_PRINT("SHADOW_PARALLEL_4_SPLITS");
+    //       break;
+    //   }
+    //   MeshInstance3D* cube = (MeshInstance3D*)newscene->get_gobject_or_null(String("./cube"));
+    //   Ref<Resource> mesh = cube->get_mesh();
+    //   L_PRINT(mesh->get_class());
+    //   Ref<PrimitiveMesh > pm = mesh;
+    //   Ref<Resource> mat = pm->get_material();
+    //   L_PRINT(mat->get_class())
             
       
-      List<Ref<Resource>> resources;
-      ResourceCache::get_cached_resources(&resources);
+    //   List<Ref<Resource>> resources;
+    //   ResourceCache::get_cached_resources(&resources);
 
-      newscene->add_child(subscene);
-      subscene->set_owner(newscene);
-      s->pack(newscene);
-      draw_tree(newscene);
-      // 查看是否reuse 可以
-      ResourceSaver::save(s, "3.tscn");
-    }
-    List<Ref<Resource>> resources;
-    ResourceCache::get_cached_resources(&resources);
+    //   newscene->add_child(subscene);
+    //   subscene->set_owner(newscene);
+    //   s->pack(newscene);
+    //   draw_tree(newscene);
+    //   // 查看是否reuse 可以
+    //   ResourceSaver::save(s, "3.tscn");
+    // }
+    // List<Ref<Resource>> resources;
+    // ResourceCache::get_cached_resources(&resources);
 
-    for (auto&& i : resources) {
-      L_JSON(i->GetPath());
-      L_JSON(i->GetName());
-    }
+    // for (auto&& i : resources) {
+    //   L_JSON(i->GetPath());
+    //   L_JSON(i->GetName());
+    // }
 
-    if (resources.is_empty()) {
-      L_PRINT("this is empty");
-    }
-    Ref<PackedScene> s3 = ResourceLoader::load("3.tscn");
-    auto newscene_dup = s3->instantiate();
-    draw_tree(newscene_dup);
-    // @TODO 清理todo ext resource
-    L_PRINT("---------");
+    // if (resources.is_empty()) {
+    //   L_PRINT("this is empty");
+    // }
+    // Ref<PackedScene> s3 = ResourceLoader::load("3.tscn");
+    // auto newscene_dup = s3->instantiate();
+    // draw_tree(newscene_dup);
+    // // @TODO 清理todo ext resource
+    // L_PRINT("---------");
   }
 }
 }  // namespace test

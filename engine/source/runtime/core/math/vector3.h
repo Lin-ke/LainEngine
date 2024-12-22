@@ -205,7 +205,7 @@ Vector2 octahedron_encode() const {
 	return o;
 }
 
-Vector3 Vector3::octahedron_decode(const Vector2 &p_oct) {
+static L_INLINE Vector3 octahedron_decode(const Vector2 &p_oct) {
 	Vector2 f(p_oct.x * 2.0f - 1.0f, p_oct.y * 2.0f - 1.0f);
 	Vector3 n(f.x, f.y, 1.0f - Math::abs(f.x) - Math::abs(f.y));
 	const real_t t = CLAMP(-n.z, 0.0f, 1.0f);
@@ -213,6 +213,16 @@ Vector3 Vector3::octahedron_decode(const Vector2 &p_oct) {
 	n.y += n.y >= 0 ? -t : t;
 	return n.normalized();
 }
+
+static L_INLINE Vector3 octahedron_tangent_decode(const Vector2 &p_oct, float *r_sign) {
+	Vector2 oct_compressed = p_oct;
+	oct_compressed.y = oct_compressed.y * 2 - 1;
+	*r_sign = oct_compressed.y >= 0.0f ? 1.0f : -1.0f;
+	oct_compressed.y = Math::abs(oct_compressed.y);
+	Vector3 res = Vector3::octahedron_decode(oct_compressed);
+	return res;
+}
+
 
 Vector2 Vector3::octahedron_tangent_encode(float p_sign) const {
 	const real_t bias = 1.0f / (real_t)32767.0f;

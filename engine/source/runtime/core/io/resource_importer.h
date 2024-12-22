@@ -11,12 +11,9 @@ namespace lain{
 class ResourceImporter;
 
 
-INNER_REFLECTION_TYPE(ImportPathAndType,ResourceFormatImporter);
 class ResourceFormatImporter : public ResourceFormatLoader {
-    INNER_REFLECTION_BODY(ImportPathAndType,ResourceFormatImporter);
     struct ImportPathAndType {
         String path;
-        META(Fields)
         String type;
         String importer;
         String group_file;
@@ -32,7 +29,9 @@ class ResourceFormatImporter : public ResourceFormatLoader {
     bool operator()(const Ref<ResourceImporter>& p_a, const Ref<ResourceImporter>& p_b) const;
   };
 
-  Vector<Ref<ResourceImporter>> importers;
+  Vector<Ref<ResourceImporter>> importers; // 实际的加载类
+  // importers 需要重载get_recognized_extensions
+  // 和 get_recognized_resources
 
  public:
   static ResourceFormatImporter* get_singleton() { return singleton; }

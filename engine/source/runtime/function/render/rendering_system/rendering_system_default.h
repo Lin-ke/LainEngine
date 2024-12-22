@@ -287,7 +287,12 @@ class RenderingSystemDefault : public RenderingSystem {
 	FUNC3(mesh_surface_set_material, RID, int, RID)
 	FUNC1(mesh_clear, RID)
 	FUNC2(mesh_add_surface, RID, const SurfaceData &)
-
+	FUNC2(mesh_set_blend_shape_count, RID, int)
+	FUNC2RC(SurfaceData, mesh_get_surface, RID, int)
+	FUNC2(mesh_set_path, RID, const String &)
+	FUNC1RC(String, mesh_get_path, RID)
+  
+	FUNC2(mesh_set_blend_shape_mode, RID, BlendShapeMode)
 
 #undef server_name
 #undef ServerName
@@ -340,6 +345,12 @@ class RenderingSystemDefault : public RenderingSystem {
   FUNC2(instance_geometry_set_material_override, RID, RID)
   FUNC2(instance_geometry_set_material_overlay, RID, RID)
   FUNC4(instance_geometry_set_lightmap, RID, RID, const Rect2&, int)
+  // shader instance
+  FUNC3(instance_geometry_set_shader_parameter, RID, const StringName &, const Variant &)
+	FUNC2RC(Variant, instance_geometry_get_shader_parameter, RID, const StringName &)
+	FUNC2RC(Variant, instance_geometry_get_shader_parameter_default_value, RID, const StringName &)
+	FUNC2C(instance_geometry_get_shader_parameter_list, RID, List<PropertyInfo> *)
+
 
   RenderingSystemDefault(bool p_create_thread = false);
   ~RenderingSystemDefault();

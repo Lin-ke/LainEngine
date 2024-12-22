@@ -686,6 +686,9 @@ AABB MeshStorage::mesh_get_aabb(RID p_mesh, RID p_skeleton) {
 	return aabb;
 }
 
+RS::SurfaceData lain::RendererRD::MeshStorage::mesh_get_surface(RID p_mesh, int p_surface) const {
+	return mesh_get_surfacedata(p_mesh, p_surface);
+}
 
 void MeshStorage::mesh_set_path(RID p_mesh, const String &p_path) {
 	Mesh *mesh = mesh_owner.get_or_null(p_mesh);

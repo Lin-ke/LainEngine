@@ -349,13 +349,14 @@ Ref<Resource> ResourceLoader::_load(const String& p_path, const String& p_origin
   Ref<Resource> res;
   String extension = p_path.get_extension();
   Vector<int> type_loaders;
-  if(p_type_hint.is_empty()){
-     type_loaders = type_to_loader_idx[p_type_hint];
-  }
+
   if (ext_to_loader_idx.has(extension)) {
     for (int idx : ext_to_loader_idx[extension]) {
-      if (p_type_hint != "" && !type_loaders.has(idx)) {
-        continue;  // if have typehint but idx can't use
+      if(!p_type_hint.is_empty()){
+        type_loaders = type_to_loader_idx[p_type_hint];
+        if (type_loaders.find(idx) == -1) {
+          continue;
+        }
       }
       found = true;
       res = loader[idx]->load(p_path, !p_original_path.is_empty() ? p_original_path : p_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);

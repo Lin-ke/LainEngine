@@ -48,7 +48,7 @@ namespace lain {
 		virtual Error CopyFrom(const Ref<Resource>& p_resource);
 
 		virtual RID GetRID() const; // some resources may offer conversion to RID
-
+		
 		virtual void emit_changed();
 		/// <summary>
 		/// @TODO
@@ -67,6 +67,7 @@ namespace lain {
 		void _take_over_path(const String& p_path) { set_path(p_path, true); }
 		virtual void reset_local_to_scene() {}
 		virtual GObject* get_local_scene(){return nullptr;}
+	virtual void reset_state(){} //for resources that use variable amount of properties, either via _validate_property or _get_property_list, this function needs to be implemented to correctly clear state
 
 	private:
 

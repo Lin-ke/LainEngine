@@ -970,6 +970,82 @@ void RendererSceneCull::instance_geometry_set_lod_bias(RID p_instance, float p_l
   }
 }
 
+
+void RendererSceneCull::instance_geometry_set_shader_parameter(RID p_instance, const StringName &p_parameter, const Variant &p_value) {
+	Instance *instance = instance_owner.get_or_null(p_instance);
+	ERR_FAIL_NULL(instance);
+
+	ERR_FAIL_COND(p_value.get_type() == Variant::OBJECT);
+
+	HashMap<StringName, Instance::InstanceShaderParameter>::Iterator E = instance->instance_shader_uniforms.find(p_parameter);
+
+	if (!E) {
+		Instance::InstanceShaderParameter isp;
+		isp.index = -1;
+		isp.info = PropertyInfo();
+		isp.value = p_value;
+		instance->instance_shader_uniforms[p_parameter] = isp;
+	} else {
+		E->value.value = p_value;
+		if (E->value.index >= 0 && instance->instance_allocated_shader_uniforms) {
+			int flags_count = 0;
+			if (E->value.info.hint == PROPERTY_HINT_FLAGS) {
+				// A small hack to detect boolean flags count and prevent overhead.
+				switch (E->value.info.hint_string.length()) {
+					case 3: // "x,y"
+						flags_count = 1;
+						break;
+					case 5: // "x,y,z"
+						flags_count = 2;
+						break;
+					case 7: // "x,y,z,w"
+						flags_count = 3;
+						break;
+				}
+			}
+			//update directly
+			RSG::material_storage->global_shader_parameters_instance_update(p_instance, E->value.index, p_value, flags_count);
+		}
+	}
+}
+
+Variant RendererSceneCull::instance_geometry_get_shader_parameter(RID p_instance, const StringName &p_parameter) const {
+	const Instance *instance = const_cast<RendererSceneCull *>(this)->instance_owner.get_or_null(p_instance);
+	ERR_FAIL_NULL_V(instance, Variant());
+
+	if (instance->instance_shader_uniforms.has(p_parameter)) {
+		return instance->instance_shader_uniforms[p_parameter].value;
+	}
+	return Variant();
+}
+
+Variant RendererSceneCull::instance_geometry_get_shader_parameter_default_value(RID p_instance, const StringName &p_parameter) const {
+	const Instance *instance = instance_owner.get_or_null(p_instance);
+	ERR_FAIL_NULL_V(instance, Variant());
+
+	if (instance->instance_shader_uniforms.has(p_parameter)) {
+		return instance->instance_shader_uniforms[p_parameter].default_value;
+	}
+	return Variant();
+}
+
+void RendererSceneCull::instance_geometry_get_shader_parameter_list(RID p_instance, List<PropertyInfo> *p_parameters) const {
+	const Instance *instance = const_cast<RendererSceneCull *>(this)->instance_owner.get_or_null(p_instance);
+	ERR_FAIL_NULL(instance);
+
+	const_cast<RendererSceneCull *>(this)->update_dirty_instances();
+
+	Vector<StringName> names;
+	for (const KeyValue<StringName, Instance::InstanceShaderParameter> &E : instance->instance_shader_uniforms) {
+		names.push_back(E.key);
+	}
+	names.sort_custom<StringName::AlphCompare>();
+	for (int i = 0; i < names.size(); i++) {
+		PropertyInfo pinfo = instance->instance_shader_uniforms[names[i]].info;
+		p_parameters->push_back(pinfo);
+	}
+}
+
 void RendererSceneCull::instance_geometry_set_cast_shadows_setting(RID p_instance, RS::ShadowCastingSetting p_shadow_casting_setting) {
   Instance* instance = instance_owner.get_or_null(p_instance);
   ERR_FAIL_NULL(instance);

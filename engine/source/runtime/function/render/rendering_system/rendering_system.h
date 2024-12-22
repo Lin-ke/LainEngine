@@ -318,6 +318,12 @@ class RenderingSystem : public Object {
 	virtual void instance_geometry_set_material_override(RID p_instance, RID p_material) = 0;
 	virtual void instance_geometry_set_lightmap(RID p_instance, RID p_lightmap,const Rect2 &p_lightmap_uv_scale, int p_slice_index ) = 0;
 	virtual void instance_geometry_set_material_overlay(RID p_instance, RID p_material) = 0;
+	// shader paramter 
+	virtual void instance_geometry_set_shader_parameter(RID p_instance, const StringName &p_parameter, const Variant &p_value) = 0;
+	virtual void instance_geometry_get_shader_parameter_list(RID p_instance, List<PropertyInfo> *p_parameters) const = 0;
+	virtual Variant instance_geometry_get_shader_parameter(RID p_instance, const StringName &p_parameter) const = 0;
+	virtual Variant instance_geometry_get_shader_parameter_default_value(RID p_instance, const StringName &p_parameter) const = 0;
+
     /// *************** ///
   /// ***CAMERA API*** ///
   /// *************** ///
@@ -682,15 +688,24 @@ class RenderingSystem : public Object {
 	virtual void mesh_clear(RID p_mesh) = 0;
 	virtual void mesh_add_surface(RID p_mesh, const SurfaceData &p_surface) = 0;
 
+	virtual void mesh_set_blend_shape_count(RID mesh, int p_count) = 0;
 
 	virtual void mesh_add_surface_from_arrays(RID p_mesh, PrimitiveType p_prim, const Array &p_arrays, const Array &p_blend_shapes = Array(), const Dictionary &p_lods = Dictionary(), BitField<ArrayFormat> p_compress_format = 0 );
 	virtual Error mesh_create_surface_data_from_arrays(SurfaceData *r_surface_data, PrimitiveType p_primitive, const Array &p_arrays, const Array &p_blend_shapes = Array(), const Dictionary &p_lods = Dictionary(), uint64_t p_compress_format = 0);
 	Error _surface_set_data(Array p_arrays, uint64_t p_format, uint32_t *p_offsets, uint32_t p_vertex_stride, uint32_t p_normal_stride, uint32_t p_attrib_stride, uint32_t p_skin_stride, Vector<uint8_t> &r_vertex_array, Vector<uint8_t> &r_attrib_array, Vector<uint8_t> &r_skin_array, int p_vertex_array_len, Vector<uint8_t> &r_index_array, int p_index_array_len, AABB &r_aabb, Vector<AABB> &r_bone_aabb, Vector4 &r_uv_scale);
 	virtual void mesh_surface_make_offsets_from_format(uint64_t p_format, int p_vertex_len, int p_index_len, uint32_t *r_offsets, uint32_t &r_vertex_element_size, uint32_t &r_normal_element_size, uint32_t &r_attrib_element_size, uint32_t &r_skin_element_size) const;
 	
+	virtual SurfaceData mesh_get_surface(RID mesh, int p_surface) const = 0;
+
+	virtual void mesh_set_blend_shape_mode(RID p_mesh, BlendShapeMode p_mode) = 0;
+	virtual void mesh_set_path(RID p_mesh, const String &p_path) = 0;
+	virtual String mesh_get_path(RID p_mesh) const= 0 ;
+
 
 	Array mesh_surface_get_arrays(RID p_mesh, int p_surface) const;
+	Array mesh_create_arrays_from_surface_data(const SurfaceData& p_data) const;
 	Dictionary mesh_surface_get_lods(RID p_mesh, int p_surface) const;
+	Array _get_array_from_surface(uint64_t p_format, Vector<uint8_t> p_vertex_data, Vector<uint8_t> p_attrib_data, Vector<uint8_t> p_skin_data, int p_vertex_len, Vector<uint8_t> p_index_data, int p_index_len, const AABB &p_aabb, const Vector4 &p_uv_scale) const;
 
 	/* Reflection Probe*/
 

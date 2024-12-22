@@ -34,9 +34,10 @@ namespace lain{
 	virtual RID mesh_surface_get_material(RID p_mesh, int p_surface) const = 0; // 获得mesh 第 p_surface 的材质
 
 	virtual RS::SurfaceData mesh_get_surfacedata(RID p_mesh, int p_surface) const = 0;
+	virtual RS::SurfaceData mesh_get_surface(RID p_mesh, int p_surface) const = 0;
+
 
 	virtual int mesh_get_surface_count(RID p_mesh) const = 0;
-
 	virtual void mesh_set_custom_aabb(RID p_mesh, const AABB &p_aabb) = 0;
 	virtual AABB mesh_get_custom_aabb(RID p_mesh) const = 0;
 	virtual AABB mesh_get_aabb(RID p_mesh, RID p_skeleton = RID()) = 0;

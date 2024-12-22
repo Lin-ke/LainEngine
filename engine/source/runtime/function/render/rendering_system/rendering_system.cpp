@@ -1,4 +1,5 @@
 #include "rendering_system.h"
+#include "function/render/renderer_rd/storage/mesh_storage.h"
 using namespace lain;
 RenderingSystem* RenderingSystem::p_singleton = nullptr;
 
@@ -513,6 +514,7 @@ Error lain::RenderingSystem::mesh_create_surface_data_from_arrays(SurfaceData* r
 
 	return OK;
 }
+
 
 
 
@@ -1169,4 +1171,386 @@ Error RS::_surface_set_data(Array p_arrays, uint64_t p_format, uint32_t *p_offse
 		}
 	}
 	return OK;
+}
+
+Array lain::RenderingSystem::mesh_surface_get_arrays(RID p_mesh, int p_surface) const {
+	SurfaceData sd = mesh_get_surface(p_mesh, p_surface);
+	return mesh_create_arrays_from_surface_data(sd);
+}
+
+Array RenderingSystem::mesh_create_arrays_from_surface_data(const SurfaceData &p_data) const {
+	Vector<uint8_t> vertex_data = p_data.vertex_data;
+	Vector<uint8_t> attrib_data = p_data.attribute_data;
+	Vector<uint8_t> skin_data = p_data.skin_data;
+
+	ERR_FAIL_COND_V(vertex_data.is_empty() && (p_data.format & RS::ARRAY_FORMAT_VERTEX), Array());
+	int vertex_len = p_data.vertex_count;
+
+	Vector<uint8_t> index_data = p_data.index_data;
+	int index_len = p_data.index_count;
+
+	uint64_t format = p_data.format;
+
+	return _get_array_from_surface(format, vertex_data, attrib_data, skin_data, vertex_len, index_data, index_len, p_data.aabb, p_data.uv_scale);
+}
+// 就这步，获得LOD的方法是
+Dictionary RS::mesh_surface_get_lods(RID p_mesh, int p_surface) const {
+	SurfaceData sd = mesh_get_surface(p_mesh, p_surface);
+	ERR_FAIL_COND_V(sd.vertex_count == 0, Dictionary());
+
+	Dictionary ret;
+
+	for (int i = 0; i < sd.lods.size(); i++) {
+		Vector<int> lods;
+		if (sd.vertex_count <= 65536) {
+			uint32_t lc = sd.lods[i].index_data.size() / 2;
+			lods.resize(lc);
+			const uint8_t *r = sd.lods[i].index_data.ptr();
+			const uint16_t *rptr = (const uint16_t *)r;
+			int *w = lods.ptrw();
+			for (uint32_t j = 0; j < lc; j++) {
+				w[j] = rptr[i];
+			}
+		} else {
+			uint32_t lc = sd.lods[i].index_data.size() / 4;
+			lods.resize(lc);
+			const uint8_t *r = sd.lods[i].index_data.ptr();
+			const uint32_t *rptr = (const uint32_t *)r;
+			int *w = lods.ptrw();
+			for (uint32_t j = 0; j < lc; j++) {
+				w[j] = rptr[i];
+			}
+		}
+
+		ret[sd.lods[i].edge_length] = lods;
+	}
+
+	return ret;
+}
+
+// The inputs to this function should match the outputs of _get_axis_angle. I.e. p_axis is a normalized vector
+// and p_angle includes the binormal direction.
+void _get_tbn_from_axis_angle(const Vector3 &p_axis, float p_angle, Vector3 &r_normal, Vector4 &r_tangent) {
+	float binormal_sign = p_angle > 0.5 ? 1.0 : -1.0;
+	float angle = Math::abs(p_angle * 2.0 - 1.0) * Math_PI;
+
+	Basis tbn = Basis(p_axis, angle);
+	Vector3 tan = tbn.rows[0];
+	r_tangent = Vector4(tan.x, tan.y, tan.z, binormal_sign);
+	r_normal = tbn.rows[2];
+}
+
+Array RS::_get_array_from_surface(uint64_t p_format, Vector<uint8_t> p_vertex_data, Vector<uint8_t> p_attrib_data, Vector<uint8_t> p_skin_data, int p_vertex_len, Vector<uint8_t> p_index_data, int p_index_len, const AABB &p_aabb, const Vector4 &p_uv_scale) const {
+	uint32_t offsets[RS::ARRAY_MAX];
+
+	uint32_t vertex_elem_size;
+	uint32_t normal_elem_size;
+	uint32_t attrib_elem_size;
+	uint32_t skin_elem_size;
+	mesh_surface_make_offsets_from_format(p_format, p_vertex_len, p_index_len, offsets, vertex_elem_size, normal_elem_size, attrib_elem_size, skin_elem_size);
+
+	Array ret;
+	ret.resize(RS::ARRAY_MAX);
+
+	const uint8_t *r = p_vertex_data.ptr();
+	const uint8_t *ar = p_attrib_data.ptr();
+	const uint8_t *sr = p_skin_data.ptr();
+
+	for (int i = 0; i < RS::ARRAY_MAX; i++) {
+		if (!(p_format & (1ULL << i))) {
+			continue;
+		}
+
+		switch (i) {
+			case RS::ARRAY_VERTEX: {
+				if (p_format & ARRAY_FLAG_USE_2D_VERTICES) {
+					Vector<Vector2> arr_2d;
+					arr_2d.resize(p_vertex_len);
+
+					{
+						Vector2 *w = arr_2d.ptrw();
+
+						for (int j = 0; j < p_vertex_len; j++) {
+							const float *v = reinterpret_cast<const float *>(&r[j * vertex_elem_size + offsets[i]]);
+							w[j] = Vector2(v[0], v[1]);
+						}
+					}
+
+					ret[i] = arr_2d;
+				} else {
+					Vector<Vector3> arr_3d;
+					arr_3d.resize(p_vertex_len);
+
+					{
+						Vector3 *w = arr_3d.ptrw();
+
+						if (p_format & ARRAY_FLAG_COMPRESS_ATTRIBUTES) {
+							// We only have vertices to read, so just read them and skip everything else.
+							if (!(p_format & RS::ARRAY_FORMAT_NORMAL)) {
+								for (int j = 0; j < p_vertex_len; j++) {
+									const uint16_t *v = reinterpret_cast<const uint16_t *>(&r[j * vertex_elem_size + offsets[i]]);
+									Vector3 vec = Vector3(float(v[0]) / 65535.0, float(v[1]) / 65535.0, float(v[2]) / 65535.0);
+									w[j] = (vec * p_aabb.size) + p_aabb.position;
+								}
+								continue;
+							}
+
+							Vector<Vector3> normals;
+							normals.resize(p_vertex_len);
+							Vector3 *normalsw = normals.ptrw();
+
+							Vector<float> tangents;
+							tangents.resize(p_vertex_len * 4);
+							float *tangentsw = tangents.ptrw();
+
+							for (int j = 0; j < p_vertex_len; j++) {
+								const uint32_t n = *(const uint32_t *)&r[j * normal_elem_size + offsets[RS::ARRAY_NORMAL]];
+								Vector3 axis = Vector3::octahedron_decode(Vector2((n & 0xFFFF) / 65535.0, ((n >> 16) & 0xFFFF) / 65535.0));
+
+								const uint16_t *v = reinterpret_cast<const uint16_t *>(&r[j * vertex_elem_size + offsets[i]]);
+								Vector3 vec = Vector3(float(v[0]) / 65535.0, float(v[1]) / 65535.0, float(v[2]) / 65535.0);
+								float angle = float(v[3]) / 65535.0;
+								w[j] = (vec * p_aabb.size) + p_aabb.position;
+
+								Vector3 normal;
+								Vector4 tan;
+								_get_tbn_from_axis_angle(axis, angle, normal, tan);
+
+								normalsw[j] = normal;
+								tangentsw[j * 4 + 0] = tan.x;
+								tangentsw[j * 4 + 1] = tan.y;
+								tangentsw[j * 4 + 2] = tan.z;
+								tangentsw[j * 4 + 3] = tan.w;
+							}
+							ret[RS::ARRAY_NORMAL] = normals;
+							ret[RS::ARRAY_TANGENT] = tangents;
+
+						} else {
+							for (int j = 0; j < p_vertex_len; j++) {
+								const float *v = reinterpret_cast<const float *>(&r[j * vertex_elem_size + offsets[i]]);
+								w[j] = Vector3(v[0], v[1], v[2]);
+							}
+						}
+					}
+
+					ret[i] = arr_3d;
+				}
+
+			} break;
+			case RS::ARRAY_NORMAL: {
+				if (!(p_format & RS::ARRAY_FLAG_COMPRESS_ATTRIBUTES)) {
+					Vector<Vector3> arr;
+					arr.resize(p_vertex_len);
+
+					Vector3 *w = arr.ptrw();
+
+					for (int j = 0; j < p_vertex_len; j++) {
+						const uint32_t v = *(const uint32_t *)&r[j * normal_elem_size + offsets[i]];
+
+						w[j] = Vector3::octahedron_decode(Vector2((v & 0xFFFF) / 65535.0, ((v >> 16) & 0xFFFF) / 65535.0));
+					}
+
+					ret[i] = arr;
+				}
+			} break;
+
+			case RS::ARRAY_TANGENT: {
+				if (!(p_format & RS::ARRAY_FLAG_COMPRESS_ATTRIBUTES)) {
+					Vector<float> arr;
+					arr.resize(p_vertex_len * 4);
+
+					float *w = arr.ptrw();
+
+					for (int j = 0; j < p_vertex_len; j++) {
+						const uint32_t v = *(const uint32_t *)&r[j * normal_elem_size + offsets[i]];
+						float tangent_sign;
+						Vector3 res = Vector3::octahedron_tangent_decode(Vector2((v & 0xFFFF) / 65535.0, ((v >> 16) & 0xFFFF) / 65535.0), &tangent_sign);
+						w[j * 4 + 0] = res.x;
+						w[j * 4 + 1] = res.y;
+						w[j * 4 + 2] = res.z;
+						w[j * 4 + 3] = tangent_sign;
+					}
+
+					ret[i] = arr;
+				}
+			} break;
+			case RS::ARRAY_COLOR: {
+				Vector<Color> arr;
+				arr.resize(p_vertex_len);
+
+				Color *w = arr.ptrw();
+
+				for (int32_t j = 0; j < p_vertex_len; j++) {
+					const uint8_t *v = reinterpret_cast<const uint8_t *>(&ar[j * attrib_elem_size + offsets[i]]);
+
+					w[j] = Color(v[0] / 255.0, v[1] / 255.0, v[2] / 255.0, v[3] / 255.0);
+				}
+
+				ret[i] = arr;
+			} break;
+			case RS::ARRAY_TEX_UV: {
+				Vector<Vector2> arr;
+				arr.resize(p_vertex_len);
+
+				Vector2 *w = arr.ptrw();
+				if (p_format & ARRAY_FLAG_COMPRESS_ATTRIBUTES) {
+					for (int j = 0; j < p_vertex_len; j++) {
+						const uint16_t *v = reinterpret_cast<const uint16_t *>(&ar[j * attrib_elem_size + offsets[i]]);
+						Vector2 vec = Vector2(float(v[0]) / 65535.0, float(v[1]) / 65535.0);
+						if (!p_uv_scale.is_zero_approx()) {
+							vec = (vec - Vector2(0.5, 0.5)) * Vector2(p_uv_scale.x, p_uv_scale.y);
+						}
+
+						w[j] = vec;
+					}
+				} else {
+					for (int j = 0; j < p_vertex_len; j++) {
+						const float *v = reinterpret_cast<const float *>(&ar[j * attrib_elem_size + offsets[i]]);
+						w[j] = Vector2(v[0], v[1]);
+					}
+				}
+				ret[i] = arr;
+			} break;
+
+			case RS::ARRAY_TEX_UV2: {
+				Vector<Vector2> arr;
+				arr.resize(p_vertex_len);
+
+				Vector2 *w = arr.ptrw();
+
+				if (p_format & ARRAY_FLAG_COMPRESS_ATTRIBUTES) {
+					for (int j = 0; j < p_vertex_len; j++) {
+						const uint16_t *v = reinterpret_cast<const uint16_t *>(&ar[j * attrib_elem_size + offsets[i]]);
+						Vector2 vec = Vector2(float(v[0]) / 65535.0, float(v[1]) / 65535.0);
+						if (!p_uv_scale.is_zero_approx()) {
+							vec = (vec - Vector2(0.5, 0.5)) * Vector2(p_uv_scale.z, p_uv_scale.w);
+						}
+						w[j] = vec;
+					}
+				} else {
+					for (int j = 0; j < p_vertex_len; j++) {
+						const float *v = reinterpret_cast<const float *>(&ar[j * attrib_elem_size + offsets[i]]);
+						w[j] = Vector2(v[0], v[1]);
+					}
+				}
+
+				ret[i] = arr;
+
+			} break;
+			case RS::ARRAY_CUSTOM0:
+			case RS::ARRAY_CUSTOM1:
+			case RS::ARRAY_CUSTOM2:
+			case RS::ARRAY_CUSTOM3: {
+				uint32_t type = (p_format >> (ARRAY_FORMAT_CUSTOM_BASE + ARRAY_FORMAT_CUSTOM_BITS * (i - RS::ARRAY_CUSTOM0))) & ARRAY_FORMAT_CUSTOM_MASK;
+				switch (type) {
+					case ARRAY_CUSTOM_RGBA8_UNORM:
+					case ARRAY_CUSTOM_RGBA8_SNORM:
+					case ARRAY_CUSTOM_RG_HALF:
+					case ARRAY_CUSTOM_RGBA_HALF: {
+						// Size 4
+						int s = type == ARRAY_CUSTOM_RGBA_HALF ? 8 : 4;
+						Vector<uint8_t> arr;
+						arr.resize(p_vertex_len * s);
+
+						uint8_t *w = arr.ptrw();
+
+						for (int j = 0; j < p_vertex_len; j++) {
+							const uint8_t *v = reinterpret_cast<const uint8_t *>(&ar[j * attrib_elem_size + offsets[i]]);
+							memcpy(&w[j * s], v, s);
+						}
+
+						ret[i] = arr;
+
+					} break;
+					case ARRAY_CUSTOM_R_FLOAT:
+					case ARRAY_CUSTOM_RG_FLOAT:
+					case ARRAY_CUSTOM_RGB_FLOAT:
+					case ARRAY_CUSTOM_RGBA_FLOAT: {
+						uint32_t s = type - ARRAY_CUSTOM_R_FLOAT + 1;
+
+						Vector<float> arr;
+						arr.resize(s * p_vertex_len);
+
+						float *w = arr.ptrw();
+
+						for (int j = 0; j < p_vertex_len; j++) {
+							const float *v = reinterpret_cast<const float *>(&ar[j * attrib_elem_size + offsets[i]]);
+							memcpy(&w[j * s], v, s * sizeof(float));
+						}
+						ret[i] = arr;
+
+					} break;
+					default: {
+					}
+				}
+
+			} break;
+			case RS::ARRAY_WEIGHTS: {
+				uint32_t bone_count = (p_format & ARRAY_FLAG_USE_8_BONE_WEIGHTS) ? 8 : 4;
+
+				Vector<float> arr;
+				arr.resize(p_vertex_len * bone_count);
+				{
+					float *w = arr.ptrw();
+
+					for (int j = 0; j < p_vertex_len; j++) {
+						const uint16_t *v = (const uint16_t *)&sr[j * skin_elem_size + offsets[i]];
+						for (uint32_t k = 0; k < bone_count; k++) {
+							w[j * bone_count + k] = float(v[k] / 65535.0);
+						}
+					}
+				}
+
+				ret[i] = arr;
+
+			} break;
+			case RS::ARRAY_BONES: {
+				uint32_t bone_count = (p_format & ARRAY_FLAG_USE_8_BONE_WEIGHTS) ? 8 : 4;
+
+				Vector<int> arr;
+				arr.resize(p_vertex_len * bone_count);
+
+				int *w = arr.ptrw();
+
+				for (int j = 0; j < p_vertex_len; j++) {
+					const uint16_t *v = (const uint16_t *)&sr[j * skin_elem_size + offsets[i]];
+					for (uint32_t k = 0; k < bone_count; k++) {
+						w[j * bone_count + k] = v[k];
+					}
+				}
+
+				ret[i] = arr;
+
+			} break;
+			case RS::ARRAY_INDEX: {
+				/* determine whether using 16 or 32 bits indices */
+
+				const uint8_t *ir = p_index_data.ptr();
+
+				Vector<int> arr;
+				arr.resize(p_index_len);
+				if (p_vertex_len <= (1 << 16)) {
+					int *w = arr.ptrw();
+
+					for (int j = 0; j < p_index_len; j++) {
+						const uint16_t *v = (const uint16_t *)&ir[j * 2];
+						w[j] = *v;
+					}
+				} else {
+					int *w = arr.ptrw();
+
+					for (int j = 0; j < p_index_len; j++) {
+						const int *v = (const int *)&ir[j * 4];
+						w[j] = *v;
+					}
+				}
+				ret[i] = arr;
+			} break;
+			default: {
+				ERR_FAIL_V(ret);
+			}
+		}
+	}
+
+	return ret;
 }

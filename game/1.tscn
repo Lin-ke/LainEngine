@@ -1,29 +1,17 @@
 {
   "head": {
     "tag": "scene",
-    "load_steps": 3
+    "load_steps": 2
   },
-  "ext_res": [],
-  "sub_res": [
+  "ext_res": [
     {
-      "type": "StandardMaterial3D",
-      "id": "StandardMaterial3D_uidbb",
-      "sub_res": {},
-      "ext_res": {},
-      "variants": {}
-    },
-    {
-      "type": "CapsuleMesh",
-      "id": "CapsuleMesh_vq6yd",
-      "sub_res": {
-        "material": "StandardMaterial3D_uidbb"
-      },
-      "ext_res": {},
-      "variants": {
-        "radius": 1
-      }
+      "type": "ArrayMesh",
+      "uid": "",
+      "def_path": "res://robot.obj",
+      "id": "1_gqwcmvet8c"
     }
   ],
+  "sub_res": [],
   "gobjects": [
     {
       "variants": {
@@ -49,7 +37,7 @@
       "variants": {
         "type": {
           "$typeName": "StringName",
-          "$context": "Camera3DMove"
+          "$context": "Camera3D"
         },
         "parent": {
           "$typeName": "GObjectPath",
@@ -59,7 +47,6 @@
           "$typeName": "StringName",
           "$context": "default_cam"
         },
-        "current": true,
         "transform": {
           "$typeName": "Transform3D",
           "$context": {
@@ -67,18 +54,18 @@
               "rows": [
                 {
                   "x": 1,
-                  "y": 0,
-                  "z": 0
-                },
-                {
-                  "x": 0,
                   "y": 1,
-                  "z": 0
+                  "z": 1
                 },
                 {
-                  "x": 0,
-                  "y": 0,
-                  "z": 1
+                  "x": 2,
+                  "y": 2,
+                  "z": 2
+                },
+                {
+                  "x": 3,
+                  "y": 3,
+                  "z": 3
                 }
               ]
             },
@@ -146,39 +133,10 @@
         "light_color": {
           "$typeName": "Color",
           "$context": {
-            "r": 1,
-            "g": 0.25,
+            "r": 0.5,
+            "g": 0.5,
             "b": 1,
             "a": 1
-          }
-        },
-        "transform": {
-          "$typeName": "Transform3D",
-          "$context": {
-            "basis": {
-              "rows": [
-                {
-                  "x": 1,
-                  "y": 0,
-                  "z": 0
-                },
-                {
-                  "x": 0,
-                  "y": 1,
-                  "z": 0
-                },
-                {
-                  "x": 0,
-                  "y": 0,
-                  "z": 1
-                }
-              ]
-            },
-            "origin": {
-              "x": 1,
-              "y": 2,
-              "z": 2.5
-            }
           }
         },
         "directional_shadow_mode": 2
@@ -263,42 +221,13 @@
           "$typeName": "StringName",
           "$context": "cube"
         },
-        "layers": 1,
-        "transform": {
-          "$typeName": "Transform3D",
-          "$context": {
-            "basis": {
-              "rows": [
-                {
-                  "x": 0.37,
-                  "y": 0,
-                  "z": 0
-                },
-                {
-                  "x": 0,
-                  "y": 0.37,
-                  "z": 0
-                },
-                {
-                  "x": 0,
-                  "y": 0,
-                  "z": 0.37
-                }
-              ]
-            },
-            "origin": {
-              "x": 1,
-              "y": 2,
-              "z": 2.5
-            }
-          }
-        }
+        "layers": 1
       },
       "instanced_components": [],
-      "sub_res": {
-        "mesh": "CapsuleMesh_vq6yd"
-      },
-      "ext_res": {}
+      "sub_res": {},
+      "ext_res": {
+        "mesh": "1_gqwcmvet8c"
+      }
     }
   ]
 }

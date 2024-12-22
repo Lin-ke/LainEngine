@@ -258,6 +258,7 @@ class MeshStorage : public RendererMeshStorage {
   virtual AABB mesh_get_custom_aabb(RID p_mesh) const override;
 
   virtual AABB mesh_get_aabb(RID p_mesh, RID p_skeleton = RID()) override;
+	virtual RS::SurfaceData mesh_get_surface(RID p_mesh, int p_surface) const override;
 
   virtual void mesh_set_path(RID p_mesh, const String &p_path) override;
   virtual String mesh_get_path(RID p_mesh) const override;
