@@ -641,7 +641,7 @@ bool lain::ShaderRD::version_free(RID p_version) {
 
   return true;
 }
-
+// 这个函数可以获得 glsl
 RS::ShaderNativeSourceCode ShaderRD::version_get_native_source_code(RID p_version) {
   Version* version = version_owner.get_or_null(p_version);
   RS::ShaderNativeSourceCode source_code;

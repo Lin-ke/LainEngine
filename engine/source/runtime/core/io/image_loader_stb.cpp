@@ -32,36 +32,29 @@ namespace lain {
 			}
 			ERR_FAIL_COND_V_MSG(false, Image::FORMAT_MAX, "wrong jpeg?");
 		}
-		else if (p_ext == "bmp") {
+		else if (p_ext == "bmp" || p_ext == "png" || p_ext == "hdr") {
 			switch (p_channels) {
 			case 1:
 				format = Image::FORMAT_L8;
+				break;
 			case 2:
 				format = Image::FORMAT_LA8;
+				break;
+			
 			case 3:
 				format = Image::FORMAT_RGB8;
+				break;
+			
 			case 4:
 				format = Image::FORMAT_RGBA8;
+				break;
+			
 			default:
-				ERR_FAIL_COND_V_MSG(false, Image::FORMAT_MAX, "wrong bmp?");
-			}
-		}
-		else if (p_ext == "png") {
-			switch (p_channels) {
-			case 1:
-				format = Image::FORMAT_L8;
-			case 2:
-				format = Image::FORMAT_LA8;
-			case 3:
-				format = Image::FORMAT_RGB8;
-			case 4:
-				format = Image::FORMAT_RGBA8;
-			default:
-				ERR_FAIL_COND_V_MSG(false, Image::FORMAT_MAX, "wrong png?");
+				ERR_FAIL_V_MSG( Image::FORMAT_MAX, "wrong image?");
 			}
 		}
 		else {
-			ERR_FAIL_COND_V_MSG(false, Image::FORMAT_MAX, "unknown format");
+			ERR_FAIL_V_MSG( Image::FORMAT_MAX, "unknown format");
 		}
 		return format;
 	}

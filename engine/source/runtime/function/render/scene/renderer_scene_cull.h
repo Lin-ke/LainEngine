@@ -832,6 +832,17 @@ class RendererSceneCull : public RenderingMethod {
 #endif
 
 #define PASSBASE scene_render
+
+	/* SKY API */
+
+	PASS0R(RID, sky_allocate)
+	PASS1(sky_initialize, RID)
+
+	PASS2(sky_set_radiance_size, RID, int)
+	PASS2(sky_set_mode, RID, RS::SkyMode)
+	PASS2(sky_set_material, RID, RID)
+	PASS4R(Ref<Image>, sky_bake_panorama, RID, float, bool, const Size2i &)
+
   // Compositor effect
   PASS0R(RID, compositor_effect_allocate)
   PASS1(compositor_effect_initialize, RID)
@@ -857,6 +868,33 @@ class RendererSceneCull : public RenderingMethod {
   PASS3(environment_set_bg_energy, RID, float, float)
   PASS2(environment_set_canvas_max_layer, RID, int)
   PASS6(environment_set_ambient_light, RID, const Color&, RS::EnvironmentAmbientSource, float, float, RS::EnvironmentReflectionSource)
+
+	// SSR
+	PASS6(environment_set_ssr, RID, bool, int, float, float, float)
+
+	PASS1RC(bool, environment_get_ssr_enabled, RID)
+	PASS1RC(int, environment_get_ssr_max_steps, RID)
+	PASS1RC(float, environment_get_ssr_fade_in, RID)
+	PASS1RC(float, environment_get_ssr_fade_out, RID)
+	PASS1RC(float, environment_get_ssr_depth_tolerance, RID)
+
+	PASS1(environment_set_ssr_roughness_quality, RS::EnvironmentSSRRoughnessQuality)
+
+	// SSAO
+	PASS10(environment_set_ssao, RID, bool, float, float, float, float, float, float, float, float)
+
+	PASS1RC(bool, environment_get_ssao_enabled, RID)
+	PASS1RC(float, environment_get_ssao_radius, RID)
+	PASS1RC(float, environment_get_ssao_intensity, RID)
+	PASS1RC(float, environment_get_ssao_power, RID)
+	PASS1RC(float, environment_get_ssao_detail, RID)
+	PASS1RC(float, environment_get_ssao_horizon, RID)
+	PASS1RC(float, environment_get_ssao_sharpness, RID)
+	PASS1RC(float, environment_get_ssao_direct_light_affect, RID)
+	PASS1RC(float, environment_get_ssao_ao_channel_affect, RID)
+
+	PASS6(environment_set_ssao_quality, RS::EnvironmentSSAOQuality, bool, float, int, float, float)
+
 
 #undef PASSBASE
 

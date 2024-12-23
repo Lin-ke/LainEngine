@@ -96,9 +96,46 @@ class RenderingMethod {
 	virtual void environment_set_canvas_max_layer(RID p_env, int p_max_layer) = 0;
 	virtual void environment_set_ambient_light(RID p_env, const Color &p_color, RS::EnvironmentAmbientSource p_ambient = RS::ENV_AMBIENT_SOURCE_BG, float p_energy = 1.0, float p_sky_contribution = 0.0, RS::EnvironmentReflectionSource p_reflection_source = RS::ENV_REFLECTION_SOURCE_BG) = 0;
 
+	virtual void environment_set_ssr(RID p_env, bool p_enable, int p_max_steps, float p_fade_int, float p_fade_out, float p_depth_tolerance) = 0;
+
+	virtual bool environment_get_ssr_enabled(RID p_env) const = 0;
+	virtual int environment_get_ssr_max_steps(RID p_env) const = 0;
+	virtual float environment_get_ssr_fade_in(RID p_env) const = 0;
+	virtual float environment_get_ssr_fade_out(RID p_env) const = 0;
+	virtual float environment_get_ssr_depth_tolerance(RID p_env) const = 0;
+
+	virtual void environment_set_ssr_roughness_quality(RS::EnvironmentSSRRoughnessQuality p_quality) = 0;
+
+	// SSAO
+	virtual void environment_set_ssao(RID p_env, bool p_enable, float p_radius, float p_intensity, float p_power, float p_detail, float p_horizon, float p_sharpness, float p_light_affect, float p_ao_channel_affect) = 0;
+
+	virtual bool environment_get_ssao_enabled(RID p_env) const = 0;
+	virtual float environment_get_ssao_radius(RID p_env) const = 0;
+	virtual float environment_get_ssao_intensity(RID p_env) const = 0;
+	virtual float environment_get_ssao_power(RID p_env) const = 0;
+	virtual float environment_get_ssao_detail(RID p_env) const = 0;
+	virtual float environment_get_ssao_horizon(RID p_env) const = 0;
+	virtual float environment_get_ssao_sharpness(RID p_env) const = 0;
+	virtual float environment_get_ssao_direct_light_affect(RID p_env) const = 0;
+	virtual float environment_get_ssao_ao_channel_affect(RID p_env) const = 0;
+
+	virtual void environment_set_ssao_quality(RS::EnvironmentSSAOQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) = 0;
+
 
 	virtual RS::EnvironmentBG environment_get_background(RID p_Env) const = 0;
 	virtual int environment_get_canvas_max_layer(RID p_env) const = 0;
+
+	/* SKY API */
+
+	virtual RID sky_allocate() = 0;
+	virtual void sky_initialize(RID p_rid) = 0;
+
+	virtual void sky_set_radiance_size(RID p_sky, int p_radiance_size) = 0;
+	virtual void sky_set_mode(RID p_sky, RS::SkyMode p_samples) = 0;
+	virtual void sky_set_material(RID p_sky, RID p_material) = 0;
+	virtual Ref<Image> sky_bake_panorama(RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i &p_size) = 0;
+
+
 
 		/* COMPOSITOR EFFECT API */
 

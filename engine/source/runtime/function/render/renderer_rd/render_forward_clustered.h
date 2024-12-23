@@ -9,6 +9,10 @@
 #include "scene_shader_forward_clustered.h"
 #include "storage/render_buffer_custom_data_rd.h"
 #include "storage/render_data_rd.h"
+
+#include "./effects/ss_effects.h"
+#include "./effects/taa.h"
+
 #define RB_SCOPE_FORWARD_CLUSTERED SNAME("forward_clustered")
 
 #define RB_SCOPE_FORWARD_CLUSTERED SNAME("forward_clustered")
@@ -557,10 +561,9 @@ class RenderForwardClustered : public RendererSceneRenderRD {
 
   // /* Effects */
 
-  // RendererRD::Resolve *resolve_effects = nullptr;
-  // RendererRD::TAA *taa = nullptr;
+  RendererRD::TAA *taa = nullptr;
   // RendererRD::FSR2Effect *fsr2_effect = nullptr;
-  // RendererRD::SSEffects *ss_effects = nullptr;
+  RendererRD::SSEffects *ss_effects = nullptr;
 
   /* Cluster builder */
 
@@ -610,10 +613,10 @@ class RenderForwardClustered : public RendererSceneRenderRD {
 
   virtual RID _render_buffers_get_normal_texture(Ref<RenderSceneBuffersRD> p_render_buffers) override;
   virtual RID _render_buffers_get_velocity_texture(Ref<RenderSceneBuffersRD> p_render_buffers) override;
-
-  // virtual void environment_set_ssao_quality(RS::EnvironmentSSAOQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) override;
+  // 继承自RendererSceneRender
+  virtual void environment_set_ssao_quality(RS::EnvironmentSSAOQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) override;
   // virtual void environment_set_ssil_quality(RS::EnvironmentSSILQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) override;
-  // virtual void environment_set_ssr_roughness_quality(RS::EnvironmentSSRRoughnessQuality p_quality) override;
+  virtual void environment_set_ssr_roughness_quality(RS::EnvironmentSSRRoughnessQuality p_quality) override;
 
   // virtual void sub_surface_scattering_set_quality(RS::SubSurfaceScatteringQuality p_quality) override;
   // virtual void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) override;

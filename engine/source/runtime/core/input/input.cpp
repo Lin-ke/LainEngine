@@ -5,7 +5,6 @@
 #include "core/os/os.h"
 #include "core/engine/engine.h"
 #include "default_controller_mappings.h"
-#define DEFVAL(m_defval) (m_defval)
 
 #ifdef DEV_ENABLED
 #include "core/os/thread.h"

@@ -532,6 +532,9 @@ void WindowSystem::on_key(int id, int key, int scancode, int action, int p_mods)
     k->set_pressed(true);
   } else if (action == GLFW_RELEASE) {
     k->set_pressed(false);
+  } else if (action == GLFW_REPEAT) {
+    k->set_pressed(true);
+    k->set_echo(true);
   }
   Input::get_singleton()->parse_input_event(k);
   // 解决shift 的问题

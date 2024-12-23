@@ -29,9 +29,7 @@
 /**************************************************************************/
 
 #include "surface_tool.h"
-#ifndef DEFVAL
-#define DEFVAL(m_defval) (m_defval)
-#endif
+
 #define EQ_VERTEX_DIST 0.00001
 using namespace lain;
 SurfaceTool::OptimizeVertexCacheFunc SurfaceTool::optimize_vertex_cache_func = nullptr;

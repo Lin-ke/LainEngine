@@ -386,6 +386,28 @@ RID lain::RendererSceneRenderRD::render_buffers_get_default_voxel_gi_buffer() {
   return gi.default_voxel_gi_buffer;
 }
 
+RID RendererSceneRenderRD::sky_allocate() {
+	return sky.allocate_sky_rid();
+}
+void RendererSceneRenderRD::sky_initialize(RID p_rid) {
+	sky.initialize_sky_rid(p_rid);
+}
+
+void RendererSceneRenderRD::sky_set_radiance_size(RID p_sky, int p_radiance_size) {
+	sky.sky_set_radiance_size(p_sky, p_radiance_size);
+}
+
+void RendererSceneRenderRD::sky_set_mode(RID p_sky, RS::SkyMode p_mode) {
+	sky.sky_set_mode(p_sky, p_mode);
+}
+
+void RendererSceneRenderRD::sky_set_material(RID p_sky, RID p_material) {
+	sky.sky_set_material(p_sky, p_material);
+}
+
+Ref<Image> RendererSceneRenderRD::sky_bake_panorama(RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i &p_size) {
+	return sky.sky_bake_panorama(p_sky, p_energy, p_bake_irradiance, p_size);
+}
 bool RendererSceneRenderRD::_compositor_effects_has_flag(const RenderDataRD* p_render_data, RS::CompositorEffectFlags p_flag,
                                                          RS::CompositorEffectCallbackType p_callback_type) {
   RendererCompositorStorage* comp_storage = RendererCompositorStorage::get_singleton();

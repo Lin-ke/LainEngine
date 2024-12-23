@@ -721,13 +721,13 @@ void lain::Camera3DMove::_notification(int p_what) {
 		double delta = get_process_delta_time();
 		
 		Vector3 motion = Vector3(0, 0, 0);
+
 		motion = Vector3(
 			Input::get_singleton()->get_axis("move_left", "move_right"),
 			0,
 			Input::get_singleton()->get_axis("move_forward", "move_back")
 		);
 		motion.normalise();
-		
 		velocity += MOVE_SPEED * delta * (get_transform().basis.xform(motion));
 		velocity *= 0.85;
 		Vector3 postion = get_position();

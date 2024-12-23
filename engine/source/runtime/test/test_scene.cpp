@@ -13,6 +13,9 @@
 #include "function/render/rendering_system/light_storage_api.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/resources/common/primitive_meshes.h"
+#include "scene/3d/world_environment.h"
+#include "scene/resources/common/sky_material.h"
+#include "scene/resources/common/image_texture.h"
 namespace lain {
 namespace test {
 void draw_tree(GObject* root) {
@@ -53,10 +56,27 @@ void test_scene() {
       GObject* gobj1 = memnew(TestNode);
       GObject* gobj2 = memnew(TestNode);
       GObject* gobj1_1 = memnew(TestNode);
-      Camera3D* cam = memnew(Camera3D);
+      Camera3D* cam = memnew(Camera3DMove);
       DirectionalLight3D* light = memnew(DirectionalLight3D);
       OmniLight3D* omni = memnew(OmniLight3D);
-      
+      WorldEnvironment* env = memnew(WorldEnvironment);
+      Ref<Environment> ev;
+      ev.instantiate();
+      ev->set_background(Environment::BGMode::BG_SKY);
+      Ref<Sky> sky;
+      sky.instantiate();
+      Ref<PanoramaSkyMaterial> material;
+      material.instantiate();
+      Ref<Image> img = ResourceLoader::load("res://lakeside_sunrise_4k.hdr");
+      Ref<Texture2D> tex = ImageTexture::create_from_image(img);
+      if(tex.is_null()){
+        L_PRINT("error!!")
+      }
+      material->set_panorama(tex);
+      sky->set_material(material);
+      ev.instantiate();
+      ev->set_sky(sky);
+            
       scene->set_name("TestScene");
       scene->add_component(memnew(TestComponent));
       scene->add_child(cam);
@@ -64,6 +84,11 @@ void test_scene() {
       cam->set_name("default_cam");
       cam->set_transform(
         Transform3D(Vector3(1,2,3), Vector3(1,2,3), Vector3(1,2,3), Vector3(1,2,3)));
+      scene->add_child(env);
+      env->set_owner(scene);
+      env->set_name("default_env");
+      env->set_environment(ev);
+
       omni->set_color(Color(.2, .1, 1));
       scene->add_child(omni);
       omni->set_owner(scene);
@@ -89,7 +114,7 @@ void test_scene() {
       cube->set_name("cube");
       scene->add_child(cube);
       cube->set_owner(scene);
-      
+
       // Ref<CapsuleMesh> mesh = memnew(CapsuleMesh);
       // cube->set_mesh(mesh);
       // mesh->set_radius(1);

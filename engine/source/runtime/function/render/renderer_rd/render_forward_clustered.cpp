@@ -306,6 +306,19 @@ RID lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_buf
   return p_render_buffers->get_velocity_buffer(false);
 }
 
+void lain::RendererSceneRenderImplementation::RenderForwardClustered::environment_set_ssao_quality(RS::EnvironmentSSAOQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to)
+{
+  ERR_FAIL_NULL(ss_effects);
+	ERR_FAIL_COND(p_quality < RS::EnvironmentSSAOQuality::ENV_SSAO_QUALITY_VERY_LOW || p_quality > RS::EnvironmentSSAOQuality::ENV_SSAO_QUALITY_ULTRA);
+	ss_effects->ssao_set_quality(p_quality, p_half_size, p_adaptive_target, p_blur_passes, p_fadeout_from, p_fadeout_to);
+}
+
+void lain::RendererSceneRenderImplementation::RenderForwardClustered::environment_set_ssr_roughness_quality(RS::EnvironmentSSRRoughnessQuality p_quality) {
+  ERR_FAIL_NULL(ss_effects);
+	ERR_FAIL_COND(p_quality < RS::EnvironmentSSRRoughnessQuality::ENV_SSR_ROUGHNESS_QUALITY_DISABLED || p_quality > RS::EnvironmentSSRRoughnessQuality::ENV_SSR_ROUGHNESS_QUALITY_HIGH);
+	ss_effects->ssr_set_roughness_quality(p_quality);
+}
+
 void lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_scene(RenderDataRD* p_render_data, const Color& p_default_bg_color) {
   RendererRD::LightStorage* light_storage = RendererRD::LightStorage::get_singleton();
 

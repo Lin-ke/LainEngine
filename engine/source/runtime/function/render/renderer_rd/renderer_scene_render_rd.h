@@ -13,6 +13,7 @@
 namespace lain {
 class RendererSceneRenderRD : public RendererSceneRender {
   static RendererSceneRenderRD* singleton;
+	friend class RendererRD::SkyRD;
 
 protected:
 	RendererRD::ForwardIDStorage *forward_id_storage = nullptr;
@@ -79,7 +80,15 @@ void _process_compositor_effects(RS::CompositorEffectCallbackType p_callback_typ
 	virtual float _render_buffers_get_luminance_multiplier(){return 1.0f;}
 	// 跟获得特定纹理相关的
 	RID render_buffers_get_default_voxel_gi_buffer();
+	/* SKY */
 
+	virtual RID sky_allocate() override;
+	virtual void sky_initialize(RID p_rid) override;
+
+	virtual void sky_set_radiance_size(RID p_sky, int p_radiance_size) override;
+	virtual void sky_set_mode(RID p_sky, RS::SkyMode p_mode) override;
+	virtual void sky_set_material(RID p_sky, RID p_material) override;
+	virtual Ref<Image> sky_bake_panorama(RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i &p_size) override;
   /* GI */
   bool screen_space_roughness_limiter = false;
   float screen_space_roughness_limiter_amount = 0.25;

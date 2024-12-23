@@ -10,6 +10,7 @@ namespace lain {
 			p_list->push_back("jpg");
 			p_list->push_back("jpeg");
 			p_list->push_back("bmp");
+			p_list->push_back("hdr");
 		}
 		virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> f, ImageLoader::LoaderFlags p_flags, float p_scale) override;
 		

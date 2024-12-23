@@ -63,7 +63,14 @@ private:
 	public:
 	Ref<CameraAttributes> get_camera_attributes() const;
 	RID get_scenario() const{return scenario;}
+	
+	void set_environment(const Ref<Environment> &p_environment);
+	Ref<Environment> get_environment() const;
+	void set_camera_attributes(const Ref<CameraAttributes> &p_camera_attributes);
 	World3D();
+	void set_compositor(const Ref<Compositor> &p_compositor);
+	Ref<Compositor> get_compositor() const;
+
 };
 }
 

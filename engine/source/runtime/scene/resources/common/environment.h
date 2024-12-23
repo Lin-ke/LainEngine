@@ -86,7 +86,7 @@ private:
 	ToneMapper tone_mapper = TONE_MAPPER_LINEAR;
 	float tonemap_exposure = 1.0;
 	float tonemap_white = 1.0;
-	void _update_tonemap(){}
+	void _update_tonemap();
 
 	// SSR
 	bool ssr_enabled = false;
@@ -94,7 +94,7 @@ private:
 	float ssr_fade_in = 0.15;
 	float ssr_fade_out = 2.0;
 	float ssr_depth_tolerance = 0.2;
-	void _update_ssr(){}
+	void _update_ssr();
 
 	// SSAO
 	bool ssao_enabled = false;
@@ -106,7 +106,7 @@ private:
 	float ssao_sharpness = 0.98;
 	float ssao_direct_light_affect = 0.0;
 	float ssao_ao_channel_affect = 0.0;
-	void _update_ssao(){}
+	void _update_ssao();
 
 	// SSIL
 	bool ssil_enabled = false;
@@ -115,7 +115,7 @@ private:
 	float ssil_sharpness = 0.98;
 	float ssil_normal_rejection = 1.0;
 
-	void _update_ssil(){}
+	void _update_ssil();
 
 	// SDFGI
 	bool sdfgi_enabled = false;
@@ -128,7 +128,7 @@ private:
 	float sdfgi_energy = 1.0;
 	float sdfgi_normal_bias = 1.1;
 	float sdfgi_probe_bias = 1.1;
-	void _update_sdfgi(){}
+	void _update_sdfgi();
 
 	// Glow
 	bool glow_enabled = false;
@@ -144,7 +144,7 @@ private:
 	float glow_hdr_luminance_cap = 12.0;
 	float glow_map_strength = 0.8f;
 	Ref<Texture> glow_map;
-	void _update_glow(){}
+	void _update_glow();
 
 	// Fog
 	bool fog_enabled = false;
@@ -158,14 +158,14 @@ private:
 	float fog_aerial_perspective = 0.0;
 	float fog_sky_affect = 1.0;
 
-	void _update_fog(){}
+	void _update_fog();
 
 	// Depth Fog
 	float fog_depth_curve = 1.0;
 	float fog_depth_begin = 10.0;
 	float fog_depth_end = 100.0;
 
-	void _update_fog_depth(){}
+	void _update_fog_depth();
 
 	// Volumetric Fog
 	bool volumetric_fog_enabled = false;
@@ -181,7 +181,7 @@ private:
 	float volumetric_fog_sky_affect = 1.0;
 	bool volumetric_fog_temporal_reproject = true;
 	float volumetric_fog_temporal_reproject_amount = 0.9;
-	void _update_volumetric_fog(){}
+	void _update_volumetric_fog();
 
 	// Adjustment
 	bool adjustment_enabled = false;
@@ -190,7 +190,7 @@ private:
 	float adjustment_saturation = 1.0;
 	bool use_1d_color_correction = true;
 	Ref<Texture> adjustment_color_correction;
-	void _update_adjustment(){}
+	void _update_adjustment();
 
 protected:
 	static void _bind_methods();
@@ -414,13 +414,13 @@ public:
 	
 };
 
-// VARIANT_ENUM_CAST(Environment::BGMode)
-// VARIANT_ENUM_CAST(Environment::AmbientSource)
-// VARIANT_ENUM_CAST(Environment::ReflectionSource)
-// VARIANT_ENUM_CAST(Environment::ToneMapper)
-// VARIANT_ENUM_CAST(Environment::SDFGIYScale)
-// VARIANT_ENUM_CAST(Environment::GlowBlendMode)
-// VARIANT_ENUM_CAST(Environment::FogMode)
+VARIANT_ENUM_CAST(Environment::BGMode)
+VARIANT_ENUM_CAST(Environment::AmbientSource)
+VARIANT_ENUM_CAST(Environment::ReflectionSource)
+VARIANT_ENUM_CAST(Environment::ToneMapper)
+VARIANT_ENUM_CAST(Environment::SDFGIYScale)
+VARIANT_ENUM_CAST(Environment::GlowBlendMode)
+VARIANT_ENUM_CAST(Environment::FogMode)
 }
 
 #endif // ENVIRONMENT_H

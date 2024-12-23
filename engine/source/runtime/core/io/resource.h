@@ -24,9 +24,9 @@ namespace lain {
 		static void register_custom_data_to_otdb() { ClassDB::add_resource_base_extension("res", get_class_static()); }
 		virtual String get_base_extension() const { return "res"; }
 	private:
-		String name;
-		String path_cache;
-		String scene_unique_id;
+		String name = "";
+		String path_cache = "";
+		String scene_unique_id = "";
 
 		//SelfList<Resource> remapped_list;
 		bool local_to_scene = false;

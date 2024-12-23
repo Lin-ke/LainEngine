@@ -134,6 +134,15 @@ class RendererSceneRender {
                             RenderingMethod::RenderInfo* r_render_info = nullptr) = 0;
   // 这几个API最后在 render_forward_clustered.h中实现
 
+/* SKY */
+	virtual RID sky_allocate() = 0;
+	virtual void sky_initialize(RID p_rid) = 0;
+
+	virtual void sky_set_radiance_size(RID p_sky, int p_radiance_size) = 0;
+	virtual void sky_set_mode(RID p_sky, RS::SkyMode p_samples) = 0;
+	virtual void sky_set_material(RID p_sky, RID p_material) = 0;
+	virtual Ref<Image> sky_bake_panorama(RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i &p_size) = 0;
+
 
 /* Environment*/
 	// Background
@@ -159,7 +168,7 @@ class RendererSceneRender {
 	float environment_get_ssao_direct_light_affect(RID p_env) const;
 	float environment_get_ssao_ao_channel_affect(RID p_env) const;
 
-	// virtual void environment_set_ssao_quality(RS::EnvironmentSSAOQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) = 0;
+	virtual void environment_set_ssao_quality(RS::EnvironmentSSAOQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) = 0;
 
 	// SSIL
 	void environment_set_ssil(RID p_env, bool p_enable, float p_radius, float p_intensity, float p_sharpness, float p_normal_rejection);
@@ -178,7 +187,7 @@ class RendererSceneRender {
 	float environment_get_ssr_fade_out(RID p_env) const;
 	float environment_get_ssr_depth_tolerance(RID p_env) const;
 
-	// virtual void environment_set_ssr_roughness_quality(RS::EnvironmentSSRRoughnessQuality p_quality) = 0;
+	virtual void environment_set_ssr_roughness_quality(RS::EnvironmentSSRRoughnessQuality p_quality) = 0;
 
   // virtual void sub_surface_scattering_set_quality(RS::SubSurfaceScatteringQuality p_quality) = 0;
 	// virtual void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) = 0;

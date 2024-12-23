@@ -419,6 +419,22 @@ void SceneTree::flush_transform_notifications() {
     node->notification(NOTIFICATION_TRANSFORM_CHANGED);
   }
 }
+GObject *SceneTree::get_first_node_in_group(const StringName &p_group) {
+	_THREAD_SAFE_METHOD_
+	HashMap<StringName, Group>::Iterator E = group_map.find(p_group);
+	if (!E) {
+		return nullptr; // No group.
+	}
+
+	_update_group_order(E->value); // Update order just in case.
+
+	if (E->value.nodes.is_empty()) {
+		return nullptr;
+	}
+
+	return E->value.nodes[0];
+}
+
 /// signal method
 void SceneTree::node_removed(GObject* p_node) {
   if (current_scene == p_node) {

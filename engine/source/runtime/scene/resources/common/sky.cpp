@@ -1,49 +1,64 @@
 #include "sky.h"
 using namespace lain;
-// #include "sky.h"
+void lain::Sky::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_radiance_size", "size"), &Sky::set_radiance_size);
+	ClassDB::bind_method(D_METHOD("get_radiance_size"), &Sky::get_radiance_size);
 
-// #include "core/io/image_loader.h"
-// #include "function/render/rendering_system/rendering_system.h"
-// using namespace lain;
-// void Sky::set_radiance_size(RadianceSize p_size) {
-// 	ERR_FAIL_INDEX(p_size, RADIANCE_SIZE_MAX);
+	ClassDB::bind_method(D_METHOD("set_process_mode", "mode"), &Sky::set_process_mode);
+	ClassDB::bind_method(D_METHOD("get_process_mode"), &Sky::get_process_mode);
 
-// 	radiance_size = p_size;
-// 	static const int size[RADIANCE_SIZE_MAX] = {
-// 		32, 64, 128, 256, 512, 1024, 2048
-// 	};
-// 	RS::get_singleton()->sky_set_radiance_size(sky, size[radiance_size]);
-// }
+	ClassDB::bind_method(D_METHOD("set_material", "material"), &Sky::set_material);
+	ClassDB::bind_method(D_METHOD("get_material"), &Sky::get_material);
 
-// Sky::RadianceSize Sky::get_radiance_size() const {
-// 	return radiance_size;
-// }
 
-// void Sky::set_process_mode(ProcessMode p_mode) {
-// 	mode = p_mode;
-// 	RS::get_singleton()->sky_set_mode(sky, RS::SkyMode(mode));
-// }
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "sky_material", PROPERTY_HINT_RESOURCE_TYPE, "PanoramaSkyMaterial,ProceduralSkyMaterial,PhysicalSkyMaterial,ShaderMaterial"), "set_material", "get_material");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "process_mode", PROPERTY_HINT_ENUM, "Automatic,High-Quality,High-Quality Incremental,Real-Time"), "set_process_mode", "get_process_mode");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "radiance_size", PROPERTY_HINT_ENUM, "32,64,128,256,512,1024,2048"), "set_radiance_size", "get_radiance_size");
 
-// Sky::ProcessMode Sky::get_process_mode() const {
-// 	return mode;
-// }
+}
+void Sky::set_radiance_size(RadianceSize p_size) {
+  ERR_FAIL_INDEX(p_size, RADIANCE_SIZE_MAX);
 
-// void Sky::set_material(const Ref<Material> &p_material) {
-// 	sky_material = p_material;
-// 	RID material_rid;
-// 	if (sky_material.is_valid()) {
-// 		material_rid = sky_material->get_rid();
-// 	}
-// 	RS::get_singleton()->sky_set_material(sky, material_rid);
-// }
+  radiance_size = p_size;
+  static const int size[RADIANCE_SIZE_MAX] = {32, 64, 128, 256, 512, 1024, 2048};
+  RS::get_singleton()->sky_set_radiance_size(sky, size[radiance_size]);
+}
 
-// Ref<Material> Sky::get_material() const {
-// 	return sky_material;
-// }
+Sky::RadianceSize Sky::get_radiance_size() const {
+	return radiance_size;
+}
+
+void Sky::set_process_mode(ProcessMode p_mode) {
+	mode = p_mode;
+	RS::get_singleton()->sky_set_mode(sky, RS::SkyMode(mode));
+}
+
+Sky::ProcessMode Sky::get_process_mode() const {
+	return mode;
+}
+
+void Sky::set_material(const Ref<Material> &p_material) {
+	sky_material = p_material;
+	RID material_rid;
+	if (sky_material.is_valid()) {
+		material_rid = sky_material->GetRID();
+	}
+	RS::get_singleton()->sky_set_material(sky, material_rid);
+}
+
+Ref<Material> Sky::get_material() const {
+	return sky_material;
+}
 
 RID Sky::GetRID() const {
 	return sky;
 }
-lain::Sky::Sky() {}
 
-lain::Sky::~Sky() {}
+Sky::Sky() {
+	sky = RS::get_singleton()->sky_create();
+}
+
+Sky::~Sky() {
+	ERR_FAIL_NULL(RS::get_singleton());
+	RS::get_singleton()->free(sky);
+}

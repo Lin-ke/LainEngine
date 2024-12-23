@@ -102,6 +102,7 @@ namespace lain {
 		L_INLINE int get_node_count() {
 			return nodes_in_tree_count;
 		}
+		GObject* get_first_node_in_group(const StringName& p_group);
 		/// signal method
 		void node_removed(GObject* node);
 

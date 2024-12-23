@@ -59,7 +59,7 @@ class RenderingSystem : public Object {
  	virtual Ref<Image> texture_2d_get(RID p_texture) const = 0;
 	virtual Ref<Image> texture_2d_layer_get(RID p_texture, int p_layer) const = 0;
 	virtual Vector<Ref<Image>> texture_3d_get(RID p_texture) const = 0;
-
+	virtual void texture_replace(RID p_old, RID p_new) = 0;
 	virtual void texture_2d_update(RID p_texture, const Ref<Image> &p_image, int p_layer = 0) = 0;
 	virtual void texture_3d_update(RID p_texture, const Vector<Ref<Image>> &p_data) = 0;
 
@@ -67,6 +67,7 @@ class RenderingSystem : public Object {
 	virtual RID texture_get_rd_texture(RID p_texture, bool p_srgb = false) const = 0;
 	virtual uint64_t texture_get_native_handle(RID p_texture, bool p_srgb = false) const = 0;
 
+	virtual void texture_set_path(RID p_texture, const String &p_path) = 0;
   /********SHADER ******* */
   /********SHADER ******* */
   /********SHADER ******* */
@@ -838,6 +839,33 @@ public:
 	virtual void environment_set_canvas_max_layer(RID p_env, int p_max_layer) = 0;
 	virtual void environment_set_ambient_light(RID p_env, const Color &p_color, EnvironmentAmbientSource p_ambient = ENV_AMBIENT_SOURCE_BG, float p_energy = 1.0, float p_sky_contribution = 0.0, EnvironmentReflectionSource p_reflection_source = ENV_REFLECTION_SOURCE_BG) = 0;
 
+	virtual void environment_set_ssr(RID p_env, bool p_enable, int p_max_steps, float p_fade_in, float p_fade_out, float p_depth_tolerance) = 0;
+
+	// ssr
+	virtual void environment_set_ssr_roughness_quality(EnvironmentSSRRoughnessQuality p_quality) = 0;
+	// ssao
+
+	virtual void environment_set_ssao(RID p_env, bool p_enable, float p_radius, float p_intensity, float p_power, float p_detail, float p_horizon, float p_sharpness, float p_light_affect, float p_ao_channel_affect) = 0;
+	virtual void environment_set_ssao_quality(EnvironmentSSAOQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) = 0;
+
+	
+	/* SKY API */
+
+	enum SkyMode {
+		SKY_MODE_AUTOMATIC,
+		SKY_MODE_QUALITY,
+		SKY_MODE_INCREMENTAL,
+		SKY_MODE_REALTIME
+	};
+
+	
+	virtual RID sky_create() = 0;
+	virtual void sky_set_radiance_size(RID p_sky, int p_radiance_size) = 0;
+	virtual void sky_set_mode(RID p_sky, SkyMode p_mode) = 0;
+	virtual void sky_set_material(RID p_sky, RID p_material) = 0;
+	virtual Ref<Image> sky_bake_panorama(RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i &p_size) = 0;
+
+
 
 	/*CAMERA EFFECT*/
 	/*CAMERA EFFECT*/
@@ -902,6 +930,7 @@ public:
   virtual void free(RID p_rid) = 0;
 
 };
+VARIANT_ENUM_CAST(RenderingSystem::EnvironmentSSAOQuality);
 
 }  // namespace lain
 #define RS RenderingSystem

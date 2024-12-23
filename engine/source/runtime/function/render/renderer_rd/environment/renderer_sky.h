@@ -7,9 +7,19 @@
 #include "function/render/scene/renderer_scene_renderer_api.h"
 #include "function/shader/shader_compiler.h"
 #include "../storage/material_storage.h"
+#include "../storage/render_scene_buffers_rd.h"
 namespace lain::RendererRD {
 class SkyRD {
- private:
+ public:
+ 	enum SkySet {
+		SKY_SET_UNIFORMS,
+		SKY_SET_MATERIAL,
+		SKY_SET_TEXTURES,
+		SKY_SET_FOG,
+	};
+
+
+  const int SAMPLERS_BINDING_FIRST_INDEX = 4;
   // Skys need less info from Directional Lights than the normal shaders
   struct SkyDirectionalLightData {
     float direction[3];
@@ -19,36 +29,79 @@ class SkyRD {
     uint32_t enabled;
     uint32_t pad[3];
   };
-  
+private:
 
- public:
-  ~SkyRD();
-  SkyRD();
-  float sky_get_baked_exposure(RID p_sky) const;
-  int roughness_layers;
-  bool sky_use_cubemap_array; // default true;
-  struct Sky {
-    float baked_exposure = 1.0;
-  };
-  mutable RID_Owner<Sky, true> sky_owner;
-  void init();
+	RD::DataFormat texture_format = RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
 
-  enum SkyVersion {
-    SKY_VERSION_BACKGROUND,
-    SKY_VERSION_HALF_RES,
-    SKY_VERSION_QUARTER_RES,
-    SKY_VERSION_CUBEMAP,
-    SKY_VERSION_CUBEMAP_HALF_RES,
-    SKY_VERSION_CUBEMAP_QUARTER_RES,
+	enum SkyTextureSetVersion {
+		SKY_TEXTURE_SET_BACKGROUND,
+		SKY_TEXTURE_SET_HALF_RES,
+		SKY_TEXTURE_SET_QUARTER_RES,
+		SKY_TEXTURE_SET_CUBEMAP,
+		SKY_TEXTURE_SET_CUBEMAP_HALF_RES,
+		SKY_TEXTURE_SET_CUBEMAP_QUARTER_RES,
+		SKY_TEXTURE_SET_MAX
+	};
 
-    SKY_VERSION_BACKGROUND_MULTIVIEW,
-    SKY_VERSION_HALF_RES_MULTIVIEW,
-    SKY_VERSION_QUARTER_RES_MULTIVIEW,
+	enum SkyVersion {
+		SKY_VERSION_BACKGROUND,
+		SKY_VERSION_HALF_RES,
+		SKY_VERSION_QUARTER_RES,
+		SKY_VERSION_CUBEMAP,
+		SKY_VERSION_CUBEMAP_HALF_RES,
+		SKY_VERSION_CUBEMAP_QUARTER_RES,
 
-    SKY_VERSION_MAX
-  };
+		SKY_VERSION_BACKGROUND_MULTIVIEW,
+		SKY_VERSION_HALF_RES_MULTIVIEW,
+		SKY_VERSION_QUARTER_RES_MULTIVIEW,
 
-  struct SkyShaderData : public RendererRD::MaterialStorage::ShaderData {
+		SKY_VERSION_MAX
+	};
+
+
+
+
+  struct ReflectionData {
+		struct Layer {
+			struct Mipmap {
+				RID framebuffers[6];
+				RID views[6];
+				Size2i size;
+			};
+			Vector<Mipmap> mipmaps; //per-face view
+			Vector<RID> views; // per-cubemap view
+		};
+
+		struct DownsampleLayer {
+			struct Mipmap {
+				RID view;
+				Size2i size;
+
+				// for mobile only
+				RID views[6];
+				RID framebuffers[6];
+			};
+			Vector<Mipmap> mipmaps;
+		};
+
+		RID radiance_base_cubemap; //cubemap for first layer, first cubemap
+		RID downsampled_radiance_cubemap;
+		DownsampleLayer downsampled_layer;
+		RID coefficient_buffer;
+
+		bool dirty = true;
+
+		Vector<Layer> layers;
+
+		void clear_reflection_data();
+		void update_reflection_data(int p_size, int p_mipmaps, bool p_use_array, RID p_base_cube, int p_base_layer, bool p_low_quality, int p_roughness_layers, RD::DataFormat p_texture_format);
+		void create_reflection_fast_filter(bool p_use_arrays);
+		void create_reflection_importance_sample(bool p_use_arrays, int p_cube_side, int p_base_layer, uint32_t p_sky_ggx_samples_quality);
+		void update_reflection_mipmaps(int p_start, int p_end);
+	};
+
+
+    struct SkyShaderData : public RendererRD::MaterialStorage::ShaderData {
     bool valid = false;
     RID version;
 
@@ -74,6 +127,56 @@ class SkyRD {
     SkyShaderData() {}
     virtual ~SkyShaderData();
   };
+
+	struct SkyMaterialData : public RendererRD::MaterialStorage::MaterialData {
+		SkyShaderData *shader_data = nullptr;
+		RID uniform_set;
+		bool uniform_set_updated;
+
+		virtual void set_render_priority(int p_priority) {}
+		virtual void set_next_pass(RID p_pass) {}
+		virtual bool update_parameters(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty);
+		virtual ~SkyMaterialData();
+	};
+
+  struct Sky {
+    RID radiance;
+		RID quarter_res_pass;
+		RID quarter_res_framebuffer;
+		Size2i screen_size;
+
+		RID uniform_set;
+
+		RID material;
+		RID uniform_buffer;
+
+		int radiance_size = 256;
+
+		RS::SkyMode mode = RS::SKY_MODE_AUTOMATIC;
+
+		ReflectionData reflection;
+		bool dirty = false;
+		int processing_layer = 0;
+		Sky *dirty_list = nullptr;
+		float baked_exposure = 1.0;
+
+		//State to track when radiance cubemap needs updating
+		SkyMaterialData *prev_material = nullptr;
+		Vector3 prev_position;
+		float prev_time;
+
+		void free();
+
+		RID get_textures(SkyTextureSetVersion p_version, RID p_default_shader_rd, Ref<RenderSceneBuffersRD> p_render_buffers);
+		bool set_radiance_size(int p_radiance_size);
+		bool set_mode(RS::SkyMode p_mode);
+		bool set_material(RID p_material);
+		Ref<Image> bake_panorama(float p_energy, int p_roughness_layers, const Size2i &p_size);
+  };
+  mutable RID_Owner<Sky, true> sky_owner;
+
+
+
 	/* Sky shader */
 
 	struct SkyShader {
@@ -145,7 +248,34 @@ class SkyRD {
     RID fog_material;
     RID fog_only_texture_uniform_set;
   } sky_scene_state;
-  const int SAMPLERS_BINDING_FIRST_INDEX = 4;
+ 
+  public:
+  ~SkyRD();
+  SkyRD();
+  int roughness_layers;
+  bool sky_use_cubemap_array; // default true;
+	uint32_t sky_ggx_samples_quality;
+  Sky *dirty_sky_list = nullptr;
+
+  RID allocate_sky_rid();
+	void initialize_sky_rid(RID p_rid);
+	Sky *get_sky(RID p_sky) const;
+	void free_sky(RID p_sky);
+	void sky_set_radiance_size(RID p_sky, int p_radiance_size);
+	void sky_set_mode(RID p_sky, RS::SkyMode p_mode);
+	void sky_set_material(RID p_sky, RID p_material);
+	Ref<Image> sky_bake_panorama(RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i &p_size);
+  void invalidate_sky(Sky *P_sky);
+	void update_dirty_skys();
+
+  	RID sky_get_material(RID p_sky) const;
+	RID sky_get_radiance_texture_rd(RID p_sky) const;
+	float sky_get_baked_exposure(RID p_sky) const;
+  void init();
+
+	static RendererRD::MaterialStorage::ShaderData *_create_sky_shader_func();
+
+	static RendererRD::MaterialStorage::MaterialData *_create_sky_material_func(RendererRD::MaterialStorage::ShaderData *p_shader);
 
 };
 }  // namespace lain::RendererRD

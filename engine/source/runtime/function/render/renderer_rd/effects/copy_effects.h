@@ -147,7 +147,8 @@ class CopyEffects {
                        bool p_alpha_to_zero = false, bool p_srgb = false, RID p_secondary = RID(), bool p_multiview = false, bool alpha_to_one = false, bool p_linear = false,
                        bool p_normal = false, const Rect2& p_src_rect = Rect2());
 	void copy_cubemap_to_dp(RID p_source_rd_texture, RID p_dst_framebuffer, const Rect2 &p_rect, const Vector2 &p_dst_size, float p_z_near, float p_z_far, bool p_dp_flip);
-                       
+            
+  void copy_cubemap_to_panorama(RID p_source_cube, RID p_dest_panorama, const Size2i& p_size, float p_lod, bool is_array);
 
   void make_mipmap(RID p_source_rd_texture, RID p_dest_texture, const Size2i& p_size);
   void make_mipmap_raster(RID p_source_rd_texture, RID p_dest_texture, const Size2i &p_size) {}

@@ -47,7 +47,11 @@ namespace lain
         HashMap<String, Variant> m_variants;
     };
        
-
+    struct ExtResParam{
+        META(Fields)
+        HashMap<String, Variant> m_variants;
+    };
+       
 
     REFLECTION_TYPE(GObjectInstanceRes)
         CLASS(GObjectInstanceRes, Fields)
@@ -62,4 +66,6 @@ namespace lain
         HashMap<String, String> ext_res; //
 
     };
+
+
 } // namespace Piccolo

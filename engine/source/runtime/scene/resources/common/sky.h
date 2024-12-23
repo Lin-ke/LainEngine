@@ -28,6 +28,8 @@ public:
 		PROCESS_MODE_REALTIME
 	};
 
+
+
 private:
 	RID sky;
 	ProcessMode mode = PROCESS_MODE_AUTOMATIC;
@@ -38,6 +40,8 @@ protected:
 	static void _bind_methods();
 
 public:
+
+
 	void set_radiance_size(RadianceSize p_size);
 	RadianceSize get_radiance_size() const;
 

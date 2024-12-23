@@ -696,8 +696,6 @@ Error SceneState::_parse_gobject(GObject* p_owner, GObject* p_node, int p_parent
 
   List<PropertyInfo> plist;
   p_node->get_property_list(&plist);
-
-
   Array pinned_props;
   //Dictionary missing_resource_properties = p_node->get_meta(META_MISSING_RESOURCES, Dictionary());
 
@@ -793,6 +791,7 @@ Error SceneState::_parse_gobject(GObject* p_owner, GObject* p_node, int p_parent
   	GObjectData::Property prop;
   	prop.name = _nm_get_string(name, name_map);
   	prop.value = _vm_get_variant(value, variant_map);
+    L_PRINT("save name:" + name + "of " + p_node->get_name());
   	if (use_deferred_gobject_path_bit) {
   		prop.name |= PackedScene::FLAG_PATH_PROPERTY_IS_NODE;
   	}
@@ -899,17 +898,7 @@ Error SceneState::_parse_gobject(GObject* p_owner, GObject* p_node, int p_parent
     }
 
     parent_node = idx;
-    // {  // 处理node instance resource
-    //   // 应该全部依靠这个数据聚合类去反射
-    //   if (p_node->get_instance_data() == nullptr) {
-    //     L_CORE_ERROR("Node class " + p_node->get_class() + "has no serializer");  // error
-    //     nd.node_ins_res = "{}";
-    //   } else {
-    //     void* ins_data = p_node->get_instance_data();
-    //     nd.node_ins_res = Reflection::TypeMeta::writeByName(p_node->get_data_classname(), ins_data).dump();
-    //     memdelete(ins_data);
-    //   }
-    // }
+
     gobjects.push_back(nd);
   }
 

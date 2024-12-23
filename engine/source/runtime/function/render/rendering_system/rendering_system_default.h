@@ -163,6 +163,9 @@ class RenderingSystemDefault : public RenderingSystem {
   FUNCRIDTEX2(texture_2d_layered, const Vector<Ref<Image>>&, TextureLayeredType)
   FUNCRIDTEX6(texture_3d, Image::Format, int, int, int, bool, const Vector<Ref<Image>>&)
   FUNCRIDTEX2(texture_rd, const RID&, const RS::TextureLayeredType)
+  FUNC2(texture_replace, RID, RID)
+  FUNC2(texture_set_path, RID, const String&)
+
 
   //these go through command queue if they are in another thread
   FUNC3(texture_2d_update, RID, const Ref<Image>&, int)
@@ -258,41 +261,41 @@ class RenderingSystemDefault : public RenderingSystem {
 
 #define ServerName RendererMeshStorage
 #define server_name RSG::mesh_storage
-	FUNCRIDSPLIT(mesh)
-	virtual RID mesh_create_from_surfaces(const Vector<RS::SurfaceData> &p_surfaces, int p_blend_shape_count) override {
-		RID mesh = RSG::mesh_storage->mesh_allocate();
+  FUNCRIDSPLIT(mesh)
+  virtual RID mesh_create_from_surfaces(const Vector<RS::SurfaceData>& p_surfaces, int p_blend_shape_count) override {
+    RID mesh = RSG::mesh_storage->mesh_allocate();
 
-		// TODO once we have RSG::mesh_storage, add can_create_resources_async and call here instead of texture_storage!!
+    // TODO once we have RSG::mesh_storage, add can_create_resources_async and call here instead of texture_storage!!
 
-		if (Thread::get_caller_id() == server_thread || RSG::texture_storage->can_create_resources_async()) {
-			if (Thread::get_caller_id() == server_thread) {
-				command_queue.flush_if_pending();
-			}
-			RSG::mesh_storage->mesh_initialize(mesh);
-			RSG::mesh_storage->mesh_set_blend_shape_count(mesh, p_blend_shape_count);
-			for (int i = 0; i < p_surfaces.size(); i++) {
-				RSG::mesh_storage->mesh_add_surface(mesh, p_surfaces[i]);
-			}
-		} else {
-			command_queue.push(RSG::mesh_storage, &RendererMeshStorage::mesh_initialize, mesh);
-			command_queue.push(RSG::mesh_storage, &RendererMeshStorage::mesh_set_blend_shape_count, mesh, p_blend_shape_count);
-			for (int i = 0; i < p_surfaces.size(); i++) {
-				command_queue.push(RSG::mesh_storage, &RendererMeshStorage::mesh_add_surface, mesh, p_surfaces[i]);
-			}
-		}
+    if (Thread::get_caller_id() == server_thread || RSG::texture_storage->can_create_resources_async()) {
+      if (Thread::get_caller_id() == server_thread) {
+        command_queue.flush_if_pending();
+      }
+      RSG::mesh_storage->mesh_initialize(mesh);
+      RSG::mesh_storage->mesh_set_blend_shape_count(mesh, p_blend_shape_count);
+      for (int i = 0; i < p_surfaces.size(); i++) {
+        RSG::mesh_storage->mesh_add_surface(mesh, p_surfaces[i]);
+      }
+    } else {
+      command_queue.push(RSG::mesh_storage, &RendererMeshStorage::mesh_initialize, mesh);
+      command_queue.push(RSG::mesh_storage, &RendererMeshStorage::mesh_set_blend_shape_count, mesh, p_blend_shape_count);
+      for (int i = 0; i < p_surfaces.size(); i++) {
+        command_queue.push(RSG::mesh_storage, &RendererMeshStorage::mesh_add_surface, mesh, p_surfaces[i]);
+      }
+    }
 
-		return mesh;
-	}
+    return mesh;
+  }
 
-	FUNC3(mesh_surface_set_material, RID, int, RID)
-	FUNC1(mesh_clear, RID)
-	FUNC2(mesh_add_surface, RID, const SurfaceData &)
-	FUNC2(mesh_set_blend_shape_count, RID, int)
-	FUNC2RC(SurfaceData, mesh_get_surface, RID, int)
-	FUNC2(mesh_set_path, RID, const String &)
-	FUNC1RC(String, mesh_get_path, RID)
-  
-	FUNC2(mesh_set_blend_shape_mode, RID, BlendShapeMode)
+  FUNC3(mesh_surface_set_material, RID, int, RID)
+  FUNC1(mesh_clear, RID)
+  FUNC2(mesh_add_surface, RID, const SurfaceData&)
+  FUNC2(mesh_set_blend_shape_count, RID, int)
+  FUNC2RC(SurfaceData, mesh_get_surface, RID, int)
+  FUNC2(mesh_set_path, RID, const String&)
+  FUNC1RC(String, mesh_get_path, RID)
+
+  FUNC2(mesh_set_blend_shape_mode, RID, BlendShapeMode)
 
 #undef server_name
 #undef ServerName
@@ -305,9 +308,19 @@ class RenderingSystemDefault : public RenderingSystem {
   FUNC2(scenario_set_camera_attributes, RID, RID)
   FUNC2(scenario_set_fallback_environment, RID, RID)
   FUNC2(scenario_set_compositor, RID, RID)
+  /* Compositor API */
 
   FUNCRIDSPLIT(compositor)
   FUNCRIDSPLIT(compositor_effect)
+  /* SKY API */
+
+	FUNCRIDSPLIT(sky)
+	FUNC2(sky_set_radiance_size, RID, int)
+	FUNC2(sky_set_mode, RID, SkyMode)
+	FUNC2(sky_set_material, RID, RID)
+	FUNC4R(Ref<Image>, sky_bake_panorama, RID, float, bool, const Size2i &)
+
+
   /* ENVIRONMENT */
 
   FUNCRIDSPLIT(environment)
@@ -320,7 +333,11 @@ class RenderingSystemDefault : public RenderingSystem {
   FUNC3(environment_set_bg_energy, RID, float, float)
   FUNC2(environment_set_canvas_max_layer, RID, int)
   FUNC6(environment_set_ambient_light, RID, const Color&, EnvironmentAmbientSource, float, float, EnvironmentReflectionSource)
+  FUNC6(environment_set_ssr, RID, bool, int, float, float, float)
+  FUNC1(environment_set_ssr_roughness_quality, EnvironmentSSRRoughnessQuality)
 
+  FUNC10(environment_set_ssao, RID, bool, float, float, float, float, float, float, float, float)
+  FUNC6(environment_set_ssao_quality, EnvironmentSSAOQuality, bool, float, int, float, float)
   /* Instance API*/
   FUNCRIDSPLIT(instance)
 
@@ -346,11 +363,10 @@ class RenderingSystemDefault : public RenderingSystem {
   FUNC2(instance_geometry_set_material_overlay, RID, RID)
   FUNC4(instance_geometry_set_lightmap, RID, RID, const Rect2&, int)
   // shader instance
-  FUNC3(instance_geometry_set_shader_parameter, RID, const StringName &, const Variant &)
-	FUNC2RC(Variant, instance_geometry_get_shader_parameter, RID, const StringName &)
-	FUNC2RC(Variant, instance_geometry_get_shader_parameter_default_value, RID, const StringName &)
-	FUNC2C(instance_geometry_get_shader_parameter_list, RID, List<PropertyInfo> *)
-
+  FUNC3(instance_geometry_set_shader_parameter, RID, const StringName&, const Variant&)
+  FUNC2RC(Variant, instance_geometry_get_shader_parameter, RID, const StringName&)
+  FUNC2RC(Variant, instance_geometry_get_shader_parameter_default_value, RID, const StringName&)
+  FUNC2C(instance_geometry_get_shader_parameter_list, RID, List<PropertyInfo>*)
 
   RenderingSystemDefault(bool p_create_thread = false);
   ~RenderingSystemDefault();

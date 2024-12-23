@@ -144,6 +144,35 @@ bool lain::RendererSceneRender::environment_get_ssao_enabled(RID p_env) const {
 	return environment_storage.environment_get_ssao_enabled(p_env);
 }
 
+float lain::RendererSceneRender::environment_get_ssao_radius(RID p_env) const {
+  return environment_storage.environment_get_ssao_radius(p_env);
+}
+
+
+float RendererSceneRender::environment_get_ssao_intensity(RID p_env) const {
+	return environment_storage.environment_get_ssao_intensity(p_env);
+}
+
+float RendererSceneRender::environment_get_ssao_power(RID p_env) const {
+	return environment_storage.environment_get_ssao_power(p_env);
+}
+
+float RendererSceneRender::environment_get_ssao_detail(RID p_env) const {
+	return environment_storage.environment_get_ssao_detail(p_env);
+}
+
+float RendererSceneRender::environment_get_ssao_horizon(RID p_env) const {
+	return environment_storage.environment_get_ssao_horizon(p_env);
+}
+
+float RendererSceneRender::environment_get_ssao_sharpness(RID p_env) const {
+	return environment_storage.environment_get_ssao_sharpness(p_env);
+}
+
+float RendererSceneRender::environment_get_ssao_ao_channel_affect(RID p_env) const {
+	return environment_storage.environment_get_ssao_ao_channel_affect(p_env);
+}
+
 void RendererSceneRender::environment_set_ssr(RID p_env, bool p_enable, int p_max_steps, float p_fade_int, float p_fade_out, float p_depth_tolerance) {
 	environment_storage.environment_set_ssr(p_env, p_enable, p_max_steps, p_fade_int, p_fade_out, p_depth_tolerance);
 }
@@ -172,9 +201,6 @@ float lain::RendererSceneRender::environment_get_ssao_direct_light_affect(RID p_
  	return environment_storage.environment_get_ssao_direct_light_affect(p_env);
 }
 
-float lain::RendererSceneRender::environment_get_ssao_ao_channel_affect(RID p_env) const {
-  return environment_storage.environment_get_ssao_ao_channel_affect(p_env);
-}
 
 // SSIL
 void RendererSceneRender::environment_set_ssil(RID p_env, bool p_enable, float p_radius, float p_intensity, float p_sharpness, float p_normal_rejection) {

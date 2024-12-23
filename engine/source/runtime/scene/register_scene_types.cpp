@@ -10,14 +10,18 @@
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/3d/light_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
+#include "scene/3d/world_environment.h"
+
 // function types
 #include "function/shader/shader_types.h"
-
 
 // resource types
 #include "scene/resources/common/mesh.h"
 #include "scene/resources/common/material.h"
 #include "scene/resources/common/primitive_meshes.h"
+#include "scene/resources/common/image_texture.h"
+#include "scene/resources/common/sky_material.h"
+
 namespace lain{
 	static Ref<ResourceFormatLoaderText> resource_format_loader_text;
 	static Ref<ResourceFormatSaverText> resource_format_saver_text;
@@ -74,11 +78,24 @@ namespace lain{
 	GDREGISTER_VIRTUAL_CLASS(Mesh);
 	GDREGISTER_VIRTUAL_CLASS(PrimitiveMesh);
 	GDREGISTER_CLASS(CapsuleMesh);
+	GDREGISTER_CLASS(ArrayMesh);
 	
 	GDREGISTER_VIRTUAL_CLASS(Material);
 	GDREGISTER_ABSTRACT_CLASS(BaseMaterial3D);
 	GDREGISTER_CLASS(StandardMaterial3D);
 	GDREGISTER_CLASS(ORMMaterial3D);
+	GDREGISTER_CLASS(PanoramaSkyMaterial);
+	GDREGISTER_CLASS(PhysicalSkyMaterial);
+
+
+
+	GDREGISTER_CLASS(WorldEnvironment);
+	
+	GDREGISTER_VIRTUAL_CLASS(Texture);
+	GDREGISTER_VIRTUAL_CLASS(Texture2D);
+	GDREGISTER_CLASS(Sky);
+	GDREGISTER_CLASS(ImageTexture);
+	GDREGISTER_CLASS(Environment);
 
 	BaseMaterial3D::init_shaders();
 

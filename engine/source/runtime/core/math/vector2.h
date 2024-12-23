@@ -462,6 +462,9 @@ STRUCT(_NO_DISCARD_ Vector2, Fields) {
   L_INLINE Vector2 ceil() const {
     return Vector2(Math::ceil(x), Math::ceil(y));
   }
+  L_INLINE real_t distance_to(const Vector2& p_vector2) const {
+    return (*this - p_vector2).length();
+  }
 
   operator String() const;
   // special points

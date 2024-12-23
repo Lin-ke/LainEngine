@@ -225,7 +225,7 @@ private:
 	uint64_t last_parsed_frame = UINT64_MAX;
 #endif
 
-	friend class DisplayServer;
+	friend class WindowSystem;
 
 	static void (*set_mouse_mode_func)(MouseMode);
 	static MouseMode (*get_mouse_mode_func)();
@@ -235,12 +235,6 @@ private:
 	static void (*set_custom_mouse_cursor_func)(const Ref<Resource> &, CursorShape, const Vector2 &);
 
 	EventDispatchFunc event_dispatch_function = nullptr;
-
-#ifndef DISABLE_DEPRECATED
-	void _vibrate_handheld_bind_compat_91143(int p_duration_ms = 500);
-	static void _bind_compatibility_methods();
-#endif // DISABLE_DEPRECATED
-
 protected:
 	static void _bind_methods();
 
