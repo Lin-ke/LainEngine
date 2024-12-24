@@ -3,6 +3,19 @@
 #include "function/render/renderer_rd/shaders/copy_to_fb.glsl.gen.h"
 #include "function/render/rendering_system/rendering_system.h"
 #include "function/render/renderer_rd/shaders/cube_to_dp.glsl.gen.h"
+#include "function/render/renderer_rd/shaders/cubemap_downsampler.glsl.gen.h"
+#include "function/render/renderer_rd/shaders/cubemap_downsampler_raster.glsl.gen.h"
+
+#include "function/render/renderer_rd/shaders/cubemap_downsampler_raster.glsl.gen.h"
+#include "function/render/renderer_rd/shaders/cubemap_filter.glsl.gen.h"
+#include "function/render/renderer_rd/shaders/cubemap_filter_raster.glsl.gen.h"
+
+#include "function/render/renderer_rd/shaders/cubemap_roughness.glsl.gen.h"
+#include "function/render/renderer_rd/shaders/cubemap_roughness_raster.glsl.gen.h"
+
+#include "function/render/renderer_rd/shaders/specular_merge.glsl.gen.h"
+
+
 namespace lain::RendererRD {
 // 几个shader 的组合：
 // copy
@@ -121,6 +134,22 @@ class CopyEffects {
 
   } copy_to_fb;
 
+// cubemap downsampler
+	struct CubemapDownsamplerPushConstant {
+		uint32_t face_size;
+		uint32_t face_id;
+		float pad[2];
+	};
+
+	struct CubemapDownsampler {
+		CubemapDownsamplerPushConstant push_constant;
+		CubemapDownsamplerShaderRD compute_shader;
+		CubemapDownsamplerRasterShaderRD raster_shader;
+		RID shader_version;
+		RID compute_pipeline;
+		PipelineCacheRD raster_pipeline;
+	} cubemap_downsampler;
+
 
 // Copy to DP
 
@@ -136,6 +165,81 @@ class CopyEffects {
 		RID shader_version;
 		PipelineCacheRD pipeline;
 	} cube_to_dp;
+// cubemap filter
+	struct CubemapFilterRasterPushConstant {
+		uint32_t mip_level;
+		uint32_t face_id;
+		float pad[2];
+	};
+	enum CubemapFilterMode {
+		FILTER_MODE_HIGH_QUALITY,
+		FILTER_MODE_LOW_QUALITY,
+		FILTER_MODE_HIGH_QUALITY_ARRAY,
+		FILTER_MODE_LOW_QUALITY_ARRAY,
+		FILTER_MODE_MAX,
+	};
+
+  struct CubemapFilter {
+		CubemapFilterShaderRD compute_shader;
+		CubemapFilterRasterShaderRD raster_shader;
+		RID shader_version;
+		RID compute_pipelines[FILTER_MODE_MAX];
+		PipelineCacheRD raster_pipelines[FILTER_MODE_MAX];
+
+		RID uniform_set;
+		RID image_uniform_set;
+		RID coefficient_buffer;
+		bool use_high_quality;
+
+	} filter;
+  // roughness filter
+  
+	struct CubemapRoughnessPushConstant {
+		uint32_t face_id;
+		uint32_t sample_count;
+		float roughness;
+		uint32_t use_direct_write;
+		float face_size;
+		float pad[3];
+	};
+
+	struct CubemapRoughness {
+		CubemapRoughnessPushConstant push_constant;
+		CubemapRoughnessShaderRD compute_shader;
+		CubemapRoughnessRasterShaderRD raster_shader;
+		RID shader_version;
+		RID compute_pipeline;
+		PipelineCacheRD raster_pipeline;
+	} roughness;
+  
+  
+	// Merge specular
+
+	enum SpecularMergeMode {
+		SPECULAR_MERGE_ADD,
+		SPECULAR_MERGE_SSR,
+		SPECULAR_MERGE_ADDITIVE_ADD,
+		SPECULAR_MERGE_ADDITIVE_SSR,
+
+		SPECULAR_MERGE_ADD_MULTIVIEW,
+		SPECULAR_MERGE_SSR_MULTIVIEW,
+		SPECULAR_MERGE_ADDITIVE_ADD_MULTIVIEW,
+		SPECULAR_MERGE_ADDITIVE_SSR_MULTIVIEW,
+
+		SPECULAR_MERGE_MAX
+	};
+
+  	/* Specular merge must be done using raster, rather than compute
+	 * because it must continue the existing color buffer
+	 */
+
+	struct SpecularMerge {
+		SpecularMergeShaderRD shader;
+		RID shader_version;
+		PipelineCacheRD pipelines[SPECULAR_MERGE_MAX];
+
+	} specular_merge;
+
 
 
   CopyEffects(bool p_prefer_raster_effects);
@@ -152,5 +256,13 @@ class CopyEffects {
 
   void make_mipmap(RID p_source_rd_texture, RID p_dest_texture, const Size2i& p_size);
   void make_mipmap_raster(RID p_source_rd_texture, RID p_dest_texture, const Size2i &p_size) {}
+	bool get_prefer_raster_effects() { return prefer_raster_effects; }
+	void cubemap_downsample_raster(RID p_source_cubemap, RID p_dest_framebuffer, uint32_t p_face_id, const Size2i &p_size);
+  void cubemap_filter_raster(RID p_source_cubemap, RID p_dest_framebuffer, uint32_t p_face_id, uint32_t p_mip_level);
+void cubemap_downsample(RID p_source_cubemap, RID p_dest_cubemap, const Size2i &p_size);
+	void cubemap_filter(RID p_source_cubemap, Vector<RID> p_dest_cubemap, bool p_use_array);
+	void cubemap_roughness_raster(RID p_source_rd_texture, RID p_dest_framebuffer, uint32_t p_face_id, uint32_t p_sample_count, float p_roughness, float p_size);
+void cubemap_roughness(RID p_source_rd_texture, RID p_dest_texture, uint32_t p_face_id, uint32_t p_sample_count, float p_roughness, float p_size);
+void CopyEffects::merge_specular(RID p_dest_framebuffer, RID p_specular, RID p_base, RID p_reflection, uint32_t p_view_count);
 };
 }  // namespace lain::RendererRD

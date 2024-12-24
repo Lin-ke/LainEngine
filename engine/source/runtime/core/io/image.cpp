@@ -3335,7 +3335,13 @@ void Image::_set_color_at_ofs(uint8_t* ptr, uint32_t ofs, const Color& p_color) 
 	}
 }
 
-void Image::_bind_methods() {}
+void Image::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_from_path"), &Image::get_from_path);
+	ClassDB::bind_method(D_METHOD("set_from_path", "path"), &Image::set_from_path);
+
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "from_path", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE), "set_from_path", "get_from_path");
+
+}
 
 Color Image::get_pixel(int p_x, int p_y) const {
 #ifdef DEBUG_ENABLED
@@ -4214,5 +4220,20 @@ Dictionary Image::compute_image_metrics(const Ref<Image> p_compared_image, bool 
 	result["root_mean_squared"] = image_metric_root_mean_squared;
 	result["peak_snr"] = image_metric_peak_snr;
 	return result;
+}
+String Image::get_from_path()
+{
+	return from_path;
+}
+
+void Image::set_from_path(const String& p_from_path){
+	Error err = ImageLoader::load_image(p_from_path, this); // 虽然最好不要这么做。。
+	ERR_FAIL_COND(err);
+	from_path = p_from_path;
+}
+
+
+void Image::set_from_path_directly(const String& p_from_path){
+	from_path = p_from_path;
 }
 }

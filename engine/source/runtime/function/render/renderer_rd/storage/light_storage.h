@@ -631,6 +631,13 @@ class LightStorage : public RendererLightStorage {
     ERR_FAIL_UNSIGNED_INDEX_V(p_quadrant, 4, 0);
     return atlas->quadrants[p_quadrant].shadows.size();
   }
+  	_FORCE_INLINE_ bool light_is_negative(RID p_light) const {
+		const Light *light = light_owner.get_or_null(p_light);
+		ERR_FAIL_NULL_V(light, RS::LIGHT_DIRECTIONAL);
+
+		return light->negative;
+	}
+
   /* Reflection Atlas*/
   virtual void reflection_atlas_free(RID p_rid) {}
 

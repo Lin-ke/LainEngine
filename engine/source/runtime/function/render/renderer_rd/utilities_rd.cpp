@@ -57,6 +57,11 @@ RS::InstanceType Utilities::get_base_type(RID p_rid) const {
 
 void lain::RendererRD::Utilities::update_dirty_resources() {
   // @todo
+	// MaterialStorage::get_singleton()->_update_global_shader_uniforms(); //must do before materials, so it can queue them for update
+	MaterialStorage::get_singleton()->_update_queued_materials();
+	// MeshStorage::get_singleton()->_update_dirty_multimeshes();
+	// MeshStorage::get_singleton()->_update_dirty_skeletons();
+	// TextureStorage::get_singleton()->update_decal_atlas();
 }
 
 uint64_t lain::RendererRD::Utilities::get_rendering_info(RS::RenderingInfo p_info) {

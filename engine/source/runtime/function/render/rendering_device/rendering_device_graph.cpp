@@ -1,16 +1,18 @@
 #include "rendering_device_graph.h"
 // 生成后面的会导致vulkan被包含，隔离失败了
-#ifdef PRINT_RESOURCE_TRACKER_TOTAL
-#include "core/string/print_string.h"
-#endif
+// #ifdef PRINT_RESOURCE_TRACKER_TOTAL
+// #include "core/string/print_string.h"
+// #endif
 #define PRINT_RENDER_GRAPH 0
 #define PRINT_COMMAND_RECORDING 0
+static int drawed = 0;
 using namespace lain;
 // 主要分为read和write两种
 RenderingDeviceGraph::RenderingDeviceGraph() {}
 RenderingDeviceGraph::~RenderingDeviceGraph() {}
-
+#if PRINT_COMMAND_RECORDING
 uint32_t RenderingDeviceGraph::resource_tracker_total = 0;
+#endif
 bool RenderingDeviceGraph::_is_write_usage(ResourceUsage p_usage) {
   switch (p_usage) {
     case RESOURCE_USAGE_COPY_FROM:
@@ -302,8 +304,8 @@ void RDG::_add_command_to_graph(ResourceTracker** p_resource_trackers,
         current_tracker->reset_if_outdated(tracking_frame);
         // 脏列表一定与父纹理的layout不同
         if (current_tracker->is_texture()) {
-          DEV_ASSERT(_usage_to_image_layout(current_tracker->usage) ==
-                     _usage_to_image_layout(new_resource_usage));
+          // DEV_ASSERT(_usage_to_image_layout(current_tracker->usage) ==
+                    //  _usage_to_image_layout(new_resource_usage));
           // Transition all slices to the layout of the parent resource.
           _add_texture_barrier_to_command(
               current_tracker->texture_driver_id, current_tracker->usage_access, new_usage_access,

@@ -67,8 +67,12 @@ void test_scene() {
       sky.instantiate();
       Ref<PanoramaSkyMaterial> material;
       material.instantiate();
-      Ref<Image> img = ResourceLoader::load("res://lakeside_sunrise_4k.hdr");
+      Ref<Image> img;
+      img.instantiate();
+      img->set_from_path("res://lakeside_sunrise_4k.hdr");
       Ref<Texture2D> tex = ImageTexture::create_from_image(img);
+      
+
       if(tex.is_null()){
         L_PRINT("error!!")
       }
@@ -83,7 +87,7 @@ void test_scene() {
       cam->set_owner(scene);
       cam->set_name("default_cam");
       cam->set_transform(
-        Transform3D(Vector3(1,2,3), Vector3(1,2,3), Vector3(1,2,3), Vector3(1,2,3)));
+        Transform3D(Vector3(1,0,0), Vector3(0,1,0), Vector3(0,0,1), Vector3(1,2,3)));
       scene->add_child(env);
       env->set_owner(scene);
       env->set_name("default_env");

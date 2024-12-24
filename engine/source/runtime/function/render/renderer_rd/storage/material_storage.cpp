@@ -1368,6 +1368,26 @@ void MaterialStorage::_material_queue_update(Material* material, bool p_uniform,
   material_update_list.add(&material->update_element);
 }
 
+void MaterialStorage::_update_queued_materials() {
+	while (material_update_list.first()) {
+		Material *material = material_update_list.first()->self();
+		bool uniforms_changed = false;
+
+		if (material->data) {
+			uniforms_changed = material->data->update_parameters(material->params, material->uniform_dirty, material->texture_dirty);
+		}
+		material->texture_dirty = false;
+		material->uniform_dirty = false;
+
+		material_update_list.remove(&material->update_element);
+
+		if (uniforms_changed) {
+			//some implementations such as 3D renderer cache the material uniform set, so update is required
+			material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL);
+		}
+	}
+}
+
 Vector<RD::Uniform> lain::RendererRD::MaterialStorage::Samplers::get_uniforms(int p_first_index) const {
   Vector<RD::Uniform> uniforms;
 

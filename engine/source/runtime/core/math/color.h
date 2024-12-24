@@ -12,10 +12,10 @@ struct _NO_DISCARD_ Color {
 	REFLECTION_BODY(Color);
 
 	META(Fields)
-	float r;
-	float g;
-	float b;
-	float a;
+	float r = 0;
+	float g = 0;
+	float b = 0;
+	float a = 1.0; // 教训：永远记得初始化成员变量！
 
 	uint32_t to_rgba32() const;
 	uint32_t to_argb32() const;

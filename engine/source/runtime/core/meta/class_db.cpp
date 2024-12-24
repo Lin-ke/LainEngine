@@ -22,7 +22,8 @@ MethodDefinition D_METHODP(const char* p_name, const char* const** p_args, uint3
 HashMap<StringName, StringName> ClassDB::resource_base_extensions;
 HashMap<StringName, ClassDB::ClassInfo> ClassDB::classes;
 HashMap<StringName, StringName> ClassDB::compat_classes;
-
+HashMap<StringName, HashMap<StringName, Variant>> ClassDB::default_values;
+HashSet<StringName> ClassDB::default_values_cached;
 void ClassDB::add_resource_base_extension(const StringName& p_extension, const StringName& p_class) {
   if (resource_base_extensions.has(p_extension)) {
     return;
@@ -317,15 +318,84 @@ void ClassDB::add_signal(const StringName& p_class, const MethodInfo& p_signal) 
 	type->signal_map[sname] = p_signal;
 }
 
-void ClassDB::add_property(const StringName& p_class, const PropertyInfo& p_pinfo, const StringName& p_setter, const StringName& p_getter, int p_index) {
-  	lock.read_lock();
-	ClassInfo *type = classes.getptr(p_class);
-	lock.read_unlock();
-ERR_FAIL_NULL(type);
+void ClassDB::set_property_default_value(const StringName &p_class, const StringName &p_name, const Variant &p_default) {
+	if (!default_values.has(p_class)) {
+		default_values[p_class] = HashMap<StringName, Variant>();
+	}
+	default_values[p_class][p_name] = p_default;
+}
+Variant ClassDB::class_get_default_property_value(const StringName& p_class, const StringName& p_property, bool* r_valid) {
+  if (!default_values_cached.has(p_class)) {
+		if (!default_values.has(p_class)) {
+			default_values[p_class] = HashMap<StringName, Variant>();
+		}
 
-	MethodBind *mb_set = nullptr;
-	if (p_setter) {
-		mb_set = get_method(p_class, p_setter);
+		Object *c = nullptr;
+		bool cleanup_c = false;
+		if (ClassDB::can_instantiate(p_class) && !ClassDB::is_virtual(p_class)){
+			c = ClassDB::instantiate(p_class);
+			cleanup_c = true;
+		}
+		if (c) {
+			List<PropertyInfo> plist;
+			c->get_property_list(&plist);
+			for (const PropertyInfo &E : plist) {
+				if (E.usage & (PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR)) {
+					if (!default_values[p_class].has(E.name)) {
+						Variant v = c->get(E.name);
+						default_values[p_class][E.name] = v;
+					}
+				}
+			}
+
+			if (cleanup_c) {
+				memdelete(c);
+			}
+		}
+
+		default_values_cached.insert(p_class);
+	}
+		if (!default_values.has(p_class)) {
+		if (r_valid != nullptr) {
+			*r_valid = false;
+		}
+		return Variant();
+	}
+
+	if (!default_values[p_class].has(p_property)) {
+		if (r_valid != nullptr) {
+			*r_valid = false;
+		}
+		return Variant();
+	}
+
+	if (r_valid != nullptr) {
+		*r_valid = true;
+	}
+
+	Variant var = default_values[p_class][p_property];
+	return var;
+
+}
+bool ClassDB::is_virtual(const StringName & p_class)
+{
+	OBJTYPE_RLOCK;
+
+	ClassInfo *ti = classes.getptr(p_class);
+	if (!ti) {
+		return true;
+	}
+	return (!ti->disabled && ti->creation_func != nullptr &&  ti->is_virtual);
+}
+void ClassDB::add_property(const StringName& p_class, const PropertyInfo& p_pinfo, const StringName& p_setter, const StringName& p_getter, int p_index) {
+  lock.read_lock();
+  ClassInfo* type = classes.getptr(p_class);
+  lock.read_unlock();
+  ERR_FAIL_NULL(type);
+
+  MethodBind* mb_set = nullptr;
+  if (p_setter) {
+    mb_set = get_method(p_class, p_setter);
 #ifdef DEBUG_METHODS_ENABLED
 
 		ERR_FAIL_NULL_MSG(mb_set, "Invalid setter '" + p_class + "::" + p_setter + "' for property '" + p_pinfo.name + "'.");

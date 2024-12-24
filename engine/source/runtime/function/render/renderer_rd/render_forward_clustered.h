@@ -129,6 +129,16 @@ class RenderForwardClustered : public RendererSceneRenderRD {
 
     virtual void configure(RenderSceneBuffersRD* p_render_buffers) override;
     virtual void free_data() override;
+
+    struct SSEffectsData {
+			Projection last_frame_projections[RendererSceneRender::MAX_RENDER_VIEWS];
+			Transform3D last_frame_transform;
+
+			RendererRD::SSEffects::SSILRenderBuffers ssil;
+			RendererRD::SSEffects::SSAORenderBuffers ssao;
+			RendererRD::SSEffects::SSRRenderBuffers ssr;
+		} ss_effects_data;
+    
   };
 	ClusterBuilderSharedDataRD *get_cluster_builder_shared() { return &cluster_builder_shared; }
 

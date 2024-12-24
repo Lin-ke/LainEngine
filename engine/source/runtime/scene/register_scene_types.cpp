@@ -95,6 +95,7 @@ namespace lain{
 	GDREGISTER_VIRTUAL_CLASS(Texture2D);
 	GDREGISTER_CLASS(Sky);
 	GDREGISTER_CLASS(ImageTexture);
+
 	GDREGISTER_CLASS(Environment);
 
 	BaseMaterial3D::init_shaders();

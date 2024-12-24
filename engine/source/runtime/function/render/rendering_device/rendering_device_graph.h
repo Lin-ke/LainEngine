@@ -3,7 +3,7 @@
 #include "core/thread/worker_thread_pool.h"
 #include "rendering_device_driver.h"
 #define USE_BUFFER_BARRIERS 1
-#define PRINT_RESOURCE_TRACKER_TOTAL 1
+#define PRINT_RESOURCE_TRACKER_TOTAL 0
 // Buffer barriers have not shown any significant improvement or shown to be
 // even detrimental to performance. However, there are currently some known
 // cases where using them can solve problems that using singular memory

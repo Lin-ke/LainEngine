@@ -10,6 +10,7 @@ Ref<ImageTexture> ImageTexture::create_from_image(const Ref<Image> &p_image) {
 	Ref<ImageTexture> image_texture;
 	image_texture.instantiate();
 	image_texture->set_image(p_image);
+  image_texture->image_from_path = p_image->get_from_path();
 	return image_texture;
 }
 
@@ -83,7 +84,9 @@ void ImageTexture::reload_from_file() {
 
 Ref<Image> ImageTexture::get_image() const {
 	if (image_stored) {
-		return RS::get_singleton()->texture_2d_get(texture);
+		Ref<Image> img =  RS::get_singleton()->texture_2d_get(texture);
+    img->set_from_path(image_from_path);
+    return img;
 	} else {
 		return Ref<Image>();
 	}

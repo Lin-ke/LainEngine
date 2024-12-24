@@ -160,6 +160,8 @@ private:
 	int height = 0;
 	bool mipmaps = false;
 
+	String from_path;
+
 	void _copy_internals_from(const Image& p_image) {
 		format = p_image.format;
 		width = p_image.width;
@@ -417,6 +419,11 @@ public:
 	}
 
 	Dictionary compute_image_metrics(const Ref<Image> p_compared_image, bool p_luma_metric = true);
+
+	// 这里是为了避免import的一大堆流程
+	String get_from_path();
+	void set_from_path(const String& p_path);
+	void set_from_path_directly(const String& path);
 };
 
 VARIANT_ENUM_CAST(Image::Format)

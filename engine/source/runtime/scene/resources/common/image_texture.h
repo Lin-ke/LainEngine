@@ -48,6 +48,7 @@ class ImageTexture : public Texture2D {
 	Size2 size_override;
 	mutable Ref<BitMap> alpha_cache;
 	bool image_stored = false;
+  String image_from_path; 
 
 protected:
 	virtual void reload_from_file() override;

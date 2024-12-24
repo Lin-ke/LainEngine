@@ -8,6 +8,7 @@
 using namespace lain;
 #include "test/test_headers.h"
 #include "main/main.h"
+#include "app_windows.h"
 #ifndef _TEST_
 
 int main() {
@@ -22,8 +23,8 @@ int main() {
 	// test::test_vulkan_driver();
 	// test::test_draw_triangle();
 	// test::test_shader();
-	test::test_scene();
-	// os.Run();
+	// test::test_scene();
+	os.Run();
 	// test::test_mesh();
 
 }

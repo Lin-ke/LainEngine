@@ -42,7 +42,7 @@ private:
 		SKY_TEXTURE_SET_CUBEMAP_QUARTER_RES,
 		SKY_TEXTURE_SET_MAX
 	};
-
+  // shader 变体
 	enum SkyVersion {
 		SKY_VERSION_BACKGROUND,
 		SKY_VERSION_HALF_RES,
@@ -204,7 +204,7 @@ private:
   };
 
   struct SkySceneState {
-    struct UBO {
+    struct UBO { // uniform 0 binding2
       float combined_reprojection[RendererSceneRender::MAX_RENDER_VIEWS][16];  // 2 x 64 - 128
       float view_inv_projections[RendererSceneRender::MAX_RENDER_VIEWS][16];   // 2 x 64 - 256
       float view_eye_offsets[RendererSceneRender::MAX_RENDER_VIEWS][4];        // 2 x 16 - 288
@@ -276,6 +276,13 @@ private:
 	static RendererRD::MaterialStorage::ShaderData *_create_sky_shader_func();
 
 	static RendererRD::MaterialStorage::MaterialData *_create_sky_material_func(RendererRD::MaterialStorage::ShaderData *p_shader);
+
+ ///// render
+ 
+	void setup_sky(RID p_env, Ref<RenderSceneBuffersRD> p_render_buffers, const PagedArray<RID> &p_lights, RID p_camera_attributes, uint32_t p_view_count, const Projection *p_view_projections, const Vector3 *p_view_eye_offsets, const Transform3D &p_cam_transform, const Projection &p_cam_projection, const Size2i p_screen_size, Vector2 p_jitter, RendererSceneRenderRD *p_scene_render);
+	void update_radiance_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_env, const Vector3 &p_global_pos, double p_time, float p_luminance_multiplier = 1.0);
+	void update_res_buffers(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_env, double p_time, float p_luminance_multiplier = 1.0);
+	void draw_sky(RD::DrawListID p_draw_list, Ref<RenderSceneBuffersRD> p_render_buffers, RID p_env, RID p_fb, double p_time, float p_luminance_multiplier = 1.0);
 
 };
 }  // namespace lain::RendererRD

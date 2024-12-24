@@ -573,6 +573,7 @@ void WindowSystem::mouse_set_mode(Input::MouseMode p_mode) {
   for (const KeyValue<WindowID, WindowData>& E : m_windows) {
     glfwSetInputMode(E.value.p_window, GLFW_CURSOR, mode);
   }
+  // 鼠标位置设置为中心
 }
 
 void WindowSystem::_set_mouse(Input::MouseMode p_mode) {

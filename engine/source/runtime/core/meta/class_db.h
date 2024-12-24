@@ -127,6 +127,9 @@ class ClassDB {
   static HashMap<StringName, StringName> compat_classes;
   static RWLock lock;
 
+  static HashMap<StringName, HashMap<StringName, Variant>> default_values;
+	static HashSet<StringName> default_values_cached;
+
  public:
   static void add_resource_base_extension(const StringName& p_extension, const StringName& p_class);
   static void get_resource_base_extensions(List<String>* p_extensions);
@@ -148,6 +151,11 @@ class ClassDB {
 
 	static void add_signal(const StringName &p_class, const MethodInfo &p_signal);
    
+  static void set_property_default_value(const StringName &p_class, const StringName &p_name, const Variant &p_default);
+  // default property 可以通过memnew一个在测量得到
+	static Variant class_get_default_property_value(const StringName &p_class, const StringName &p_property, bool *r_valid = nullptr);
+
+  static bool is_virtual(const StringName& p);
 #ifdef DEBUG_METHODS_ENABLED
   static MethodBind* bind_methodfi(uint32_t p_flags, MethodBind* p_bind, bool p_compatibility, const MethodDefinition& method_name, const Variant** p_defs, int p_defcount);
 #else

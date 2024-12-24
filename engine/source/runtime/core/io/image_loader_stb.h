@@ -18,6 +18,7 @@ namespace lain {
 		static StbLoader* singleton;
 		StbLoader() { singleton = this; }
 	};
+
 }
 
 #endif // !IMAGE_LOADER_STB_H

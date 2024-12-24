@@ -674,10 +674,17 @@ Error ResourceSaverText::save(const String& p_path, const Ref<Resource>& p_resou
               value = res->get(name);
             }
             bool is_valid_default = false;
-            Variant default_value = PropertyUtils::get_property_default_value(res, name, &is_valid_default);
-            if (is_valid_default && !PropertyUtils::is_property_value_different(res, value, default_value)) {
-              continue;
-            }
+            Variant default_value = ClassDB::class_get_default_property_value(res->get_class(), name);
+            // L_PRINT(res->get_class() + " " + name + " " + default_value.operator lain::String())
+            // L_PRINT(res->get_class() + " " + name + " " + value.operator lain::String())
+
+          if (default_value.get_type() != Variant::NIL && default_value == value) {
+            continue;
+          }
+        // 处理nil object
+          if (PE->get().type == Variant::OBJECT && value.is_zero() && !(PE->get().usage & PROPERTY_USAGE_STORE_IF_NULL)) {
+					continue;
+				}
             // save
             Ref<Resource> res = value;
             if (!res.is_valid()) {

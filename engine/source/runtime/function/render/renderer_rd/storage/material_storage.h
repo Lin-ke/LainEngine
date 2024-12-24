@@ -356,6 +356,7 @@ class MaterialStorage : public RendererMaterialStorage {
 	void shader_set_data_request_function(ShaderType p_shader_type, ShaderDataRequestFunction p_function);
 
 	RID get_quad_index_array() { return quad_index_array; }
+	void _update_queued_materials();
 
   private:
 	SelfList<Material>::List material_update_list;

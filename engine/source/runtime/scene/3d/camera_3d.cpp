@@ -750,6 +750,7 @@ void lain::Camera3DMove::input(const Ref<InputEvent>& p_event) {
 		set_transform({bas, get_transform().origin});
 	}
 	if(Input::get_singleton()->is_action_pressed("toggle_mouse_capture")){
+		L_PRINT("change mode")
 		if(Input::get_singleton()->get_mouse_mode() == Input::MouseMode::MOUSE_MODE_CAPTURED){
 			Input::get_singleton()->set_mouse_mode(Input::MouseMode::MOUSE_MODE_VISIBLE);
 		} else{

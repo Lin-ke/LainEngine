@@ -93,8 +93,10 @@ RenderForwardClustered::RenderForwardClustered() {
     RD::get_singleton()->compute_list_end();
 
     best_fit_normal.shader.version_free(best_fit_normal.shader_version);
-    _update_shader_quality_settings();
   }
+  _update_shader_quality_settings();
+  taa = memnew(RendererRD::TAA);
+  ss_effects = memnew(RendererRD::SSEffects);
 }
 
 void lain::RendererSceneRenderImplementation::RenderForwardClustered::setup_render_buffer_data(Ref<RenderSceneBuffersRD> p_render_buffers) {
@@ -306,17 +308,19 @@ RID lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_buf
   return p_render_buffers->get_velocity_buffer(false);
 }
 
-void lain::RendererSceneRenderImplementation::RenderForwardClustered::environment_set_ssao_quality(RS::EnvironmentSSAOQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to)
-{
+void lain::RendererSceneRenderImplementation::RenderForwardClustered::environment_set_ssao_quality(RS::EnvironmentSSAOQuality p_quality, bool p_half_size,
+                                                                                                   float p_adaptive_target, int p_blur_passes, float p_fadeout_from,
+                                                                                                   float p_fadeout_to) {
   ERR_FAIL_NULL(ss_effects);
-	ERR_FAIL_COND(p_quality < RS::EnvironmentSSAOQuality::ENV_SSAO_QUALITY_VERY_LOW || p_quality > RS::EnvironmentSSAOQuality::ENV_SSAO_QUALITY_ULTRA);
-	ss_effects->ssao_set_quality(p_quality, p_half_size, p_adaptive_target, p_blur_passes, p_fadeout_from, p_fadeout_to);
+  ERR_FAIL_COND(p_quality < RS::EnvironmentSSAOQuality::ENV_SSAO_QUALITY_VERY_LOW || p_quality > RS::EnvironmentSSAOQuality::ENV_SSAO_QUALITY_ULTRA);
+  ss_effects->ssao_set_quality(p_quality, p_half_size, p_adaptive_target, p_blur_passes, p_fadeout_from, p_fadeout_to);
 }
 
 void lain::RendererSceneRenderImplementation::RenderForwardClustered::environment_set_ssr_roughness_quality(RS::EnvironmentSSRRoughnessQuality p_quality) {
   ERR_FAIL_NULL(ss_effects);
-	ERR_FAIL_COND(p_quality < RS::EnvironmentSSRRoughnessQuality::ENV_SSR_ROUGHNESS_QUALITY_DISABLED || p_quality > RS::EnvironmentSSRRoughnessQuality::ENV_SSR_ROUGHNESS_QUALITY_HIGH);
-	ss_effects->ssr_set_roughness_quality(p_quality);
+  ERR_FAIL_COND(p_quality < RS::EnvironmentSSRRoughnessQuality::ENV_SSR_ROUGHNESS_QUALITY_DISABLED ||
+                p_quality > RS::EnvironmentSSRRoughnessQuality::ENV_SSR_ROUGHNESS_QUALITY_HIGH);
+  ss_effects->ssr_set_roughness_quality(p_quality);
 }
 
 void lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_scene(RenderDataRD* p_render_data, const Color& p_default_bg_color) {
@@ -568,41 +572,45 @@ void lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_sc
       }
     }
 
-    // // setup sky if used for ambient, reflections, or background
-    // if (draw_sky || draw_sky_fog_only || (reflection_source == RS::ENV_REFLECTION_SOURCE_BG && bg_mode == RS::ENV_BG_SKY) || reflection_source == RS::ENV_REFLECTION_SOURCE_SKY || environment_get_ambient_source(p_render_data->environment) == RS::ENV_AMBIENT_SOURCE_SKY) {
-    // 	RENDER_TIMESTAMP("Setup Sky");
-    // 	RD::get_singleton()->draw_command_begin_label("Setup Sky");
+    // setup sky if used for ambient, reflections, or background
+    if (draw_sky || draw_sky_fog_only || (reflection_source == RS::ENV_REFLECTION_SOURCE_BG && bg_mode == RS::ENV_BG_SKY) ||
+        reflection_source == RS::ENV_REFLECTION_SOURCE_SKY || environment_get_ambient_source(p_render_data->environment) == RS::ENV_AMBIENT_SOURCE_SKY) {
+      RENDER_TIMESTAMP("Setup Sky");
+      RD::get_singleton()->draw_command_begin_label("Setup Sky");
 
-    // 	// Setup our sky render information for this frame/viewport
-    // 	if (is_reflection_probe) {
-    // 		Vector3 eye_offset;
-    // 		Projection correction;
-    // 		correction.set_depth_correction(true);
-    // 		Projection projection = correction * p_render_data->scene_data->cam_projection;
+      // Setup our sky render information for this frame/viewport
+      if (is_reflection_probe) {
+        Vector3 eye_offset;
+        Projection correction;
+        correction.set_depth_correction(true);
+        Projection projection = correction * p_render_data->scene_data->cam_projection;
 
-    // 		sky.setup_sky(p_render_data->environment, rb, *p_render_data->lights, p_render_data->camera_attributes, 1, &projection, &eye_offset, p_render_data->scene_data->cam_transform, projection, screen_size, Vector2(0.0f, 0.0f), this);
-    // 	} else {
-    // 		sky.setup_sky(p_render_data->environment, rb, *p_render_data->lights, p_render_data->camera_attributes, p_render_data->scene_data->view_count, p_render_data->scene_data->view_projection, p_render_data->scene_data->view_eye_offset, p_render_data->scene_data->cam_transform, p_render_data->scene_data->cam_projection, screen_size, p_render_data->scene_data->taa_jitter, this);
-    // 	}
+        sky.setup_sky(p_render_data->environment, rb, *p_render_data->lights, p_render_data->camera_attributes, 1, &projection, &eye_offset,
+                      p_render_data->scene_data->cam_transform, projection, screen_size, Vector2(0.0f, 0.0f), this);
+      } else {
+        sky.setup_sky(p_render_data->environment, rb, *p_render_data->lights, p_render_data->camera_attributes, p_render_data->scene_data->view_count,
+                      p_render_data->scene_data->view_projection, p_render_data->scene_data->view_eye_offset, p_render_data->scene_data->cam_transform,
+                      p_render_data->scene_data->cam_projection, screen_size, p_render_data->scene_data->taa_jitter, this);
+      }
 
-    // 	sky_energy_multiplier *= bg_energy_multiplier;
+      sky_energy_multiplier *= bg_energy_multiplier;
 
-    // 	RID sky_rid = environment_get_sky(p_render_data->environment);
-    // 	if (sky_rid.is_valid()) {
-    // 		sky.update_radiance_buffers(rb, p_render_data->environment, p_render_data->scene_data->cam_transform.origin, time, sky_energy_multiplier);
-    // 		radiance_texture = sky.sky_get_radiance_texture_rd(sky_rid);
-    // 	} else {
-    // 		// do not try to draw sky if invalid
-    // 		draw_sky = false;
-    // 	}
+      RID sky_rid = environment_get_sky(p_render_data->environment);
+      if (sky_rid.is_valid()) {
+        sky.update_radiance_buffers(rb, p_render_data->environment, p_render_data->scene_data->cam_transform.origin, time, sky_energy_multiplier);
+        radiance_texture = sky.sky_get_radiance_texture_rd(sky_rid);
+      } else {
+        // do not try to draw sky if invalid
+        draw_sky = false;
+      }
 
-    // 	if (draw_sky || draw_sky_fog_only) {
-    // 		// update sky half/quarter res buffers (if required)
-    // 		sky.update_res_buffers(rb, p_render_data->environment, time, sky_energy_multiplier);
-    // 	}
+      if (draw_sky || draw_sky_fog_only) {
+        // update sky half/quarter res buffers (if required)
+        sky.update_res_buffers(rb, p_render_data->environment, time, sky_energy_multiplier);
+      }
 
-    // 	RD::get_singleton()->draw_command_end_label();
-    // }
+      RD::get_singleton()->draw_command_end_label();
+    }
   } else {
     clear_color = p_default_bg_color;
   }
@@ -796,6 +804,19 @@ void lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_sc
     _process_compositor_effects(RS::COMPOSITOR_EFFECT_CALLBACK_TYPE_POST_OPAQUE, p_render_data);
   }
 
+  if (draw_sky || draw_sky_fog_only) {
+    RENDER_TIMESTAMP("Render Sky");
+
+    RD::get_singleton()->draw_command_begin_label("Draw Sky");
+    RD::DrawListID draw_list =
+        RD::get_singleton()->draw_list_begin(color_only_framebuffer, RD::INITIAL_ACTION_LOAD, RD::FINAL_ACTION_STORE, RD::INITIAL_ACTION_LOAD, RD::FINAL_ACTION_STORE);
+
+    sky.draw_sky(draw_list, rb, p_render_data->environment, color_only_framebuffer, time, sky_energy_multiplier);
+
+    RD::get_singleton()->draw_list_end();
+    RD::get_singleton()->draw_command_end_label();
+  }
+
   if (use_msaa) {
     RENDER_TIMESTAMP("Resolve MSAA");
 
@@ -816,6 +837,27 @@ void lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_sc
       }
     }
   }
+
+  if (using_separate_specular) {
+
+    if (using_ssr) {
+      RENDER_TIMESTAMP("Screen-Space Reflections");
+      RD::get_singleton()->draw_command_begin_label("Process Screen-Space Reflections");
+      RID specular_views[RendererSceneRender::MAX_RENDER_VIEWS];
+      for (uint32_t v = 0; v < p_render_data->scene_data->view_count; v++) {
+        specular_views[v] = rb_data->get_specular(v);
+      }
+      _process_ssr(rb, color_only_framebuffer, normal_roughness_views, rb_data->get_specular(), specular_views, p_render_data->environment,
+                   p_render_data->scene_data->view_projection, p_render_data->scene_data->view_eye_offset, !use_msaa);
+      RD::get_singleton()->draw_command_end_label();
+    } else {
+      //just mix specular back
+      RENDER_TIMESTAMP("Merge Specular");
+      copy_effects->merge_specular(color_only_framebuffer, rb_data->get_specular(), !use_msaa ? RID() : rb->get_internal_texture(), RID(),
+                                   p_render_data->scene_data->view_count);
+    }
+  }
+
   if (scene_state.used_screen_texture) {
     RENDER_TIMESTAMP("Copy Screen Texture");
 
@@ -868,11 +910,18 @@ void lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_sc
   }
   RD::get_singleton()->draw_command_end_label();
   // screen space effects
-
+  if (rb_data.is_valid()) {
+    if (using_taa) {
+      RD::get_singleton()->draw_command_begin_label("TAA");
+      RENDER_TIMESTAMP("TAA");
+      taa->process(rb, _render_buffers_get_color_format(), p_render_data->scene_data->z_near, p_render_data->scene_data->z_far);
+      RD::get_singleton()->draw_command_end_label();
+    }
+  }
   // post process
-  if(rb_data.is_valid()){
+  if (rb_data.is_valid()) {
     RENDER_TIMESTAMP("Tonemap and Post Process");
-    _render_buffers_post_process_and_tonemap(p_render_data); // Tonemap 是必做的，把RB内部的纹理写到 render target 的纹理里面
+    _render_buffers_post_process_and_tonemap(p_render_data);  // Tonemap 是必做的，把RB内部的纹理写到 render target 的纹理里面
   }
 }
 
@@ -2848,27 +2897,27 @@ void RenderForwardClustered::_pre_opaque_render(RenderDataRD* p_render_data, boo
     _render_shadow_end();
   }
 
-  // if (rb_data.is_valid() && ss_effects) {
-  // 	// Note, in multiview we're allocating buffers for each eye/view we're rendering.
-  // 	// This should allow most of the processing to happen in parallel even if we're doing
-  // 	// drawcalls per eye/view. It will all sync up at the barrier.
+  if (rb_data.is_valid() && ss_effects) {
+  	// Note, in multiview we're allocating buffers for each eye/view we're rendering.
+  	// This should allow most of the processing to happen in parallel even if we're doing
+  	// drawcalls per eye/view. It will all sync up at the barrier.
 
-  // 	if (p_use_ssao || p_use_ssil) {
-  // 		RENDER_TIMESTAMP("Prepare Depth for SSAO/SSIL");
-  // 		// Convert our depth buffer data to linear data in
-  // 		for (uint32_t v = 0; v < rb->get_view_count(); v++) {
-  // 			ss_effects->downsample_depth(rb, v, p_render_data->scene_data->view_projection[v]);
-  // 		}
+  	if (p_use_ssao || p_use_ssil) {
+  		RENDER_TIMESTAMP("Prepare Depth for SSAO/SSIL");
+  		// Convert our depth buffer data to linear data in
+  		for (uint32_t v = 0; v < rb->get_view_count(); v++) {
+  			ss_effects->downsample_depth(rb, v, p_render_data->scene_data->view_projection[v]);
+  		}
 
-  // 		if (p_use_ssao) {
-  // 			_process_ssao(rb, p_render_data->environment, p_normal_roughness_slices, p_render_data->scene_data->view_projection);
-  // 		}
+  		if (p_use_ssao) {
+  			_process_ssao(rb, p_render_data->environment, p_normal_roughness_slices, p_render_data->scene_data->view_projection);
+  		}
 
-  // 		if (p_use_ssil) {
-  // 			_process_ssil(rb, p_render_data->environment, p_normal_roughness_slices, p_render_data->scene_data->view_projection, p_render_data->scene_data->cam_transform);
-  // 		}
-  // 	}
-  // }
+  		// if (p_use_ssil) {
+  		// 	_process_ssil(rb, p_render_data->environment, p_normal_roughness_slices, p_render_data->scene_data->view_projection, p_render_data->scene_data->cam_transform);
+  		// }
+  	}
+  }
 
   RENDER_TIMESTAMP("Pre Opaque Render");
 
@@ -2912,6 +2961,7 @@ void RenderForwardClustered::_pre_opaque_render(RenderDataRD* p_render_data, boo
                            positional_light_count, p_render_data->voxel_gi_count, *p_render_data->fog_volumes);
   }
 }
+
 void RenderForwardClustered::_render_shadow_pass(RID p_light, RID p_shadow_atlas, int p_pass, const PagedArray<RenderGeometryInstance*>& p_instances,
                                                  float p_lod_distance_multiplier, float p_screen_mesh_lod_threshold, bool p_open_pass, bool p_close_pass, bool p_clear_region,
                                                  RenderingMethod::RenderInfo* p_render_info, const Size2i& p_viewport_size, const Transform3D& p_main_cam_transform) {
@@ -3207,4 +3257,61 @@ void RenderForwardClustered::_render_shadow_end() {
   }
 
   RD::get_singleton()->draw_command_end_label();
+}
+
+void RenderForwardClustered::_process_ssao(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_environment, const RID* p_normal_buffers, const Projection* p_projections) {
+  ERR_FAIL_NULL(ss_effects);
+  ERR_FAIL_COND(p_render_buffers.is_null());
+  ERR_FAIL_COND(p_environment.is_null());
+
+  Ref<RenderBufferDataForwardClustered> rb_data = p_render_buffers->get_custom_data(RB_SCOPE_FORWARD_CLUSTERED);
+  ERR_FAIL_COND(rb_data.is_null());
+
+  RENDER_TIMESTAMP("Process SSAO");
+
+  RendererRD::SSEffects::SSAOSettings settings;
+  settings.radius = environment_get_ssao_radius(p_environment);
+  settings.intensity = environment_get_ssao_intensity(p_environment);
+  settings.power = environment_get_ssao_power(p_environment);
+  settings.detail = environment_get_ssao_detail(p_environment);
+  settings.horizon = environment_get_ssao_horizon(p_environment);
+  settings.sharpness = environment_get_ssao_sharpness(p_environment);
+  settings.full_screen_size = p_render_buffers->get_internal_size();
+
+  ss_effects->ssao_allocate_buffers(p_render_buffers, rb_data->ss_effects_data.ssao, settings);
+
+  for (uint32_t v = 0; v < p_render_buffers->get_view_count(); v++) {
+    ss_effects->generate_ssao(p_render_buffers, rb_data->ss_effects_data.ssao, v, p_normal_buffers[v], p_projections[v], settings);
+  }
+}
+
+void RenderForwardClustered::_process_ssr(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_dest_framebuffer, const RID* p_normal_slices, RID p_specular_buffer,
+                                          const RID* p_metallic_slices, RID p_environment, const Projection* p_projections, const Vector3* p_eye_offsets,
+                                          bool p_use_additive) {
+  ERR_FAIL_NULL(ss_effects);
+  ERR_FAIL_COND(p_render_buffers.is_null());
+
+  Ref<RenderBufferDataForwardClustered> rb_data = p_render_buffers->get_custom_data(RB_SCOPE_FORWARD_CLUSTERED);
+  ERR_FAIL_COND(rb_data.is_null());
+
+  Size2i internal_size = p_render_buffers->get_internal_size();
+  bool can_use_effects = internal_size.x >= 8 && internal_size.y >= 8;
+  uint32_t view_count = p_render_buffers->get_view_count();
+
+  if (!can_use_effects) {
+    //just copy
+    copy_effects->merge_specular(p_dest_framebuffer, p_specular_buffer, p_use_additive ? RID() : p_render_buffers->get_internal_texture(), RID(), view_count);
+    return;
+  }
+
+  ERR_FAIL_COND(p_environment.is_null());
+  ERR_FAIL_COND(!environment_get_ssr_enabled(p_environment));
+
+  ss_effects->ssr_allocate_buffers(p_render_buffers, rb_data->ss_effects_data.ssr, _render_buffers_get_color_format());
+  ss_effects->screen_space_reflection(p_render_buffers, rb_data->ss_effects_data.ssr, p_normal_slices, p_metallic_slices, environment_get_ssr_max_steps(p_environment),
+                                      environment_get_ssr_fade_in(p_environment), environment_get_ssr_fade_out(p_environment),
+                                      environment_get_ssr_depth_tolerance(p_environment), p_projections, p_eye_offsets);
+
+  RID output = p_render_buffers->get_texture(RB_SCOPE_SSR, RB_OUTPUT);
+  copy_effects->merge_specular(p_dest_framebuffer, p_specular_buffer, p_use_additive ? RID() : p_render_buffers->get_internal_texture(), output, view_count);
 }
