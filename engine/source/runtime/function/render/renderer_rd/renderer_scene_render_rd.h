@@ -34,7 +34,6 @@ protected:
 
   RendererSceneRenderRD();
   ~RendererSceneRenderRD();
-  void cull_scene();
   uint64_t get_scene_pass();
   // 这个函数处理渲染数据，真正渲染在_render_scene 的实现中。
 	// 主要填充了 RenderDataRD RenderSceneDataRD
