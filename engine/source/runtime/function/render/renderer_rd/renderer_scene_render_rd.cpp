@@ -46,7 +46,7 @@ lain::RendererSceneRenderRD::~RendererSceneRenderRD() {
 }
 
 uint64_t RendererSceneRenderRD::get_scene_pass() {
-  return 0;
+  return scene_pass;
 }
 
 void RendererSceneRenderRD::render_scene(const Ref<RenderSceneBuffers>& p_render_buffers, const CameraData* p_camera_data, const CameraData* p_prev_camera_data,
