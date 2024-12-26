@@ -336,7 +336,7 @@ void lain::RendererRD::LightStorage::directional_shadow_atlas_set_size(int p_siz
 	if (directional_shadow.depth.is_valid()) {
 		RD::get_singleton()->free(directional_shadow.depth);
 		directional_shadow.depth = RID();
-		// RendererSceneRenderRD::get_singleton()->base_uniforms_changed(); // @todo
+		RendererSceneRenderRD::get_singleton()->base_uniforms_changed(); // @todo
 	}
 }
 

@@ -420,41 +420,42 @@ void lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_sc
   bool reverse_cull = p_render_data->scene_data->cam_transform.basis.determinant() < 0;
   bool using_ssil = !is_reflection_probe && p_render_data->environment.is_valid() && environment_get_ssil_enabled(p_render_data->environment);
   bool using_motion_pass = rb_data.is_valid() && using_fsr2;
-  screen_size = rb->get_internal_size();
-
-  if (p_render_data->scene_data->calculate_motion_vectors) {
-    color_pass_flags |= COLOR_PASS_FLAG_MOTION_VECTORS;
-    scene_shader.enable_advanced_shader_group();
-  }
-
-  if (p_render_data->voxel_gi_instances->size() > 0) {
-    using_voxelgi = true;
-  }
-
-  if (p_render_data->environment.is_valid()) {
-    // if (environment_get_sdfgi_enabled(p_render_data->environment) && get_debug_draw_mode() != RS::VIEWPORT_DEBUG_DRAW_UNSHADED) {
-    //   using_sdfgi = true;
-    // }
-    if (environment_get_ssr_enabled(p_render_data->environment)) {
-      using_separate_specular = true;
-      using_ssr = true;
-      color_pass_flags |= COLOR_PASS_FLAG_SEPARATE_SPECULAR;
+  {
+    screen_size = rb->get_internal_size();
+    if (p_render_data->scene_data->calculate_motion_vectors) {
+      color_pass_flags |= COLOR_PASS_FLAG_MOTION_VECTORS;
+      scene_shader.enable_advanced_shader_group();
     }
+
+    if (p_render_data->voxel_gi_instances->size() > 0) {
+      using_voxelgi = true;
+    }
+
+    if (p_render_data->environment.is_valid()) {
+      // if (environment_get_sdfgi_enabled(p_render_data->environment) && get_debug_draw_mode() != RS::VIEWPORT_DEBUG_DRAW_UNSHADED) {
+      //   using_sdfgi = true;
+      // }
+      if (environment_get_ssr_enabled(p_render_data->environment)) {
+        using_separate_specular = true;
+        using_ssr = true;
+        color_pass_flags |= COLOR_PASS_FLAG_SEPARATE_SPECULAR;
+      }
+    }
+
+    if (p_render_data->scene_data->view_count > 1) {
+      color_pass_flags |= COLOR_PASS_FLAG_MULTIVIEW;
+      // Try enabling here in case is_xr_enabled() returns false.
+      scene_shader.shader.enable_group(SceneShaderForwardClustered::SHADER_GROUP_MULTIVIEW);
+    }
+
+    color_framebuffer = rb_data->get_color_pass_fb(color_pass_flags);
+    color_only_framebuffer = rb_data->get_color_only_fb();
+    samplers = rb->get_samplers();
+
   }
-
-  if (p_render_data->scene_data->view_count > 1) {
-    color_pass_flags |= COLOR_PASS_FLAG_MULTIVIEW;
-    // Try enabling here in case is_xr_enabled() returns false.
-    scene_shader.shader.enable_group(SceneShaderForwardClustered::SHADER_GROUP_MULTIVIEW);
-  }
-
-  color_framebuffer = rb_data->get_color_pass_fb(color_pass_flags);
-  color_only_framebuffer = rb_data->get_color_only_fb();
-  samplers = rb->get_samplers();
-
   p_render_data->scene_data->emissive_exposure_normalization = -1.0;
   RD::get_singleton()->draw_command_begin_label("Render Setup");
-  _setup_environment(p_render_data, is_reflection_probe, screen_size, p_default_bg_color, false);
+  _setup_environment(p_render_data, is_reflection_probe, screen_size, p_default_bg_color, false); // 第 0 个 scene_state.uniform_buffers
   // May have changed due to the above (light buffer enlarged, as an example).
 
   _update_render_base_uniform_set();
@@ -558,7 +559,6 @@ void lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_sc
           RID texture = RendererRD::TextureStorage::get_singleton()->render_target_get_rd_texture(rb->get_render_target());
           bool convert_to_linear = !RendererRD::TextureStorage::get_singleton()->render_target_is_using_hdr(rb->get_render_target());
           // 绘制背景
-
           copy_effects->copy_to_fb_rect(texture, color_only_framebuffer, Rect2i(), false, false, false, false, RID(), false, false, convert_to_linear);
         }
         load_color = true;
@@ -1010,16 +1010,16 @@ void RenderForwardClustered::RenderBufferDataForwardClustered::free_data() {
   // JIC, should already have been cleared
   if (render_buffers) {
     render_buffers->clear_context(RB_SCOPE_FORWARD_CLUSTERED);
-    // render_buffers->clear_context(RB_SCOPE_SSDS);
+    render_buffers->clear_context(RB_SCOPE_SSDS);
     // render_buffers->clear_context(RB_SCOPE_SSIL);
-    // render_buffers->clear_context(RB_SCOPE_SSAO);
-    // render_buffers->clear_context(RB_SCOPE_SSR);
+    render_buffers->clear_context(RB_SCOPE_SSAO);
+    render_buffers->clear_context(RB_SCOPE_SSR);
   }
 
-  // if (cluster_builder) {
-  // 	memdelete(cluster_builder);
-  // 	cluster_builder = nullptr;
-  // }
+  if (cluster_builder) {
+  	memdelete(cluster_builder);
+  	cluster_builder = nullptr;
+  }
 
   // if (fsr2_context) {
   // 	memdelete(fsr2_context);
@@ -2048,7 +2048,7 @@ void RenderForwardClustered::_fill_instance_data(RenderListType p_render_list, i
     instance_data.uv_scale[1] = uv_scale.y;
     instance_data.uv_scale[2] = uv_scale.z;
     instance_data.uv_scale[3] = uv_scale.w;
-    // 到处都是为了功能(multimesh)开的洞
+
     bool cant_repeat = instance_data.flags & INSTANCE_DATA_FLAG_MULTIMESH || inst->mesh_instance.is_valid();
 
     if (prev_surface != nullptr && !cant_repeat && prev_surface->sort.sort_key1 == surface->sort.sort_key1 && prev_surface->sort.sort_key2 == surface->sort.sort_key2 &&
@@ -2258,8 +2258,8 @@ void RenderForwardClustered::_render_list_template(RenderingDevice::DrawListID p
                                                     : SceneShaderForwardClustered::PIPELINE_VERSION_DEPTH_PASS_WITH_NORMAL_AND_ROUGHNESS;
       } break;
       case PASS_MODE_DEPTH_NORMAL_ROUGHNESS_VOXEL_GI: {
-        // pipeline_version = p_params->view_count > 1 ? SceneShaderForwardClustered::PIPELINE_VERSION_DEPTH_PASS_WITH_NORMAL_AND_ROUGHNESS_AND_VOXEL_GI_MULTIVIEW :
-        // SceneShaderForwardClustered::PIPELINE_VERSION_DEPTH_PASS_WITH_NORMAL_AND_ROUGHNESS_AND_VOXEL_GI;
+        pipeline_version = p_params->view_count > 1 ? SceneShaderForwardClustered::PIPELINE_VERSION_DEPTH_PASS_WITH_NORMAL_AND_ROUGHNESS_AND_VOXEL_GI_MULTIVIEW :
+        SceneShaderForwardClustered::PIPELINE_VERSION_DEPTH_PASS_WITH_NORMAL_AND_ROUGHNESS_AND_VOXEL_GI;
       } break;
       case PASS_MODE_DEPTH_MATERIAL: {
         ERR_FAIL_COND_MSG(p_params->view_count > 1, "Multiview not supported for material pass");
@@ -2898,25 +2898,25 @@ void RenderForwardClustered::_pre_opaque_render(RenderDataRD* p_render_data, boo
   }
 
   if (rb_data.is_valid() && ss_effects) {
-  	// Note, in multiview we're allocating buffers for each eye/view we're rendering.
-  	// This should allow most of the processing to happen in parallel even if we're doing
-  	// drawcalls per eye/view. It will all sync up at the barrier.
+    // Note, in multiview we're allocating buffers for each eye/view we're rendering.
+    // This should allow most of the processing to happen in parallel even if we're doing
+    // drawcalls per eye/view. It will all sync up at the barrier.
 
-  	if (p_use_ssao || p_use_ssil) {
-  		RENDER_TIMESTAMP("Prepare Depth for SSAO/SSIL");
-  		// Convert our depth buffer data to linear data in
-  		for (uint32_t v = 0; v < rb->get_view_count(); v++) {
-  			ss_effects->downsample_depth(rb, v, p_render_data->scene_data->view_projection[v]);
-  		}
+    if (p_use_ssao || p_use_ssil) {
+      RENDER_TIMESTAMP("Prepare Depth for SSAO/SSIL");
+      // Convert our depth buffer data to linear data in
+      for (uint32_t v = 0; v < rb->get_view_count(); v++) {
+        ss_effects->downsample_depth(rb, v, p_render_data->scene_data->view_projection[v]);
+      }
 
-  		if (p_use_ssao) {
-  			_process_ssao(rb, p_render_data->environment, p_normal_roughness_slices, p_render_data->scene_data->view_projection);
-  		}
+      if (p_use_ssao) {
+        _process_ssao(rb, p_render_data->environment, p_normal_roughness_slices, p_render_data->scene_data->view_projection);
+      }
 
-  		// if (p_use_ssil) {
-  		// 	_process_ssil(rb, p_render_data->environment, p_normal_roughness_slices, p_render_data->scene_data->view_projection, p_render_data->scene_data->cam_transform);
-  		// }
-  	}
+      // if (p_use_ssil) {
+      // 	_process_ssil(rb, p_render_data->environment, p_normal_roughness_slices, p_render_data->scene_data->view_projection, p_render_data->scene_data->cam_transform);
+      // }
+    }
   }
 
   RENDER_TIMESTAMP("Pre Opaque Render");
@@ -3155,10 +3155,10 @@ void RenderForwardClustered::_render_shadow_append(RID p_framebuffer, const Page
   SceneState::ShadowPass shadow_pass;
 
   RenderSceneDataRD scene_data;
-  scene_data.flip_y = !p_flip_y;  // Q: Why is this inverted? Do we assume flip in shadow logic?
+  scene_data.flip_y = !p_flip_y;  // Q: Why is this inverted? Do we assume flip in shadow logic? // 只在 cubemap 中是 true，其他是false
   scene_data.cam_projection = p_projection;
   scene_data.cam_transform = p_transform;
-  scene_data.view_projection[0] = p_projection;
+  scene_data.view_projection[0] = p_projection; // 相机projection, 
   scene_data.z_far = p_zfar;
   scene_data.z_near = 0.0;
   scene_data.lod_distance_multiplier = p_lod_distance_multiplier;
@@ -3223,7 +3223,7 @@ void RenderForwardClustered::_render_shadow_append(RID p_framebuffer, const Page
 void RenderForwardClustered::_render_shadow_begin() {
   scene_state.shadow_passes.clear();
   RD::get_singleton()->draw_command_begin_label("Shadow Setup");
-  // 这是在重新绑定什么？感觉可以节约这点开销@todo
+
   _update_render_base_uniform_set();
 
   render_list[RENDER_LIST_SECONDARY].clear();

@@ -246,7 +246,7 @@ public:
 
 		RenderElementData &e = render_elements[render_element_count];
 
-		Transform3D xform = view_xform * p_transform;
+		Transform3D xform = view_xform * p_transform; // 屏幕空间到世界空间（右），需要一个radius（因为normalize过）
 
 		float radius = xform.basis.get_uniform_scale();
 		if (radius < 0.98 || radius > 1.02) {

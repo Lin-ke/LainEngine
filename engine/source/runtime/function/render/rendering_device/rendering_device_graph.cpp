@@ -1875,7 +1875,7 @@ void RenderingDeviceGraph::end(bool p_reorder_commands, bool p_full_barriers,
     // 为什么都使用thread_local?
     thread_local LocalVector<uint32_t> command_degrees;
     command_degrees.resize(command_count);
-    // 必须初始化为0，否则有错
+    // 必须初始化为0，否则有错(thread local 类似 static，不是局部变量)
 		memset(command_degrees.ptr(), 0, sizeof(uint32_t) * command_degrees.size());
     // 这两个为什么不是先后的？明明是读了一个texture
 

@@ -56,7 +56,9 @@
       },
       "ext_res": {},
       "variants": {
-        "background_mode": 2
+        "background_mode": 2,
+        "ssr_enabled": true,
+        "ssao_enabled": true
       }
     }
   ],

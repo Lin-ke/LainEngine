@@ -334,9 +334,9 @@ class LightStorage : public RendererLightStorage {
     RID fb;     // when rendering direct //@typo
 
     int light_count = 0;
-    int size = 0;
+    int size = 0; // directional atlas 的 size
     bool use_16_bits = true;
-    int current_light = 0;
+    int current_light = 0; // 正在计算的light，会在render_shadow中更新 （directional_shadow_increase_current_light）
   } directional_shadow;
 
   struct ShadowCubemap {

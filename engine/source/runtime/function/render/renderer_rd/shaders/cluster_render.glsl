@@ -106,10 +106,10 @@ layout(location = 0) out vec4 frag_color;
 
 void main() {
 	//convert from screen to cluster
-	uvec2 cluster = uvec2(gl_FragCoord.xy) >> state.screen_to_clusters_shift;
+	uvec2 cluster = uvec2(gl_FragCoord.xy) >> state.screen_to_clusters_shift; /// xy / cluster size 
 
 	//get linear cluster offset from screen poss
-	uint cluster_offset = cluster.x + state.cluster_screen_width * cluster.y;
+	uint cluster_offset = cluster.x + state.cluster_screen_width * cluster.y; /// cluster_screen_width 是一排有几个cluster
 	//multiply by data size to position at the beginning of the element list for this cluster
 	cluster_offset *= state.cluster_data_size;
 
@@ -159,7 +159,7 @@ void main() {
 	//find the current element in the depth usage list and mark the current depth as used
 	float unit_depth = depth_interp * state.inv_z_far;
 
-	uint z_bit = clamp(uint(floor(unit_depth * 32.0)), 0, 31);
+	uint z_bit = clamp(uint(floor(unit_depth * 32.0)), 0, 31); /// 32个深度值
 
 	uint z_write_offset = cluster_offset + state.cluster_depth_offset + element_index;
 	uint z_write_bit = 1 << z_bit;

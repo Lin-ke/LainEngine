@@ -644,8 +644,7 @@ class RenderForwardClustered : public RendererSceneRenderRD {
  public:
   static RenderForwardClustered* get_singleton() { return singleton; }
 
-  // ClusterBuilderSharedDataRD *get_cluster_builder_shared() { return &cluster_builder_shared; }
-  // RendererRD::SSEffects *get_ss_effects() { return ss_effects; }
+  RendererRD::SSEffects *get_ss_effects() { return ss_effects; }
 
   // /* callback from updating our lighting UBOs, used to populate cluster builder */
   // virtual void setup_added_reflection_probe(const Transform3D &p_transform, const Vector3 &p_half_size) override;
