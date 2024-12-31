@@ -258,7 +258,7 @@ void sky() {
       RD::Uniform u;
       u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
       u.binding = 0;
-      u.append_id(texture_storage->texture_rd_get_default(RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_CUBEMAP_BLACK));
+      u.append_id(texture_storage->texture_rd_get_default(RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_WHITE));
       uniforms.push_back(u);
     }
     {

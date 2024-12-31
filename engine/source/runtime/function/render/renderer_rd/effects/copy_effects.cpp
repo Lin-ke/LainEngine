@@ -222,55 +222,55 @@ lain::RendererRD::CopyEffects::CopyEffects(bool p_prefer_raster_effects) {
 		}
 	}
 
-	// {
-	// 	Vector<String> specular_modes;
-	// 	specular_modes.push_back("\n#define MODE_MERGE\n"); // SPECULAR_MERGE_ADD
-	// 	specular_modes.push_back("\n#define MODE_MERGE\n#define MODE_SSR\n"); // SPECULAR_MERGE_SSR
-	// 	specular_modes.push_back("\n"); // SPECULAR_MERGE_ADDITIVE_ADD
-	// 	specular_modes.push_back("\n#define MODE_SSR\n"); // SPECULAR_MERGE_ADDITIVE_SSR
+	{
+		Vector<String> specular_modes;
+		specular_modes.push_back("\n#define MODE_MERGE\n"); // SPECULAR_MERGE_ADD
+		specular_modes.push_back("\n#define MODE_MERGE\n#define MODE_SSR\n"); // SPECULAR_MERGE_SSR
+		specular_modes.push_back("\n"); // SPECULAR_MERGE_ADDITIVE_ADD
+		specular_modes.push_back("\n#define MODE_SSR\n"); // SPECULAR_MERGE_ADDITIVE_SSR
 
-	// 	specular_modes.push_back("\n#define USE_MULTIVIEW\n#define MODE_MERGE\n"); // SPECULAR_MERGE_ADD_MULTIVIEW
-	// 	specular_modes.push_back("\n#define USE_MULTIVIEW\n#define MODE_MERGE\n#define MODE_SSR\n"); // SPECULAR_MERGE_SSR_MULTIVIEW
-	// 	specular_modes.push_back("\n#define USE_MULTIVIEW\n"); // SPECULAR_MERGE_ADDITIVE_ADD_MULTIVIEW
-	// 	specular_modes.push_back("\n#define USE_MULTIVIEW\n#define MODE_SSR\n"); // SPECULAR_MERGE_ADDITIVE_SSR_MULTIVIEW
+		specular_modes.push_back("\n#define USE_MULTIVIEW\n#define MODE_MERGE\n"); // SPECULAR_MERGE_ADD_MULTIVIEW
+		specular_modes.push_back("\n#define USE_MULTIVIEW\n#define MODE_MERGE\n#define MODE_SSR\n"); // SPECULAR_MERGE_SSR_MULTIVIEW
+		specular_modes.push_back("\n#define USE_MULTIVIEW\n"); // SPECULAR_MERGE_ADDITIVE_ADD_MULTIVIEW
+		specular_modes.push_back("\n#define USE_MULTIVIEW\n#define MODE_SSR\n"); // SPECULAR_MERGE_ADDITIVE_SSR_MULTIVIEW
 
-	// 	specular_merge.shader.initialize(specular_modes);
+		specular_merge.shader.initialize(specular_modes);
 
-	// 	if (!RendererCompositorRD::get_singleton()->is_xr_enabled()) {
-	// 		specular_merge.shader.set_variant_enabled(SPECULAR_MERGE_ADD_MULTIVIEW, false);
-	// 		specular_merge.shader.set_variant_enabled(SPECULAR_MERGE_SSR_MULTIVIEW, false);
-	// 		specular_merge.shader.set_variant_enabled(SPECULAR_MERGE_ADDITIVE_ADD_MULTIVIEW, false);
-	// 		specular_merge.shader.set_variant_enabled(SPECULAR_MERGE_ADDITIVE_SSR_MULTIVIEW, false);
-	// 	}
+		// if (!RendererCompositorRD::get_singleton()->is_xr_enabled()) {
+		specular_merge.shader.set_variant_enabled(SPECULAR_MERGE_ADD_MULTIVIEW, false);
+		specular_merge.shader.set_variant_enabled(SPECULAR_MERGE_SSR_MULTIVIEW, false);
+		specular_merge.shader.set_variant_enabled(SPECULAR_MERGE_ADDITIVE_ADD_MULTIVIEW, false);
+		specular_merge.shader.set_variant_enabled(SPECULAR_MERGE_ADDITIVE_SSR_MULTIVIEW, false);
+		// }
 
-	// 	specular_merge.shader_version = specular_merge.shader.version_create();
+		specular_merge.shader_version = specular_merge.shader.version_create();
 
-	// 	//use additive
+		//use additive
 
-	// 	RD::PipelineColorBlendState::Attachment ba;
-	// 	ba.enable_blend = true;
-	// 	ba.src_color_blend_factor = RD::BLEND_FACTOR_ONE;
-	// 	ba.dst_color_blend_factor = RD::BLEND_FACTOR_ONE;
-	// 	ba.src_alpha_blend_factor = RD::BLEND_FACTOR_ZERO;
-	// 	ba.dst_alpha_blend_factor = RD::BLEND_FACTOR_ZERO;
-	// 	ba.color_blend_op = RD::BLEND_OP_ADD;
-	// 	ba.alpha_blend_op = RD::BLEND_OP_ADD;
+		RD::PipelineColorBlendState::Attachment ba;
+		ba.enable_blend = true;
+		ba.src_color_blend_factor = RD::BLEND_FACTOR_ONE;
+		ba.dst_color_blend_factor = RD::BLEND_FACTOR_ONE;
+		ba.src_alpha_blend_factor = RD::BLEND_FACTOR_ZERO;
+		ba.dst_alpha_blend_factor = RD::BLEND_FACTOR_ZERO;
+		ba.color_blend_op = RD::BLEND_OP_ADD;
+		ba.alpha_blend_op = RD::BLEND_OP_ADD;
 
-	// 	RD::PipelineColorBlendState blend_additive;
-	// 	blend_additive.attachments.push_back(ba);
+		RD::PipelineColorBlendState blend_additive;
+		blend_additive.attachments.push_back(ba);
 
-	// 	for (int i = 0; i < SPECULAR_MERGE_MAX; i++) {
-	// 		if (specular_merge.shader.is_variant_enabled(i)) {
-	// 			RD::PipelineColorBlendState blend_state;
-	// 			if (i == SPECULAR_MERGE_ADDITIVE_ADD || i == SPECULAR_MERGE_ADDITIVE_SSR || i == SPECULAR_MERGE_ADDITIVE_ADD_MULTIVIEW || i == SPECULAR_MERGE_ADDITIVE_SSR_MULTIVIEW) {
-	// 				blend_state = blend_additive;
-	// 			} else {
-	// 				blend_state = RD::PipelineColorBlendState::create_disabled();
-	// 			}
-	// 			specular_merge.pipelines[i].setup(specular_merge.shader.version_get_shader(specular_merge.shader_version, i), RD::RENDER_PRIMITIVE_TRIANGLES, RD::PipelineRasterizationState(), RD::PipelineMultisampleState(), RD::PipelineDepthStencilState(), blend_state, 0);
-	// 		}
-	// 	}
-	// }
+		for (int i = 0; i < SPECULAR_MERGE_MAX; i++) {
+			if (specular_merge.shader.is_variant_enabled(i)) {
+				RD::PipelineColorBlendState blend_state;
+				if (i == SPECULAR_MERGE_ADDITIVE_ADD || i == SPECULAR_MERGE_ADDITIVE_SSR || i == SPECULAR_MERGE_ADDITIVE_ADD_MULTIVIEW || i == SPECULAR_MERGE_ADDITIVE_SSR_MULTIVIEW) {
+					blend_state = blend_additive;
+				} else {
+					blend_state = RD::PipelineColorBlendState::create_disabled();
+				}
+				specular_merge.pipelines[i].setup(specular_merge.shader.version_get_shader(specular_merge.shader_version, i), RD::RENDER_PRIMITIVE_TRIANGLES, RD::PipelineRasterizationState(), RD::PipelineMultisampleState(), RD::PipelineDepthStencilState(), blend_state, 0);
+			}
+		}
+	}
 
 }
 lain::RendererRD::CopyEffects::~CopyEffects() {}

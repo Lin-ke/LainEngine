@@ -269,20 +269,20 @@ void ClusterBuilderRD::setup(Size2i p_screen_size, uint32_t p_max_elements, RID 
 
 	screen_size = p_screen_size;
 
-	cluster_screen_size.width() = Math::division_round_up((uint32_t)p_screen_size.width(), cluster_size);
-	cluster_screen_size.height() = Math::division_round_up((uint32_t)p_screen_size.height(), cluster_size);
+	cluster_screen_size.width() = Math::division_round_up((uint32_t)p_screen_size.width(), cluster_size); // cluster的数量(x)
+	cluster_screen_size.height() = Math::division_round_up((uint32_t)p_screen_size.height(), cluster_size); // cluster的数量(y)
 
 	max_elements_by_type = p_max_elements;
 	if (max_elements_by_type % 32) { // Needs to be aligned to 32.
 		max_elements_by_type += 32 - (max_elements_by_type % 32);
 	}
-
-	cluster_buffer_size = cluster_screen_size.x * cluster_screen_size.y * (max_elements_by_type / 32 + 32) * ELEMENT_TYPE_MAX * 4;
+	// 每个element都产生 4个type的，是否使用该index和index的最低位和最高位
+	cluster_buffer_size = cluster_screen_size.x * cluster_screen_size.y * (max_elements_by_type / 32 + 32) * ELEMENT_TYPE_MAX * 4;  
 
 	render_element_max = max_elements_by_type * ELEMENT_TYPE_MAX;
 
-	uint32_t element_tag_bits_size = render_element_max / 32;
-	uint32_t element_tag_depth_bits_size = render_element_max;
+	uint32_t element_tag_bits_size = render_element_max / 32; // 32个元素用1个int作为tag element was used
+	uint32_t element_tag_depth_bits_size = render_element_max; // 一个元素用1个4int作为depth的tag
 
 	cluster_render_buffer_size = cluster_screen_size.x * cluster_screen_size.y * (element_tag_bits_size + element_tag_depth_bits_size) * 4; // Tag bits (element was used) and tag depth (depth range in which it was used).
 
@@ -439,7 +439,7 @@ void ClusterBuilderRD::bake_cluster() {
 			state.screen_to_clusters_shift -= divisor; //screen is smaller, shift one less
 
 			state.cluster_screen_width = cluster_screen_size.x;
-			state.cluster_depth_offset = (render_element_max / 32);
+			state.cluster_depth_offset = (render_element_max / 32); // 先是usage tag ( 这是usage_offset 的长度)，然后是一个depth用32位
 			state.cluster_data_size = state.cluster_depth_offset + render_element_max;
 
 			RD::get_singleton()->buffer_update(state_uniform, 0, sizeof(StateUniform), &state);
@@ -487,7 +487,7 @@ void ClusterBuilderRD::bake_cluster() {
 
 				RD::get_singleton()->draw_list_set_push_constant(draw_list, &push_constant, sizeof(ClusterBuilderSharedDataRD::ClusterRender::PushConstant));
 
-				uint32_t instances = 1;
+				uint32_t instances = 1; // 额那不就是instance=1吗。。
 				RD::get_singleton()->draw_list_draw(draw_list, true, instances);
 				i += instances;
 			}

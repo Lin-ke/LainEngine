@@ -18,7 +18,7 @@ RenderingDevice::ShaderSPIRVGetCacheKeyFunction RenderingDevice::get_spirv_cache
 // This behavior can be disabled if it's suspected that the graph is not detecting dependencies correctly and more control over the order of
 // the commands is desired (e.g. debugging).
 
-#define RENDER_GRAPH_REORDER 1
+#define RENDER_GRAPH_REORDER 0
 
 // Synchronization barriers are issued between the graph's levels only with the necessary amount of detail to achieve the correct result. If
 // it's suspected that the graph is not doing this correctly, full barriers can be issued instead that will block all types of operations
@@ -2227,49 +2227,57 @@ RenderingDevice* lain::RenderingDevice::create_local_device() {
   return rd;
 }
 
-void RenderingDevice::set_resource_name(RID p_id, const String& p_name) {
+void RenderingDevice::set_resource_name(RID p_id, const String& p_name, const String& p_function, const String& p_line) {
+  String name = p_name;
+  if(p_function != ""){
+     name = "f_" + p_function + "_";
+  }
+  if(p_line != ""){
+    name = name + "l_" + p_line;
+  }
+  
   if (texture_owner.owns(p_id)) {
     Texture* texture = texture_owner.get_or_null(p_id);
-    driver->set_object_name(RDD::OBJECT_TYPE_TEXTURE, texture->driver_id, p_name);
+    driver->set_object_name(RDD::OBJECT_TYPE_TEXTURE, texture->driver_id, name);
   } else if (framebuffer_owner.owns(p_id)) {
     //Framebuffer *framebuffer = framebuffer_owner.get_or_null(p_id);
     // Not implemented for now as the relationship between Framebuffer and RenderPass is very complex.
   } else if (sampler_owner.owns(p_id)) {
     RDD::SamplerID sampler_driver_id = *sampler_owner.get_or_null(p_id);
-    driver->set_object_name(RDD::OBJECT_TYPE_SAMPLER, sampler_driver_id, p_name);
+    driver->set_object_name(RDD::OBJECT_TYPE_SAMPLER, sampler_driver_id, name);
   } else if (vertex_buffer_owner.owns(p_id)) {
     Buffer* vertex_buffer = vertex_buffer_owner.get_or_null(p_id);
-    driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, vertex_buffer->driver_id, p_name);
+    driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, vertex_buffer->driver_id, name);
   } else if (index_buffer_owner.owns(p_id)) {
     IndexBuffer* index_buffer = index_buffer_owner.get_or_null(p_id);
-    driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, index_buffer->driver_id, p_name);
+    driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, index_buffer->driver_id, name);
   } else if (shader_owner.owns(p_id)) {
     Shader* shader = shader_owner.get_or_null(p_id);
-    driver->set_object_name(RDD::OBJECT_TYPE_SHADER, shader->driver_id, p_name);
+    driver->set_object_name(RDD::OBJECT_TYPE_SHADER, shader->driver_id, name);
   } else if (uniform_buffer_owner.owns(p_id)) {
     Buffer* uniform_buffer = uniform_buffer_owner.get_or_null(p_id);
-    driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, uniform_buffer->driver_id, p_name);
+    driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, uniform_buffer->driver_id, name);
   } else if (texture_buffer_owner.owns(p_id)) {
     Buffer* texture_buffer = texture_buffer_owner.get_or_null(p_id);
-    driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, texture_buffer->driver_id, p_name);
+    driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, texture_buffer->driver_id, name);
   } else if (storage_buffer_owner.owns(p_id)) {
     Buffer* storage_buffer = storage_buffer_owner.get_or_null(p_id);
-    driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, storage_buffer->driver_id, p_name);
+    driver->set_object_name(RDD::OBJECT_TYPE_BUFFER, storage_buffer->driver_id, name);
   } else if (uniform_set_owner.owns(p_id)) {
     UniformSet* uniform_set = uniform_set_owner.get_or_null(p_id);
-    driver->set_object_name(RDD::OBJECT_TYPE_UNIFORM_SET, uniform_set->driver_id, p_name);
+    driver->set_object_name(RDD::OBJECT_TYPE_UNIFORM_SET, uniform_set->driver_id, name);
   } else if (render_pipeline_owner.owns(p_id)) {
     RenderPipeline* pipeline = render_pipeline_owner.get_or_null(p_id);
-    driver->set_object_name(RDD::OBJECT_TYPE_PIPELINE, pipeline->driver_id, p_name);
+    driver->set_object_name(RDD::OBJECT_TYPE_PIPELINE, pipeline->driver_id, name);
   } else if (compute_pipeline_owner.owns(p_id)) {
     ComputePipeline* pipeline = compute_pipeline_owner.get_or_null(p_id);
-    driver->set_object_name(RDD::OBJECT_TYPE_PIPELINE, pipeline->driver_id, p_name);
+    driver->set_object_name(RDD::OBJECT_TYPE_PIPELINE, pipeline->driver_id, name);
   } else {
     ERR_PRINT("Attempted to name invalid ID: " + itos(p_id.get_id()));
     return;
   }
 #ifdef DEV_ENABLED
-  resource_names[p_id] = p_name;
+  resource_names[p_id] = name;
 #endif
 }
 void RenderingDevice::draw_command_begin_label(String p_label_name, const Color &p_color) {

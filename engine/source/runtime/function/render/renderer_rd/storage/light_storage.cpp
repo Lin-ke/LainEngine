@@ -380,10 +380,10 @@ int LightStorage::get_directional_light_shadow_size(RID p_light_intance) {
 		case RS::LIGHT_DIRECTIONAL_SHADOW_ORTHOGONAL:
 			break; //none
 		case RS::LIGHT_DIRECTIONAL_SHADOW_PARALLEL_2_SPLITS:
-			r.size.height() /= 2; // csm的阴影贴图分辨率相同
+			r.size.height() /= 2; // csm的阴影贴图分辨率相同 // 一半一半
 			break;
 		case RS::LIGHT_DIRECTIONAL_SHADOW_PARALLEL_4_SPLITS:
-			r.size /= 2;
+			r.size /= 2;  // 各 1/4
 			break;
 	}
 

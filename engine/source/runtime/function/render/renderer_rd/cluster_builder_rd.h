@@ -158,7 +158,7 @@ private:
 
 	struct RenderElementData {
 		uint32_t type; // 0-4
-		uint32_t touches_near;
+		uint32_t touches_near; // 避免一些clip会带来的问题
 		uint32_t touches_far;
 		uint32_t original_index;
 		float transform_inv[12]; // Transposed transform for less space.
@@ -246,7 +246,7 @@ public:
 
 		RenderElementData &e = render_elements[render_element_count];
 
-		Transform3D xform = view_xform * p_transform; // 屏幕空间到世界空间（右），需要一个radius（因为normalize过）
+		Transform3D xform = view_xform * p_transform; 
 
 		float radius = xform.basis.get_uniform_scale();
 		if (radius < 0.98 || radius > 1.02) {

@@ -283,6 +283,7 @@ void main() {
 	if (!AT_CUBEMAP_PASS && !AT_HALF_RES_PASS && !AT_QUARTER_RES_PASS) {
 		frag_color.a = 0.0;
 	}
+	// frag_color.rgb = vec3(panorama_coords, 0.0);
 
 #ifdef USE_DEBANDING
 	frag_color.rgb += interleaved_gradient_noise(gl_FragCoord.xy) * params.luminance_multiplier;

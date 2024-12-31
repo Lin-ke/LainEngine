@@ -323,6 +323,7 @@ class MaterialStorage : public RendererMaterialStorage {
 		p_array[10] = p_mtx.rows[2][2];
 		p_array[11] = 0;
 	}
+	// 相当于转为行主序（右乘；左乘转置）
 		static _FORCE_INLINE_ void store_transform_transposed_3x4(const Transform3D &p_mtx, float *p_array) {
 		p_array[0] = p_mtx.basis.rows[0][0];
 		p_array[1] = p_mtx.basis.rows[0][1];

@@ -333,7 +333,7 @@ class LightStorage : public RendererLightStorage {
     RID depth;  // texture， 下面那个是framebuffer
     RID fb;     // when rendering direct //@typo
 
-    int light_count = 0;
+    int light_count = 0; // 记录有几个
     int size = 0; // directional atlas 的 size
     bool use_16_bits = true;
     int current_light = 0; // 正在计算的light，会在render_shadow中更新 （directional_shadow_increase_current_light）
@@ -421,7 +421,7 @@ class LightStorage : public RendererLightStorage {
   bool owns_light_instance(RID p_rid) { return light_instance_owner.owns(p_rid); }
   L_INLINE uint64_t light_instance_get_shadow_pass(RID p_light_instance) {
     LightInstance* li = light_instance_owner.get_or_null(p_light_instance);
-    return li->shadow_pass;
+    return li->last_scene_shadow_pass;
   }
   _FORCE_INLINE_ RID light_instance_get_base_light(RID p_light_instance) {
     LightInstance* li = light_instance_owner.get_or_null(p_light_instance);

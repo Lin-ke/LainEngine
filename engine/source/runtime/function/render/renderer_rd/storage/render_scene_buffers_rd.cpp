@@ -387,7 +387,7 @@ RID RenderSceneBuffersRD::get_texture_slice_view(const StringName &p_context, co
 	arr.push_back(itos(p_view.swizzle_g));
 	arr.push_back(itos(p_view.swizzle_b));
 	arr.push_back(itos(p_view.swizzle_a));
-	// RD::get_singleton()->set_resource_name(slice, String("RenderBuffer {0}/{1}, layer {2}/{3}, mipmap {4}/{5}, view {6}/{7}/{8}/{9}/{10}").format(arr));
+	RD::get_singleton()->set_resource_name(slice, String("RenderBuffer {0}/{1}, layer {2}/{3}, mipmap {4}/{5}, view {6}/{7}/{8}/{9}/{10}").format(arr));
 
 	// and return our slice
 	return slice;

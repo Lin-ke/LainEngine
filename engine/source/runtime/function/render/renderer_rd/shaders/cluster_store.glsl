@@ -6,7 +6,7 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-layout(push_constant, std430) uniform Params {
+layout(push_constant, std430) uniform Params { // 32byte
 	uint cluster_render_data_size; // how much data for a single cluster takes
 	uint max_render_element_count_div_32; //divided by 32
 	uvec2 cluster_screen_size;
@@ -45,15 +45,15 @@ render_elements;
 
 void main() {
 	uvec2 pos = gl_GlobalInvocationID.xy;
-	if (any(greaterThanEqual(pos, params.cluster_screen_size))) {
+	if (any(greaterThanEqual(pos, params.cluster_screen_size))) { // 一个线程算一个cluster
 		return;
 	}
 
 	//counter for each type of render_element
 
 	//base offset for this cluster
-	uint base_offset = (pos.x + params.cluster_screen_size.x * pos.y);
-	uint src_offset = base_offset * params.cluster_render_data_size;
+	uint base_offset = (pos.x + params.cluster_screen_size.x * pos.y); // 这是第几个cluster
+	uint src_offset = base_offset * params.cluster_render_data_size; 
 
 	uint render_element_offset = 0;
 
@@ -63,8 +63,8 @@ void main() {
 		while (bits != 0) {
 			//if bits exist, check the render_element
 			uint index_bit = findLSB(bits);
-			uint index = render_element_offset * 32 + index_bit;
-			uint type = render_elements.data[index].type;
+			uint index = render_element_offset * 32 + index_bit; // index 存在
+			uint type = render_elements.data[index].type; // 根据index对应的element
 
 			uint z_range_offset = src_offset + params.max_render_element_count_div_32 + index;
 			uint z_range = cluster_render.data[z_range_offset];
@@ -101,11 +101,11 @@ void main() {
 					uint elem_max = max(orig_index + 1, minmax >> 16); //always store plus one, so zero means range is empty when not written to
 
 					minmax = elem_min | (elem_max << 16);
-					cluster_store.data[slice_ofs] = minmax;
+					cluster_store.data[slice_ofs] = minmax; // 记录的是每个深度index的最低值和index的最大值
 				}
 
 				uint store_word = orig_index >> 5;
-				uint store_bit = orig_index & 0x1F;
+				uint store_bit = orig_index & 0x1F; // 记录有这个物体
 
 				//store the actual render_element index at the end, so the rendering code can reference it
 				cluster_store.data[dst_offset + store_word] |= 1 << store_bit;

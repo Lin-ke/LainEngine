@@ -1235,7 +1235,7 @@ class RenderingDevice : public RenderingDeviceCommons {
 
   RenderingDevice* create_local_device();
 
-  void set_resource_name(RID p_id, const String& p_name);
+  void set_resource_name(RID p_id, const String& p_name, const String& p_function = "", const String& p_line ="");
 
   void draw_command_begin_label(String p_label_name, const Color& p_color = Color(1, 1, 1, 1));
   void draw_command_end_label();

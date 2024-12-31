@@ -105,13 +105,14 @@ layout(location = 0) out vec4 frag_color;
 #endif
 
 void main() {
+	// 判断当前面片在哪个cluster中
 	//convert from screen to cluster
 	uvec2 cluster = uvec2(gl_FragCoord.xy) >> state.screen_to_clusters_shift; /// xy / cluster size 
 
 	//get linear cluster offset from screen poss
 	uint cluster_offset = cluster.x + state.cluster_screen_width * cluster.y; /// cluster_screen_width 是一排有几个cluster
 	//multiply by data size to position at the beginning of the element list for this cluster
-	cluster_offset *= state.cluster_data_size;
+	cluster_offset *= state.cluster_data_size; // 一个cluster有多少个uint，一个cluster中先是 element list，然后是 depth list, element list是 max/32, depth lish是max
 
 	//find the current element in the list and plot the bit to mark it as used
 	uint usage_write_offset = cluster_offset + (element_index >> 5);

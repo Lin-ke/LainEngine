@@ -39,7 +39,7 @@ class Light3D : public VisualInstance3D {
 private:
 	Color color;
 	real_t param[PARAM_MAX] = {};
-	bool shadow = false;
+	bool shadow = false; // 默认是false的
 	bool negative = false;
 	bool reverse_cull = false;
 	uint32_t cull_mask = 0;

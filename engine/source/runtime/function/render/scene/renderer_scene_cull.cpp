@@ -2876,7 +2876,7 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance, cons
   bool animated_material_found = false;
 
   switch (RSG::light_storage->light_get_type(p_instance->base)) {
-    case RS::LIGHT_DIRECTIONAL: {
+    case RS::LIGHT_DIRECTIONAL: { // 不再这里处理
     } break;
     case RS::LIGHT_OMNI: {
       RS::LightOmniShadowMode shadow_mode = RSG::light_storage->light_omni_get_shadow_mode(p_instance->base);
@@ -2992,7 +2992,7 @@ bool RendererSceneCull::_light_instance_update_shadow(Instance* p_instance, cons
           CullConvex cull_convex;
           cull_convex.result = &instance_shadow_cull_result;
           // 场景的BVH和光的视锥体进行裁剪
-          // 需要对每个光确定绘制的部分，所以也不能算有冗余的部分
+          // 
           p_scenario->indexers[Scenario::INDEXER_GEOMETRY].convex_query(planes.ptr(), planes.size(), points.ptr(), points.size(), cull_convex);
 
           RendererSceneRender::RenderShadowData& shadow_data = render_shadow_data[max_shadows_used++];
