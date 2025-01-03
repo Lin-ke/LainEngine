@@ -116,6 +116,25 @@ namespace lain {
 		void _update_group_order(Group& g);
 		// state
 		bool is_paused() const { return paused; }
+		// 部分函数的回调，例如 更新material 用的 flush_changes
+	typedef void (*IdleCallback)();
+	enum {
+		MAX_IDLE_CALLBACKS = 256
+	};
+
+	static IdleCallback idle_callbacks[MAX_IDLE_CALLBACKS];
+	static int idle_callback_count;
+
+	static void add_idle_callback(IdleCallback p_callback) {
+		ERR_FAIL_COND(idle_callback_count >= MAX_IDLE_CALLBACKS);
+		idle_callbacks[idle_callback_count++] = p_callback;
+	}
+	void _call_idle_callbacks() {
+	for (int i = 0; i < idle_callback_count; i++) {
+		idle_callbacks[i]();
+	}
+}
+
 	};
 }
 #endif

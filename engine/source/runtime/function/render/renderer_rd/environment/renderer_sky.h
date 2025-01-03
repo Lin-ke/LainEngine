@@ -10,10 +10,11 @@
 #include "../storage/render_scene_buffers_rd.h"
 namespace lain::RendererRD {
 class SkyRD {
+	friend class RendererSceneRenderRD;
  public:
  	enum SkySet {
 		SKY_SET_UNIFORMS,
-		SKY_SET_MATERIAL,
+		SKY_SET_MATERIAL, // 1
 		SKY_SET_TEXTURES,
 		SKY_SET_FOG,
 	};

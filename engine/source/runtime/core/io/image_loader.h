@@ -43,7 +43,7 @@ namespace lain {
 		friend class ResourceFormatLoaderImage;
 		friend class ImageLoader;
 
-		virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> f, ImageLoader::LoaderFlags p_flags = ImageLoader::FLAG_NONE, float p_scale = 1.0) { return FAILED; }
+		virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> f, BitField<ImageLoader::LoaderFlags> p_flags = ImageLoader::FLAG_NONE, float p_scale = 1.0) { return FAILED; }
 
 		virtual void get_recognized_extensions(List<String>* p_extensions) const {}
 	};
@@ -53,6 +53,7 @@ namespace lain {
 
 		static ResourceFormatLoaderImage* singleton;
 	public:
+		static ResourceFormatLoaderImage* get_singleton() { return singleton; }
 		virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "", Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
 		virtual void get_recognized_extensions(List<String>* p_extensions) const {
 			ImageLoader::get_recognized_extensions(p_extensions);

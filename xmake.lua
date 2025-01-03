@@ -13,7 +13,7 @@ add_cxflags("/wd4305") -- double to float
 add_cxflags("/wd4267") -- size_t to int
 add_cxflags("/wd4244") -- int64, int32 int;
 
-add_requires( "assimp",  "zstd","glfw","imgui",  "zlib", "spdlog","tinyobjloader", "vulkan-headers")
+add_requires( "assimp",  "zstd","glfw","imgui",  "zlib", "spdlog","tinyobjloader", "vulkan-headers", "libpng")
 add_requires("mustache")
 target("Spirv-Reflect")
     set_kind("static")
@@ -176,7 +176,8 @@ target("Core")
     -- sourcve 
     add_files("engine/source/runtime/core/**.cpp")
     add_packages(
-        "assimp","glfw", "imgui", "zstd",  "zlib", "spdlog","tinyobjloader"
+        "assimp","glfw", "imgui", "zstd",  "zlib", "spdlog","tinyobjloader", "libpng"
+        
     )
     -- include path
     add_includedirs("engine/source/runtime")

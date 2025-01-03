@@ -6,6 +6,9 @@
 #include "scene/main/window.h"
 namespace lain {
 SceneTree* SceneTree::singleton = nullptr;
+int SceneTree::idle_callback_count = 0;
+SceneTree::IdleCallback SceneTree::idle_callbacks[SceneTree::MAX_IDLE_CALLBACKS];
+
 SceneTree::SceneTree() {
   if (singleton == nullptr) {
     singleton = this;
@@ -111,7 +114,7 @@ bool SceneTree::process(double p_time) {
 
   //process_tweens(p_time, false);
 
-  //_call_idle_callbacks();
+  _call_idle_callbacks();
 
 #ifdef TOOLS_ENABLED
 #ifndef _3D_DISABLED

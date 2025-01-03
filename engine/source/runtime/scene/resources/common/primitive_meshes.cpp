@@ -445,3 +445,188 @@ void CapsuleMesh::_bind_methods(){
 	ClassDB::bind_method(D_METHOD("get_radius"), &CapsuleMesh::get_radius);
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius", PROPERTY_HINT_RANGE, "0.001,100.0,0.001,or_greater,suffix:m"), "set_radius", "get_radius");
 }
+
+void SphereMesh::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_radius", "radius"), &SphereMesh::set_radius);
+	ClassDB::bind_method(D_METHOD("get_radius"), &SphereMesh::get_radius);
+	ClassDB::bind_method(D_METHOD("set_height", "height"), &SphereMesh::set_height);
+	ClassDB::bind_method(D_METHOD("get_height"), &SphereMesh::get_height);
+
+	ClassDB::bind_method(D_METHOD("set_radial_segments", "radial_segments"), &SphereMesh::set_radial_segments);
+	ClassDB::bind_method(D_METHOD("get_radial_segments"), &SphereMesh::get_radial_segments);
+	ClassDB::bind_method(D_METHOD("set_rings", "rings"), &SphereMesh::set_rings);
+	ClassDB::bind_method(D_METHOD("get_rings"), &SphereMesh::get_rings);
+
+	ClassDB::bind_method(D_METHOD("set_is_hemisphere", "is_hemisphere"), &SphereMesh::set_is_hemisphere);
+	ClassDB::bind_method(D_METHOD("get_is_hemisphere"), &SphereMesh::get_is_hemisphere);
+
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius", PROPERTY_HINT_RANGE, "0.001,100.0,0.001,or_greater,suffix:m"), "set_radius", "get_radius");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "height", PROPERTY_HINT_RANGE, "0.001,100.0,0.001,or_greater,suffix:m"), "set_height", "get_height");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "radial_segments", PROPERTY_HINT_RANGE, "1,100,1,or_greater"), "set_radial_segments", "get_radial_segments");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "rings", PROPERTY_HINT_RANGE, "1,100,1,or_greater"), "set_rings", "get_rings");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "is_hemisphere"), "set_is_hemisphere", "get_is_hemisphere");
+}
+
+
+void SphereMesh::set_radius(const float p_radius) {
+	radius = p_radius;
+	_update_lightmap_size();
+	request_update();
+}
+
+float SphereMesh::get_radius() const {
+	return radius;
+}
+
+void SphereMesh::set_height(const float p_height) {
+	height = p_height;
+	_update_lightmap_size();
+	request_update();
+}
+
+float SphereMesh::get_height() const {
+	return height;
+}
+
+void SphereMesh::set_radial_segments(const int p_radial_segments) {
+	radial_segments = p_radial_segments > 4 ? p_radial_segments : 4;
+	request_update();
+}
+
+int SphereMesh::get_radial_segments() const {
+	return radial_segments;
+}
+
+void SphereMesh::set_rings(const int p_rings) {
+	ERR_FAIL_COND(p_rings < 1);
+	rings = p_rings;
+	request_update();
+}
+
+int SphereMesh::get_rings() const {
+	return rings;
+}
+
+void SphereMesh::set_is_hemisphere(const bool p_is_hemisphere) {
+	is_hemisphere = p_is_hemisphere;
+	_update_lightmap_size();
+	request_update();
+}
+
+bool SphereMesh::get_is_hemisphere() const {
+	return is_hemisphere;
+}
+
+SphereMesh::SphereMesh() {}
+
+void SphereMesh::_update_lightmap_size() {
+	if (get_add_uv2()) {
+		// size must have changed, update lightmap size hint
+		Size2i _lightmap_size_hint;
+		float texel_size = get_lightmap_texel_size();
+		float padding = get_uv2_padding();
+
+		float _width = radius * Math_TAU;
+		_lightmap_size_hint.x = MAX(1.0, (_width / texel_size) + padding);
+		float _height = (is_hemisphere ? 1.0 : 0.5) * height * Math_PI; // note, with hemisphere height is our radius, while with a full sphere it is the diameter..
+		_lightmap_size_hint.y = MAX(1.0, (_height / texel_size) + padding);
+
+		set_lightmap_size_hint(_lightmap_size_hint);
+	}
+}
+
+void SphereMesh::_create_mesh_array(Array &p_arr) const {
+	bool _add_uv2 = get_add_uv2();
+	float texel_size = get_lightmap_texel_size();
+	float _uv2_padding = get_uv2_padding() * texel_size;
+
+	create_mesh_array(p_arr, radius, height, radial_segments, rings, is_hemisphere, _add_uv2, _uv2_padding);
+}
+
+void SphereMesh::create_mesh_array(Array &p_arr, float radius, float height, int radial_segments, int rings, bool is_hemisphere, bool p_add_uv2, const float p_uv2_padding) {
+	int i, j, prevrow, thisrow, point;
+	float x, y, z;
+
+	float scale = height * (is_hemisphere ? 1.0 : 0.5);
+
+	// Only used if we calculate UV2
+	float circumference = radius * Math_TAU;
+	float horizontal_length = circumference + p_uv2_padding;
+	float center_h = 0.5 * circumference / horizontal_length;
+
+	float height_v = scale * Math_PI / ((scale * Math_PI) + p_uv2_padding);
+
+	// set our bounding box
+
+	Vector<Vector3> points;
+	Vector<Vector3> normals;
+	Vector<float> tangents;
+	Vector<Vector2> uvs;
+	Vector<Vector2> uv2s;
+	Vector<int> indices;
+	point = 0;
+
+#define ADD_TANGENT(m_x, m_y, m_z, m_d) \
+	tangents.push_back(m_x);            \
+	tangents.push_back(m_y);            \
+	tangents.push_back(m_z);            \
+	tangents.push_back(m_d);
+
+	thisrow = 0;
+	prevrow = 0;
+	for (j = 0; j <= (rings + 1); j++) {
+		float v = j;
+		float w;
+
+		v /= (rings + 1);
+		w = sin(Math_PI * v);
+		y = scale * cos(Math_PI * v);
+
+		for (i = 0; i <= radial_segments; i++) {
+			float u = i;
+			u /= radial_segments;
+
+			x = sin(u * Math_TAU);
+			z = cos(u * Math_TAU);
+
+			if (is_hemisphere && y < 0.0) {
+				points.push_back(Vector3(x * radius * w, 0.0, z * radius * w));
+				normals.push_back(Vector3(0.0, -1.0, 0.0));
+			} else {
+				Vector3 p = Vector3(x * radius * w, y, z * radius * w);
+				points.push_back(p);
+				Vector3 normal = Vector3(x * w * scale, radius * (y / scale), z * w * scale);
+				normals.push_back(normal.normalized());
+			}
+			ADD_TANGENT(z, 0.0, -x, 1.0)
+			uvs.push_back(Vector2(u, v));
+			if (p_add_uv2) {
+				float w_h = w * 2.0 * center_h;
+				uv2s.push_back(Vector2(center_h + ((u - 0.5) * w_h), v * height_v));
+			}
+			point++;
+
+			if (i > 0 && j > 0) {
+				indices.push_back(prevrow + i - 1);
+				indices.push_back(prevrow + i);
+				indices.push_back(thisrow + i - 1);
+
+				indices.push_back(prevrow + i);
+				indices.push_back(thisrow + i);
+				indices.push_back(thisrow + i - 1);
+			}
+		}
+
+		prevrow = thisrow;
+		thisrow = point;
+	}
+
+	p_arr[RS::ARRAY_VERTEX] = points;
+	p_arr[RS::ARRAY_NORMAL] = normals;
+	p_arr[RS::ARRAY_TANGENT] = tangents;
+	p_arr[RS::ARRAY_TEX_UV] = uvs;
+	if (p_add_uv2) {
+		p_arr[RS::ARRAY_TEX_UV2] = uv2s;
+	}
+	p_arr[RS::ARRAY_INDEX] = indices;
+}

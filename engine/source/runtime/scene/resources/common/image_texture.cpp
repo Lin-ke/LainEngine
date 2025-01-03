@@ -30,7 +30,6 @@ void ImageTexture::set_image(const Ref<Image> &p_image) {
 	}
 	notify_property_list_changed();
 	emit_changed();
-
 	image_stored = true;
 }
 // 这两个是服务于 _get_property_list的，用于避免在_bind_methods中定义

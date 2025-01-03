@@ -1,6 +1,10 @@
 #include "image_loader.h"
 #include "image_loader_stb.h"
+#include "image_loader_png.h"
+#include "image_loader_hdr.h"
+
 namespace lain {
+
 
 	Ref<Resource> ResourceFormatLoaderImage::load(const String& p_path, const String& p_original_path, Error* r_error, bool p_use_sub_threads, float* r_progress, CacheMode p_cache_mode) {
 		Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
@@ -28,9 +32,7 @@ namespace lain {
 
 	ResourceFormatLoaderImage::ResourceFormatLoaderImage() {
 			singleton = this;
-			// built in loaders
-			Ref<StbLoader> stbloader = memnew(StbLoader);
-			add_image_format_loader(stbloader);
+		
 	}
 	
 

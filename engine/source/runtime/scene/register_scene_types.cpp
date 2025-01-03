@@ -79,6 +79,8 @@ namespace lain{
 	GDREGISTER_VIRTUAL_CLASS(PrimitiveMesh);
 	GDREGISTER_CLASS(CapsuleMesh);
 	GDREGISTER_CLASS(ArrayMesh);
+	GDREGISTER_CLASS(SphereMesh);
+
 	
 	GDREGISTER_VIRTUAL_CLASS(Material);
 	GDREGISTER_ABSTRACT_CLASS(BaseMaterial3D);
@@ -87,7 +89,7 @@ namespace lain{
 	GDREGISTER_CLASS(PanoramaSkyMaterial);
 	GDREGISTER_CLASS(PhysicalSkyMaterial);
 
-
+	SceneTree::add_idle_callback(BaseMaterial3D::flush_changes);
 
 	GDREGISTER_CLASS(WorldEnvironment);
 	

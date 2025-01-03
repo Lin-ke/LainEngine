@@ -1372,7 +1372,6 @@ void MaterialStorage::_update_queued_materials() {
 	while (material_update_list.first()) {
 		Material *material = material_update_list.first()->self();
 		bool uniforms_changed = false;
-
 		if (material->data) {
 			uniforms_changed = material->data->update_parameters(material->params, material->uniform_dirty, material->texture_dirty);
 		}
@@ -1512,7 +1511,7 @@ void lain::RendererRD::MaterialStorage::MaterialData::update_uniform_buffer(cons
     }
   }
 }
-// @todo read
+
 void MaterialStorage::MaterialData::update_textures(const HashMap<StringName, Variant>& p_parameters, const HashMap<StringName, HashMap<int, RID>>& p_default_textures,
                                                     const Vector<shader::ShaderCompiler::GeneratedCode::Texture>& p_texture_uniforms, RID* p_textures, bool p_use_linear_color,
                                                     bool p_3d_material) {

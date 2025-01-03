@@ -1,7 +1,7 @@
 {
   "head": {
     "tag": "scene",
-    "load_steps": 7
+    "load_steps": 10
   },
   "ext_res": [
     {
@@ -9,6 +9,12 @@
       "uid": "",
       "def_path": "res://robot.obj",
       "id": "1_ocky2fv4x2"
+    },
+    {
+      "type": "ArrayMesh",
+      "uid": "",
+      "def_path": "res://ImageToStl.com_zdm2.obj",
+      "id": "2_qxdsafa2da"
     }
   ],
   "sub_res": [
@@ -60,6 +66,63 @@
         "ssr_enabled": true,
         "ssao_enabled": false
       }
+    },
+    {
+      "type": "StandardMaterial3D",
+      "id": "StandardMaterial3D_le24i",
+      "sub_res": {},
+      "ext_res": {},
+      "variants": {
+        "metallic": 1.0,
+        "roughness": 0.0,
+        "albedo_color": {
+          "$typeName": "Color",
+          "$context": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 0.8
+          }
+        },
+        "transparency": 1
+      }
+    },
+    {
+      "type": "StandardMaterial3D",
+      "id": "StandardMaterial3D_qwert",
+      "sub_res": {},
+      "ext_res": {},
+      "variants": {
+        "metallic": 1.0,
+        "roughness": 0.2,
+        "albedo_color": {
+          "$typeName": "Color",
+          "$context": {
+            "r": 1.0,
+            "g": 1.0,
+            "b": 1.0,
+            "a": 1.0
+          }
+        }
+      }
+    },
+    {
+      "type": "SphereMesh",
+      "id": "SphereMesh_okwgr",
+      "sub_res": {
+        "material": "StandardMaterial3D_le24i"
+      },
+      "ext_res": {},
+      "variants": {}
+    },
+    {
+      "type": "SphereMesh",
+      "id": "SphereMesh_asdfg",
+      "sub_res": {
+        "material": "StandardMaterial3D_qwert"
+      },
+      "ext_res": {},
+      "variants": {}
     }
   ],
   "gobjects": [
@@ -67,7 +130,7 @@
       "variants": {
         "type": {
           "$typeName": "StringName",
-          "$context": "TestNode"
+          "$context": "GObject3D"
         },
         "name": {
           "$typeName": "StringName",
@@ -120,9 +183,9 @@
               ]
             },
             "origin": {
-              "x": 1,
-              "y": 2,
-              "z": 3
+              "x": 11,
+              "y": -1.5,
+              "z": 9.5
             }
           }
         }
@@ -160,7 +223,7 @@
         },
         "parent": {
           "$typeName": "GObjectPath",
-          "$context": "."
+          "$context": "default_cam" 
         },
         "name": {
           "$typeName": "StringName",
@@ -174,7 +237,98 @@
             "b": 1,
             "a": 1
           }
-        }
+        },
+        "transform": {
+          "$typeName": "Transform3D",
+          "$context": {
+            "basis": {
+              "rows": [
+                {
+                  "x": 1,
+                  "y": 0,
+                  "z": 0
+                },
+                {
+                  "x": 0,
+                  "y": 1,
+                  "z": 0
+                },
+                {
+                  "x": 0,
+                  "y": 0,
+                  "z": 1
+                }
+              ]
+            },
+            "origin": {
+              "x": 0,
+              "y": 4,
+              "z": -3
+            }
+          }
+        },
+        "shadow_enabled": true,
+        "omni_range": 10,
+        "light_energy": 20
+      },
+      "instanced_components": [],
+      "sub_res": {},
+      "ext_res": {}
+    },
+    {
+      "variants": {
+        "type": {
+          "$typeName": "StringName",
+          "$context": "OmniLight3D"
+        },
+        "parent": {
+          "$typeName": "GObjectPath",
+          "$context": "."
+        },
+        "name": {
+          "$typeName": "StringName",
+          "$context": "default_omni2"
+        },
+        "light_color": {
+          "$typeName": "Color",
+          "$context": {
+            "r": 1,
+            "g": 0.500000001490116,
+            "b": 1,
+            "a": 1
+          }
+        },
+        "transform": {
+          "$typeName": "Transform3D",
+          "$context": {
+            "basis": {
+              "rows": [
+                {
+                  "x": 1,
+                  "y": 0,
+                  "z": 0
+                },
+                {
+                  "x": 0,
+                  "y": 1,
+                  "z": 0
+                },
+                {
+                  "x": 0,
+                  "y": 0,
+                  "z": 1
+                }
+              ]
+            },
+            "origin": {
+              "x": 21,
+              "y": -1,
+              "z": -13
+            }
+          }
+        },
+        "shadow_enabled": true,
+        "omni_range": 10
       },
       "instanced_components": [],
       "sub_res": {},
@@ -198,73 +352,41 @@
         "light_color": {
           "$typeName": "Color",
           "$context": {
-            "r": 0.5,
-            "g": 0.5,
+            "r": 1,
+            "g": 1,
             "b": 1,
             "a": 1
           }
-        }
-      },
-      "instanced_components": [],
-      "sub_res": {},
-      "ext_res": {}
-    },
-    {
-      "variants": {
-        "type": {
-          "$typeName": "StringName",
-          "$context": "TestNode"
         },
-        "parent": {
-          "$typeName": "GObjectPath",
-          "$context": "."
-        },
-        "name": {
-          "$typeName": "StringName",
-          "$context": "hello"
-        }
-      },
-      "instanced_components": [],
-      "sub_res": {},
-      "ext_res": {}
-    },
-    {
-      "variants": {
-        "type": {
-          "$typeName": "StringName",
-          "$context": "TestNode"
-        },
-        "parent": {
-          "$typeName": "GObjectPath",
-          "$context": "./hello"
-        },
-        "name": {
-          "$typeName": "StringName",
-          "$context": "hello_child"
-        }
-      },
-      "instanced_components": [
-        {
-          "$typeName": "TestComponent",
-          "$context": {}
-        }
-      ],
-      "sub_res": {},
-      "ext_res": {}
-    },
-    {
-      "variants": {
-        "type": {
-          "$typeName": "StringName",
-          "$context": "TestNode"
-        },
-        "parent": {
-          "$typeName": "GObjectPath",
-          "$context": "."
-        },
-        "name": {
-          "$typeName": "StringName",
-          "$context": "world"
+        "transform": {
+          "$typeName": "Transform3D",
+          "$context": {
+            "basis": {
+              "rows": [
+                {
+                  "x": 0.889832,
+                  "y": 0.251497,
+                  "z": 0.380722
+                },
+                {
+                  "x": 0,
+                  "y": 0.834387,
+                  "z":  0.551179
+                },
+                {
+                  "x": -0.456289,
+                  "y": -0.490456,
+                  "z": 0.742464
+                }
+              ]
+            },
+            "origin": {
+              "x": 4.4,
+              "y": 6.5,
+              "z": 8.2
+            }
+          },
+          "directional_shadow_max_distance" : 75
         }
       },
       "instanced_components": [],
@@ -284,12 +406,143 @@
         "name": {
           "$typeName": "StringName",
           "$context": "cube"
+        },
+        "transform": {
+          "$typeName": "Transform3D",
+          "$context": {
+            "basis": {
+              "rows": [
+                {
+                  "x": 1,
+                  "y": 0,
+                  "z": 0
+                },
+                {
+                  "x": 0,
+                  "y": 1,
+                  "z": 0
+                },
+                {
+                  "x": 0,
+                  "y": 0,
+                  "z": 1
+                }
+              ]
+            },
+            "origin": {
+              "x": 0,
+              "y": -3,
+              "z": 0
+            }
+          }
         }
       },
       "instanced_components": [],
       "sub_res": {},
       "ext_res": {
-        "mesh": "1_ocky2fv4x2"
+        "mesh": "2_qxdsafa2da"
+      }
+    },
+    {
+      "variants": {
+        "type": {
+          "$typeName": "StringName",
+          "$context": "MeshInstance3D"
+        },
+        "parent": {
+          "$typeName": "GObjectPath",
+          "$context": "default_cam"
+        },
+        "name": {
+          "$typeName": "StringName",
+          "$context": "sphere"
+        },
+        "transform": {
+          "$typeName": "Transform3D",
+          "$context": {
+            "basis": {
+              "rows": [
+                {
+                  "x": 1,
+                  "y": 0,
+                  "z": 0
+                },
+                {
+                  "x": 0,
+                  "y": 1,
+                  "z": 0
+                },
+                {
+                  "x": 0,
+                  "y": 0,
+                  "z": 1
+                }
+              ]
+            },
+            "origin": {
+              "x": 0,
+              "y": -1,
+              "z": -3
+            }
+          }
+        }
+      },
+      "instanced_components": [],
+      "sub_res": {
+        "mesh": "SphereMesh_okwgr"
+      },
+      "ext_res": {
+      }
+    },
+    {
+      "variants": {
+        "type": {
+          "$typeName": "StringName",
+          "$context": "MeshInstance3D"
+        },
+        "parent": {
+          "$typeName": "GObjectPath",
+          "$context": "default_cam"
+        },
+        "name": {
+          "$typeName": "StringName",
+          "$context": "sphere2"
+        },
+        "transform": {
+          "$typeName": "Transform3D",
+          "$context": {
+            "basis": {
+              "rows": [
+                {
+                  "x": 1,
+                  "y": 0,
+                  "z": 0
+                },
+                {
+                  "x": 0,
+                  "y": 1,
+                  "z": 0
+                },
+                {
+                  "x": 0,
+                  "y": 0,
+                  "z": 1
+                }
+              ]
+            },
+            "origin": {
+               "x": 2,
+              "y": -1,
+              "z": -5
+            }
+          }
+        }
+      },
+      "instanced_components": [],
+      "sub_res": {
+        "mesh": "SphereMesh_asdfg"
+      },
+      "ext_res": {
       }
     }
   ]

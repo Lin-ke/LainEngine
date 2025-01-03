@@ -506,7 +506,8 @@ struct MethodInfo {
 #define ADD_PROPERTYI(m_property, m_setter, m_getter, m_index) \
   lain::ClassDB::add_property(get_class_static(), m_property, _scs_create(m_setter), _scs_create(m_getter), m_index)
 #define ADD_SIGNAL(m_signal) lain::ClassDB::add_signal(get_class_static(), m_signal)
-
+#define ADD_GROUP(group, m_name) 
+#define ADD_SUBGROUP(m_name, m_prefix)
 // const 限定符是必要的，因为const对象拒绝调用非const方法
 
 #endif  // !__CORE_OBJECT_H__

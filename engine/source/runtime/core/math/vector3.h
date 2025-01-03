@@ -4,7 +4,6 @@
 #include "runtime/core/math/math.h"
 #include "runtime/core/meta/reflection/reflection_marcos.h"
 #include "vector2.h"
-#include <cassert>
 
 namespace lain {
 class String;
@@ -35,21 +34,21 @@ struct _NO_DISCARD_ Vector3 {
   operator String() const;
 
   real_t operator[](size_t i) const {
-    assert(i < 3);
+    // assert(i < 3);
     return *(&x + i);
   }
 
   real_t& operator[](size_t i) {
-    assert(i < 3);
+    // assert(i < 3);
     return *(&x + i);
   }
 
   real_t& coord(size_t i) {
-    assert(i < 3);
+    // assert(i < 3);
     return *(&x + i);
   }
   real_t coord(size_t i) const {
-    assert(i < 3);
+    // assert(i < 3);
     return *(&x + i);
   }
   /// Pointer accessor for direct copying
@@ -71,12 +70,12 @@ struct _NO_DISCARD_ Vector3 {
   Vector3 operator*(const Vector3& rhs) const { return Vector3(x * rhs.x, y * rhs.y, z * rhs.z); }
 
   Vector3 operator/(real_t scalar) const {
-    assert(scalar != 0.0);
+    // assert(scalar != 0.0);
     return Vector3(x / scalar, y / scalar, z / scalar);
   }
 
   Vector3 operator/(const Vector3& rhs) const {
-    assert((rhs.x != 0 && rhs.y != 0 && rhs.z != 0));
+    // assert((rhs.x != 0 && rhs.y != 0 && rhs.z != 0));
     return Vector3(x / rhs.x, y / rhs.y, z / rhs.z);
   }
 
@@ -127,7 +126,7 @@ struct _NO_DISCARD_ Vector3 {
   friend Vector3 operator*(real_t scalar, const Vector3& rhs) { return Vector3(scalar * rhs.x, scalar * rhs.y, scalar * rhs.z); }
 
   friend Vector3 operator/(real_t scalar, const Vector3& rhs) {
-    assert(rhs.x != 0 && rhs.y != 0 && rhs.z != 0);
+    // assert(rhs.x != 0 && rhs.y != 0 && rhs.z != 0);
     return Vector3(scalar / rhs.x, scalar / rhs.y, scalar / rhs.z);
   }
 
@@ -183,7 +182,6 @@ struct _NO_DISCARD_ Vector3 {
   }
 
   Vector3& operator/=(real_t scalar) {
-    assert(scalar != 0.0);
     x /= scalar;
     y /= scalar;
     z /= scalar;
@@ -191,7 +189,7 @@ struct _NO_DISCARD_ Vector3 {
   }
 Vector2 octahedron_encode() const {
 	Vector3 n = *this;
-	n /= Math::abs(n.x) + Math::abs(n.y) + Math::abs(n.z);
+	n /= (Math::abs(n.x) + Math::abs(n.y) + Math::abs(n.z));
 	Vector2 o;
 	if (n.z >= 0.0f) {
 		o.x = n.x;
@@ -233,7 +231,7 @@ Vector2 Vector3::octahedron_tangent_encode(float p_sign) const {
 	return res;
 }
   Vector3& operator/=(const Vector3& rhs) {
-    assert(rhs.x != 0 && rhs.y != 0 && rhs.z != 0);
+    // assert(rhs.x != 0 && rhs.y != 0 && rhs.z != 0);
     x /= rhs.x;
     y /= rhs.y;
     z /= rhs.z;

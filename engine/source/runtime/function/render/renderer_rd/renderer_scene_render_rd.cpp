@@ -369,10 +369,11 @@ bool RendererSceneRenderRD::free(RID p_rid) {
   // else if (gi.voxel_gi_instance_owns(p_rid)) {
   // gi.voxel_gi_instance_free(p_rid);
   // }
-  // else if (sky.sky_owner.owns(p_rid)) {
-  // 	sky.update_dirty_skys();
-  // 	sky.free_sky(p_rid);
-  // } else if (RendererRD::Fog::get_singleton()->owns_fog_volume_instance(p_rid)) {
+  else if (sky.sky_owner.owns(p_rid)) {
+  	sky.update_dirty_skys();
+  	sky.free_sky(p_rid);
+  } 
+  // else if (RendererRD::Fog::get_singleton()->owns_fog_volume_instance(p_rid)) {
   // 	RendererRD::Fog::get_singleton()->fog_instance_free(p_rid);
   // }
   else {

@@ -880,8 +880,11 @@ Ref<Resource> lain::ResourceFormatLoaderOBJ::load(const String& p_path, const St
 
 	ERR_FAIL_COND_V(err != OK, err);
 	ERR_FAIL_COND_V(meshes.size() != 1, ERR_BUG);
-  Ref<Resource> res  = meshes.front()->get()->get_mesh();
-  return meshes.front()->get()->get_mesh();
+	Ref<ImporterMesh> impt_mesh = meshes.front()->get();
+	impt_mesh->create_shadow_mesh();
+  Ref<ArrayMesh> res  = impt_mesh->get_mesh();
+	L_PRINT(res->surface_get_material(0).is_valid());
+  return res;
 }
 
 void lain::ResourceFormatLoaderOBJ::get_recognized_extensions(List<String>* p_extensions) const

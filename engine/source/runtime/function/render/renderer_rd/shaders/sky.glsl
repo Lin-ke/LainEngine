@@ -251,7 +251,8 @@ void main() {
 #CODE : SKY
 
 	}
-
+	// color=(texture(sampler2D(m_source_panorama, SAMPLER_LINEAR_REPEAT), panorama_coords).rgb );
+	// color = vec3(1.0, 1.0, 1.0);
 	frag_color.rgb = color;
 	frag_color.a = alpha;
 

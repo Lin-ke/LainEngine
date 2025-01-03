@@ -6,7 +6,7 @@
 namespace lain {
 	StbLoader* StbLoader::singleton = nullptr;
 
-	Error StbLoader::load_image(Ref<Image> p_image, Ref<FileAccess> f, ImageLoader::LoaderFlags p_flags, float p_scale) {
+	Error StbLoader::load_image(Ref<Image> p_image, Ref<FileAccess> f, BitField<ImageLoader::LoaderFlags> p_flags, float p_scale) {
 		int width, height, channels;
 		ui8* img = stbi_load(CSTR(f->get_path_absolute()), & width, & height, & channels, 0);
 		ERR_FAIL_NULL_V_MSG(img, ERR_FILE_CORRUPT, "stbi_load failed");

@@ -6,6 +6,9 @@
 #include "core/object/objectdb.h"
 #include "core/meta/serializer/serializer.h"
 #include "core/io/image_loader_stb.h"
+#include "core/io/image_loader_hdr.h"
+#include "core/io/image_loader_png.h"
+
 // scene
 #include "core/scene/scene_stringnames.h"
 #include "core/scene/object/gobject.h"
@@ -35,6 +38,11 @@ namespace lain {
 
 	// godot: register scene types
 	static Ref<ResourceFormatLoaderImage> resource_format_loader_image;
+
+
+	static Ref<StbLoader> stbloader ;
+	static Ref<ImageLoaderPNG> pngloader;
+	static Ref<ImageLoaderHDR> hdrloader;
 
 	void register_core_types() {
 
@@ -68,6 +76,13 @@ namespace lain {
 		resource_format_loader_image.instantiate();
 		ResourceLoader::add_resource_format_loader(resource_format_loader_image);
 
+		// built in loaders
+			stbloader.instantiate();
+			ResourceFormatLoaderImage::get_singleton()->add_image_format_loader(stbloader);
+			pngloader.instantiate();
+			ResourceFormatLoaderImage::get_singleton()->add_image_format_loader(pngloader);
+			hdrloader.instantiate();
+			ResourceFormatLoaderImage::get_singleton()->add_image_format_loader(hdrloader);
 		GObject::init_gobj_hrcr();
 
 
