@@ -266,6 +266,7 @@ class RenderSceneBuffersRD : public RenderSceneBuffers {
 	RID get_velocity_buffer(bool p_get_msaa);
 	RID get_velocity_buffer(bool p_get_msaa, uint32_t p_layer);
 
+  void configure_for_reflections(const Size2i p_reflection_size);
 
 };
 };  // namespace lain

@@ -153,7 +153,7 @@ class RenderingMethod {
 	virtual void update() = 0;
 
 	virtual void render_camera(const Ref<RenderSceneBuffers> &p_render_buffers, RID p_camera, RID p_scenario, RID p_viewport, Size2 p_viewport_size, uint32_t p_jitter_phase_count, float p_screen_mesh_lod_threshold, RID p_shadow_atlas, RenderInfo *r_render_info) = 0;
-	// virtual void render_probes() = 0;
+	virtual void render_probes() = 0;
 	// virtual void update_visibility_notifiers() = 0;
 
 	virtual bool free(RID p_rid) = 0;

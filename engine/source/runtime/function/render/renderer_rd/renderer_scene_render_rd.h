@@ -73,6 +73,7 @@ void _process_compositor_effects(RS::CompositorEffectCallbackType p_callback_typ
 	// virtual void _render_particle_collider_heightfield(RID p_fb, const Transform3D &p_cam_transform, const Projection &p_cam_projection, const PagedArray<RenderGeometryInstance *> &p_instances) = 0;
 	virtual void base_uniforms_changed() = 0;
 	virtual void setup_added_light(const RS::LightType p_type, const Transform3D &p_transform, float p_radius, float p_spot_aperture){};
+  virtual void setup_added_reflection_probe(const Transform3D &p_transform, const Vector3 &p_half_size) {};
 
 
   /* RENDER BUFFERS */
@@ -98,6 +99,9 @@ void _process_compositor_effects(RS::CompositorEffectCallbackType p_callback_typ
   float screen_space_roughness_limiter_get_amount() const { return screen_space_roughness_limiter_amount; }
 
   float screen_space_roughness_limiter_get_limit() const { return screen_space_roughness_limiter_limit; }
+	/* REFLECTION PROBE */
+
+	virtual RID reflection_probe_create_framebuffer(RID p_color, RID p_depth);
 
 /* Light data */
 

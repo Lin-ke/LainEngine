@@ -2709,7 +2709,7 @@ RDD::CommandPoolID RenderingDeviceDriverVulkan::command_pool_create(CommandQueue
   VkCommandPoolCreateInfo cmd_pool_info = {};
   cmd_pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
   cmd_pool_info.queueFamilyIndex = family_index;  // //注意commnd pool也需要index，这个pool中的buffer只能submit到该queue中。
-  cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+  cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // @opt: 这里会重置
   // TRANSIENT代表生命周期很短
   // @? PROTECTED有什么用
   // 这里有trim函数可以将未使用的内存从commandpool回收到系统

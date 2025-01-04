@@ -544,6 +544,40 @@
       },
       "ext_res": {
       }
+    },
+    {
+      "variants": {
+        "type": {
+          "$typeName": "StringName",
+          "$context": "ReflectionProbe"
+        },
+        "parent": {
+          "$typeName": "GObjectPath",
+          "$context": "default_cam/sphere"
+        },
+        "name": {
+          "$typeName": "StringName",
+          "$context": "reflectsphere"
+        },
+        "size" :{
+          "$typeName":"Vector3",
+          "$context": {
+            "x": 22,
+            "y": 22,
+            "z": 22
+          }
+        },
+        "box_projection":true,
+        "enable_shadows":true,
+        "ambient_mode":0,
+        "max_distance":50.0,
+        "update_mode":1
+      },
+      "instanced_components": [],
+      "sub_res": {
+      },
+      "ext_res": {
+      }
     }
   ]
 }

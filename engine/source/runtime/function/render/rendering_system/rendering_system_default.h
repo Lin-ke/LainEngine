@@ -233,6 +233,27 @@ class RenderingSystemDefault : public RenderingSystem {
   FUNC2(light_directional_set_blend_splits, RID, bool)
   FUNC2(light_directional_set_sky_mode, RID, LightDirectionalSkyMode)
 
+
+/* PROBE API */ // probe 也算一种light吧
+
+	FUNCRIDSPLIT(reflection_probe)
+
+	FUNC2(reflection_probe_set_update_mode, RID, ReflectionProbeUpdateMode)
+	FUNC2(reflection_probe_set_intensity, RID, float)
+	FUNC2(reflection_probe_set_ambient_color, RID, const Color &)
+	FUNC2(reflection_probe_set_ambient_energy, RID, float)
+	FUNC2(reflection_probe_set_ambient_mode, RID, ReflectionProbeAmbientMode)
+	FUNC2(reflection_probe_set_max_distance, RID, float)
+	FUNC2(reflection_probe_set_size, RID, const Vector3 &)
+	FUNC2(reflection_probe_set_origin_offset, RID, const Vector3 &)
+	FUNC2(reflection_probe_set_as_interior, RID, bool)
+	FUNC2(reflection_probe_set_enable_box_projection, RID, bool)
+	FUNC2(reflection_probe_set_enable_shadows, RID, bool)
+	FUNC2(reflection_probe_set_cull_mask, RID, uint32_t)
+	FUNC2(reflection_probe_set_reflection_mask, RID, uint32_t)
+	FUNC2(reflection_probe_set_resolution, RID, int)
+	FUNC2(reflection_probe_set_mesh_lod_threshold, RID, float)
+
   /*Shadow Atlas*/
   FUNC0R(RID, shadow_atlas_create)
   FUNC3(shadow_atlas_set_size, RID, int, bool)

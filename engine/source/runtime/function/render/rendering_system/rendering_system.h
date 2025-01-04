@@ -708,18 +708,6 @@ class RenderingSystem : public Object {
 	Dictionary mesh_surface_get_lods(RID p_mesh, int p_surface) const;
 	Array _get_array_from_surface(uint64_t p_format, Vector<uint8_t> p_vertex_data, Vector<uint8_t> p_attrib_data, Vector<uint8_t> p_skin_data, int p_vertex_len, Vector<uint8_t> p_index_data, int p_index_len, const AABB &p_aabb, const Vector4 &p_uv_scale) const;
 
-	/* Reflection Probe*/
-
-	enum ReflectionProbeUpdateMode {
-		REFLECTION_PROBE_UPDATE_ONCE,
-		REFLECTION_PROBE_UPDATE_ALWAYS,
-	};
-	enum ReflectionProbeAmbientMode {
-		REFLECTION_PROBE_AMBIENT_DISABLED,
-		REFLECTION_PROBE_AMBIENT_ENVIRONMENT,
-		REFLECTION_PROBE_AMBIENT_COLOR,
-	};
-
 
 public:
  	virtual void draw(bool p_swap_buffers = true, double frame_step = 0.0) = 0;
@@ -925,6 +913,40 @@ public:
 		DECAL_TEXTURE_MAX
 	};
 
+
+	/* PROBE API */
+	/* PROBE API */
+	/* PROBE API */ // RS里没有instance 的API
+
+	virtual RID reflection_probe_create() = 0;
+
+	enum ReflectionProbeUpdateMode {
+		REFLECTION_PROBE_UPDATE_ONCE,
+		REFLECTION_PROBE_UPDATE_ALWAYS,
+	};
+
+	virtual void reflection_probe_set_update_mode(RID p_probe, ReflectionProbeUpdateMode p_mode) = 0;
+	virtual void reflection_probe_set_intensity(RID p_probe, float p_intensity) = 0;
+
+	enum ReflectionProbeAmbientMode {
+		REFLECTION_PROBE_AMBIENT_DISABLED,
+		REFLECTION_PROBE_AMBIENT_ENVIRONMENT,
+		REFLECTION_PROBE_AMBIENT_COLOR,
+	};
+
+	virtual void reflection_probe_set_ambient_mode(RID p_probe, ReflectionProbeAmbientMode p_mode) = 0;
+	virtual void reflection_probe_set_ambient_color(RID p_probe, const Color &p_color) = 0;
+	virtual void reflection_probe_set_ambient_energy(RID p_probe, float p_energy) = 0;
+	virtual void reflection_probe_set_max_distance(RID p_probe, float p_distance) = 0;
+	virtual void reflection_probe_set_size(RID p_probe, const Vector3 &p_size) = 0;
+	virtual void reflection_probe_set_origin_offset(RID p_probe, const Vector3 &p_offset) = 0;
+	virtual void reflection_probe_set_as_interior(RID p_probe, bool p_enable) = 0;
+	virtual void reflection_probe_set_enable_box_projection(RID p_probe, bool p_enable) = 0;
+	virtual void reflection_probe_set_enable_shadows(RID p_probe, bool p_enable) = 0;
+	virtual void reflection_probe_set_cull_mask(RID p_probe, uint32_t p_layers) = 0;
+	virtual void reflection_probe_set_reflection_mask(RID p_probe, uint32_t p_layers) = 0;
+	virtual void reflection_probe_set_resolution(RID p_probe, int p_resolution) = 0;
+	virtual void reflection_probe_set_mesh_lod_threshold(RID p_probe, float p_pixels) = 0;
 
 
   virtual void free(RID p_rid) = 0;

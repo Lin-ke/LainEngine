@@ -177,7 +177,7 @@ void RenderingSystemDefault::_draw(bool p_swap_buffers, double frame_step) {
 
 	// RSG::particles_storage->update_particles(); //need to be done after instances are updated (colliders and particle transforms), and colliders are rendered
 
-	// RSG::scene->render_probes();
+	RSG::scene->render_probes();
 
 	RSG::viewport->draw_viewports(p_swap_buffers);
 	// RSG::canvas_render->update();

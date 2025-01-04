@@ -11,7 +11,7 @@
 #include "scene/3d/light_3d.h"
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/world_environment.h"
-
+#include "scene/3d/reflection_probe.h"
 // function types
 #include "function/shader/shader_types.h"
 
@@ -99,6 +99,7 @@ namespace lain{
 	GDREGISTER_CLASS(ImageTexture);
 
 	GDREGISTER_CLASS(Environment);
+	GDREGISTER_CLASS(ReflectionProbe);
 
 	BaseMaterial3D::init_shaders();
 

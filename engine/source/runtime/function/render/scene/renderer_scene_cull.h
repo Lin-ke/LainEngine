@@ -596,8 +596,23 @@ class RendererSceneCull : public RenderingMethod {
     bool material_is_animated = false;
   };
   struct InstanceReflectionProbeData : public InstanceBaseData {
-    RID instance;
+    Instance *owner = nullptr;
+
+		HashSet<Instance *> geometries;
+
+		RID instance;
+		SelfList<InstanceReflectionProbeData> update_list;
+
+		int render_step;
+
+		InstanceReflectionProbeData() :
+				update_list(this) {
+			render_step = -1;
+		}
   };
+	SelfList<InstanceReflectionProbeData>::List reflection_probe_render_list;
+
+
   struct InstanceLightData : public InstanceBaseData {
 
     RID instance;
@@ -902,7 +917,7 @@ class RendererSceneCull : public RenderingMethod {
                              uint32_t p_jitter_phase_count, float p_screen_mesh_lod_threshold, RID p_shadow_atlas,
                              RenderingMethod::RenderInfo* r_render_info = nullptr) override;
   // virtual void render_empty_scene(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_scenario, RID p_shadow_atlas) override;
-  // virtual void render_probes() override;
+  virtual void render_probes() override;
 
   // update
   virtual void update();
@@ -929,7 +944,7 @@ class RendererSceneCull : public RenderingMethod {
 
   void _render_scene(const RendererSceneRender::CameraData* p_camera_data, const Ref<RenderSceneBuffers>& p_render_buffers, RID p_environment, RID p_force_camera_attributes,
                      RID p_compositor, uint32_t p_visible_layers, RID p_scenario, RID p_viewport, RID p_shadow_atlas, RID p_reflection_probe, int p_reflection_probe_pass,
-                     float p_screen_mesh_lod_threshold, bool p_using_shadows, RenderingMethod::RenderInfo* r_render_info);
+                     float p_screen_mesh_lod_threshold, bool p_using_shadows = true, RenderingMethod::RenderInfo* r_render_info = nullptr);
   void _visibility_cull_threaded(uint32_t p_thread, VisibilityCullData* cull_data);
   void _visibility_cull(const VisibilityCullData& cull_data, uint64_t p_from, uint64_t p_to);
   template <bool p_fade_check>
@@ -942,7 +957,7 @@ class RendererSceneCull : public RenderingMethod {
   bool _light_instance_update_shadow(Instance* p_instance, const Transform3D p_cam_transform, const Projection& p_cam_projection, bool p_cam_orthogonal, bool p_cam_vaspect,
                                      RID p_shadow_atlas, Scenario* p_scenario, float p_scren_mesh_lod_threshold, uint32_t p_visible_layers = 0xFFFFFF);
   void _update_instance(Instance* p_instance);
-
+  bool _render_reflection_probe_step(Instance *p_instance, int p_step);
   virtual bool free(RID p_rid) override;
 };
 }  // namespace lain

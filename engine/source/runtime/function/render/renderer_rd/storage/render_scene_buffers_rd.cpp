@@ -554,3 +554,26 @@ RID RenderSceneBuffersRD::get_velocity_buffer(bool p_get_msaa, uint32_t p_layer)
 		}
 	}
 }
+void RenderSceneBuffersRD::configure_for_reflections(const Size2i p_reflection_size) {
+	// For now our render buffers for reflections are only used for effects/environment (Sky/Fog/Etc)
+	// Possibly at some point move our entire reflection atlas buffer management into this class
+
+	target_size = p_reflection_size;
+	internal_size = p_reflection_size;
+	render_target = RID();
+	scaling_3d_mode = RS::VIEWPORT_SCALING_3D_MODE_OFF;
+	fsr_sharpness = 0.0;
+	msaa_3d = RS::VIEWPORT_MSAA_DISABLED;
+	screen_space_aa = RS::VIEWPORT_SCREEN_SPACE_AA_DISABLED;
+	use_taa = false;
+	use_debanding = false;
+	view_count = 1;
+
+	// cleanout any old buffers we had.
+	cleanup();
+
+	// (re-)configure any named buffers
+	for (KeyValue<StringName, Ref<RenderBufferCustomDataRD>> &E : data_buffers) {
+		E.value->configure(this);
+	}
+}

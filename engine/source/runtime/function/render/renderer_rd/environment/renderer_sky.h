@@ -11,6 +11,7 @@
 namespace lain::RendererRD {
 class SkyRD {
 	friend class RendererSceneRenderRD;
+	friend class RendererRD::LightStorage;
  public:
  	enum SkySet {
 		SKY_SET_UNIFORMS,

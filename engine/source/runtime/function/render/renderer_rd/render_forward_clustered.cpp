@@ -288,6 +288,14 @@ void RenderForwardClustered::setup_added_light(const RS::LightType p_type, const
                                        p_spot_aperture);
   }
 }
+
+void RenderForwardClustered::setup_added_reflection_probe(const Transform3D &p_transform, const Vector3 &p_half_size) {
+	if (current_cluster_builder != nullptr) {
+		current_cluster_builder->add_box(ClusterBuilderRD::BOX_TYPE_REFLECTION_PROBE, p_transform, p_half_size);
+	}
+}
+
+
 void lain::RendererSceneRenderImplementation::RenderForwardClustered::base_uniforms_changed() {
   if (!render_base_uniform_set.is_null() && RD::get_singleton()->uniform_set_is_valid(render_base_uniform_set)) {
     RD::get_singleton()->free(render_base_uniform_set);
@@ -420,7 +428,23 @@ void lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_sc
   bool reverse_cull = p_render_data->scene_data->cam_transform.basis.determinant() < 0;
   bool using_ssil = !is_reflection_probe && p_render_data->environment.is_valid() && environment_get_ssil_enabled(p_render_data->environment);
   bool using_motion_pass = rb_data.is_valid() && using_fsr2;
-  {
+  if (is_reflection_probe) {
+		uint32_t resolution = light_storage->reflection_probe_instance_get_resolution(p_render_data->reflection_probe);
+		screen_size.x = resolution;
+		screen_size.y = resolution;
+
+		color_framebuffer = light_storage->reflection_probe_instance_get_framebuffer(p_render_data->reflection_probe, p_render_data->reflection_probe_pass);
+		color_only_framebuffer = color_framebuffer;
+		depth_framebuffer = light_storage->reflection_probe_instance_get_depth_framebuffer(p_render_data->reflection_probe, p_render_data->reflection_probe_pass);
+
+		if (light_storage->reflection_probe_is_interior(light_storage->reflection_probe_instance_get_probe(p_render_data->reflection_probe))) {
+			p_render_data->environment = RID(); //no environment on interiors
+		}
+
+		reverse_cull = true; // for some reason our views are inverted
+		samplers = RendererRD::MaterialStorage::get_singleton()->samplers_rd_get_default();
+	} 
+  else {
     screen_size = rb->get_internal_size();
     if (p_render_data->scene_data->calculate_motion_vectors) {
       color_pass_flags |= COLOR_PASS_FLAG_MOTION_VECTORS;
@@ -802,6 +826,7 @@ void lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_sc
     RENDER_TIMESTAMP("Process Post Opaque Compositor Effects");
     _process_compositor_effects(RS::COMPOSITOR_EFFECT_CALLBACK_TYPE_POST_OPAQUE, p_render_data);
   }
+  //@ todo voxelgi debug; sdfgi probes debug
 
   if (draw_sky || draw_sky_fog_only) {
     RENDER_TIMESTAMP("Render Sky");
@@ -856,7 +881,17 @@ void lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_sc
                                    p_render_data->scene_data->view_count);
     }
   }
-
+  // canvas需要clear separate specular?
+	if (using_separate_specular && is_environment(p_render_data->environment) && (environment_get_background(p_render_data->environment) == RS::ENV_BG_CANVAS)) {
+		// Canvas background mode does not clear the color buffer, but copies over it. If screen-space specular effects are enabled and the background is blank,
+		// this results in ghosting due to the separate specular buffer copy. Need to explicitly clear the specular buffer once we're done with it to fix it.
+		RENDER_TIMESTAMP("Clear Separate Specular (Canvas Background Mode)");
+		Vector<Color> blank_clear_color;
+		blank_clear_color.push_back(Color(0.0, 0.0, 0.0));
+		RD::get_singleton()->draw_list_begin(rb_data->get_specular_only_fb(), RD::INITIAL_ACTION_CLEAR, RD::FINAL_ACTION_STORE, RD::INITIAL_ACTION_DISCARD, RD::FINAL_ACTION_DISCARD, blank_clear_color);
+		RD::get_singleton()->draw_list_end();
+	}
+   // @todo fsr
   if (scene_state.used_screen_texture) {
     RENDER_TIMESTAMP("Copy Screen Texture");
 
@@ -869,6 +904,29 @@ void lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_sc
     // Copy depth texture to backbuffer so we can read from it
     _render_buffers_copy_depth_texture(p_render_data);
   }
+
+  {
+		if (using_separate_specular) {
+			// Our specular will be combined back in (and effects, subsurface scattering and/or ssr applied),
+			// so if we've requested this, we need another copy.
+			// Fairly unlikely scenario though.
+
+			if (ce_pre_transparent_resolved_color) {
+				for (uint32_t v = 0; v < rb->get_view_count(); v++) {
+					RD::get_singleton()->texture_resolve_multisample(rb->get_color_msaa(v), rb->get_internal_texture(v));
+				}
+			}
+
+			if (ce_pre_transparent_resolved_depth) {
+				for (uint32_t v = 0; v < rb->get_view_count(); v++) {
+					resolve_effects->resolve_depth(rb->get_depth_msaa(v), rb->get_depth_texture(v), rb->get_internal_size(), texture_multisamples[msaa]);
+				}
+			}
+		}
+
+		RENDER_TIMESTAMP("Process Pre Transparent Compositor Effects");
+		_process_compositor_effects(RS::COMPOSITOR_EFFECT_CALLBACK_TYPE_PRE_TRANSPARENT, p_render_data);
+	}
 
   RENDER_TIMESTAMP("Render 3D Transparent Pass");
   RD::get_singleton()->draw_command_begin_label("Render 3D Transparent Pass");
@@ -908,7 +966,14 @@ void lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_sc
     }
   }
   RD::get_singleton()->draw_command_end_label();
+  
+  {
+		RENDER_TIMESTAMP("Process Post Transparent Compositor Effects");
+		_process_compositor_effects(RS::COMPOSITOR_EFFECT_CALLBACK_TYPE_POST_TRANSPARENT, p_render_data);
+	}
   // screen space effects
+  // @todo ssil
+  // @todo fsr 
   if (rb_data.is_valid()) {
     if (using_taa) {
       RD::get_singleton()->draw_command_begin_label("TAA");
@@ -921,6 +986,9 @@ void lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_sc
   if (rb_data.is_valid()) {
     RENDER_TIMESTAMP("Tonemap and Post Process");
     _render_buffers_post_process_and_tonemap(p_render_data);  // Tonemap 是必做的，把RB内部的纹理写到 render target 的纹理里面
+  }
+  if (rb_data.is_valid()) {
+		// _render_buffers_debug_draw(p_render_data);
   }
 }
 
@@ -1117,7 +1185,7 @@ void RenderForwardClustered::_setup_environment(const RenderDataRD* p_render_dat
 
   Ref<RenderSceneBuffersRD> rd = p_render_data->render_buffers;
   RID env = is_environment(p_render_data->environment) ? p_render_data->environment : RID();
-  // RID reflection_probe_instance = p_render_data->reflection_probe.is_valid() ? light_storage->reflection_probe_instance_get_probe(p_render_data->reflection_probe) : RID();
+  RID reflection_probe_instance = p_render_data->reflection_probe.is_valid() ? light_storage->reflection_probe_instance_get_probe(p_render_data->reflection_probe) : RID();
 
   // May do this earlier in RenderSceneRenderRD::render_scene
   if (p_index >= (int)scene_state.uniform_buffers.size()) {
@@ -1127,8 +1195,6 @@ void RenderForwardClustered::_setup_environment(const RenderDataRD* p_render_dat
       scene_state.uniform_buffers[i] = p_render_data->scene_data->create_uniform_buffer();
     }
   }
-  //
-  RID reflection_probe_instance = RID();
   //
   p_render_data->scene_data->update_ubo(scene_state.uniform_buffers[p_index], get_debug_draw_mode(), env, reflection_probe_instance, p_render_data->camera_attributes,
                                         p_pancake_shadows, p_screen_size, p_default_bg_color, 1.0, p_opaque_render_buffers, p_apply_alpha_multiplier);
@@ -1314,6 +1380,14 @@ RID RenderForwardClustered::RenderBufferDataForwardClustered::get_depth_fb(Depth
       ERR_FAIL_V(RID());
     } break;
   }
+}
+
+RID RenderForwardClustered::RenderBufferDataForwardClustered::get_specular_only_fb() {
+	bool use_msaa = render_buffers->get_msaa_3d() != RS::VIEWPORT_MSAA_DISABLED;
+
+	RID specular = render_buffers->get_texture(RB_SCOPE_FORWARD_CLUSTERED, use_msaa ? RB_TEX_SPECULAR_MSAA : RB_TEX_SPECULAR);
+
+	return FramebufferCacheRD::get_singleton()->get_cache_multiview(render_buffers->get_view_count(), specular);
 }
 
 RID RenderForwardClustered::RenderBufferDataForwardClustered::get_velocity_only_fb() {
@@ -2932,12 +3006,12 @@ void RenderForwardClustered::_pre_opaque_render(RenderDataRD* p_render_data, boo
   bool using_shadows = true;
 
   if (p_render_data->reflection_probe.is_valid()) {
-    // if (!RSG::light_storage->reflection_probe_renders_shadows(light_storage->reflection_probe_instance_get_probe(p_render_data->reflection_probe))) {
-    // 	using_shadows = false;
-    // }
+    if (!RSG::light_storage->reflection_probe_renders_shadows(light_storage->reflection_probe_instance_get_probe(p_render_data->reflection_probe))) {
+    	using_shadows = false;
+    }
   } else {
     //do not render reflections when rendering a reflection probe
-    // light_storage->update_reflection_probe_buffer(p_render_data, *p_render_data->reflection_probes, p_render_data->scene_data->cam_transform.affine_inverse(), p_render_data->environment);
+    light_storage->update_reflection_probe_buffer(p_render_data, *p_render_data->reflection_probes, p_render_data->scene_data->cam_transform.affine_inverse(), p_render_data->environment);
   }
 
   uint32_t directional_light_count = 0;

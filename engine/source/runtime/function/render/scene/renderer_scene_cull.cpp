@@ -352,10 +352,10 @@ void lain::RendererSceneCull::instance_set_base(RID p_instance, RID p_base) {
       } break;
       case RS::INSTANCE_REFLECTION_PROBE: {
         InstanceReflectionProbeData* reflection_probe = static_cast<InstanceReflectionProbeData*>(instance->base_data);
-        // RSG::light_storage->reflection_probe_instance_free(reflection_probe->instance);
-        // if (reflection_probe->update_list.in_list()) {
-        // 	reflection_probe_render_list.remove(&reflection_probe->update_list);
-        // }
+        RSG::light_storage->reflection_probe_instance_free(reflection_probe->instance);
+        if (reflection_probe->update_list.in_list()) {
+        	reflection_probe_render_list.remove(&reflection_probe->update_list);
+        }
       } break;
       case RS::INSTANCE_DECAL: {
         InstanceDecalData* decal = static_cast<InstanceDecalData*>(instance->base_data);
@@ -478,8 +478,10 @@ void lain::RendererSceneCull::instance_set_base(RID p_instance, RID p_base) {
       instance->base_data = decal;
     } break;
     case RS::INSTANCE_REFLECTION_PROBE: {
-      InstanceReflectionProbeData* reflection = memnew(InstanceReflectionProbeData);
-      instance->base_data = reflection;
+      InstanceReflectionProbeData* reflection_probe = memnew(InstanceReflectionProbeData);
+      reflection_probe->owner = instance;
+      instance->base_data = reflection_probe;
+      reflection_probe->instance = RSG::light_storage->reflection_probe_instance_create(p_base);
     } break;
     case RS::INSTANCE_VOXEL_GI: {
       InstanceVoxelGIData* voxel_gi = memnew(InstanceVoxelGIData);
@@ -535,7 +537,7 @@ void lain::RendererSceneCull::instance_set_scenario(RID p_instance, RID p_scenar
         break;
         case RS::INSTANCE_REFLECTION_PROBE: {
           InstanceReflectionProbeData* reflection_probe = static_cast<InstanceReflectionProbeData*>(instance->base_data);
-          // RSG::light_storage->reflection_probe_release_atlas_index(reflection_probe->instance);
+          RSG::light_storage->reflection_probe_release_atlas_index(reflection_probe->instance);
 
         } break;
         case RS::INSTANCE_VOXEL_GI: {
@@ -827,6 +829,142 @@ void RendererSceneCull::_instance_update_mesh_instance(Instance* p_instance) {
     RSG::mesh_storage->mesh_instance_set_skeleton(p_instance->mesh_instance, p_instance->skeleton);
   }
 }
+
+void RendererSceneCull::render_probes() {
+  SelfList<InstanceReflectionProbeData> *ref_probe = reflection_probe_render_list.first();
+	Vector<SelfList<InstanceReflectionProbeData> *> done_list;
+
+	bool busy = false;
+  if (ref_probe) {
+		RENDER_TIMESTAMP("Render ReflectionProbes");
+
+		while (ref_probe) {
+			SelfList<InstanceReflectionProbeData> *next = ref_probe->next();
+			RID base = ref_probe->self()->owner->base;
+
+			switch (RSG::light_storage->reflection_probe_get_update_mode(base)) {
+				case RS::REFLECTION_PROBE_UPDATE_ONCE: {
+					if (busy) { // Already rendering something.
+						break;
+					}
+
+					bool done = _render_reflection_probe_step(ref_probe->self()->owner, ref_probe->self()->render_step);
+					if (done) {
+						done_list.push_back(ref_probe);
+					} else {
+						ref_probe->self()->render_step++;
+					}
+
+					busy = true; // Do not render another one of this kind.
+				} break;
+				case RS::REFLECTION_PROBE_UPDATE_ALWAYS: {
+					int step = 0;
+					bool done = false;
+					while (!done) {
+						done = _render_reflection_probe_step(ref_probe->self()->owner, step);
+						step++;
+					}
+
+					done_list.push_back(ref_probe);
+				} break;
+			}
+
+			ref_probe = next;
+		}
+
+		// Now remove from our list
+		for (SelfList<InstanceReflectionProbeData> *rp : done_list) {
+			reflection_probe_render_list.remove(rp);
+		}
+	}
+}
+
+bool RendererSceneCull::_render_reflection_probe_step(Instance *p_instance, int p_step) {
+	InstanceReflectionProbeData *reflection_probe = static_cast<InstanceReflectionProbeData *>(p_instance->base_data);
+	Scenario *scenario = p_instance->scenario;
+	ERR_FAIL_NULL_V(scenario, true);
+
+	RenderingSystemDefault::redraw_request(); //update, so it updates in editor
+
+	if (p_step == 0) {
+		if (!RSG::light_storage->reflection_probe_instance_begin_render(reflection_probe->instance, scenario->reflection_atlas)) {
+			return true; // All full, no atlas entry to render to.
+		}
+	} else if (!RSG::light_storage->reflection_probe_has_atlas_index(reflection_probe->instance)) {
+		// We don't have an atlas to render to, just round off.
+		// This is likely due to the atlas being reset.
+		// If so the probe will be marked as dirty and start over.
+		return true;
+	}
+
+	if (p_step >= 0 && p_step < 6) {
+		static const Vector3 view_normals[6] = {
+			Vector3(+1, 0, 0),
+			Vector3(-1, 0, 0),
+			Vector3(0, +1, 0),
+			Vector3(0, -1, 0),
+			Vector3(0, 0, +1),
+			Vector3(0, 0, -1)
+		};
+		static const Vector3 view_up[6] = {
+			Vector3(0, -1, 0),
+			Vector3(0, -1, 0),
+			Vector3(0, 0, +1),
+			Vector3(0, 0, -1),
+			Vector3(0, -1, 0),
+			Vector3(0, -1, 0)
+		};
+
+		Vector3 probe_size = RSG::light_storage->reflection_probe_get_size(p_instance->base);
+		Vector3 origin_offset = RSG::light_storage->reflection_probe_get_origin_offset(p_instance->base);
+		float max_distance = RSG::light_storage->reflection_probe_get_origin_max_distance(p_instance->base);
+		float atlas_size = RSG::light_storage->reflection_atlas_get_size(scenario->reflection_atlas);
+		float mesh_lod_threshold = RSG::light_storage->reflection_probe_get_mesh_lod_threshold(p_instance->base) / atlas_size;
+
+		Vector3 edge = view_normals[p_step] * probe_size / 2;
+		float distance = ABS(view_normals[p_step].dot(edge) - view_normals[p_step].dot(origin_offset)); //distance from origin offset to actual view distance limit
+
+		max_distance = MAX(max_distance, distance);
+
+		//render cubemap side
+		Projection cm;
+		cm.set_perspective(90, 1, 0.01, max_distance);
+
+		Transform3D local_view;
+		local_view.set_look_at(origin_offset, origin_offset + view_normals[p_step], view_up[p_step]);
+
+		Transform3D xform = p_instance->transform * local_view;
+
+		RID shadow_atlas;
+
+		bool use_shadows = RSG::light_storage->reflection_probe_renders_shadows(p_instance->base);
+		if (use_shadows) {
+			shadow_atlas = scenario->reflection_probe_shadow_atlas;
+		}
+
+		RID environment;
+		if (scenario->environment.is_valid()) {
+			environment = scenario->environment;
+		} else {
+			environment = scenario->fallback_environment;
+		}
+
+		RENDER_TIMESTAMP("Render ReflectionProbe, Step " + itos(p_step));
+		RendererSceneRender::CameraData camera_data;
+		camera_data.set_camera(xform, cm, false, false);
+
+		Ref<RenderSceneBuffers> render_buffers = RSG::light_storage->reflection_probe_atlas_get_render_buffers(scenario->reflection_atlas); // viewport 是 RID()
+		_render_scene(&camera_data, render_buffers, environment, RID(), RID(), RSG::light_storage->reflection_probe_get_cull_mask(p_instance->base), p_instance->scenario->self, RID(), shadow_atlas, reflection_probe->instance, p_step, mesh_lod_threshold, use_shadows);
+
+	} else {
+		//do roughness postprocess step until it believes it's done
+		RENDER_TIMESTAMP("Post-Process ReflectionProbe, Step " + itos(p_step));
+		return RSG::light_storage->reflection_probe_instance_postprocess_step(reflection_probe->instance);
+	}
+
+	return false;
+}
+
 
 void RendererSceneCull::update() {
   //optimize bvhs
@@ -1656,8 +1794,8 @@ void RendererSceneCull::_instance_unpair(Instance* p_A, Instance* p_B) {
   // 		InstanceData &idata = A->scenario->instance_data[A->array_index];
   // 		idata.flags |= InstanceData::FLAG_GEOM_REFLECTION_DIRTY;
   // 	}
-
-  // } else if (self->geometry_instance_pair_mask & (1 << RS::INSTANCE_DECAL) && B->base_type == RS::INSTANCE_DECAL && ((1 << A->base_type) & RS::INSTANCE_GEOMETRY_MASK)) {
+  // }
+  // else if (self->geometry_instance_pair_mask & (1 << RS::INSTANCE_DECAL) && B->base_type == RS::INSTANCE_DECAL && ((1 << A->base_type) & RS::INSTANCE_GEOMETRY_MASK)) {
   // 	InstanceDecalData *decal = static_cast<InstanceDecalData *>(B->base_data);
   // 	InstanceGeometryData *geom = static_cast<InstanceGeometryData *>(A->base_data);
 
@@ -1739,7 +1877,7 @@ void lain::RendererSceneCull::_update_instance(Instance* p_instance) {
   } else if (p_instance->base_type == RS::INSTANCE_REFLECTION_PROBE) {
     InstanceReflectionProbeData* reflection_probe = static_cast<InstanceReflectionProbeData*>(p_instance->base_data);
 
-    // RSG::light_storage->reflection_probe_instance_set_transform(reflection_probe->instance, p_instance->transform);
+    RSG::light_storage->reflection_probe_instance_set_transform(reflection_probe->instance, p_instance->transform);
 
     if (p_instance->scenario && p_instance->array_index >= 0) {
       InstanceData& idata = p_instance->scenario->instance_data[p_instance->array_index];
@@ -2061,6 +2199,8 @@ void lain::RendererSceneCull::_render_scene(const RendererSceneRender::CameraDat
                                             RID p_force_camera_attributes, RID p_compositor, uint32_t p_visible_layers, RID p_scenario, RID p_viewport, RID p_shadow_atlas,
                                             RID p_reflection_probe, int p_reflection_probe_pass, float p_screen_mesh_lod_threshold, bool p_using_shadows,
                                             RenderingMethod::RenderInfo* r_render_info) {
+	Instance *render_reflection_probe = instance_owner.get_or_null(p_reflection_probe); //if null, not rendering to it // 一个probe会渲染一次吗
+                                              
   // 填 camera 视锥体 的信息
   light_culler->prepare_camera(p_camera_data->main_transform, p_camera_data->main_projection);
   Scenario* scenario = scenario_owner.get_or_null(p_scenario);
@@ -2158,7 +2298,7 @@ void lain::RendererSceneCull::_render_scene(const RendererSceneRender::CameraDat
     cull_data.shadow_atlas = p_shadow_atlas;
     cull_data.cam_transform = p_camera_data->main_transform;
     cull_data.visible_layers = p_visible_layers;
-    // cull_data.render_reflection_probe = render_reflection_probe;
+    cull_data.render_reflection_probe = render_reflection_probe;
     cull_data.occlusion_buffer = RendererSceneOcclusionCull::get_singleton()->buffer_get_ptr(p_viewport);
     cull_data.camera_matrix = &p_camera_data->main_projection;
     cull_data.visibility_viewport_mask = scenario->viewport_visibility_masks.has(p_viewport) ? scenario->viewport_visibility_masks[p_viewport] : 0;
@@ -2769,7 +2909,25 @@ void RendererSceneCull::_scene_cull(CullData& cull_data, InstanceCullResult& cul
             RSG::light_storage->light_instance_mark_visible(RID::from_uint64(idata.instance_data_rid));  //mark it visible for shadow allocation later
           }
         } else if (base_type == RS::INSTANCE_REFLECTION_PROBE) {
+            if (cull_data.render_reflection_probe != idata.instance) {
+						//avoid entering The Matrix
 
+						if ((idata.flags & InstanceData::FLAG_REFLECTION_PROBE_DIRTY) || RSG::light_storage->reflection_probe_instance_needs_redraw(RID::from_uint64(idata.instance_data_rid))) {
+							InstanceReflectionProbeData *reflection_probe = static_cast<InstanceReflectionProbeData *>(idata.instance->base_data);
+							cull_data.cull->lock.lock();
+							if (!reflection_probe->update_list.in_list()) {
+								reflection_probe->render_step = 0;
+								reflection_probe_render_list.add_last(&reflection_probe->update_list);
+							}
+							cull_data.cull->lock.unlock();
+
+							idata.flags &= ~uint32_t(InstanceData::FLAG_REFLECTION_PROBE_DIRTY);
+						}
+
+						if (RSG::light_storage->reflection_probe_instance_has_reflection(RID::from_uint64(idata.instance_data_rid))) {
+							cull_result.reflections.push_back(RID::from_uint64(idata.instance_data_rid));
+						}
+					}
         } else if (base_type == RS::INSTANCE_DECAL) {
           cull_result.decals.push_back(RID::from_uint64(idata.instance_data_rid));
 

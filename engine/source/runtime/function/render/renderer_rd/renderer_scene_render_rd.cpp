@@ -409,6 +409,12 @@ void RendererSceneRenderRD::sky_set_material(RID p_sky, RID p_material) {
 Ref<Image> RendererSceneRenderRD::sky_bake_panorama(RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i &p_size) {
 	return sky.sky_bake_panorama(p_sky, p_energy, p_bake_irradiance, p_size);
 }
+RID lain::RendererSceneRenderRD::reflection_probe_create_framebuffer(RID p_color, RID p_depth) {
+  Vector<RID> fb;
+	fb.push_back(p_color);
+	fb.push_back(p_depth);
+	return RD::get_singleton()->framebuffer_create(fb);
+}
 bool RendererSceneRenderRD::_compositor_effects_has_flag(const RenderDataRD* p_render_data, RS::CompositorEffectFlags p_flag,
                                                          RS::CompositorEffectCallbackType p_callback_type) {
   RendererCompositorStorage* comp_storage = RendererCompositorStorage::get_singleton();

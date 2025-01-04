@@ -5,6 +5,8 @@
 #include "function/render/rendering_system/utilities.h"
 #include "forward_id.h"
 #include "render_data_rd.h"
+#include "../cluster_builder_rd.h"
+#include "../environment/renderer_sky.h"
 namespace lain::RendererRD {
 class LightStorage : public RendererLightStorage {
   static LightStorage* singleton;
@@ -14,12 +16,13 @@ class LightStorage : public RendererLightStorage {
   LightStorage();
   virtual ~LightStorage();
   static LightStorage* get_singleton() { return singleton; }
-  bool owns_reflection_probe(RID p_rid);
-	bool owns_reflection_probe_instance(RID p_rid);
+
   bool owns_light(RID p_rid);
   bool owns_lightmap(RID p_rid);
   bool free(RID p_rid);
-
+  bool owns_reflection_probe(RID p_rid);
+	bool owns_reflection_probe_instance(RID p_rid);
+	
  private:
   /* LIGHT */
   struct Light {
@@ -202,31 +205,6 @@ class LightStorage : public RendererLightStorage {
 		Dependency dependency;
 	};
 	mutable RID_Owner<ReflectionProbe, true> reflection_probe_owner;
-
-	/* REFLECTION ATLAS */
-
-	// struct ReflectionAtlas {
-	// 	int count = 0;
-	// 	int size = 0;
-
-	// 	RID reflection;
-	// 	RID depth_buffer;
-	// 	RID depth_fb;
-
-	// 	struct Reflection {
-	// 		RID owner;
-	// 		RendererRD::SkyRD::ReflectionData data;
-	// 		RID fbs[6];
-	// 	};
-
-	// 	Vector<Reflection> reflections;
-
-	// 	Ref<RenderSceneBuffersRD> render_buffers; // Further render buffers used.
-
-	// 	ClusterBuilderRD *cluster_builder = nullptr; // only used if cluster builder is supported by the renderer.
-	// };
-
-	// mutable RID_Owner<ReflectionAtlas> reflection_atlas_owner;
 
 	/* REFLECTION PROBE INSTANCE */
 
@@ -638,8 +616,6 @@ class LightStorage : public RendererLightStorage {
 		return light->negative;
 	}
 
-  /* Reflection Atlas*/
-  virtual void reflection_atlas_free(RID p_rid) {}
 
   /* SHADOW CUBEMAPS */
 
@@ -647,7 +623,6 @@ class LightStorage : public RendererLightStorage {
   // size 为 p_size 的第p_pass个
   RID get_cubemap_fb(int p_size, int p_pass);
 
-  bool reflection_probe_is_interior(RID p) const { return false; }
 
   // settings
   void set_max_cluster_elements(const uint32_t p_max_cluster_elements) {
@@ -675,6 +650,155 @@ class LightStorage : public RendererLightStorage {
   void update_light_buffers(RenderDataRD* p_render_data, const PagedArray<RID>& p_lights, const Transform3D& p_camera_transform, RID p_shadow_atlas, bool p_using_shadows,
                             uint32_t& r_directional_light_count, uint32_t& r_positional_light_count, bool& r_directional_light_soft_shadows);
 
+/* REFLECTION ATLAS */
+	struct ReflectionAtlas {
+		int count = 0;
+		int size = 0;
+
+		RID reflection;
+		RID depth_buffer;
+		RID depth_fb;
+
+		struct Reflection {
+			RID owner;
+			RendererRD::SkyRD::ReflectionData data;
+			RID fbs[6];
+		};
+
+		Vector<Reflection> reflections;
+
+		Ref<RenderSceneBuffersRD> render_buffers; // Further render buffers used.
+
+		ClusterBuilderRD *cluster_builder = nullptr; // only used if cluster builder is supported by the renderer.
+	};
+
+	mutable RID_Owner<ReflectionAtlas> reflection_atlas_owner;
+
+
+	/* REFLECTION PROBE INSTANCE */
+  virtual RID reflection_probe_allocate() override;
+	virtual void reflection_probe_initialize(RID p_reflection_probe) override;
+	virtual void reflection_probe_free(RID p_rid) override;
+
+	virtual void reflection_probe_set_update_mode(RID p_probe, RS::ReflectionProbeUpdateMode p_mode) override;
+	virtual void reflection_probe_set_intensity(RID p_probe, float p_intensity) override;
+	virtual void reflection_probe_set_ambient_mode(RID p_probe, RS::ReflectionProbeAmbientMode p_mode) override;
+	virtual void reflection_probe_set_ambient_color(RID p_probe, const Color &p_color) override;
+	virtual void reflection_probe_set_ambient_energy(RID p_probe, float p_energy) override;
+	virtual void reflection_probe_set_max_distance(RID p_probe, float p_distance) override;
+	virtual void reflection_probe_set_size(RID p_probe, const Vector3 &p_size) override;
+	virtual void reflection_probe_set_origin_offset(RID p_probe, const Vector3 &p_offset) override;
+	virtual void reflection_probe_set_as_interior(RID p_probe, bool p_enable) override;
+	virtual void reflection_probe_set_enable_box_projection(RID p_probe, bool p_enable) override;
+	virtual void reflection_probe_set_enable_shadows(RID p_probe, bool p_enable) override;
+	virtual void reflection_probe_set_cull_mask(RID p_probe, uint32_t p_layers) override;
+	virtual void reflection_probe_set_reflection_mask(RID p_probe, uint32_t p_layers) override;
+	virtual void reflection_probe_set_resolution(RID p_probe, int p_resolution) override;
+	virtual void reflection_probe_set_mesh_lod_threshold(RID p_probe, float p_ratio) override;
+
+	void reflection_probe_set_baked_exposure(RID p_probe, float p_exposure);
+
+	virtual AABB reflection_probe_get_aabb(RID p_probe) const override;
+	virtual RS::ReflectionProbeUpdateMode reflection_probe_get_update_mode(RID p_probe) const override;
+	virtual uint32_t reflection_probe_get_cull_mask(RID p_probe) const override;
+	virtual uint32_t reflection_probe_get_reflection_mask(RID p_probe) const override;
+	virtual Vector3 reflection_probe_get_size(RID p_probe) const override;
+	virtual Vector3 reflection_probe_get_origin_offset(RID p_probe) const override;
+	virtual float reflection_probe_get_origin_max_distance(RID p_probe) const override;
+	virtual float reflection_probe_get_mesh_lod_threshold(RID p_probe) const override;
+
+int reflection_probe_get_resolution(RID p_probe) const;
+	float reflection_probe_get_baked_exposure(RID p_probe) const;
+	virtual bool reflection_probe_renders_shadows(RID p_probe) const override;
+
+	float reflection_probe_get_intensity(RID p_probe) const;
+	bool reflection_probe_is_interior(RID p_probe) const;
+	bool reflection_probe_is_box_projection(RID p_probe) const;
+	RS::ReflectionProbeAmbientMode reflection_probe_get_ambient_mode(RID p_probe) const;
+	Color reflection_probe_get_ambient_color(RID p_probe) const;
+	float reflection_probe_get_ambient_color_energy(RID p_probe) const;
+
+	Dependency *reflection_probe_get_dependency(RID p_probe) const;
+
+
+	/* REFLECTION ATLAS */
+
+	bool owns_reflection_atlas(RID p_rid) { return reflection_atlas_owner.owns(p_rid); }
+
+	virtual RID reflection_atlas_create() override;
+	virtual void reflection_atlas_free(RID p_ref_atlas) override;
+	virtual void reflection_atlas_set_size(RID p_ref_atlas, int p_reflection_size, int p_reflection_count) override;
+	virtual int reflection_atlas_get_size(RID p_ref_atlas) const override;
+
+	_FORCE_INLINE_ RID reflection_atlas_get_texture(RID p_ref_atlas) {
+		ReflectionAtlas *atlas = reflection_atlas_owner.get_or_null(p_ref_atlas);
+		ERR_FAIL_NULL_V(atlas, RID());
+		return atlas->reflection;
+	}
+
+  // reflection instance
+	virtual RID reflection_probe_instance_create(RID p_probe) override;
+	virtual void reflection_probe_instance_free(RID p_instance) override;
+	virtual void reflection_probe_instance_set_transform(RID p_instance, const Transform3D &p_transform) override;
+	virtual bool reflection_probe_has_atlas_index(RID p_instance) override;
+	virtual void reflection_probe_release_atlas_index(RID p_instance) override;
+	virtual bool reflection_probe_instance_needs_redraw(RID p_instance) override;
+	virtual bool reflection_probe_instance_has_reflection(RID p_instance) override;
+	virtual bool reflection_probe_instance_begin_render(RID p_instance, RID p_reflection_atlas) override;
+	virtual Ref<RenderSceneBuffers> reflection_probe_atlas_get_render_buffers(RID p_reflection_atlas) override;
+	virtual bool reflection_probe_instance_postprocess_step(RID p_instance) override;
+	uint32_t reflection_probe_instance_get_resolution(RID p_instance);
+	RID reflection_probe_instance_get_framebuffer(RID p_instance, int p_index);
+	RID reflection_probe_instance_get_depth_framebuffer(RID p_instance, int p_index);
+
+	_FORCE_INLINE_ RID reflection_probe_instance_get_probe(RID p_instance) {
+		ReflectionProbeInstance *rpi = reflection_probe_instance_owner.get_or_null(p_instance);
+		ERR_FAIL_NULL_V(rpi, RID());
+
+		return rpi->probe;
+	}
+
+	_FORCE_INLINE_ RendererRD::ForwardID reflection_probe_instance_get_forward_id(RID p_instance) {
+		ReflectionProbeInstance *rpi = reflection_probe_instance_owner.get_or_null(p_instance);
+		ERR_FAIL_NULL_V(rpi, 0);
+
+		return rpi->forward_id;
+	}
+
+	_FORCE_INLINE_ void reflection_probe_instance_set_cull_mask(RID p_instance, uint32_t p_render_pass) {
+		ReflectionProbeInstance *rpi = reflection_probe_instance_owner.get_or_null(p_instance);
+		ERR_FAIL_NULL(rpi);
+		rpi->cull_mask = p_render_pass;
+	}
+
+	_FORCE_INLINE_ void reflection_probe_instance_set_render_pass(RID p_instance, uint32_t p_render_pass) {
+		ReflectionProbeInstance *rpi = reflection_probe_instance_owner.get_or_null(p_instance);
+		ERR_FAIL_NULL(rpi);
+		rpi->last_pass = p_render_pass;
+	}
+
+	_FORCE_INLINE_ uint32_t reflection_probe_instance_get_render_pass(RID p_instance) {
+		ReflectionProbeInstance *rpi = reflection_probe_instance_owner.get_or_null(p_instance);
+		ERR_FAIL_NULL_V(rpi, 0);
+
+		return rpi->last_pass;
+	}
+
+	_FORCE_INLINE_ Transform3D reflection_probe_instance_get_transform(RID p_instance) {
+		ReflectionProbeInstance *rpi = reflection_probe_instance_owner.get_or_null(p_instance);
+		ERR_FAIL_NULL_V(rpi, Transform3D());
+
+		return rpi->transform;
+	}
+
+	_FORCE_INLINE_ int reflection_probe_instance_get_atlas_index(RID p_instance) {
+		ReflectionProbeInstance *rpi = reflection_probe_instance_owner.get_or_null(p_instance);
+		ERR_FAIL_NULL_V(rpi, -1);
+
+		return rpi->atlas_index;
+	}
+
+	ClusterBuilderRD *reflection_probe_instance_get_cluster_builder(RID p_instance, ClusterBuilderSharedDataRD *p_cluster_builder_shared);
 
 	/* REFLECTION DATA */
 
