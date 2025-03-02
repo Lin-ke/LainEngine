@@ -652,16 +652,16 @@ class LightStorage : public RendererLightStorage {
 
 /* REFLECTION ATLAS */
 	struct ReflectionAtlas {
-		int count = 0;
-		int size = 0;
+		int count = 0; // default 64
+		int size = 0; // default 512
 
 		RID reflection;
-		RID depth_buffer;
+		RID depth_buffer; // 共用的
 		RID depth_fb;
 
 		struct Reflection {
 			RID owner;
-			RendererRD::SkyRD::ReflectionData data;
+			RendererRD::SkyRD::ReflectionData data; // 
 			RID fbs[6];
 		};
 

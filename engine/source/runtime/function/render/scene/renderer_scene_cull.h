@@ -848,6 +848,9 @@ class RendererSceneCull : public RenderingMethod {
 
 #define PASSBASE scene_render
 
+  PASS1(voxel_gi_set_quality, RS::VoxelGIQuality) // voxel gi
+
+
 	/* SKY API */
 
 	PASS0R(RID, sky_allocate)

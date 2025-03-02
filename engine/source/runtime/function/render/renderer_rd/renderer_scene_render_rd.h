@@ -14,7 +14,7 @@ namespace lain {
 class RendererSceneRenderRD : public RendererSceneRender {
   static RendererSceneRenderRD* singleton;
 	friend class RendererRD::SkyRD;
-
+	friend class RendererRD::GI;
 protected:
 	RendererRD::ForwardIDStorage *forward_id_storage = nullptr;
 	double time = 0.0;
@@ -24,7 +24,7 @@ protected:
 	PagedArray<RenderGeometryInstance *> cull_argument; //need this to exist
 
 	RendererRD::SkyRD sky;
-	RendererRD::GI gi;
+	RendererRD::GI gi; // GI 这种不知道为什么要写到上面的层而不是属于这个的下一层
 	RendererRD::CopyEffects* copy_effects; 
 	RendererRD::Resolve* resolve_effects;
 	RendererRD::ToneMapper *tone_mapper = nullptr;
@@ -67,7 +67,7 @@ void _process_compositor_effects(RS::CompositorEffectCallbackType p_callback_typ
 	virtual RID _render_buffers_get_normal_texture(Ref<RenderSceneBuffersRD> p_render_buffers) = 0;
 	virtual RID _render_buffers_get_velocity_texture(Ref<RenderSceneBuffersRD> p_render_buffers) = 0;
 	// virtual void _render_buffers_debug_draw(const RenderDataRD *p_render_data);
-	// virtual void _render_material(const Transform3D &p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region, float p_exposure_normalization) = 0;
+	virtual void _render_material(const Transform3D &p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region, float p_exposure_normalization) = 0;
 	// virtual void _render_uv2(const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region) = 0;
 	// virtual void _render_sdfgi(Ref<RenderSceneBuffersRD> p_render_buffers, const Vector3i &p_from, const Vector3i &p_size, const AABB &p_bounds, const PagedArray<RenderGeometryInstance *> &p_instances, const RID &p_albedo_texture, const RID &p_emission_texture, const RID &p_emission_aniso_texture, const RID &p_geom_facing_texture, float p_exposure_normalization) = 0;
 	// virtual void _render_particle_collider_heightfield(RID p_fb, const Transform3D &p_cam_transform, const Projection &p_cam_projection, const PagedArray<RenderGeometryInstance *> &p_instances) = 0;
@@ -90,6 +90,15 @@ void _process_compositor_effects(RS::CompositorEffectCallbackType p_callback_typ
 	virtual void sky_set_material(RID p_sky, RID p_material) override;
 	virtual Ref<Image> sky_bake_panorama(RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i &p_size) override;
   /* GI */
+		/* gi light probes */
+
+		virtual RID voxel_gi_instance_create(RID p_base) override;
+		virtual void voxel_gi_instance_set_transform_to_data(RID p_probe, const Transform3D &p_xform) override;
+		virtual bool voxel_gi_needs_update(RID p_probe) const override;
+		virtual void voxel_gi_update(RID p_probe, bool p_update_light_instances, const Vector<RID> &p_light_instances, const PagedArray<RenderGeometryInstance *> &p_dynamic_objects) override;
+		virtual void voxel_gi_set_quality(RS::VoxelGIQuality p_quality) override { gi.voxel_gi_quality = p_quality; }
+
+		
   bool screen_space_roughness_limiter = false;
   float screen_space_roughness_limiter_amount = 0.25;
   float screen_space_roughness_limiter_limit = 0.18;

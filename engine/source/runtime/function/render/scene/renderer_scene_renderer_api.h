@@ -13,7 +13,7 @@ class RendererSceneRender {
   // 1. 场景的渲染，开放render_scene API，其实现依赖 _rd 的 render_scene 以及在Implementation命名空间里的函数
   // 2. Enviroment 的管理 （包括 Fog， Tone Map， Sky， 屏幕空间效果，...)
   // 3. GeometryInstance 的创建和释放
-  // 4. SDFGI的更新相关
+  // 4. SDFGI的更新相关 (voxel GI)
   // 5. COMPOSITOR 的管理
   // 依赖注入
  private:
@@ -36,6 +36,14 @@ class RendererSceneRender {
     MAX_DIRECTIONAL_LIGHT_CASCADES = 4,
     MAX_RENDER_VIEWS = 2
   };
+
+	virtual RID voxel_gi_instance_create(RID p_voxel_gi) = 0;
+	virtual void voxel_gi_instance_set_transform_to_data(RID p_probe, const Transform3D &p_xform) = 0;
+	virtual bool voxel_gi_needs_update(RID p_probe) const = 0;
+	virtual void voxel_gi_update(RID p_probe, bool p_update_light_instances, const Vector<RID> &p_light_instances, const PagedArray<RenderGeometryInstance *> &p_dynamic_objects) = 0;
+
+	virtual void voxel_gi_set_quality(RS::VoxelGIQuality) = 0;
+	
   struct RenderShadowData {
     RID light;
     int pass = 0;                                   // 例如cubemap记录六个面
@@ -89,7 +97,6 @@ class RendererSceneRender {
 	void compositor_effect_set_flag(RID p_compositor, RS::CompositorEffectFlags p_flag, bool p_set);
   
 
-  // 虚接口
   virtual Ref<RenderSceneBuffers> render_buffers_create() = 0;
 
   virtual void update() = 0;

@@ -52,7 +52,9 @@
         "sky_material": "PanoramaSkyMaterial_og17w"
       },
       "ext_res": {},
-      "variants": {}
+      "variants": {
+        "process_mode" : 0
+      }
     },
     {
       "type": "Environment",
@@ -81,10 +83,9 @@
             "r": 1.0,
             "g": 1.0,
             "b": 1.0,
-            "a": 0.8
+            "a": 1.0
           }
-        },
-        "transparency": 1
+        }
       }
     },
     {
@@ -577,6 +578,65 @@
       "sub_res": {
       },
       "ext_res": {
+      }
+    },
+    {
+      "variants": {
+        "type": {
+          "$typeName": "StringName",
+          "$context": "VoxelGI"
+        },
+        "parent": {
+          "$typeName": "GObjectPath",
+          "$context": "."
+        },
+        "name": {
+          "$typeName": "StringName",
+          "$context": "default_voxel_gi"
+        },
+        "transform": {
+          "$typeName": "Transform3D",
+          "$context": {
+            "basis": {
+              "rows": [
+                {
+                  "x": 1,
+                  "y": 0,
+                  "z": 0
+                },
+                {
+                  "x": 0,
+                  "y": 1,
+                  "z": 0
+                },
+                {
+                  "x": 0,
+                  "y": 0,
+                  "z": 1
+                }
+              ]
+            },
+            "origin": {
+               "x": 5,
+              "y": 6,
+              "z": 2.5
+            }
+          },
+          "size" : {
+            "$typeName":"Vector3",
+            "$context": {
+              "x": 78,
+              "y": 37,
+              "z": 60
+            }
+          }
+        }
+      },
+      "instanced_components": [],
+      "sub_res": {
+      },
+      "ext_res": {
+        "data" : "3_1netx"
       }
     }
   ]

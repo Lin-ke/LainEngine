@@ -93,7 +93,8 @@ private:
 
 		bool dirty = true;
 
-		Vector<Layer> layers;
+		Vector<Layer> layers; // num_layers 个 layer，每个layer 有 mipmap个 mipmap（6面） 和 view （1面的cubemap）
+		// layer 就是 不同粗糙度
 
 		void clear_reflection_data();
 		void update_reflection_data(int p_size, int p_mipmaps, bool p_use_array, RID p_base_cube, int p_base_layer, bool p_low_quality, int p_roughness_layers, RD::DataFormat p_texture_format);

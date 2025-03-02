@@ -346,6 +346,8 @@ class RenderingSystemDefault : public RenderingSystem {
 
   FUNCRIDSPLIT(environment)
 
+	FUNC1(voxel_gi_set_quality, VoxelGIQuality)
+  
   FUNC2(environment_set_background, RID, EnvironmentBG)
   FUNC2(environment_set_sky, RID, RID)
   FUNC2(environment_set_sky_custom_fov, RID, float)
@@ -388,7 +390,40 @@ class RenderingSystemDefault : public RenderingSystem {
   FUNC2RC(Variant, instance_geometry_get_shader_parameter, RID, const StringName&)
   FUNC2RC(Variant, instance_geometry_get_shader_parameter_default_value, RID, const StringName&)
   FUNC2C(instance_geometry_get_shader_parameter_list, RID, List<PropertyInfo>*)
+  #undef server_name
+  #undef ServerName
+  // voxel GI
 
+  
+#define ServerName RendererGI
+#define server_name RSG::gi
+
+	FUNCRIDSPLIT(voxel_gi)
+  // voxel Gi quality 这个api设计到rendering method里了
+	FUNC8(voxel_gi_allocate_data, RID, const Transform3D &, const AABB &, const Vector3i &, const Vector<uint8_t> &, const Vector<uint8_t> &, const Vector<uint8_t> &, const Vector<int> &)
+
+	FUNC1RC(AABB, voxel_gi_get_bounds, RID)
+	FUNC1RC(Vector3i, voxel_gi_get_octree_size, RID)
+	FUNC1RC(Vector<uint8_t>, voxel_gi_get_octree_cells, RID)
+	FUNC1RC(Vector<uint8_t>, voxel_gi_get_data_cells, RID)
+	FUNC1RC(Vector<uint8_t>, voxel_gi_get_distance_field, RID)
+	FUNC1RC(Vector<int>, voxel_gi_get_level_counts, RID)
+	FUNC1RC(Transform3D, voxel_gi_get_to_cell_xform, RID)
+
+	FUNC2(voxel_gi_set_dynamic_range, RID, float)
+	FUNC2(voxel_gi_set_propagation, RID, float)
+	FUNC2(voxel_gi_set_energy, RID, float)
+	FUNC2(voxel_gi_set_baked_exposure_normalization, RID, float)
+	FUNC2(voxel_gi_set_bias, RID, float)
+	FUNC2(voxel_gi_set_normal_bias, RID, float)
+	FUNC2(voxel_gi_set_interior, RID, bool)
+	FUNC2(voxel_gi_set_use_two_bounces, RID, bool)
+
+	FUNC0(sdfgi_reset)
+
+
+  #undef server_name
+  #undef ServerName
   RenderingSystemDefault(bool p_create_thread = false);
   ~RenderingSystemDefault();
   virtual void init() override;

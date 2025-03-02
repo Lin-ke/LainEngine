@@ -409,6 +409,25 @@ void RendererSceneRenderRD::sky_set_material(RID p_sky, RID p_material) {
 Ref<Image> RendererSceneRenderRD::sky_bake_panorama(RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i &p_size) {
 	return sky.sky_bake_panorama(p_sky, p_energy, p_bake_irradiance, p_size);
 }
+
+RID RendererSceneRenderRD::voxel_gi_instance_create(RID p_base) {
+	return gi.voxel_gi_instance_create(p_base);
+}
+
+void RendererSceneRenderRD::voxel_gi_instance_set_transform_to_data(RID p_probe, const Transform3D &p_xform) {
+	gi.voxel_gi_instance_set_transform_to_data(p_probe, p_xform);
+}
+
+bool RendererSceneRenderRD::voxel_gi_needs_update(RID p_probe) const {
+
+	return gi.voxel_gi_needs_update(p_probe);
+}
+
+void RendererSceneRenderRD::voxel_gi_update(RID p_probe, bool p_update_light_instances, const Vector<RID> &p_light_instances, const PagedArray<RenderGeometryInstance *> &p_dynamic_objects) {
+
+	gi.voxel_gi_update(p_probe, p_update_light_instances, p_light_instances, p_dynamic_objects);
+}
+
 RID lain::RendererSceneRenderRD::reflection_probe_create_framebuffer(RID p_color, RID p_depth) {
   Vector<RID> fb;
 	fb.push_back(p_color);

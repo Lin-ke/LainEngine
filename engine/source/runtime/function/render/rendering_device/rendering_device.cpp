@@ -250,7 +250,7 @@ bool RenderingDevice::FramebufferFormatKey::operator<(const RenderingDevice::Fra
 
   return false;  // Equal.
 }
-
+// @todo texture_create 应该做成池化的；free掉就加入池中
 RID RenderingDevice::texture_create(const TextureFormat& p_format, const TextureView& p_view, const Vector<Vector<uint8_t>>& p_data) {
   _THREAD_SAFE_METHOD_
 
@@ -522,146 +522,149 @@ RID lain::RenderingDevice::texture_create_shared(const TextureView& p_view, RID 
 
   return id;
 }
+RID RenderingDevice::texture_create_shared_from_slice(const TextureView &p_view, RID p_with_texture, uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps, TextureSliceType p_slice_type, uint32_t p_layers) {
+	_THREAD_SAFE_METHOD_
 
-RID lain::RenderingDevice::texture_create_shared_from_slice(const TextureView& p_view, RID p_with_texture, uint32_t p_layer, uint32_t p_mipmap, uint32_t p_mipmaps,
-                                                            TextureSliceType p_slice_type, uint32_t p_layers) {
-  _THREAD_SAFE_METHOD_
+	Texture *src_texture = texture_owner.get_or_null(p_with_texture);
+	ERR_FAIL_NULL_V(src_texture, RID());
 
-  Texture* src_texture = texture_owner.get_or_null(p_with_texture);
-  ERR_FAIL_NULL_V(src_texture, RID());
+	if (src_texture->owner.is_valid()) { // // Ahh this is a share. The RenderingDeviceDriver needs the actual owner.
+		p_with_texture = src_texture->owner;
+		src_texture = texture_owner.get_or_null(src_texture->owner);
+		ERR_FAIL_NULL_V(src_texture, RID()); // This is a bug.
+	}
 
-  if (src_texture->owner.is_valid()) {  // // Ahh this is a share. The RenderingDeviceDriver needs the actual owner.
-    p_with_texture = src_texture->owner;
-    src_texture = texture_owner.get_or_null(src_texture->owner);
-    ERR_FAIL_NULL_V(src_texture, RID());  // This is a bug.
-  }
+	ERR_FAIL_COND_V_MSG(p_slice_type == TEXTURE_SLICE_CUBEMAP && (src_texture->type != TEXTURE_TYPE_CUBE && src_texture->type != TEXTURE_TYPE_CUBE_ARRAY), RID(),
+			"Can only create a cubemap slice from a cubemap or cubemap array mipmap");
 
-  ERR_FAIL_COND_V_MSG(p_slice_type == TEXTURE_SLICE_CUBEMAP && (src_texture->type != TEXTURE_TYPE_CUBE && src_texture->type != TEXTURE_TYPE_CUBE_ARRAY), RID(),
-                      "Can only create a cubemap slice from a cubemap or cubemap array mipmap");
+	ERR_FAIL_COND_V_MSG(p_slice_type == TEXTURE_SLICE_3D && src_texture->type != TEXTURE_TYPE_3D, RID(),
+			"Can only create a 3D slice from a 3D texture");
 
-  ERR_FAIL_COND_V_MSG(p_slice_type == TEXTURE_SLICE_3D && src_texture->type != TEXTURE_TYPE_3D, RID(), "Can only create a 3D slice from a 3D texture");
+	ERR_FAIL_COND_V_MSG(p_slice_type == TEXTURE_SLICE_2D_ARRAY && (src_texture->type != TEXTURE_TYPE_2D_ARRAY), RID(),
+			"Can only create an array slice from a 2D array mipmap");
 
-  ERR_FAIL_COND_V_MSG(p_slice_type == TEXTURE_SLICE_2D_ARRAY && (src_texture->type != TEXTURE_TYPE_2D_ARRAY), RID(), "Can only create an array slice from a 2D array mipmap");
+	// Create view.
 
-  // Create view.
+	ERR_FAIL_UNSIGNED_INDEX_V(p_mipmap, src_texture->mipmaps, RID());
+	ERR_FAIL_COND_V(p_mipmap + p_mipmaps > src_texture->mipmaps, RID());
+	ERR_FAIL_UNSIGNED_INDEX_V(p_layer, src_texture->layers, RID());
 
-  ERR_FAIL_UNSIGNED_INDEX_V(p_mipmap, src_texture->mipmaps, RID());
-  ERR_FAIL_COND_V(p_mipmap + p_mipmaps > src_texture->mipmaps, RID());
-  ERR_FAIL_UNSIGNED_INDEX_V(p_layer, src_texture->layers, RID());
+	int slice_layers = 1;
+	if (p_layers != 0) {
+		ERR_FAIL_COND_V_MSG(p_layers > 1 && p_slice_type != TEXTURE_SLICE_2D_ARRAY, RID(), "layer slicing only supported for 2D arrays");
+		ERR_FAIL_COND_V_MSG(p_layer + p_layers > src_texture->layers, RID(), "layer slice is out of bounds");
+		slice_layers = p_layers;
+	} else if (p_slice_type == TEXTURE_SLICE_2D_ARRAY) {
+		ERR_FAIL_COND_V_MSG(p_layer != 0, RID(), "layer must be 0 when obtaining a 2D array mipmap slice");
+		slice_layers = src_texture->layers;
+	} else if (p_slice_type == TEXTURE_SLICE_CUBEMAP) {
+		slice_layers = 6;
+	}
 
-  int slice_layers = 1;
-  if (p_layers != 0) {
-    ERR_FAIL_COND_V_MSG(p_layers > 1 && p_slice_type != TEXTURE_SLICE_2D_ARRAY, RID(), "layer slicing only supported for 2D arrays");
-    ERR_FAIL_COND_V_MSG(p_layer + p_layers > src_texture->layers, RID(), "layer slice is out of bounds");
-    slice_layers = p_layers;
-  } else if (p_slice_type == TEXTURE_SLICE_2D_ARRAY) {
-    ERR_FAIL_COND_V_MSG(p_layer != 0, RID(), "layer must be 0 when obtaining a 2D array mipmap slice");
-    slice_layers = src_texture->layers;
-  } else if (p_slice_type == TEXTURE_SLICE_CUBEMAP) {
-    slice_layers = 6;
-  }
+	Texture texture = *src_texture;
+	texture.shared_fallback = nullptr;
 
-  Texture texture = *src_texture;
-  texture.shared_fallback = nullptr;
+	get_image_format_required_size(texture.format, texture.width, texture.height, texture.depth, p_mipmap + 1, &texture.width, &texture.height);
+	texture.mipmaps = p_mipmaps;
+	texture.layers = slice_layers;
+	texture.base_mipmap = p_mipmap;
+	texture.base_layer = p_layer;
 
-  get_image_format_required_size(texture.format, texture.width, texture.height, texture.depth, p_mipmap + 1, &texture.width, &texture.height);
-  texture.mipmaps = p_mipmaps;
-  texture.layers = slice_layers;
-  texture.base_mipmap = p_mipmap;
-  texture.base_layer = p_layer;
+	if (p_slice_type == TEXTURE_SLICE_2D) {
+		texture.type = TEXTURE_TYPE_2D;
+	} else if (p_slice_type == TEXTURE_SLICE_3D) {
+		texture.type = TEXTURE_TYPE_3D;
+	}
 
-  if (p_slice_type == TEXTURE_SLICE_2D) {
-    texture.type = TEXTURE_TYPE_2D;
-  } else if (p_slice_type == TEXTURE_SLICE_3D) {
-    texture.type = TEXTURE_TYPE_3D;
-  }
+	RDD::TextureView tv;
+	bool create_shared = true;
+	bool raw_reintepretation = false;
+	if (p_view.format_override == DATA_FORMAT_MAX || p_view.format_override == texture.format) {
+		tv.format = texture.format;
+	} else {
+		ERR_FAIL_INDEX_V(p_view.format_override, DATA_FORMAT_MAX, RID());
 
-  RDD::TextureView tv;
-  bool create_shared = true;
-  bool raw_reintepretation = false;
-  if (p_view.format_override == DATA_FORMAT_MAX || p_view.format_override == texture.format) {
-    tv.format = texture.format;
-  } else {
-    ERR_FAIL_INDEX_V(p_view.format_override, DATA_FORMAT_MAX, RID());
+		ERR_FAIL_COND_V_MSG(!texture.allowed_shared_formats.has(p_view.format_override), RID(),
+				"Format override is not in the list of allowed shareable formats for original texture.");
+		tv.format = p_view.format_override;
+		create_shared = driver->texture_can_make_shared_with_format(texture.driver_id, p_view.format_override, raw_reintepretation);
+	}
 
-    ERR_FAIL_COND_V_MSG(!texture.allowed_shared_formats.has(p_view.format_override), RID(),
-                        "Format override is not in the list of allowed shareable formats for original texture.");
-    tv.format = p_view.format_override;
-    create_shared = driver->texture_can_make_shared_with_format(texture.driver_id, p_view.format_override, raw_reintepretation);
-  }
+	tv.swizzle_r = p_view.swizzle_r;
+	tv.swizzle_g = p_view.swizzle_g;
+	tv.swizzle_b = p_view.swizzle_b;
+	tv.swizzle_a = p_view.swizzle_a;
 
-  tv.swizzle_r = p_view.swizzle_r;
-  tv.swizzle_g = p_view.swizzle_g;
-  tv.swizzle_b = p_view.swizzle_b;
-  tv.swizzle_a = p_view.swizzle_a;
+	if (p_slice_type == TEXTURE_SLICE_CUBEMAP) {
+		ERR_FAIL_COND_V_MSG(p_layer >= src_texture->layers, RID(),
+				"Specified layer is invalid for cubemap");
+		ERR_FAIL_COND_V_MSG((p_layer % 6) != 0, RID(),
+				"Specified layer must be a multiple of 6.");
+	}
 
-  if (p_slice_type == TEXTURE_SLICE_CUBEMAP) {
-    ERR_FAIL_COND_V_MSG(p_layer >= src_texture->layers, RID(), "Specified layer is invalid for cubemap");
-    ERR_FAIL_COND_V_MSG((p_layer % 6) != 0, RID(), "Specified layer must be a multiple of 6.");
-  }
+	if (create_shared) {
+		texture.driver_id = driver->texture_create_shared_from_slice(src_texture->driver_id, tv, p_slice_type, p_layer, slice_layers, p_mipmap, p_mipmaps);
+	} else {
+		// The regular view will use the same format as the main texture.
+		RDD::TextureView regular_view = tv;
+		regular_view.format = src_texture->format;
+		texture.driver_id = driver->texture_create_shared_from_slice(src_texture->driver_id, regular_view, p_slice_type, p_layer, slice_layers, p_mipmap, p_mipmaps);
 
-  if (create_shared) {
-    texture.driver_id = driver->texture_create_shared_from_slice(src_texture->driver_id, tv, p_slice_type, p_layer, slice_layers, p_mipmap, p_mipmaps);
-  } else {
-    // The regular view will use the same format as the main texture.
-    RDD::TextureView regular_view = tv;
-    regular_view.format = src_texture->format;
-    texture.driver_id = driver->texture_create_shared_from_slice(src_texture->driver_id, regular_view, p_slice_type, p_layer, slice_layers, p_mipmap, p_mipmaps);
+		// Create the independent texture for the slice.
+		RDD::TextureSubresourceRange slice_range = texture.barrier_range();
+		slice_range.base_mipmap = 0;
+		slice_range.base_layer = 0;
 
-    // Create the independent texture for the slice.
-    RDD::TextureSubresourceRange slice_range = texture.barrier_range();
-    slice_range.base_mipmap = 0;
-    slice_range.base_layer = 0;
+		RDD::TextureFormat slice_format = texture.texture_format();
+		slice_format.width = MAX(texture.width >> p_mipmap, 1U);
+		slice_format.height = MAX(texture.height >> p_mipmap, 1U);
+		slice_format.depth = MAX(texture.depth >> p_mipmap, 1U);
+		slice_format.format = tv.format;
+		slice_format.usage_bits = TEXTURE_USAGE_SAMPLING_BIT | TEXTURE_USAGE_CAN_COPY_TO_BIT;
 
-    RDD::TextureFormat slice_format = texture.texture_format();
-    slice_format.width = MAX(texture.width >> p_mipmap, 1U);
-    slice_format.height = MAX(texture.height >> p_mipmap, 1U);
-    slice_format.depth = MAX(texture.depth >> p_mipmap, 1U);
-    slice_format.format = tv.format;
-    slice_format.usage_bits = TEXTURE_USAGE_SAMPLING_BIT | TEXTURE_USAGE_CAN_COPY_TO_BIT;
+		_texture_check_shared_fallback(src_texture);
+		_texture_check_shared_fallback(&texture);
 
-    _texture_check_shared_fallback(src_texture);
-    _texture_check_shared_fallback(&texture);
+		texture.shared_fallback->texture = driver->texture_create(slice_format, tv);
+		texture.shared_fallback->raw_reinterpretation = raw_reintepretation;
+		texture_memory += driver->texture_get_allocation_size(texture.shared_fallback->texture);
 
-    texture.shared_fallback->texture = driver->texture_create(slice_format, tv);
-    texture.shared_fallback->raw_reinterpretation = raw_reintepretation;
-    texture_memory += driver->texture_get_allocation_size(texture.shared_fallback->texture);
+		RDG::ResourceTracker *tracker = RDG::resource_tracker_create();
+		tracker->texture_driver_id = texture.shared_fallback->texture;
+		tracker->texture_subresources = slice_range;
+		tracker->texture_usage = slice_format.usage_bits;
+		tracker->ref_count = 1;
+		texture.shared_fallback->texture_tracker = tracker;
+		texture.shared_fallback->revision = 0;
 
-    RDG::ResourceTracker* tracker = RDG::resource_tracker_create();
-    tracker->texture_driver_id = texture.shared_fallback->texture;
-    tracker->texture_subresources = slice_range;
-    tracker->texture_usage = slice_format.usage_bits;
-    tracker->ref_count = 1;
-    texture.shared_fallback->texture_tracker = tracker;
-    texture.shared_fallback->revision = 0;
+		if (raw_reintepretation && src_texture->shared_fallback->buffer.id == 0) {
+			// For shared texture slices, we create the buffer on the slice if the source texture has no reinterpretation buffer.
+			_texture_create_reinterpret_buffer(&texture);
+		}
+	}
 
-    if (raw_reintepretation && src_texture->shared_fallback->buffer.id == 0) {
-      // For shared texture slices, we create the buffer on the slice if the source texture has no reinterpretation buffer.
-      _texture_create_reinterpret_buffer(&texture);
-    }
-  }
+	ERR_FAIL_COND_V(!texture.driver_id, RID());
 
-  ERR_FAIL_COND_V(!texture.driver_id, RID());
+	const Rect2i slice_rect(p_mipmap, p_layer, p_mipmaps, slice_layers);
+	texture.owner = p_with_texture;
+	texture.slice_type = p_slice_type;
+	texture.slice_rect = slice_rect;
 
-  const Rect2i slice_rect(p_mipmap, p_layer, p_mipmaps, slice_layers);
-  texture.owner = p_with_texture;
-  texture.slice_type = p_slice_type;
-  texture.slice_rect = slice_rect;
+	// If parent is mutable, make slice mutable by default.
+	if (src_texture->draw_tracker != nullptr) {
+		texture.draw_tracker = nullptr;
+		_texture_make_mutable(&texture, RID());
+	}
 
-  // If parent is mutable, make slice mutable by default.
-  if (src_texture->draw_tracker != nullptr) {
-    texture.draw_tracker = nullptr;
-    _texture_make_mutable(&texture, RID());
-  }
-
-  RID id = texture_owner.make_rid(texture);
+	RID id = texture_owner.make_rid(texture);
 #ifdef DEV_ENABLED
-  set_resource_name(id, "RID:" + itos(id.get_id()));
+	set_resource_name(id, "RID:" + itos(id.get_id()));
 #endif
-  _add_dependency(id, p_with_texture);
+	_add_dependency(id, p_with_texture);
 
-  return id;
+	return id;
 }
+
 
 Error lain::RenderingDevice::texture_update(RID p_texture, uint32_t p_layer, const Vector<uint8_t>& p_data) {
   return _texture_update(p_texture, p_layer, p_data, false, true);

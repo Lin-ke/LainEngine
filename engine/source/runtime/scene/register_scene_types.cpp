@@ -12,6 +12,7 @@
 #include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/world_environment.h"
 #include "scene/3d/reflection_probe.h"
+#include "scene/3d/voxel_gi.h"
 // function types
 #include "function/shader/shader_types.h"
 
@@ -103,6 +104,7 @@ namespace lain{
 
 	BaseMaterial3D::init_shaders();
 
+	GDREGISTER_CLASS(VoxelGI);
 	
 	}
 

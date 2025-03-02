@@ -237,50 +237,7 @@ void RenderForwardClustered::_update_render_base_uniform_set() {
   }
 }
 // 这里需要的数据都在父类型 renderer_scene_renderer_rd.h 中
-void lain::RendererSceneRenderImplementation::RenderForwardClustered::_update_shader_quality_settings() {
-  Vector<RD::PipelineSpecializationConstant> spec_constants;
 
-  RD::PipelineSpecializationConstant sc;
-  sc.type = RD::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_INT;
-
-  sc.constant_id = SPEC_CONSTANT_SOFT_SHADOW_SAMPLES;
-  sc.int_value = soft_shadow_samples_get();
-
-  spec_constants.push_back(sc);
-
-  sc.constant_id = SPEC_CONSTANT_PENUMBRA_SHADOW_SAMPLES;
-  sc.int_value = penumbra_shadow_samples_get();
-
-  spec_constants.push_back(sc);
-
-  sc.constant_id = SPEC_CONSTANT_DIRECTIONAL_SOFT_SHADOW_SAMPLES;
-  sc.int_value = directional_soft_shadow_samples_get();
-
-  spec_constants.push_back(sc);
-
-  sc.constant_id = SPEC_CONSTANT_DIRECTIONAL_PENUMBRA_SHADOW_SAMPLES;
-  sc.int_value = directional_penumbra_shadow_samples_get();
-
-  spec_constants.push_back(sc);
-
-  sc.type = RD::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_BOOL;
-  sc.constant_id = SPEC_CONSTANT_DECAL_FILTER;
-  sc.bool_value = decals_get_filter() == RS::DECAL_FILTER_NEAREST_MIPMAPS || decals_get_filter() == RS::DECAL_FILTER_LINEAR_MIPMAPS ||
-                  decals_get_filter() == RS::DECAL_FILTER_NEAREST_MIPMAPS_ANISOTROPIC || decals_get_filter() == RS::DECAL_FILTER_LINEAR_MIPMAPS_ANISOTROPIC;
-
-  spec_constants.push_back(sc);
-
-  sc.constant_id = SPEC_CONSTANT_PROJECTOR_FILTER;
-  sc.bool_value = light_projectors_get_filter() == RS::LIGHT_PROJECTOR_FILTER_NEAREST_MIPMAPS || light_projectors_get_filter() == RS::LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS ||
-                  light_projectors_get_filter() == RS::LIGHT_PROJECTOR_FILTER_NEAREST_MIPMAPS_ANISOTROPIC ||
-                  light_projectors_get_filter() == RS::LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS_ANISOTROPIC;
-
-  spec_constants.push_back(sc);
-
-  scene_shader.set_default_specialization_constants(spec_constants);
-
-  base_uniforms_changed();  //also need this
-}
 
 void RenderForwardClustered::setup_added_light(const RS::LightType p_type, const Transform3D& p_transform, float p_radius, float p_spot_aperture) {
   if (current_cluster_builder != nullptr) {
@@ -356,11 +313,11 @@ void lain::RendererSceneRenderImplementation::RenderForwardClustered::_render_sc
   bool ce_needs_separate_specular = _compositor_effects_has_flag(p_render_data, RS::COMPOSITOR_EFFECT_FLAG_NEEDS_SEPARATE_SPECULAR);
   // obtain cluster builder
   if (light_storage->owns_reflection_probe_instance(p_render_data->reflection_probe)) {
-    // current_cluster_builder = light_storage->reflection_probe_instance_get_cluster_builder(p_render_data->reflection_probe, &cluster_builder_shared);
+    current_cluster_builder = light_storage->reflection_probe_instance_get_cluster_builder(p_render_data->reflection_probe, &cluster_builder_shared);
 
-    // if (p_render_data->camera_attributes.is_valid()) {
-    // 	light_storage->reflection_probe_set_baked_exposure(light_storage->reflection_probe_instance_get_probe(p_render_data->reflection_probe), RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(p_render_data->camera_attributes));
-    // }
+    if (p_render_data->camera_attributes.is_valid()) {
+    	light_storage->reflection_probe_set_baked_exposure(light_storage->reflection_probe_instance_get_probe(p_render_data->reflection_probe), RSG::camera_attributes->camera_attributes_get_exposure_normalization_factor(p_render_data->camera_attributes));
+    }
   } else if (rb_data.is_valid()) {
     current_cluster_builder = rb_data->cluster_builder;
 
@@ -2574,8 +2531,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
     uniforms.push_back(u);
   }
   {
-    // RID ref_texture = (p_render_data && p_render_data->reflection_atlas.is_valid()) ? light_storage->reflection_atlas_get_texture(p_render_data->reflection_atlas) : RID();
-    RID ref_texture = RID();
+    RID ref_texture = (p_render_data && p_render_data->reflection_atlas.is_valid()) ? light_storage->reflection_atlas_get_texture(p_render_data->reflection_atlas) : RID();
     RD::Uniform u;
     u.binding = 4;
     u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
@@ -3035,6 +2991,51 @@ void RenderForwardClustered::_pre_opaque_render(RenderDataRD* p_render_data, boo
   }
 }
 
+void lain::RendererSceneRenderImplementation::RenderForwardClustered::_update_shader_quality_settings() {
+  Vector<RD::PipelineSpecializationConstant> spec_constants;
+
+  RD::PipelineSpecializationConstant sc;
+  sc.type = RD::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_INT;
+
+  sc.constant_id = SPEC_CONSTANT_SOFT_SHADOW_SAMPLES;
+  sc.int_value = soft_shadow_samples_get();
+
+  spec_constants.push_back(sc);
+
+  sc.constant_id = SPEC_CONSTANT_PENUMBRA_SHADOW_SAMPLES;
+  sc.int_value = penumbra_shadow_samples_get();
+
+  spec_constants.push_back(sc);
+
+  sc.constant_id = SPEC_CONSTANT_DIRECTIONAL_SOFT_SHADOW_SAMPLES;
+  sc.int_value = directional_soft_shadow_samples_get();
+
+  spec_constants.push_back(sc);
+
+  sc.constant_id = SPEC_CONSTANT_DIRECTIONAL_PENUMBRA_SHADOW_SAMPLES;
+  sc.int_value = directional_penumbra_shadow_samples_get();
+
+  spec_constants.push_back(sc);
+
+  sc.type = RD::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_BOOL;
+  sc.constant_id = SPEC_CONSTANT_DECAL_FILTER;
+  sc.bool_value = decals_get_filter() == RS::DECAL_FILTER_NEAREST_MIPMAPS || decals_get_filter() == RS::DECAL_FILTER_LINEAR_MIPMAPS ||
+                  decals_get_filter() == RS::DECAL_FILTER_NEAREST_MIPMAPS_ANISOTROPIC || decals_get_filter() == RS::DECAL_FILTER_LINEAR_MIPMAPS_ANISOTROPIC;
+
+  spec_constants.push_back(sc);
+
+  sc.constant_id = SPEC_CONSTANT_PROJECTOR_FILTER;
+  sc.bool_value = light_projectors_get_filter() == RS::LIGHT_PROJECTOR_FILTER_NEAREST_MIPMAPS || light_projectors_get_filter() == RS::LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS ||
+                  light_projectors_get_filter() == RS::LIGHT_PROJECTOR_FILTER_NEAREST_MIPMAPS_ANISOTROPIC ||
+                  light_projectors_get_filter() == RS::LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS_ANISOTROPIC;
+
+  spec_constants.push_back(sc);
+
+  scene_shader.set_default_specialization_constants(spec_constants);
+
+  base_uniforms_changed();  //also need this
+}
+
 void RenderForwardClustered::_render_shadow_pass(RID p_light, RID p_shadow_atlas, int p_pass, const PagedArray<RenderGeometryInstance*>& p_instances,
                                                  float p_lod_distance_multiplier, float p_screen_mesh_lod_threshold, bool p_open_pass, bool p_close_pass, bool p_clear_region,
                                                  RenderingMethod::RenderInfo* p_render_info, const Size2i& p_viewport_size, const Transform3D& p_main_cam_transform) {
@@ -3424,4 +3425,61 @@ void RenderForwardClustered::_process_ssr(Ref<RenderSceneBuffersRD> p_render_buf
 
   RID output = p_render_buffers->get_texture(RB_SCOPE_SSR, RB_OUTPUT);
   copy_effects->merge_specular(p_dest_framebuffer, p_specular_buffer, p_use_additive ? RID() : p_render_buffers->get_internal_texture(), output, view_count);
+}
+
+void RenderForwardClustered::_render_material(const Transform3D &p_cam_transform, const Projection &p_cam_projection, bool p_cam_orthogonal, const PagedArray<RenderGeometryInstance *> &p_instances, RID p_framebuffer, const Rect2i &p_region, float p_exposure_normalization) {
+	RENDER_TIMESTAMP("Setup Rendering 3D Material");
+
+	RD::get_singleton()->draw_command_begin_label("Render 3D Material");
+
+	RenderSceneDataRD scene_data;
+	scene_data.cam_projection = p_cam_projection;
+	scene_data.cam_transform = p_cam_transform;
+	scene_data.view_projection[0] = p_cam_projection;
+	scene_data.dual_paraboloid_side = 0;
+	scene_data.material_uv2_mode = false;
+	scene_data.opaque_prepass_threshold = 0.0f;
+	scene_data.emissive_exposure_normalization = p_exposure_normalization;
+	scene_data.time = time;
+	scene_data.time_step = time_step;
+	scene_data.main_cam_transform = p_cam_transform;
+
+	RenderDataRD render_data;
+	render_data.scene_data = &scene_data;
+	render_data.cluster_size = 1;
+	render_data.cluster_max_elements = 32;
+	render_data.instances = &p_instances;
+
+	scene_shader.enable_advanced_shader_group();
+
+	_update_render_base_uniform_set();
+
+	_setup_environment(&render_data, true, Vector2(1, 1), Color());
+
+	PassMode pass_mode = PASS_MODE_DEPTH_MATERIAL;
+	_fill_render_list(RENDER_LIST_SECONDARY, &render_data, pass_mode);
+	render_list[RENDER_LIST_SECONDARY].sort_by_key();
+	_fill_instance_data(RENDER_LIST_SECONDARY);
+
+	RID rp_uniform_set = _setup_render_pass_uniform_set(RENDER_LIST_SECONDARY, nullptr, RID(), RendererRD::MaterialStorage::get_singleton()->samplers_rd_get_default());
+
+	RENDER_TIMESTAMP("Render 3D Material");
+
+	{
+		RenderListParameters render_list_params(render_list[RENDER_LIST_SECONDARY].elements.ptr(), render_list[RENDER_LIST_SECONDARY].element_info.ptr(), render_list[RENDER_LIST_SECONDARY].elements.size(), true, pass_mode, 0, true, false, rp_uniform_set);
+		//regular forward for now
+		Vector<Color> clear = {
+			Color(0, 0, 0, 0),
+			Color(0, 0, 0, 0),
+			Color(0, 0, 0, 0),
+			Color(0, 0, 0, 0),
+			Color(0, 0, 0, 0)
+		};
+
+		RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(p_framebuffer, RD::INITIAL_ACTION_CLEAR, RD::FINAL_ACTION_STORE, RD::INITIAL_ACTION_CLEAR, RD::FINAL_ACTION_STORE, clear, 0.0, 0, p_region);
+		_render_list(draw_list, RD::get_singleton()->framebuffer_get_format(p_framebuffer), &render_list_params, 0, render_list_params.element_count);
+		RD::get_singleton()->draw_list_end();
+	}
+
+	RD::get_singleton()->draw_command_end_label();
 }

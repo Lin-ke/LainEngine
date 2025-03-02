@@ -109,16 +109,16 @@ void main() {
 	vec2 vp_line_begin = view_to_screen(vertex, w_begin);
 	float w_end;
 	vec2 vp_line_end = view_to_screen(ray_end, w_end);
-	vec2 vp_line_dir = vp_line_end - vp_line_begin;
+	vec2 vp_line_dir = vp_line_end - vp_line_begin; // 屏幕上的线段 （0,0）-（1,1）
 
 	// we need to interpolate w along the ray, to generate perspective correct reflections
 	w_begin = 1.0 / w_begin;
-	w_end = 1.0 / w_end;
+	w_end = 1.0 / w_end; // w也需要插值以生成透视正确的结果
 
 	float z_begin = vertex.z * w_begin;
 	float z_end = ray_end.z * w_end;
 
-	vec2 line_begin = vp_line_begin / pixel_size;
+	vec2 line_begin = vp_line_begin / pixel_size; // 实际的线段在屏幕空间位置（screen_width, screen_height）
 	vec2 line_dir = vp_line_dir / pixel_size;
 	float z_dir = z_end - z_begin;
 	float w_dir = w_end - w_begin;
@@ -130,12 +130,12 @@ void main() {
 	float scale_min_x = min(1.0, 0.99 * vp_line_begin.x / max(1e-5, -vp_line_dir.x));
 	float scale_min_y = min(1.0, 0.99 * vp_line_begin.y / max(1e-5, -vp_line_dir.y));
 	float line_clip = min(scale_max_x, scale_max_y) * min(scale_min_x, scale_min_y);
-	line_dir *= line_clip;
+	line_dir *= line_clip; // 避免超过视口
 	z_dir *= line_clip;
 	w_dir *= line_clip;
 
 	// clip z and w advance to line advance
-	vec2 line_advance = normalize(line_dir); // down to pixel
+	vec2 line_advance = normalize(line_dir); // down to pixel // 推进量
 	float step_size = 1.0 / length(line_dir);
 	float z_advance = z_dir * step_size; // adapt z advance to line advance
 	float w_advance = w_dir * step_size; // adapt w advance to line advance
@@ -174,7 +174,7 @@ void main() {
 		// convert to linear depth
 		ivec2 test_pos = ivec2(pos - 0.5);
 		depth = imageLoad(source_depth, test_pos).r;
-		if (sc_multiview) {
+		if (sc_multiview) { 
 			depth = depth * 2.0 - 1.0;
 			depth = 2.0 * params.camera_z_near * params.camera_z_far / (params.camera_z_far + params.camera_z_near - depth * (params.camera_z_far - params.camera_z_near));
 			depth = -depth;

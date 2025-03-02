@@ -14,6 +14,7 @@
 #include "function/render/renderer_rd/shaders/cubemap_roughness_raster.glsl.gen.h"
 
 #include "function/render/renderer_rd/shaders/specular_merge.glsl.gen.h"
+#include "function/render/renderer_rd/shaders/blur_raster.glsl.gen.h"
 
 
 namespace lain::RendererRD {
@@ -241,6 +242,56 @@ class CopyEffects {
 	} specular_merge;
 
 
+	// Blur raster shader
+
+	enum BlurRasterMode {
+		BLUR_MIPMAP,
+
+		BLUR_MODE_GAUSSIAN_BLUR,
+		BLUR_MODE_GAUSSIAN_GLOW,
+		BLUR_MODE_GAUSSIAN_GLOW_AUTO_EXPOSURE,
+		BLUR_MODE_COPY,
+
+		BLUR_MODE_SET_COLOR,
+
+		BLUR_MODE_MAX
+	};
+
+	enum {
+		BLUR_FLAG_HORIZONTAL = (1 << 0),
+		BLUR_FLAG_USE_ORTHOGONAL_PROJECTION = (1 << 1),
+		BLUR_FLAG_GLOW_FIRST_PASS = (1 << 2),
+	};
+
+	struct BlurRasterPushConstant {
+		float pixel_size[2];
+		uint32_t flags;
+		uint32_t pad;
+
+		//glow
+		float glow_strength;
+		float glow_bloom;
+		float glow_hdr_threshold;
+		float glow_hdr_scale;
+
+		float glow_exposure;
+		float glow_white;
+		float glow_luminance_cap;
+		float glow_auto_exposure_scale;
+
+		float luminance_multiplier;
+		float res1;
+		float res2;
+		float res3;
+	};
+
+	struct BlurRaster {
+		BlurRasterPushConstant push_constant;
+		BlurRasterShaderRD shader;
+		RID shader_version;
+		PipelineCacheRD pipelines[BLUR_MODE_MAX];
+	} blur_raster;
+
 
   CopyEffects(bool p_prefer_raster_effects);
   ~CopyEffects();
@@ -255,7 +306,7 @@ class CopyEffects {
   void copy_cubemap_to_panorama(RID p_source_cube, RID p_dest_panorama, const Size2i& p_size, float p_lod, bool is_array);
 
   void make_mipmap(RID p_source_rd_texture, RID p_dest_texture, const Size2i& p_size);
-  void make_mipmap_raster(RID p_source_rd_texture, RID p_dest_texture, const Size2i &p_size) {}
+  void make_mipmap_raster(RID p_source_rd_texture, RID p_dest_texture, const Size2i &p_size);
 	bool get_prefer_raster_effects() { return prefer_raster_effects; }
 	void cubemap_downsample_raster(RID p_source_cubemap, RID p_dest_framebuffer, uint32_t p_face_id, const Size2i &p_size);
   void cubemap_filter_raster(RID p_source_cubemap, RID p_dest_framebuffer, uint32_t p_face_id, uint32_t p_mip_level);

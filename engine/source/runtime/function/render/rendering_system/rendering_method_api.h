@@ -150,6 +150,10 @@ class RenderingMethod {
 
 	virtual Ref<RenderSceneBuffers> render_buffers_create() = 0;
 	// virtual void render_empty_scene(const Ref<RenderSceneBuffers> &p_render_buffers, RID p_scenario, RID p_shadow_atlas) = 0;
+
+	/* Voxel GI quality */
+	virtual void voxel_gi_set_quality(RS::VoxelGIQuality) = 0;
+
 	virtual void update() = 0;
 
 	virtual void render_camera(const Ref<RenderSceneBuffers> &p_render_buffers, RID p_camera, RID p_scenario, RID p_viewport, Size2 p_viewport_size, uint32_t p_jitter_phase_count, float p_screen_mesh_lod_threshold, RID p_shadow_atlas, RenderInfo *r_render_info) = 0;

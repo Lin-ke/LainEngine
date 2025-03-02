@@ -14,32 +14,32 @@ CopyEffects* CopyEffects::get_singleton() {
 lain::RendererRD::CopyEffects::CopyEffects(bool p_prefer_raster_effects) {
   singleton = this;
   prefer_raster_effects = p_prefer_raster_effects;
-  // if (prefer_raster_effects) {
-  //   // init blur shader (on compute use copy shader)
+  if (prefer_raster_effects) {
+    // init blur shader (on compute use copy shader)
 
-  //   Vector<String> blur_modes;
-  //   blur_modes.push_back("\n#define MODE_MIPMAP\n");                                         // BLUR_MIPMAP
-  //   blur_modes.push_back("\n#define MODE_GAUSSIAN_BLUR\n");                                  // BLUR_MODE_GAUSSIAN_BLUR
-  //   blur_modes.push_back("\n#define MODE_GAUSSIAN_GLOW\n");                                  // BLUR_MODE_GAUSSIAN_GLOW
-  //   blur_modes.push_back("\n#define MODE_GAUSSIAN_GLOW\n#define GLOW_USE_AUTO_EXPOSURE\n");  // BLUR_MODE_GAUSSIAN_GLOW_AUTO_EXPOSURE
-  //   blur_modes.push_back("\n#define MODE_COPY\n");                                           // BLUR_MODE_COPY
-  //   blur_modes.push_back("\n#define MODE_SET_COLOR\n");                                      // BLUR_MODE_SET_COLOR
+    Vector<String> blur_modes;
+    blur_modes.push_back("\n#define MODE_MIPMAP\n");                                         // BLUR_MIPMAP
+    blur_modes.push_back("\n#define MODE_GAUSSIAN_BLUR\n");                                  // BLUR_MODE_GAUSSIAN_BLUR
+    blur_modes.push_back("\n#define MODE_GAUSSIAN_GLOW\n");                                  // BLUR_MODE_GAUSSIAN_GLOW
+    blur_modes.push_back("\n#define MODE_GAUSSIAN_GLOW\n#define GLOW_USE_AUTO_EXPOSURE\n");  // BLUR_MODE_GAUSSIAN_GLOW_AUTO_EXPOSURE
+    blur_modes.push_back("\n#define MODE_COPY\n");                                           // BLUR_MODE_COPY
+    blur_modes.push_back("\n#define MODE_SET_COLOR\n");                                      // BLUR_MODE_SET_COLOR
 
-  //   blur_raster.shader.initialize(blur_modes);
-  //   memset(&blur_raster.push_constant, 0, sizeof(BlurRasterPushConstant));
-  //   blur_raster.shader_version = blur_raster.shader.version_create();
+    blur_raster.shader.initialize(blur_modes);
+    memset(&blur_raster.push_constant, 0, sizeof(BlurRasterPushConstant));
+    blur_raster.shader_version = blur_raster.shader.version_create();
 
-  //   for (int i = 0; i < BLUR_MODE_MAX; i++) {
-  //     blur_raster.pipelines[i].setup(blur_raster.shader.version_get_shader(blur_raster.shader_version, i), RD::RENDER_PRIMITIVE_TRIANGLES, RD::PipelineRasterizationState(),
-  //                                    RD::PipelineMultisampleState(), RD::PipelineDepthStencilState(), RD::PipelineColorBlendState::create_disabled(), 0);
-  //   }
+    for (int i = 0; i < BLUR_MODE_MAX; i++) {
+      blur_raster.pipelines[i].setup(blur_raster.shader.version_get_shader(blur_raster.shader_version, i), RD::RENDER_PRIMITIVE_TRIANGLES, RD::PipelineRasterizationState(),
+                                     RD::PipelineMultisampleState(), RD::PipelineDepthStencilState(), RD::PipelineColorBlendState::create_disabled(), 0);
+    }
 
-  // } else {
-  //   // not used in clustered
-  //   for (int i = 0; i < BLUR_MODE_MAX; i++) {
-  //     blur_raster.pipelines[i].clear();
-  //   }
-  // }
+  } else {
+    // not used in clustered
+    for (int i = 0; i < BLUR_MODE_MAX; i++) {
+      blur_raster.pipelines[i].clear();
+    }
+  }
 
   {
     Vector<String> copy_modes;
@@ -505,39 +505,41 @@ void CopyEffects::make_mipmap(RID p_source_rd_texture, RID p_dest_texture, const
 }
 
 
-// void CopyEffects::make_mipmap_raster(RID p_source_rd_texture, RID p_dest_texture, const Size2i &p_size) {
-// 	ERR_FAIL_COND_MSG(!prefer_raster_effects, "Can't use the raster version of mipmap with the clustered renderer.");
 
-// 	RID dest_framebuffer = FramebufferCacheRD::get_singleton()->get_cache(p_dest_texture);
 
-// 	UniformSetCacheRD *uniform_set_cache = UniformSetCacheRD::get_singleton();
-// 	ERR_FAIL_NULL(uniform_set_cache);
-// 	MaterialStorage *material_storage = MaterialStorage::get_singleton();
-// 	ERR_FAIL_NULL(material_storage);
+void CopyEffects::make_mipmap_raster(RID p_source_rd_texture, RID p_dest_texture, const Size2i &p_size) {
+	ERR_FAIL_COND_MSG(!prefer_raster_effects, "Can't use the raster version of mipmap with the clustered renderer.");
 
-// 	memset(&blur_raster.push_constant, 0, sizeof(BlurRasterPushConstant));
+	RID dest_framebuffer = FramebufferCacheRD::get_singleton()->get_cache(p_dest_texture);
 
-// 	BlurRasterMode mode = BLUR_MIPMAP;
+	UniformSetCacheRD *uniform_set_cache = UniformSetCacheRD::get_singleton();
+	ERR_FAIL_NULL(uniform_set_cache);
+	MaterialStorage *material_storage = MaterialStorage::get_singleton();
+	ERR_FAIL_NULL(material_storage);
 
-// 	blur_raster.push_constant.pixel_size[0] = 1.0 / float(p_size.x);
-// 	blur_raster.push_constant.pixel_size[1] = 1.0 / float(p_size.y);
+	memset(&blur_raster.push_constant, 0, sizeof(BlurRasterPushConstant));
 
-// 	// setup our uniforms
-// 	RID default_sampler = material_storage->sampler_rd_get_default(RS::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, RS::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
+	BlurRasterMode mode = BLUR_MIPMAP;
 
-// 	RD::Uniform u_source_rd_texture(RD::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE, 0, Vector<RID>({ default_sampler, p_source_rd_texture }));
+	blur_raster.push_constant.pixel_size[0] = 1.0 / float(p_size.x);
+	blur_raster.push_constant.pixel_size[1] = 1.0 / float(p_size.y);
 
-// 	RID shader = blur_raster.shader.version_get_shader(blur_raster.shader_version, mode);
-// 	ERR_FAIL_COND(shader.is_null());
+	// setup our uniforms
+	RID default_sampler = material_storage->sampler_rd_get_default(RS::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, RS::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED);
 
-// 	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(dest_framebuffer, RD::INITIAL_ACTION_LOAD, RD::FINAL_ACTION_STORE, RD::INITIAL_ACTION_LOAD, RD::FINAL_ACTION_DISCARD);
-// 	RD::get_singleton()->draw_list_bind_render_pipeline(draw_list, blur_raster.pipelines[mode].get_render_pipeline(RD::INVALID_ID, RD::get_singleton()->framebuffer_get_format(dest_framebuffer)));
-// 	RD::get_singleton()->draw_list_bind_uniform_set(draw_list, uniform_set_cache->get_cache(shader, 0, u_source_rd_texture), 0);
-// 	RD::get_singleton()->draw_list_set_push_constant(draw_list, &blur_raster.push_constant, sizeof(BlurRasterPushConstant));
+	RD::Uniform u_source_rd_texture(RD::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE, 0, Vector<RID>({ default_sampler, p_source_rd_texture }));
 
-// 	RD::get_singleton()->draw_list_draw(draw_list, false, 1u, 3u);
-// 	RD::get_singleton()->draw_list_end();
-// }
+	RID shader = blur_raster.shader.version_get_shader(blur_raster.shader_version, mode);
+	ERR_FAIL_COND(shader.is_null());
+
+	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(dest_framebuffer, RD::INITIAL_ACTION_LOAD, RD::FINAL_ACTION_STORE, RD::INITIAL_ACTION_LOAD, RD::FINAL_ACTION_DISCARD);
+	RD::get_singleton()->draw_list_bind_render_pipeline(draw_list, blur_raster.pipelines[mode].get_render_pipeline(RD::INVALID_ID, RD::get_singleton()->framebuffer_get_format(dest_framebuffer)));
+	RD::get_singleton()->draw_list_bind_uniform_set(draw_list, uniform_set_cache->get_cache(shader, 0, u_source_rd_texture), 0);
+	RD::get_singleton()->draw_list_set_push_constant(draw_list, &blur_raster.push_constant, sizeof(BlurRasterPushConstant));
+
+	RD::get_singleton()->draw_list_draw(draw_list, false, 1u, 3u);
+	RD::get_singleton()->draw_list_end();
+}
 
 
 void CopyEffects::cubemap_downsample_raster(RID p_source_cubemap, RID p_dest_framebuffer, uint32_t p_face_id, const Size2i &p_size) {

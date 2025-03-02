@@ -144,6 +144,7 @@ lain::RendererCompositorRD::RendererCompositorRD() {
   material_storage = memnew(RendererRD::MaterialStorage);
   mesh_storage = memnew(RendererRD::MeshStorage);
   light_storage = memnew(RendererRD::LightStorage);
+	gi = memnew(RendererRD::GI);
   // particles_storage = memnew(RendererRD::ParticlesStorage);
   // fog = memnew(RendererRD::Fog);
   // canvas = memnew(RendererCanvasRenderRD());

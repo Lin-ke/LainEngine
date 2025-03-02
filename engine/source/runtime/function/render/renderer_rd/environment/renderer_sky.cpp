@@ -2,6 +2,7 @@
 #include "../renderer_compositor_rd.h"
 #include "../storage/material_storage.h"
 #include "function/render/rendering_system/rendering_system_default.h"
+#include "function/render/vulkan/rendering_device_driver_vulkan.h"
 using namespace lain;
 using namespace lain::RendererRD;
 #define RB_SCOPE_SKY SNAME("sky_buffers")
@@ -381,6 +382,7 @@ void lain::RendererRD::SkyRD::update_dirty_skys() {
         }
 
         sky->radiance = RD::get_singleton()->texture_create(tf, RD::TextureView());
+				RD::get_singleton()->set_resource_name(sky->radiance, "radiance");
 
         sky->reflection.update_reflection_data(sky->radiance_size, mipmaps, true, sky->radiance, 0, sky->mode == RS::SKY_MODE_REALTIME, roughness_layers, texture_format);
 
@@ -399,7 +401,7 @@ void lain::RendererRD::SkyRD::update_dirty_skys() {
         }
 
         sky->radiance = RD::get_singleton()->texture_create(tf, RD::TextureView());
-
+				RD::get_singleton()->set_resource_name(sky->radiance, "radiance");
         sky->reflection.update_reflection_data(sky->radiance_size, MIN(mipmaps, layers), false, sky->radiance, 0, sky->mode == RS::SKY_MODE_REALTIME, roughness_layers,
                                                texture_format);
       }
@@ -507,7 +509,7 @@ void SkyRD::ReflectionData::update_reflection_data(int p_size, int p_mipmaps, bo
 
     layers.push_back(layer);
   }
-
+	// vkCreateImageView
   radiance_base_cubemap = RD::get_singleton()->texture_create_shared_from_slice(RD::TextureView(), p_base_cube, p_base_layer, 0, 1, RD::TEXTURE_SLICE_CUBEMAP);
   RD::get_singleton()->set_resource_name(radiance_base_cubemap, "radiance base cubemap");
 
@@ -1435,7 +1437,6 @@ void SkyRD::ReflectionData::create_reflection_fast_filter(bool p_use_arrays) {
 	RendererRD::CopyEffects *copy_effects = RendererRD::CopyEffects::get_singleton();
 	ERR_FAIL_NULL_MSG(copy_effects, "Effects haven't been initialized");
 	bool prefer_raster_effects = copy_effects->get_prefer_raster_effects();
-
 	if (prefer_raster_effects) {
 		RD::get_singleton()->draw_command_begin_label("Downsample radiance map");
 		for (int k = 0; k < 6; k++) {
@@ -1468,7 +1469,7 @@ void SkyRD::ReflectionData::create_reflection_fast_filter(bool p_use_arrays) {
 	} else {
 		RD::get_singleton()->draw_command_begin_label("Downsample radiance map");
 		copy_effects->cubemap_downsample(radiance_base_cubemap, downsampled_layer.mipmaps[0].view, downsampled_layer.mipmaps[0].size);
-
+		// radiance_base_cube 是对 cube_array 第一个cubemap 的 slice
 		for (int i = 1; i < downsampled_layer.mipmaps.size(); i++) {
 			copy_effects->cubemap_downsample(downsampled_layer.mipmaps[i - 1].view, downsampled_layer.mipmaps[i].view, downsampled_layer.mipmaps[i].size);
 		}

@@ -114,7 +114,7 @@ class RenderingDeviceGraph {
   };
 
   enum ResourceUsage {
-    RESOURCE_USAGE_NONE,
+    RESOURCE_USAGE_NONE, // 0
     RESOURCE_USAGE_COPY_FROM,
     RESOURCE_USAGE_COPY_TO,
     RESOURCE_USAGE_RESOLVE_FROM,
@@ -122,15 +122,15 @@ class RenderingDeviceGraph {
     RESOURCE_USAGE_UNIFORM_BUFFER_READ,
     RESOURCE_USAGE_INDIRECT_BUFFER_READ,
     RESOURCE_USAGE_TEXTURE_BUFFER_READ,
-    RESOURCE_USAGE_TEXTURE_BUFFER_READ_WRITE,
+    RESOURCE_USAGE_TEXTURE_BUFFER_READ_WRITE, // 8
     RESOURCE_USAGE_STORAGE_BUFFER_READ,
     RESOURCE_USAGE_STORAGE_BUFFER_READ_WRITE,
     RESOURCE_USAGE_VERTEX_BUFFER_READ,
     RESOURCE_USAGE_INDEX_BUFFER_READ,
-    RESOURCE_USAGE_TEXTURE_SAMPLE,
+    RESOURCE_USAGE_TEXTURE_SAMPLE, // 13
     RESOURCE_USAGE_STORAGE_IMAGE_READ,
     RESOURCE_USAGE_STORAGE_IMAGE_READ_WRITE,
-    RESOURCE_USAGE_ATTACHMENT_COLOR_READ_WRITE,
+    RESOURCE_USAGE_ATTACHMENT_COLOR_READ_WRITE, // 16
     RESOURCE_USAGE_ATTACHMENT_DEPTH_STENCIL_READ_WRITE
   };
   // tracker保存对资源写入和读取的命令的引用
@@ -166,8 +166,8 @@ class RenderingDeviceGraph {
     int32_t slice_cmd_idx = -1;  // 最近使用的切片命令的索引
 
     ResourceTracker* parent = nullptr;
-    // 保存脏列表，包含与父纹理使用的内存布局不同的切片。
-    // 一个命令不允许使用重叠的相同纹理的切片（UB）
+    // 保存脏列表，包含与父纹理使用的内存布局不同*(usage不同)的切片。
+    // 一个命令不允许使用重叠的相同纹理的切片（UB） // 在儿子被使用，且new_usage 与 父亲的usage不同时添加
     ResourceTracker* dirty_shared_list = nullptr;  // 双向链表（to child）
     ResourceTracker* next_shared = nullptr;        // to parent
     Rect2i slice_or_dirty_rect;
@@ -766,6 +766,7 @@ void _boost_priority_for_render_commands(RecordedCommandSort *p_sorted_commands,
     uint32_t command_count = 0;
     // label
     uint32_t command_label_count = 0;
+    String command_label_string;
     LocalVector<char> command_label_chars;
 	LocalVector<Color> command_label_colors;
 	LocalVector<uint32_t> command_label_offsets; // 在chars中的offset

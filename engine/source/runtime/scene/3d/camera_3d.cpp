@@ -8,6 +8,7 @@
 #include "camera_3d_data.h"
 #include "core/input/input_map.h"
 #include "core/input/input.h"
+#include "scene/3d/voxel_gi.h"
 using namespace lain;
 
 void Camera3D::_update_audio_listener_state() {
@@ -703,11 +704,16 @@ void lain::Camera3DMove::_notification(int p_what) {
 	input_map->add_action("move_back");
 	input_map->add_action("toggle_mouse_capture");
 
+	input_map->add_action("bake gi");
+
+
 	input_map->action_add_event("move_left", InputEventKey::create_reference(Key::A));
 	input_map->action_add_event("move_right", InputEventKey::create_reference(Key::D));
 	input_map->action_add_event("move_forward", InputEventKey::create_reference(Key::W));
 	input_map->action_add_event("move_back", InputEventKey::create_reference(Key::S));
 	input_map->action_add_event("toggle_mouse_capture", InputEventKey::create_reference(Key::ESCAPE));
+
+	input_map->action_add_event("bake gi", InputEventKey::create_reference(Key::B));
 
 
 	set_process(true);
@@ -750,12 +756,29 @@ void lain::Camera3DMove::input(const Ref<InputEvent>& p_event) {
 		set_transform({bas, get_transform().origin});
 	}
 	if(Input::get_singleton()->is_action_pressed("toggle_mouse_capture")){
-		L_PRINT("change mode")
 		if(Input::get_singleton()->get_mouse_mode() == Input::MouseMode::MOUSE_MODE_CAPTURED){
 			Input::get_singleton()->set_mouse_mode(Input::MouseMode::MOUSE_MODE_VISIBLE);
 		} else{
 			Input::get_singleton()->set_mouse_mode(Input::MouseMode::MOUSE_MODE_CAPTURED);
-
 		}
+	}
+	if(Input::get_singleton()->is_action_pressed("bake gi")){
+		GObject* root = get_tree()->get_root();
+		VoxelGI* voxel_gi = (VoxelGI*)root->get_gobject_or_null(String("./default_voxel_gi")); // 应该能做到新建的时候
+		if(!voxel_gi){
+			return;
+		}
+		Ref<VoxelGIData> voxel_gi_data = voxel_gi->get_probe_data();
+		if(voxel_gi_data.is_valid()){
+			String path = voxel_gi_data->GetPath();
+			if (!path.is_resource_file()){
+				int srpos = path.find("::");
+				if (srpos != -1) {
+					String base = path.substr(0, srpos);
+					
+				}
+			}
+		}
+		voxel_gi->bake();
 	}
 }

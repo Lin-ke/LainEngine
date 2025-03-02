@@ -11,4 +11,5 @@
 #include "test_draw_triangle.h"
 #include "test_shader.h"
 #include "test_mesh.h"
+#include "test_voxel_gi.h"
 #endif // !TEST_HEADERS_H
