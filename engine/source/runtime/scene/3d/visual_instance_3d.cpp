@@ -174,22 +174,25 @@ void GeometryInstance3D::set_material_overlay(const Ref<Material> &p_material) {
 	RS::get_singleton()->instance_geometry_set_material_overlay(get_instance(), p_material.is_valid() ? p_material->GetRID() : RID());
 }
 
-void lain::GeometryInstance3D::set_instance_shader_parameter(const StringName& p_name, const Variant& p_value) {
-	if (p_value.get_type() == Variant::NIL) {
-		Variant def_value = RS::get_singleton()->instance_geometry_get_shader_parameter_default_value(get_instance(), p_name);
-		RS::get_singleton()->instance_geometry_set_shader_parameter(get_instance(), p_name, def_value);
-		instance_shader_parameters.erase(p_value);
-	} else {
-		instance_shader_parameters[p_name] = p_value;
-		if (p_value.get_type() == Variant::OBJECT) {
-			RID tex_id = p_value;
-			RS::get_singleton()->instance_geometry_set_shader_parameter(get_instance(), p_name, tex_id);
-		} else {
-			RS::get_singleton()->instance_geometry_set_shader_parameter(get_instance(), p_name, p_value);
-		}
-	}
+GeometryInstance3D::GIMode lain::GeometryInstance3D::get_gi_mode() const {
+  return gi_mode;
 }
 
+void lain::GeometryInstance3D::set_instance_shader_parameter(const StringName& p_name, const Variant& p_value) {
+  if (p_value.get_type() == Variant::NIL) {
+    Variant def_value = RS::get_singleton()->instance_geometry_get_shader_parameter_default_value(get_instance(), p_name);
+    RS::get_singleton()->instance_geometry_set_shader_parameter(get_instance(), p_name, def_value);
+    instance_shader_parameters.erase(p_value);
+  } else {
+    instance_shader_parameters[p_name] = p_value;
+    if (p_value.get_type() == Variant::OBJECT) {
+      RID tex_id = p_value;
+      RS::get_singleton()->instance_geometry_set_shader_parameter(get_instance(), p_name, tex_id);
+    } else {
+      RS::get_singleton()->instance_geometry_set_shader_parameter(get_instance(), p_name, p_value);
+    }
+  }
+}
 
 Variant GeometryInstance3D::get_instance_shader_parameter(const StringName &p_name) const {
 	return RS::get_singleton()->instance_geometry_get_shader_parameter(get_instance(), p_name);

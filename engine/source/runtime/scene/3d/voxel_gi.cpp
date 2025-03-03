@@ -1,5 +1,6 @@
 #include "voxel_gi.h"
 #include "voxelizer.h"
+#include "mesh_instance_3d.h"
 using namespace lain;
 
 VoxelGI::BakeBeginFunc VoxelGI::bake_begin_function = nullptr;
@@ -32,6 +33,81 @@ void lain::VoxelGI::bake(GObject* p_from_node, bool p_create_visual_debug) {
 
 	_find_meshes(p_from_node, mesh_list);
 }
+
+static bool is_node_voxel_bakeable(GObject3D *p_node) {
+	if (!p_node->is_visible_in_tree()) {
+		return false;
+	}
+
+	GeometryInstance3D *geometry = Object::cast_to<GeometryInstance3D>(p_node);
+	if (geometry != nullptr && geometry->get_gi_mode() != GeometryInstance3D::GI_MODE_STATIC) { // 静态GI
+		return false;
+	}
+	return true;
+}
+
+
+
+void VoxelGI::_find_meshes(GObject *p_at_node, List<PlotMesh> &plot_meshes) {
+	MeshInstance3D *mi = Object::cast_to<MeshInstance3D>(p_at_node);
+	if (mi && is_node_voxel_bakeable(mi)) {
+		Ref<Mesh> mesh = mi->get_mesh();
+		if (mesh.is_valid()) {
+			AABB aabb = mesh->get_aabb();
+
+			Transform3D xf = get_global_transform().affine_inverse() * mi->get_global_transform();
+
+			if (AABB(-size / 2, size).intersects(xf.xform(aabb))) {
+				PlotMesh pm;
+				pm.local_xform = xf;
+				pm.mesh = mesh;
+				for (int i = 0; i < mesh->get_surface_count(); i++) {
+					pm.instance_materials.push_back(mi->get_surface_override_material(i));
+				}
+				pm.override_material = mi->get_material_override();
+				plot_meshes.push_back(pm);
+			}
+		}
+	}
+  // multi mesh
+	// GObject3D *s = Object::cast_to<GObject3D>(p_at_node);
+	// if (s) {
+	// 	if (is_node_voxel_bakeable(s)) {
+	// 		Array meshes;
+	// 		MultiMeshInstance3D *multi_mesh = Object::cast_to<MultiMeshInstance3D>(p_at_node);
+	// 		if (multi_mesh) {
+	// 			meshes = multi_mesh->get_meshes();
+	// 		} else {
+	// 			meshes = p_at_node->call("get_meshes");
+	// 		}
+
+	// 		for (int i = 0; i < meshes.size(); i += 2) {
+	// 			Transform3D mxf = meshes[i];
+	// 			Ref<Mesh> mesh = meshes[i + 1];
+	// 			if (!mesh.is_valid()) {
+	// 				continue;
+	// 			}
+
+	// 			AABB aabb = mesh->get_aabb();
+
+	// 			Transform3D xf = get_global_transform().affine_inverse() * (s->get_global_transform() * mxf);
+
+	// 			if (AABB(-size / 2, size).intersects(xf.xform(aabb))) {
+	// 				PlotMesh pm;
+	// 				pm.local_xform = xf;
+	// 				pm.mesh = mesh;
+	// 				plot_meshes.push_back(pm);
+	// 			}
+	// 		}
+	// 	}
+	// }
+
+	for (int i = 0; i < p_at_node->get_child_count(); i++) {
+		GObject *child = p_at_node->get_child(i);
+		_find_meshes(child, plot_meshes);
+	}
+}
+
 
 void VoxelGI::set_probe_data(const Ref<VoxelGIData> &p_data) {
 	if (p_data.is_valid()) {

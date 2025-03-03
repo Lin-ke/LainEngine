@@ -2,6 +2,7 @@
 #define __VOXEL_GI_H__
 
 #include "scene/3d/visual_instance_3d.h"
+#include "mesh_instance_3d.h"
 
 namespace lain {
 
@@ -82,7 +83,7 @@ class VoxelGI : public VisualInstance3D {
 		Ref<Mesh> mesh;
 		Transform3D local_xform;
 	};
-  
+
 
   typedef void (*BakeBeginFunc)(int);
   typedef void (*BakeStepFunc)(int, const String&);
@@ -98,6 +99,7 @@ class VoxelGI : public VisualInstance3D {
   Vector3 size = Vector3(20, 20, 20);
 	Ref<CameraAttributes> camera_attributes;
 	float _get_camera_exposure_normalization();
+  void _find_meshes(GObject *p_at_node, List<PlotMesh> &plot_meshes);
   
  public:
   void set_probe_data(const Ref<VoxelGIData>& p_data);

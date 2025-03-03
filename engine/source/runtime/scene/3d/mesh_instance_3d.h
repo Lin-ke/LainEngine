@@ -21,9 +21,14 @@ class MeshInstance3D : public GeometryInstance3D {
 	Vector<Ref<Material>> surface_override_materials;
 	LocalVector<float> blend_shape_tracks;
 	HashMap<StringName, int> blend_shape_properties;
+  public:
 	void set_blend_shape_value(int p_blend_shape, float p_value);
 	float get_blend_shape_value(int p_blend_shape) const;
+	void set_surface_override_material(int p_surface, const Ref<Material> &p_material);
+	int get_surface_override_material_count() const;
+  Ref<Material> get_surface_override_material(int p_surface) const ;
 
+  
 };
 }
 #endif // MESH_INSTANCE_3D_H

@@ -52,11 +52,32 @@ float MeshInstance3D::get_blend_shape_value(int p_blend_shape) const {
 	ERR_FAIL_INDEX_V(p_blend_shape, (int)blend_shape_tracks.size(), 0);
 	return blend_shape_tracks[p_blend_shape];
 }
+int MeshInstance3D::get_surface_override_material_count() const {
+	return surface_override_materials.size();
+}
+
+Ref<Material> lain::MeshInstance3D::get_surface_override_material(int p_surface) const {
+	ERR_FAIL_INDEX_V(p_surface, surface_override_materials.size(), Ref<Material>());
+
+	return surface_override_materials[p_surface];
+}
+
+void MeshInstance3D::set_surface_override_material(int p_surface, const Ref<Material> &p_material) {
+	ERR_FAIL_INDEX(p_surface, surface_override_materials.size());
+
+	surface_override_materials.write[p_surface] = p_material;
+
+	if (surface_override_materials[p_surface].is_valid()) {
+		RS::get_singleton()->instance_set_surface_override_material(get_instance(), p_surface, surface_override_materials[p_surface]->GetRID());
+	} else {
+		RS::get_singleton()->instance_set_surface_override_material(get_instance(), p_surface, RID());
+	}
+}
 void MeshInstance3D::set_blend_shape_value(int p_blend_shape, float p_value) {
-	ERR_FAIL_COND(mesh.is_null());
-	ERR_FAIL_INDEX(p_blend_shape, (int)blend_shape_tracks.size());
-	blend_shape_tracks[p_blend_shape] = p_value;
-	RS::get_singleton()->instance_set_blend_shape_weight(get_instance(), p_blend_shape, p_value);
+  ERR_FAIL_COND(mesh.is_null());
+  ERR_FAIL_INDEX(p_blend_shape, (int)blend_shape_tracks.size());
+  blend_shape_tracks[p_blend_shape] = p_value;
+  RS::get_singleton()->instance_set_blend_shape_weight(get_instance(), p_blend_shape, p_value);
 }
 
 void MeshInstance3D::_bind_methods(){
