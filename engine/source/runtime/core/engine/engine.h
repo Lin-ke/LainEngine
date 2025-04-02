@@ -19,6 +19,7 @@
 #include <string>
 #include <unordered_set>
 #include "base.h"
+#include "core/string/ustring.h"
 namespace lain {
 
 class Engine {
@@ -51,6 +52,8 @@ class Engine {
 // 与时间和同步相关的参数
 	double physics_jitter_fix = 0.5;
   int ips = 60;
+  // shader cache
+  String shader_cache_path ;
 
  public:
   ENGINE_GET(get_gpu_index, m_gpu_idx);
@@ -70,7 +73,9 @@ class Engine {
   ENGINE_GET(get_physics_ticks_per_second, ips);
   ENGINE_GET(get_physics_frames, _physics_frames);
   ENGINE_GET(get_process_frames, _process_frames);
-  
+  ENGINE_SET(set_shader_cache_path,String, shader_cache_path);
+  ENGINE_GET(get_shader_cache_path, shader_cache_path);
+
   Engine::Engine() { singleton = this; }
   L_INLINE static Engine* Engine::GetSingleton() { return singleton; }
   L_INLINE void increment_frames_drawn() { m_frames_drawn++; }

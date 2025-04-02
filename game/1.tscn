@@ -102,9 +102,10 @@
             "r": 1.0,
             "g": 1.0,
             "b": 1.0,
-            "a": 1.0
+            "a": 0.3
           }
-        }
+        },
+        "transparency": 1
       }
     },
     {
@@ -124,6 +125,34 @@
       },
       "ext_res": {},
       "variants": {}
+    },
+    {
+      "type": "StandardMaterial3D",
+      "id": "StandardMaterial3D_asdfg",
+      "sub_res": {},
+      "ext_res": {},
+      "variants": {
+        "metallic": 1.0,
+        "roughness": 0.0
+      }
+    },
+    {
+     "type" : "BoxMesh",
+      "id" : "BoxMesh_zxcvb",
+      "sub_res": {
+        "material":"StandardMaterial3D_asdfg"
+      },
+      "ext_res": {},
+      "variants": {
+        "size": {
+          "$typeName": "Vector3",
+          "$context": {
+            "x": 5,
+            "y": 1,
+            "z": 5
+          }
+        }
+      }
     }
   ],
   "gobjects": [
@@ -636,8 +665,59 @@
       "sub_res": {
       },
       "ext_res": {
-        "data" : "3_1netx"
       }
+    },
+    {
+      "variants": {
+        "type": {
+          "$typeName": "StringName",
+          "$context": "MeshInstance3D"
+        },
+        "parent": {
+          "$typeName": "GObjectPath",
+          "$context": "."
+        },
+        "name": {
+          "$typeName": "StringName",
+          "$context": "mirror"
+        },
+        "transform": {
+          "$typeName": "Transform3D",
+          "$context": {
+            "basis": {
+              "rows": [
+                {
+                  "x": 1,
+                  "y": 0,
+                  "z": 0
+                },
+                {
+                  "x": 0,
+                  "y": 1,
+                  "z": 0
+                },
+                {
+                  "x": 0,
+                  "y": 0,
+                  "z": 1
+                }
+              ]
+            },
+            "origin": {
+              "x": 11,
+              "y": -1.5,
+              "z": 12.5
+            }
+          }
+        }
+      },
+      "instanced_components": [],
+      "sub_res": {
+        "mesh": "BoxMesh_zxcvb"
+      },
+      "ext_res": {
+      }
+
     }
   ]
 }

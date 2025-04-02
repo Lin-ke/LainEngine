@@ -754,3 +754,21 @@ void ShaderRD::enable_group(int p_group) {
     _compile_version(version, p_group);
   }
 }
+
+
+
+void ShaderRD::set_shader_cache_dir(const String &p_dir) {
+	shader_cache_dir = p_dir;
+}
+
+void ShaderRD::set_shader_cache_save_compressed(bool p_enable) {
+	shader_cache_save_compressed = p_enable;
+}
+
+void ShaderRD::set_shader_cache_save_compressed_zstd(bool p_enable) {
+	shader_cache_save_compressed_zstd = p_enable;
+}
+
+void ShaderRD::set_shader_cache_save_debug(bool p_enable) {
+	shader_cache_save_debug = p_enable;
+}

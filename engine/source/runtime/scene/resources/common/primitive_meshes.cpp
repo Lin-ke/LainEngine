@@ -112,8 +112,7 @@ Array PrimitiveMesh::surface_get_arrays(int p_surface) const {
 	if (pending_request) {
 		_update();
 	}
-	return Array(); // @todo
-	// return RS::get_singleton()->mesh_surface_get_arrays(mesh, 0);
+	return RS::get_singleton()->mesh_surface_get_arrays(mesh, 0);
 }
 void lain::PrimitiveMesh::set_material(const Ref<Material>& p_material) {
   material = p_material;
@@ -630,3 +629,326 @@ void SphereMesh::create_mesh_array(Array &p_arr, float radius, float height, int
 	}
 	p_arr[RS::ARRAY_INDEX] = indices;
 }
+
+/// Box Mesh
+/// Box Mesh
+/// Box Mesh
+void BoxMesh::_update_lightmap_size() {
+	if (get_add_uv2()) {
+		// size must have changed, update lightmap size hint
+		Size2i _lightmap_size_hint;
+		float texel_size = get_lightmap_texel_size();
+		float padding = get_uv2_padding();
+
+		float width = (size.x + size.z) / texel_size;
+		float length = (size.y + size.y + MAX(size.x, size.z)) / texel_size;
+
+		_lightmap_size_hint.x = MAX(1.0, width) + 2.0 * padding;
+		_lightmap_size_hint.y = MAX(1.0, length) + 3.0 * padding;
+
+		set_lightmap_size_hint(_lightmap_size_hint);
+	}
+}
+
+void BoxMesh::_create_mesh_array(Array &p_arr) const {
+	// Note about padding, with our box each face of the box faces a different direction so we want a seam
+	// around every face. We thus add our padding to the right and bottom of each face.
+	// With 3 faces along the width and 2 along the height of the texture we need to adjust our scale
+	// accordingly.
+	bool _add_uv2 = get_add_uv2();
+	float texel_size = get_lightmap_texel_size();
+	float _uv2_padding = get_uv2_padding() * texel_size;
+
+	BoxMesh::create_mesh_array(p_arr, size, subdivide_w, subdivide_h, subdivide_d, _add_uv2, _uv2_padding);
+}
+
+void BoxMesh::create_mesh_array(Array &p_arr, Vector3 size, int subdivide_w, int subdivide_h, int subdivide_d, bool p_add_uv2, const float p_uv2_padding) {
+	int i, j, prevrow, thisrow, point;
+	float x, y, z;
+	float onethird = 1.0 / 3.0;
+	float twothirds = 2.0 / 3.0;
+
+	// Only used if we calculate UV2
+	// TODO this could be improved by changing the order depending on which side is the longest (basically the below works best if size.y is the longest)
+	float total_h = (size.x + size.z + (2.0 * p_uv2_padding));
+	float padding_h = p_uv2_padding / total_h;
+	float width_h = size.x / total_h;
+	float depth_h = size.z / total_h;
+	float total_v = (size.y + size.y + MAX(size.x, size.z) + (3.0 * p_uv2_padding));
+	float padding_v = p_uv2_padding / total_v;
+	float width_v = size.x / total_v;
+	float height_v = size.y / total_v;
+	float depth_v = size.z / total_v;
+
+	Vector3 start_pos = size * -0.5;
+
+	// set our bounding box
+
+	Vector<Vector3> points;
+	Vector<Vector3> normals;
+	Vector<float> tangents;
+	Vector<Vector2> uvs;
+	Vector<Vector2> uv2s;
+	Vector<int> indices;
+	point = 0;
+
+#define ADD_TANGENT(m_x, m_y, m_z, m_d) \
+	tangents.push_back(m_x);            \
+	tangents.push_back(m_y);            \
+	tangents.push_back(m_z);            \
+	tangents.push_back(m_d);
+
+	// front + back
+	y = start_pos.y;
+	thisrow = point;
+	prevrow = 0;
+	for (j = 0; j <= subdivide_h + 1; j++) {
+		float v = j;
+		float v2 = v / (subdivide_w + 1.0);
+		v /= (2.0 * (subdivide_h + 1.0));
+
+		x = start_pos.x;
+		for (i = 0; i <= subdivide_w + 1; i++) {
+			float u = i;
+			float u2 = u / (subdivide_w + 1.0);
+			u /= (3.0 * (subdivide_w + 1.0));
+
+			// front
+			points.push_back(Vector3(x, -y, -start_pos.z)); // double negative on the Z!
+			normals.push_back(Vector3(0.0, 0.0, 1.0));
+			ADD_TANGENT(1.0, 0.0, 0.0, 1.0);
+			uvs.push_back(Vector2(u, v));
+			if (p_add_uv2) {
+				uv2s.push_back(Vector2(u2 * width_h, v2 * height_v));
+			}
+			point++;
+
+			// back
+			points.push_back(Vector3(-x, -y, start_pos.z));
+			normals.push_back(Vector3(0.0, 0.0, -1.0));
+			ADD_TANGENT(-1.0, 0.0, 0.0, 1.0);
+			uvs.push_back(Vector2(twothirds + u, v));
+			if (p_add_uv2) {
+				uv2s.push_back(Vector2(u2 * width_h, height_v + padding_v + (v2 * height_v)));
+			}
+			point++;
+
+			if (i > 0 && j > 0) {
+				int i2 = i * 2;
+
+				// front
+				indices.push_back(prevrow + i2 - 2);
+				indices.push_back(prevrow + i2);
+				indices.push_back(thisrow + i2 - 2);
+				indices.push_back(prevrow + i2);
+				indices.push_back(thisrow + i2);
+				indices.push_back(thisrow + i2 - 2);
+
+				// back
+				indices.push_back(prevrow + i2 - 1);
+				indices.push_back(prevrow + i2 + 1);
+				indices.push_back(thisrow + i2 - 1);
+				indices.push_back(prevrow + i2 + 1);
+				indices.push_back(thisrow + i2 + 1);
+				indices.push_back(thisrow + i2 - 1);
+			}
+
+			x += size.x / (subdivide_w + 1.0);
+		}
+
+		y += size.y / (subdivide_h + 1.0);
+		prevrow = thisrow;
+		thisrow = point;
+	}
+
+	// left + right
+	y = start_pos.y;
+	thisrow = point;
+	prevrow = 0;
+	for (j = 0; j <= (subdivide_h + 1); j++) {
+		float v = j;
+		float v2 = v / (subdivide_h + 1.0);
+		v /= (2.0 * (subdivide_h + 1.0));
+
+		z = start_pos.z;
+		for (i = 0; i <= (subdivide_d + 1); i++) {
+			float u = i;
+			float u2 = u / (subdivide_d + 1.0);
+			u /= (3.0 * (subdivide_d + 1.0));
+
+			// right
+			points.push_back(Vector3(-start_pos.x, -y, -z));
+			normals.push_back(Vector3(1.0, 0.0, 0.0));
+			ADD_TANGENT(0.0, 0.0, -1.0, 1.0);
+			uvs.push_back(Vector2(onethird + u, v));
+			if (p_add_uv2) {
+				uv2s.push_back(Vector2(width_h + padding_h + (u2 * depth_h), v2 * height_v));
+			}
+			point++;
+
+			// left
+			points.push_back(Vector3(start_pos.x, -y, z));
+			normals.push_back(Vector3(-1.0, 0.0, 0.0));
+			ADD_TANGENT(0.0, 0.0, 1.0, 1.0);
+			uvs.push_back(Vector2(u, 0.5 + v));
+			if (p_add_uv2) {
+				uv2s.push_back(Vector2(width_h + padding_h + (u2 * depth_h), height_v + padding_v + (v2 * height_v)));
+			}
+			point++;
+
+			if (i > 0 && j > 0) {
+				int i2 = i * 2;
+
+				// right
+				indices.push_back(prevrow + i2 - 2);
+				indices.push_back(prevrow + i2);
+				indices.push_back(thisrow + i2 - 2);
+				indices.push_back(prevrow + i2);
+				indices.push_back(thisrow + i2);
+				indices.push_back(thisrow + i2 - 2);
+
+				// left
+				indices.push_back(prevrow + i2 - 1);
+				indices.push_back(prevrow + i2 + 1);
+				indices.push_back(thisrow + i2 - 1);
+				indices.push_back(prevrow + i2 + 1);
+				indices.push_back(thisrow + i2 + 1);
+				indices.push_back(thisrow + i2 - 1);
+			}
+
+			z += size.z / (subdivide_d + 1.0);
+		}
+
+		y += size.y / (subdivide_h + 1.0);
+		prevrow = thisrow;
+		thisrow = point;
+	}
+
+	// top + bottom
+	z = start_pos.z;
+	thisrow = point;
+	prevrow = 0;
+	for (j = 0; j <= (subdivide_d + 1); j++) {
+		float v = j;
+		float v2 = v / (subdivide_d + 1.0);
+		v /= (2.0 * (subdivide_d + 1.0));
+
+		x = start_pos.x;
+		for (i = 0; i <= (subdivide_w + 1); i++) {
+			float u = i;
+			float u2 = u / (subdivide_w + 1.0);
+			u /= (3.0 * (subdivide_w + 1.0));
+
+			// top
+			points.push_back(Vector3(-x, -start_pos.y, -z));
+			normals.push_back(Vector3(0.0, 1.0, 0.0));
+			ADD_TANGENT(-1.0, 0.0, 0.0, 1.0);
+			uvs.push_back(Vector2(onethird + u, 0.5 + v));
+			if (p_add_uv2) {
+				uv2s.push_back(Vector2(u2 * width_h, ((height_v + padding_v) * 2.0) + (v2 * depth_v)));
+			}
+			point++;
+
+			// bottom
+			points.push_back(Vector3(x, start_pos.y, -z));
+			normals.push_back(Vector3(0.0, -1.0, 0.0));
+			ADD_TANGENT(1.0, 0.0, 0.0, 1.0);
+			uvs.push_back(Vector2(twothirds + u, 0.5 + v));
+			if (p_add_uv2) {
+				uv2s.push_back(Vector2(width_h + padding_h + (u2 * depth_h), ((height_v + padding_v) * 2.0) + (v2 * width_v)));
+			}
+			point++;
+
+			if (i > 0 && j > 0) {
+				int i2 = i * 2;
+
+				// top
+				indices.push_back(prevrow + i2 - 2);
+				indices.push_back(prevrow + i2);
+				indices.push_back(thisrow + i2 - 2);
+				indices.push_back(prevrow + i2);
+				indices.push_back(thisrow + i2);
+				indices.push_back(thisrow + i2 - 2);
+
+				// bottom
+				indices.push_back(prevrow + i2 - 1);
+				indices.push_back(prevrow + i2 + 1);
+				indices.push_back(thisrow + i2 - 1);
+				indices.push_back(prevrow + i2 + 1);
+				indices.push_back(thisrow + i2 + 1);
+				indices.push_back(thisrow + i2 - 1);
+			}
+
+			x += size.x / (subdivide_w + 1.0);
+		}
+
+		z += size.z / (subdivide_d + 1.0);
+		prevrow = thisrow;
+		thisrow = point;
+	}
+
+	p_arr[RS::ARRAY_VERTEX] = points;
+	p_arr[RS::ARRAY_NORMAL] = normals;
+	p_arr[RS::ARRAY_TANGENT] = tangents;
+	p_arr[RS::ARRAY_TEX_UV] = uvs;
+	if (p_add_uv2) {
+		p_arr[RS::ARRAY_TEX_UV2] = uv2s;
+	}
+	p_arr[RS::ARRAY_INDEX] = indices;
+}
+
+void BoxMesh::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_size", "size"), &BoxMesh::set_size);
+	ClassDB::bind_method(D_METHOD("get_size"), &BoxMesh::get_size);
+
+	ClassDB::bind_method(D_METHOD("set_subdivide_width", "subdivide"), &BoxMesh::set_subdivide_width);
+	ClassDB::bind_method(D_METHOD("get_subdivide_width"), &BoxMesh::get_subdivide_width);
+	ClassDB::bind_method(D_METHOD("set_subdivide_height", "divisions"), &BoxMesh::set_subdivide_height);
+	ClassDB::bind_method(D_METHOD("get_subdivide_height"), &BoxMesh::get_subdivide_height);
+	ClassDB::bind_method(D_METHOD("set_subdivide_depth", "divisions"), &BoxMesh::set_subdivide_depth);
+	ClassDB::bind_method(D_METHOD("get_subdivide_depth"), &BoxMesh::get_subdivide_depth);
+
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "size", PROPERTY_HINT_NONE, "suffix:m"), "set_size", "get_size");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "subdivide_width", PROPERTY_HINT_RANGE, "0,100,1,or_greater"), "set_subdivide_width", "get_subdivide_width");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "subdivide_height", PROPERTY_HINT_RANGE, "0,100,1,or_greater"), "set_subdivide_height", "get_subdivide_height");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "subdivide_depth", PROPERTY_HINT_RANGE, "0,100,1,or_greater"), "set_subdivide_depth", "get_subdivide_depth");
+}
+
+void BoxMesh::set_size(const Vector3 &p_size) {
+	size = p_size;
+	_update_lightmap_size();
+	request_update();
+}
+
+Vector3 BoxMesh::get_size() const {
+	return size;
+}
+
+void BoxMesh::set_subdivide_width(const int p_divisions) {
+	subdivide_w = p_divisions > 0 ? p_divisions : 0;
+	request_update();
+}
+
+int BoxMesh::get_subdivide_width() const {
+	return subdivide_w;
+}
+
+void BoxMesh::set_subdivide_height(const int p_divisions) {
+	subdivide_h = p_divisions > 0 ? p_divisions : 0;
+	request_update();
+}
+
+int BoxMesh::get_subdivide_height() const {
+	return subdivide_h;
+}
+
+void BoxMesh::set_subdivide_depth(const int p_divisions) {
+	subdivide_d = p_divisions > 0 ? p_divisions : 0;
+	request_update();
+}
+
+int BoxMesh::get_subdivide_depth() const {
+	return subdivide_d;
+}
+
+BoxMesh::BoxMesh() {}

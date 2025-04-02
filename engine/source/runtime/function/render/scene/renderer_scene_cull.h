@@ -592,6 +592,7 @@ class RendererSceneCull : public RenderingMethod {
     bool can_cast_shadows = false;
     uint32_t projector_count = 0;
     uint32_t softshadow_count = 0;
+		HashSet<Instance *> voxel_gi_instances; // 照射该instance的voxel gi
     HashSet<Instance*> lights;  // 照射该instance的灯光
     bool material_is_animated = false;
   };
@@ -683,6 +684,28 @@ class RendererSceneCull : public RenderingMethod {
     RID probe_instance;
     bool invalid;
     uint32_t base_version;
+    Instance *owner = nullptr;
+		HashSet<Instance *> lights;
+		HashSet<Instance *> geometries;
+		HashSet<Instance *> dynamic_geometries;
+    struct LightCache { // 保存light的信息，判断是否需要重新绘制？
+			RS::LightType type;
+			Transform3D transform;
+			Color color;
+			float energy;
+			float intensity;
+			float bake_energy;
+			float radius;
+			float attenuation;
+			float spot_angle;
+			float spot_attenuation;
+			bool has_shadow;
+			RS::LightDirectionalSkyMode sky_mode;
+		};
+
+		Vector<LightCache> light_cache;
+		Vector<RID> light_instances;
+
     SelfList<InstanceVoxelGIData> update_element;
     InstanceVoxelGIData() : update_element(this) {
       invalid = true;

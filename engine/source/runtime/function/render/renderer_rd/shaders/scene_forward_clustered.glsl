@@ -1280,7 +1280,6 @@ void fragment_shader(in SceneData scene_data) {
 			}
 		}
 	}
-
 	//pack albedo until needed again, saves 2 VGPRs in the meantime
 
 #endif //not render depth
@@ -1745,7 +1744,7 @@ void fragment_shader(in SceneData scene_data) {
 
 #endif //GI !defined(MODE_RENDER_DEPTH) && !defined(MODE_UNSHADED)
 
-#if !defined(MODE_RENDER_DEPTH)
+#if !defined(MODE_RENDER_DEPTH) // 普通的渲染会pack
 	//this saves some VGPRs
 	uint orms = packUnorm4x8(vec4(ao, roughness, metallic, specular));
 #endif

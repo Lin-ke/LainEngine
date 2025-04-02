@@ -132,6 +132,42 @@ public:
 	SphereMesh();
 };
 
+/**
+	A box
+*/
+class BoxMesh : public PrimitiveMesh {
+	LCLASS(BoxMesh, PrimitiveMesh);
+
+private:
+	Vector3 size = Vector3(1, 1, 1);
+	int subdivide_w = 0;
+	int subdivide_h = 0;
+	int subdivide_d = 0;
+
+protected:
+	static void _bind_methods();
+	virtual void _create_mesh_array(Array &p_arr) const override;
+
+	virtual void _update_lightmap_size() override;
+
+public:
+	static void create_mesh_array(Array &p_arr, Vector3 size, int subdivide_w = 0, int subdivide_h = 0, int subdivide_d = 0, bool p_add_uv2 = false, const float p_uv2_padding = 1.0);
+
+	void set_size(const Vector3 &p_size);
+	Vector3 get_size() const;
+
+	void set_subdivide_width(const int p_divisions);
+	int get_subdivide_width() const;
+
+	void set_subdivide_height(const int p_divisions);
+	int get_subdivide_height() const;
+
+	void set_subdivide_depth(const int p_divisions);
+	int get_subdivide_depth() const;
+
+	BoxMesh();
+};
+
 
 }
 #endif

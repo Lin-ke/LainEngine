@@ -1,6 +1,7 @@
 #include "voxel_gi.h"
 #include "voxelizer.h"
 #include "mesh_instance_3d.h"
+#include "function/render/rendering_system/rendering_system_globals.h"
 using namespace lain;
 
 VoxelGI::BakeBeginFunc VoxelGI::bake_begin_function = nullptr;
@@ -32,6 +33,36 @@ void lain::VoxelGI::bake(GObject* p_from_node, bool p_create_visual_debug) {
 	List<PlotMesh> mesh_list;
 
 	_find_meshes(p_from_node, mesh_list);
+
+	
+	int pmc = 0;
+
+	for (PlotMesh &E : mesh_list) {
+		if (bake_step_function) {
+			bake_step_function(pmc, RTR("Plotting Meshes") + " " + itos(pmc) + "/" + itos(mesh_list.size()));
+		}
+
+		pmc++;
+
+		baker.plot_mesh(E.local_xform, E.mesh, E.instance_materials, E.override_material);
+	}
+	baker.end_bake();
+
+	Ref<VoxelGIData> probe_data_new = get_probe_data();
+
+		if (probe_data_new.is_null()) {
+			probe_data_new.instantiate();
+		}
+
+		Vector<uint8_t> df = baker.get_sdf_3d_image();
+
+		RS::get_singleton()->voxel_gi_set_baked_exposure_normalization(probe_data_new->GetRID(), exposure_normalization);
+
+		probe_data_new->allocate(baker.get_to_cell_space_xform(), AABB(-size / 2, size), baker.get_voxel_gi_octree_size(), baker.get_voxel_gi_octree_cells(), baker.get_voxel_gi_data_cells(), df, baker.get_voxel_gi_level_cell_count());
+
+		set_probe_data(probe_data_new);
+		notify_property_list_changed(); //bake property may have changed
+
 }
 
 static bool is_node_voxel_bakeable(GObject3D *p_node) {
@@ -293,7 +324,7 @@ bool VoxelGIData::is_using_two_bounces() const {
 }
 
 RID VoxelGIData::GetRID() const {
-	return probe;
+	return probe; // probe是voxel gi 类型的
 }
 
 void VoxelGIData::_bind_methods() {
@@ -343,6 +374,7 @@ void VoxelGIData::_bind_methods() {
 
 VoxelGIData::VoxelGIData() {
 	probe = RS::get_singleton()->voxel_gi_create();
+	RSG::utilities->get_base_type(probe);
 }
 
 VoxelGIData::~VoxelGIData() {

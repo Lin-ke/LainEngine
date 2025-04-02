@@ -81,6 +81,8 @@ namespace lain{
 	GDREGISTER_CLASS(CapsuleMesh);
 	GDREGISTER_CLASS(ArrayMesh);
 	GDREGISTER_CLASS(SphereMesh);
+	GDREGISTER_CLASS(BoxMesh);
+
 
 	
 	GDREGISTER_VIRTUAL_CLASS(Material);

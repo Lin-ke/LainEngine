@@ -170,7 +170,7 @@ layout(rgba8, set = 0, binding = 11) uniform restrict image3D color_texture;
 float raymarch(float distance, float distance_adv, vec3 from, vec3 direction) {
 	vec3 cell_size = 1.0 / vec3(params.limits);
 	float occlusion = 1.0;
-	while (distance > 0.5) { //use this to avoid precision errors
+	while (distance > 0.5) { //use this to avoid precision errors // from 是已经raymarch的距离， 这样每次采样mipmap与from有关
 		float advance = texture(sampler3D(texture_sdf, texture_sampler), from * cell_size).r * 255.0 - 1.0;
 		if (advance < 0.0) {
 			occlusion = 0.0;
@@ -322,7 +322,7 @@ bool compute_light_at_pos(uint index, vec3 pos, vec3 normal, inout vec3 light, i
 			return false;
 		}
 
-		attenuation *= occlusion; //1.0 - smoothstep(0.1*distance_adv,distance_adv,dist);
+		attenuation *= occlusion; //1.0 - smoothstep(0.1*distance_adv,distance_adv,dist); // 这里会根据sdf算一个AO
 	}
 
 	light = lights.data[index].color * attenuation * lights.data[index].energy;
@@ -340,7 +340,7 @@ void main() {
 	}
 	cell_index += params.cell_offset;
 
-	uvec3 posu = uvec3(cell_data.data[cell_index].position & 0x7FF, (cell_data.data[cell_index].position >> 11) & 0x3FF, cell_data.data[cell_index].position >> 21);
+	uvec3 posu = uvec3(cell_data.data[cell_index].position & 0x7FF, (cell_data.data[cell_index].position >> 11) & 0x3FF, cell_data.data[cell_index].position >> 21); // 11 (z) 10 (Y) 11(X)
 	vec4 albedo = unpackUnorm4x8(cell_data.data[cell_index].albedo);
 
 #endif

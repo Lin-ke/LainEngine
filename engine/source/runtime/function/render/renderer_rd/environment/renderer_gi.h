@@ -6,6 +6,14 @@
 #include "../shaders/voxel_gi.glsl.gen.h"
 #include "core/templates/paged_array.h"
 #include "function/render/scene/renderer_geometry_instance_api.h"
+#include "function/render/renderer_rd/environment/renderer_sky.h"
+
+#define RB_SCOPE_GI SNAME("rbgi")
+#define RB_SCOPE_SDFGI SNAME("sdfgi")
+
+#define RB_TEX_AMBIENT SNAME("ambient")
+#define RB_TEX_REFLECTION SNAME("reflection")
+
 namespace lain::RendererRD{
   class GI : public RendererGI {
  private:
@@ -46,7 +54,29 @@ namespace lain::RendererRD{
 		Dependency dependency;
 	};
 
+	struct SceneData {
+		float inv_projection[2][16];
+		float cam_transform[16];
+		float eye_offset[2][4];
 
+		int32_t screen_size[2];
+		float pad1;
+		float pad2;
+	};
+
+	struct PushConstant { // voxel gi in rendering push constant 
+		uint32_t max_voxel_gi_instances;
+		uint32_t high_quality_vct;
+		uint32_t orthogonal;
+		uint32_t view_index;
+
+		float proj_info[4];
+
+		float z_near;
+		float z_far;
+		float pad2;
+		float pad3;
+	};
 
 	struct VoxelGIData {
 		float xform[16]; // 64 - 64
@@ -62,6 +92,9 @@ namespace lain::RendererRD{
 		float pad[3]; // 12 - 108
 		float exposure_normalization; // 4 - 112
 	};
+
+
+
 	RID sdfgi_ubo;
 
 	class SDFGI : public RenderBufferCustomDataRD{
@@ -117,16 +150,14 @@ namespace lain::RendererRD{
 		ProbeCascadeData cascades[SDFGI::MAX_CASCADES];
 	};
 
+	
+
 	virtual void sdfgi_reset() override;
 	uint32_t sdfgi_current_version = 0;
 
 	/// GI class 
-  ~GI(){
-	p_singleton = nullptr;
-	}
-  GI(){
-	p_singleton = this;
-	}
+  ~GI();
+	GI();
   static GI* get_singleton() { return p_singleton;}
 
 	mutable RID_Owner<VoxelGI, true> voxel_gi_owner;
@@ -134,9 +165,10 @@ namespace lain::RendererRD{
 	
 	
 	int sdfgi_get_lightprobe_octahedron_size() const { return 1; }
-  void init();
+  void init(SkyRD * sky);
 	
-	
+	void process_gi(Ref<RenderSceneBuffersRD> p_render_buffers, const RID *p_normal_roughness_slices, RID p_voxel_gi_buffer, RID p_environment, uint32_t p_view_count, const Projection *p_projections, const Vector3 *p_eye_offsets, const Transform3D &p_cam_transform, const PagedArray<RID> &p_voxel_gi_instances);
+
 	/// Voxel GI
   bool owns_voxel_gi(RID p_rid) {return voxel_gi_owner.owns(p_rid);}
 	RID default_voxel_gi_buffer;
@@ -346,7 +378,50 @@ namespace lain::RendererRD{
 	VoxelGiShaderRD voxel_gi_shader;
 	RID voxel_gi_lighting_shader_version;
 	RID voxel_gi_lighting_shader_version_shaders[VOXEL_GI_SHADER_VERSION_MAX];
+	
 	RID voxel_gi_lighting_shader_version_pipelines[VOXEL_GI_SHADER_VERSION_MAX];
+/* RenderBuffers*/
+// voxel GI render buffer
+	// Struct for use in render buffer
+	class RenderBuffersGI : public RenderBufferCustomDataRD {
+		LCLASS(RenderBuffersGI, RenderBufferCustomDataRD)
+
+	private:
+		RID voxel_gi_buffer;
+
+	public:
+		RID voxel_gi_textures[MAX_VOXEL_GI_INSTANCES];
+
+		RID full_buffer;
+		RID full_dispatch;
+		RID full_mask;
+
+		/* GI buffers */
+		bool using_half_size_gi = false;
+
+		RID uniform_set[RendererSceneRender::MAX_RENDER_VIEWS];
+		RID scene_data_ubo;
+
+		RID get_voxel_gi_buffer();
+
+		virtual void configure(RenderSceneBuffersRD *p_render_buffers) override{};
+		virtual void free_data() override;
+	};
+
+	enum ShaderSpecializations {
+		SHADER_SPECIALIZATION_HALF_RES = 1 << 0,
+		SHADER_SPECIALIZATION_USE_FULL_PROJECTION_MATRIX = 1 << 1,
+		SHADER_SPECIALIZATION_USE_VRS = 1 << 2,
+		SHADER_SPECIALIZATION_VARIATIONS = 8,
+	};
+	enum Mode {
+		MODE_VOXEL_GI,
+		MODE_SDFGI,
+		MODE_COMBINED,
+		MODE_MAX
+	};
+	bool half_resolution = false;
+	RID pipelines[SHADER_SPECIALIZATION_VARIATIONS][MODE_MAX];
 
 };
 }

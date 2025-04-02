@@ -333,7 +333,7 @@ void lain::RendererSceneRenderRD::init() {
   {  // shader init
      /* SKY SHADER */
     sky.init();
-    gi.init();  // make defalut texture
+    gi.init(&sky);  // make defalut texture
     {           //decals
       RendererRD::TextureStorage::get_singleton()->set_max_decals(max_cluster_elements);
     }

@@ -24,13 +24,15 @@ protected:
 	PagedArray<RenderGeometryInstance *> cull_argument; //need this to exist
 
 	RendererRD::SkyRD sky;
-	RendererRD::GI gi; // GI 这种不知道为什么要写到上面的层而不是属于这个的下一层
+	RendererRD::GI gi; // 这里的GI将是singleton
 	RendererRD::CopyEffects* copy_effects; 
 	RendererRD::Resolve* resolve_effects;
 	RendererRD::ToneMapper *tone_mapper = nullptr;
  public:
   static RendererSceneRenderRD* get_singleton() { return singleton; }
   virtual RendererRD::ForwardIDStorage *create_forward_id_storage() { return memnew(RendererRD::ForwardIDStorage); };
+	RendererRD::GI* get_gi() {return &gi;}
+	RendererRD::SkyRD *get_sky() { return &sky; }
 
   RendererSceneRenderRD();
   ~RendererSceneRenderRD();
@@ -125,7 +127,6 @@ void _process_compositor_effects(RS::CompositorEffectCallbackType p_callback_typ
 
 
 	public:
-	RendererRD::SkyRD *get_sky() { return &sky; }
 	int get_roughness_layers() const{
 		return sky.roughness_layers;
 	}

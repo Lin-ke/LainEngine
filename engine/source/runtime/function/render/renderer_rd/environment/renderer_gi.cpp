@@ -4,12 +4,94 @@
 #include "../renderer_scene_render_rd.h"
 namespace lain::RendererRD {
 GI* GI::p_singleton = nullptr;
-void GI::init() {
+void GI::init(SkyRD * p_sky) {
+	RendererRD::TextureStorage *texture_storage = RendererRD::TextureStorage::get_singleton();
+	RendererRD::MaterialStorage *material_storage = RendererRD::MaterialStorage::get_singleton();
+
+
+	/* GI */	
+	{
+		//kinda complicated to compute the amount of slots, we try to use as many as we can
+
+		voxel_gi_lights = memnew_arr(VoxelGILight, voxel_gi_max_lights);
+		voxel_gi_lights_uniform = RD::get_singleton()->uniform_buffer_create(voxel_gi_max_lights * sizeof(VoxelGILight));
+		voxel_gi_quality = RS::VoxelGIQuality(CLAMP(int(GLOBAL_GET("rendering/global_illumination/voxel_gi/quality")), 0, 1));
+
+		String defines = "\n#define MAX_LIGHTS " + itos(voxel_gi_max_lights) + "\n";
+
+		Vector<String> versions;
+		versions.push_back("\n#define MODE_COMPUTE_LIGHT\n");
+		versions.push_back("\n#define MODE_SECOND_BOUNCE\n");
+		versions.push_back("\n#define MODE_UPDATE_MIPMAPS\n");
+		versions.push_back("\n#define MODE_WRITE_TEXTURE\n");
+		versions.push_back("\n#define MODE_DYNAMIC\n#define MODE_DYNAMIC_LIGHTING\n");
+		versions.push_back("\n#define MODE_DYNAMIC\n#define MODE_DYNAMIC_SHRINK\n#define MODE_DYNAMIC_SHRINK_WRITE\n");
+		versions.push_back("\n#define MODE_DYNAMIC\n#define MODE_DYNAMIC_SHRINK\n#define MODE_DYNAMIC_SHRINK_PLOT\n");
+		versions.push_back("\n#define MODE_DYNAMIC\n#define MODE_DYNAMIC_SHRINK\n#define MODE_DYNAMIC_SHRINK_PLOT\n#define MODE_DYNAMIC_SHRINK_WRITE\n");
+
+		voxel_gi_shader.initialize(versions, defines);
+		voxel_gi_lighting_shader_version = voxel_gi_shader.version_create();
+		for (int i = 0; i < VOXEL_GI_SHADER_VERSION_MAX; i++) {
+			voxel_gi_lighting_shader_version_shaders[i] = voxel_gi_shader.version_get_shader(voxel_gi_lighting_shader_version, i);
+			voxel_gi_lighting_shader_version_pipelines[i] = RD::get_singleton()->compute_pipeline_create(voxel_gi_lighting_shader_version_shaders[i]);
+		}
+	}
+
+	// {
+	// 	String defines;
+	// 	Vector<String> versions;
+	// 	versions.push_back("\n#define MODE_DEBUG_COLOR\n");
+	// 	versions.push_back("\n#define MODE_DEBUG_LIGHT\n");
+	// 	versions.push_back("\n#define MODE_DEBUG_EMISSION\n");
+	// 	versions.push_back("\n#define MODE_DEBUG_LIGHT\n#define MODE_DEBUG_LIGHT_FULL\n");
+
+	// 	voxel_gi_debug_shader.initialize(versions, defines);
+	// 	voxel_gi_debug_shader_version = voxel_gi_debug_shader.version_create();
+	// 	for (int i = 0; i < VOXEL_GI_DEBUG_MAX; i++) {
+	// 		voxel_gi_debug_shader_version_shaders[i] = voxel_gi_debug_shader.version_get_shader(voxel_gi_debug_shader_version, i);
+
+	// 		RD::PipelineRasterizationState rs;
+	// 		rs.cull_mode = RD::POLYGON_CULL_FRONT;
+	// 		RD::PipelineDepthStencilState ds;
+	// 		ds.enable_depth_test = true;
+	// 		ds.enable_depth_write = true;
+	// 		ds.depth_compare_operator = RD::COMPARE_OP_GREATER_OR_EQUAL;
+
+	// 		voxel_gi_debug_shader_version_pipelines[i].setup(voxel_gi_debug_shader_version_shaders[i], RD::RENDER_PRIMITIVE_TRIANGLES, rs, RD::PipelineMultisampleState(), ds, RD::PipelineColorBlendState::create_disabled(), 0);
+	// 	}
+	// }
+
+	/* SDGFI */
+
+		// {
+		// 	Vector<String> preprocess_modes;
+		// 	preprocess_modes.push_back("\n#define MODE_SCROLL\n");
+		// 	preprocess_modes.push_back("\n#define MODE_SCROLL_OCCLUSION\n");
+		// 	preprocess_modes.push_back("\n#define MODE_INITIALIZE_JUMP_FLOOD\n");
+		// 	preprocess_modes.push_back("\n#define MODE_INITIALIZE_JUMP_FLOOD_HALF\n");
+		// 	preprocess_modes.push_back("\n#define MODE_JUMPFLOOD\n");
+		// 	preprocess_modes.push_back("\n#define MODE_JUMPFLOOD_OPTIMIZED\n");
+		// 	preprocess_modes.push_back("\n#define MODE_UPSCALE_JUMP_FLOOD\n");
+		// 	preprocess_modes.push_back("\n#define MODE_OCCLUSION\n");
+		// 	preprocess_modes.push_back("\n#define MODE_STORE\n");
+		// 	String defines = "\n#define OCCLUSION_SIZE " + itos(SDFGI::CASCADE_SIZE / SDFGI::PROBE_DIVISOR) + "\n";
+		// 	sdfgi_shader.preprocess.initialize(preprocess_modes, defines);
+		// 	sdfgi_shader.preprocess_shader = sdfgi_shader.preprocess.version_create();
+		// 	for (int i = 0; i < SDFGIShader::PRE_PROCESS_MAX; i++) {
+		// 		sdfgi_shader.preprocess_pipeline[i] = RD::get_singleton()->compute_pipeline_create(sdfgi_shader.preprocess.version_get_shader(sdfgi_shader.preprocess_shader, i));
+		// 	}
+		// }
+
+
+
   default_voxel_gi_buffer = RD::get_singleton()->uniform_buffer_create(sizeof(VoxelGIData) * MAX_VOXEL_GI_INSTANCES);
   sdfgi_ubo = RD::get_singleton()->uniform_buffer_create(sizeof(SDFGIData));
 }
 RID GI::voxel_gi_allocate() {
-  return voxel_gi_owner.allocate_rid();
+
+  auto rid =  voxel_gi_owner.allocate_rid();
+	bool ok = voxel_gi_owner.owns(rid);
+	return rid;
 }
 
 void GI::voxel_gi_free(RID p_voxel_gi) {
@@ -326,6 +408,17 @@ void GI::debug_voxel_gi(RID p_voxel_gi, RD::DrawListID p_draw_list, RID p_frameb
 
 void GI::sdfgi_reset() {
   sdfgi_current_version++;
+}
+
+GI::GI() {
+	p_singleton = this;
+
+	// sdfgi_ray_count = RS::EnvironmentSDFGIRayCount(CLAMP(int32_t(GLOBAL_GET("rendering/global_illumination/sdfgi/probe_ray_count")), 0, int32_t(RS::ENV_SDFGI_RAY_COUNT_MAX - 1)));
+	// sdfgi_frames_to_converge = RS::EnvironmentSDFGIFramesToConverge(CLAMP(int32_t(GLOBAL_GET("rendering/global_illumination/sdfgi/frames_to_converge")), 0, int32_t(RS::ENV_SDFGI_CONVERGE_MAX - 1)));
+	// sdfgi_frames_to_update_light = RS::EnvironmentSDFGIFramesToUpdateLight(CLAMP(int32_t(GLOBAL_GET("rendering/global_illumination/sdfgi/frames_to_update_lights")), 0, int32_t(RS::ENV_SDFGI_UPDATE_LIGHT_MAX - 1)));
+}
+GI::~GI(){
+	p_singleton = nullptr;
 }
 
 void GI::VoxelGIInstance::free_resources() {
@@ -1087,6 +1180,304 @@ void GI::voxel_gi_initialize(RID p_voxel_gi) {
 	voxel_gi_owner.initialize_rid(p_voxel_gi, VoxelGI());
 }
 
+void GI::process_gi(Ref<RenderSceneBuffersRD> p_render_buffers, const RID *p_normal_roughness_slices, RID p_voxel_gi_buffer, RID p_environment, uint32_t p_view_count, const Projection *p_projections, const Vector3 *p_eye_offsets, const Transform3D &p_cam_transform, const PagedArray<RID> &p_voxel_gi_instances) {
+	RendererRD::TextureStorage *texture_storage = RendererRD::TextureStorage::get_singleton();
+	RendererRD::MaterialStorage *material_storage = RendererRD::MaterialStorage::get_singleton();
+
+	ERR_FAIL_COND_MSG(p_view_count > 2, "Maximum of 2 views supported for Processing GI.");
+
+	RD::get_singleton()->draw_command_begin_label("GI Render");
+
+	ERR_FAIL_COND(p_render_buffers.is_null());
+
+	Ref<RenderBuffersGI> rbgi = p_render_buffers->get_custom_data(RB_SCOPE_GI);
+	ERR_FAIL_COND(rbgi.is_null());
+
+	Size2i internal_size = p_render_buffers->get_internal_size();
+
+	if (rbgi->using_half_size_gi != half_resolution) {
+		p_render_buffers->clear_context(RB_SCOPE_GI);
+	}
+
+	if (!p_render_buffers->has_texture(RB_SCOPE_GI, RB_TEX_AMBIENT)) {
+		Size2i size = internal_size;
+		uint32_t usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_STORAGE_BIT;
+
+		if (half_resolution) {
+			size.x >>= 1;
+			size.y >>= 1;
+		}
+
+		p_render_buffers->create_texture(RB_SCOPE_GI, RB_TEX_AMBIENT, RD::DATA_FORMAT_R16G16B16A16_SFLOAT, usage_bits, RD::TEXTURE_SAMPLES_1, size);
+		p_render_buffers->create_texture(RB_SCOPE_GI, RB_TEX_REFLECTION, RD::DATA_FORMAT_R16G16B16A16_SFLOAT, usage_bits, RD::TEXTURE_SAMPLES_1, size);
+
+		rbgi->using_half_size_gi = half_resolution;
+	}
+
+	// Setup our scene data
+	{
+		SceneData scene_data;
+
+		if (rbgi->scene_data_ubo.is_null()) {
+			rbgi->scene_data_ubo = RD::get_singleton()->uniform_buffer_create(sizeof(SceneData));
+		}
+
+		Projection correction;
+		correction.set_depth_correction(false);
+
+		for (uint32_t v = 0; v < p_view_count; v++) {
+			Projection temp = correction * p_projections[v];
+
+			RendererRD::MaterialStorage::store_camera(temp.inverse(), scene_data.inv_projection[v]);
+			scene_data.eye_offset[v][0] = p_eye_offsets[v].x;
+			scene_data.eye_offset[v][1] = p_eye_offsets[v].y;
+			scene_data.eye_offset[v][2] = p_eye_offsets[v].z;
+			scene_data.eye_offset[v][3] = 0.0;
+		}
+
+		// Note that we will be ignoring the origin of this transform.
+		RendererRD::MaterialStorage::store_transform(p_cam_transform, scene_data.cam_transform);
+
+		scene_data.screen_size[0] = internal_size.x;
+		scene_data.screen_size[1] = internal_size.y;
+
+		RD::get_singleton()->buffer_update(rbgi->scene_data_ubo, 0, sizeof(SceneData), &scene_data);
+	}
+
+	// Now compute the contents of our buffers.
+	RD::ComputeListID compute_list = RD::get_singleton()->compute_list_begin();
+
+	// Render each eye separately.
+	// We need to look into whether we can make our compute shader use Multiview but not sure that works or makes a difference..
+
+	// setup our push constant
+
+	PushConstant push_constant;
+
+	push_constant.max_voxel_gi_instances = MIN((uint64_t)MAX_VOXEL_GI_INSTANCES, p_voxel_gi_instances.size());
+	push_constant.high_quality_vct = voxel_gi_quality == RS::VOXEL_GI_QUALITY_HIGH;
+
+	// these should be the same for all views
+	push_constant.orthogonal = p_projections[0].is_orthogonal();
+	push_constant.z_near = p_projections[0].get_z_near();
+	push_constant.z_far = p_projections[0].get_z_far();
+
+	// these are only used if we have 1 view, else we use the projections in our scene data
+	push_constant.proj_info[0] = -2.0f / (internal_size.x * p_projections[0].columns[0][0]);
+	push_constant.proj_info[1] = -2.0f / (internal_size.y * p_projections[0].columns[1][1]);
+	push_constant.proj_info[2] = (1.0f - p_projections[0].columns[0][2]) / p_projections[0].columns[0][0];
+	push_constant.proj_info[3] = (1.0f + p_projections[0].columns[1][2]) / p_projections[0].columns[1][1];
+
+	bool use_sdfgi = p_render_buffers->has_custom_data(RB_SCOPE_SDFGI);
+	bool use_voxel_gi_instances = push_constant.max_voxel_gi_instances > 0;
+
+	Ref<SDFGI> sdfgi;
+	if (use_sdfgi) {
+		sdfgi = p_render_buffers->get_custom_data(RB_SCOPE_SDFGI);
+	}
+
+	uint32_t pipeline_specialization = 0;
+	if (rbgi->using_half_size_gi) {
+		pipeline_specialization |= SHADER_SPECIALIZATION_HALF_RES;
+	}
+	if (p_view_count > 1) {
+		pipeline_specialization |= SHADER_SPECIALIZATION_USE_FULL_PROJECTION_MATRIX;
+	}
+	bool has_vrs_texture = p_render_buffers->has_texture(RB_SCOPE_VRS, RB_TEXTURE);
+	if (has_vrs_texture) {
+		pipeline_specialization |= SHADER_SPECIALIZATION_USE_VRS;
+	}
+
+	Mode mode = (use_sdfgi && use_voxel_gi_instances) ? MODE_COMBINED : (use_sdfgi ? MODE_SDFGI : MODE_VOXEL_GI);
+
+	// for (uint32_t v = 0; v < p_view_count; v++) {
+	// 	push_constant.view_index = v;
+
+	// 	// setup our uniform set
+	// 	if (rbgi->uniform_set[v].is_null() || !RD::get_singleton()->uniform_set_is_valid(rbgi->uniform_set[v])) {
+	// 		Vector<RD::Uniform> uniforms;
+	// 		{
+	// 			RD::Uniform u;
+	// 			u.binding = 1;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+	// 			for (uint32_t j = 0; j < SDFGI::MAX_CASCADES; j++) {
+	// 				if (use_sdfgi && j < sdfgi->cascades.size()) {
+	// 					u.append_id(sdfgi->cascades[j].sdf_tex);
+	// 				} else {
+	// 					u.append_id(texture_storage->texture_rd_get_default(RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_3D_WHITE));
+	// 				}
+	// 			}
+	// 			uniforms.push_back(u);
+	// 		}
+	// 		{ // 0x000002817f4a8ca8 {alloc={chunks=0x000002810d821ed0 {0x000002810d65b9e0 {...}} free_list_chunks=0x000002810afa4a70 {...} ...} }
+	// 			RD::Uniform u;
+	// 			u.binding = 2;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+	// 			for (uint32_t j = 0; j < SDFGI::MAX_CASCADES; j++) {
+	// 				if (use_sdfgi && j < sdfgi->cascades.size()) {
+	// 					u.append_id(sdfgi->cascades[j].light_tex);
+	// 				} else {
+	// 					u.append_id(texture_storage->texture_rd_get_default(RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_3D_WHITE));
+	// 				}
+	// 			}
+	// 			uniforms.push_back(u);
+	// 		}
+	// 		{
+	// 			RD::Uniform u;
+	// 			u.binding = 3;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+	// 			for (uint32_t j = 0; j < SDFGI::MAX_CASCADES; j++) {
+	// 				if (use_sdfgi && j < sdfgi->cascades.size()) {
+	// 					u.append_id(sdfgi->cascades[j].light_aniso_0_tex);
+	// 				} else {
+	// 					u.append_id(texture_storage->texture_rd_get_default(RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_3D_WHITE));
+	// 				}
+	// 			}
+	// 			uniforms.push_back(u);
+	// 		}
+	// 		{
+	// 			RD::Uniform u;
+	// 			u.binding = 4;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+	// 			for (uint32_t j = 0; j < SDFGI::MAX_CASCADES; j++) {
+	// 				if (use_sdfgi && j < sdfgi->cascades.size()) {
+	// 					u.append_id(sdfgi->cascades[j].light_aniso_1_tex);
+	// 				} else {
+	// 					u.append_id(texture_storage->texture_rd_get_default(RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_3D_WHITE));
+	// 				}
+	// 			}
+	// 			uniforms.push_back(u);
+	// 		}
+	// 		{
+	// 			RD::Uniform u;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+	// 			u.binding = 5;
+	// 			if (use_sdfgi) {
+	// 				u.append_id(sdfgi->occlusion_texture);
+	// 			} else {
+	// 				u.append_id(texture_storage->texture_rd_get_default(RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_3D_WHITE));
+	// 			}
+	// 			uniforms.push_back(u);
+	// 		}
+	// 		{
+	// 			RD::Uniform u;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_SAMPLER;
+	// 			u.binding = 6;
+	// 			u.append_id(material_storage->sampler_rd_get_default(RS::CANVAS_ITEM_TEXTURE_FILTER_LINEAR, RS::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
+	// 			uniforms.push_back(u);
+	// 		}
+	// 		{
+	// 			RD::Uniform u;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_SAMPLER;
+	// 			u.binding = 7;
+	// 			u.append_id(material_storage->sampler_rd_get_default(RS::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS, RS::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED));
+	// 			uniforms.push_back(u);
+	// 		}
+	// 		{
+	// 			RD::Uniform u;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_IMAGE;
+	// 			u.binding = 9;
+	// 			u.append_id(p_render_buffers->get_texture_slice(RB_SCOPE_GI, RB_TEX_AMBIENT, v, 0));
+	// 			uniforms.push_back(u);
+	// 		}
+
+	// 		{
+	// 			RD::Uniform u;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_IMAGE;
+	// 			u.binding = 10;
+	// 			u.append_id(p_render_buffers->get_texture_slice(RB_SCOPE_GI, RB_TEX_REFLECTION, v, 0));
+	// 			uniforms.push_back(u);
+	// 		}
+
+	// 		{
+	// 			RD::Uniform u;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+	// 			u.binding = 11;
+	// 			if (use_sdfgi) {
+	// 				u.append_id(sdfgi->lightprobe_texture);
+	// 			} else {
+	// 				u.append_id(texture_storage->texture_rd_get_default(RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE));
+	// 			}
+	// 			uniforms.push_back(u);
+	// 		}
+	// 		{
+	// 			RD::Uniform u;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+	// 			u.binding = 12;
+	// 			u.append_id(p_render_buffers->get_depth_texture(v));
+	// 			uniforms.push_back(u);
+	// 		}
+	// 		{
+	// 			RD::Uniform u;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+	// 			u.binding = 13;
+	// 			u.append_id(p_normal_roughness_slices[v]);
+	// 			uniforms.push_back(u);
+	// 		}
+	// 		{
+	// 			RD::Uniform u;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+	// 			u.binding = 14;
+	// 			RID buffer = p_voxel_gi_buffer.is_valid() ? p_voxel_gi_buffer : texture_storage->texture_rd_get_default(RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_BLACK);
+	// 			u.append_id(buffer);
+	// 			uniforms.push_back(u);
+	// 		}
+	// 		{
+	// 			RD::Uniform u;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_UNIFORM_BUFFER;
+	// 			u.binding = 15;
+	// 			u.append_id(sdfgi_ubo);
+	// 			uniforms.push_back(u);
+	// 		}
+	// 		{
+	// 			RD::Uniform u;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_UNIFORM_BUFFER;
+	// 			u.binding = 16;
+	// 			u.append_id(rbgi->get_voxel_gi_buffer());
+	// 			uniforms.push_back(u);
+	// 		}
+	// 		{
+	// 			RD::Uniform u;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+	// 			u.binding = 17;
+	// 			for (int i = 0; i < MAX_VOXEL_GI_INSTANCES; i++) {
+	// 				u.append_id(rbgi->voxel_gi_textures[i]);
+	// 			}
+	// 			uniforms.push_back(u);
+	// 		}
+	// 		{
+	// 			RD::Uniform u;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_UNIFORM_BUFFER;
+	// 			u.binding = 18;
+	// 			u.append_id(rbgi->scene_data_ubo);
+	// 			uniforms.push_back(u);
+	// 		}
+	// 		if (RendererSceneRenderRD::get_singleton()->is_vrs_supported()) {
+	// 			RD::Uniform u;
+	// 			u.uniform_type = RD::UNIFORM_TYPE_IMAGE;
+	// 			u.binding = 19;
+	// 			RID buffer = has_vrs_texture ? p_render_buffers->get_texture_slice(RB_SCOPE_VRS, RB_TEXTURE, v, 0) : texture_storage->texture_rd_get_default(RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_VRS);
+	// 			u.append_id(buffer);
+	// 			uniforms.push_back(u);
+	// 		}
+
+	// 		rbgi->uniform_set[v] = RD::get_singleton()->uniform_set_create(uniforms, shader.version_get_shader(shader_version, 0), 0);
+	// 	}
+
+	// 	RD::get_singleton()->compute_list_bind_compute_pipeline(compute_list, pipelines[pipeline_specialization][mode]);
+	// 	RD::get_singleton()->compute_list_bind_uniform_set(compute_list, rbgi->uniform_set[v], 0);
+	// 	RD::get_singleton()->compute_list_set_push_constant(compute_list, &push_constant, sizeof(PushConstant));
+
+	// 	if (rbgi->using_half_size_gi) {
+	// 		RD::get_singleton()->compute_list_dispatch_threads(compute_list, internal_size.x >> 1, internal_size.y >> 1, 1);
+	// 	} else {
+	// 		RD::get_singleton()->compute_list_dispatch_threads(compute_list, internal_size.x, internal_size.y, 1);
+	// 	}
+	// }
+
+	RD::get_singleton()->compute_list_end();
+	RD::get_singleton()->draw_command_end_label();
+}
 
 void GI::VoxelGIInstance::debug(RD::DrawListID p_draw_list, RID p_framebuffer, const Projection &p_camera_with_transform, bool p_lighting, bool p_emission, float p_alpha) {
 	// RendererRD::MaterialStorage *material_storage = RendererRD::MaterialStorage::get_singleton();
@@ -1164,6 +1555,32 @@ void GI::VoxelGIInstance::debug(RD::DrawListID p_draw_list, RID p_framebuffer, c
 	// RD::get_singleton()->draw_list_bind_uniform_set(p_draw_list, gi->voxel_gi_debug_uniform_set, 0);
 	// RD::get_singleton()->draw_list_set_push_constant(p_draw_list, &push_constant, sizeof(VoxelGIDebugPushConstant));
 	// RD::get_singleton()->draw_list_draw(p_draw_list, false, cell_count, 36);
+}
+
+RID GI::RenderBuffersGI::get_voxel_gi_buffer() {
+	if (voxel_gi_buffer.is_null()) {
+		voxel_gi_buffer = RD::get_singleton()->uniform_buffer_create(sizeof(GI::VoxelGIData) * GI::MAX_VOXEL_GI_INSTANCES);
+	}
+	return voxel_gi_buffer;
+}
+
+void GI::RenderBuffersGI::free_data() {
+	for (uint32_t v = 0; v < RendererSceneRender::MAX_RENDER_VIEWS; v++) {
+		if (RD::get_singleton()->uniform_set_is_valid(uniform_set[v])) {
+			RD::get_singleton()->free(uniform_set[v]);
+		}
+		uniform_set[v] = RID();
+	}
+
+	if (scene_data_ubo.is_valid()) {
+		RD::get_singleton()->free(scene_data_ubo);
+		scene_data_ubo = RID();
+	}
+
+	if (voxel_gi_buffer.is_valid()) {
+		RD::get_singleton()->free(voxel_gi_buffer);
+		voxel_gi_buffer = RID();
+	}
 }
 
 }  // namespace lain::RendererRD

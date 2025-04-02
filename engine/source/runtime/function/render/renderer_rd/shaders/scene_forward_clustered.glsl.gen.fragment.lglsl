@@ -2316,7 +2316,7 @@ void fragment_shader(in SceneData scene_data) {
 #endif
 	}
 #endif 
-#if !defined(MODE_RENDER_DEPTH)
+#if !defined(MODE_RENDER_DEPTH) 
 	
 	uint orms = packUnorm4x8(vec4(ao, roughness, metallic, specular));
 #endif

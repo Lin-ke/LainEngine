@@ -763,8 +763,7 @@ void lain::Camera3DMove::input(const Ref<InputEvent>& p_event) {
 		}
 	}
 	if(Input::get_singleton()->is_action_pressed("bake gi")){
-		GObject* root = get_tree()->get_root();
-		VoxelGI* voxel_gi = (VoxelGI*)root->get_gobject_or_null(String("./default_voxel_gi")); // 应该能做到新建的时候
+		VoxelGI* voxel_gi = (VoxelGI*)this->get_gobject_or_null(String("../default_voxel_gi")); // 应该能做到新建的时候
 		if(!voxel_gi){
 			return;
 		}
@@ -780,5 +779,6 @@ void lain::Camera3DMove::input(const Ref<InputEvent>& p_event) {
 			}
 		}
 		voxel_gi->bake();
+
 	}
 }

@@ -38,7 +38,7 @@ public:
 #ifdef DEBUG_ENABLED
 		++awaiters;
 #endif
-		while (!count) { // Handle spurious wake-ups.
+		while (!count) { // 虚假唤醒！
 			condition.wait(lock);
 		}
 		--count;

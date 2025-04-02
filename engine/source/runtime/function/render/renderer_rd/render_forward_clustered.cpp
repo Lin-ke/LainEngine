@@ -2918,9 +2918,9 @@ void RenderForwardClustered::_pre_opaque_render(RenderDataRD* p_render_data, boo
     _render_shadow_process();
   }
 
-  // if (render_gi) {
-  // 	gi.process_gi(rb, p_normal_roughness_slices, p_voxel_gi_buffer, p_render_data->environment, p_render_data->scene_data->view_count, p_render_data->scene_data->view_projection, p_render_data->scene_data->view_eye_offset, p_render_data->scene_data->cam_transform, *p_render_data->voxel_gi_instances);
-  // }
+  if (render_gi) {
+  	gi.process_gi(rb, p_normal_roughness_slices, p_voxel_gi_buffer, p_render_data->environment, p_render_data->scene_data->view_count, p_render_data->scene_data->view_projection, p_render_data->scene_data->view_eye_offset, p_render_data->scene_data->cam_transform, *p_render_data->voxel_gi_instances);
+  }
 
   if (render_shadows) {
     _render_shadow_end();

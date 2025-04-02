@@ -3,7 +3,8 @@
 #include "storage/material_storage.h"
 #include "storage/mesh_storage.h"
 #include "render_forward_clustered.h"
-
+#include "core/io/dir_access.h"
+#include "core/engine/engine.h"
 using namespace lain;
 RendererCompositorRD* RendererCompositorRD::singleton = nullptr;
 uint64_t RendererCompositorRD::frame = 1;
@@ -137,6 +138,42 @@ void lain::RendererCompositorRD::blit_render_targets_to_screen(WindowSystem::Win
 }
 lain::RendererCompositorRD::RendererCompositorRD() {
   singleton = this;
+	{
+		String shader_cache_dir = Engine::GetSingleton()->get_shader_cache_path();
+		if (shader_cache_dir.is_empty()) {
+			shader_cache_dir = "user://";
+		}
+		Ref<DirAccess> da = DirAccess::open(shader_cache_dir);
+		if (da.is_null()) {
+			ERR_PRINT("Can't create shader cache folder, no shader caching will happen: " + shader_cache_dir);
+		} else {
+			Error err = da->change_dir("shader_cache");
+			if (err != OK) {
+				err = da->make_dir("shader_cache");
+			}
+			if (err != OK) {
+				ERR_PRINT("Can't create shader cache folder, no shader caching will happen: " + shader_cache_dir);
+			} else {
+				shader_cache_dir = shader_cache_dir.path_join("shader_cache");
+
+				bool shader_cache_enabled = GLOBAL_GET("rendering/shader_compiler/shader_cache/enabled");
+				if (!Engine::GetSingleton()->is_editor_hint() && !shader_cache_enabled) {
+					shader_cache_dir = String(); //disable only if not editor
+				}
+
+				if (!shader_cache_dir.is_empty()) {
+					bool compress = GLOBAL_GET("rendering/shader_compiler/shader_cache/compress");
+					bool use_zstd = GLOBAL_GET("rendering/shader_compiler/shader_cache/use_zstd_compression");
+					bool strip_debug = GLOBAL_GET("rendering/shader_compiler/shader_cache/strip_debug");
+
+					ShaderRD::set_shader_cache_dir(shader_cache_dir);
+					ShaderRD::set_shader_cache_save_compressed(compress);
+					ShaderRD::set_shader_cache_save_compressed_zstd(use_zstd);
+					ShaderRD::set_shader_cache_save_debug(!strip_debug);
+				}
+			}
+		}
+	}
 	uniform_set_cache = memnew(UniformSetCacheRD);
 	framebuffer_cache = memnew(FramebufferCacheRD);
   utilities = memnew(RendererRD::Utilities);
@@ -144,7 +181,6 @@ lain::RendererCompositorRD::RendererCompositorRD() {
   material_storage = memnew(RendererRD::MaterialStorage);
   mesh_storage = memnew(RendererRD::MeshStorage);
   light_storage = memnew(RendererRD::LightStorage);
-	gi = memnew(RendererRD::GI);
   // particles_storage = memnew(RendererRD::ParticlesStorage);
   // fog = memnew(RendererRD::Fog);
   // canvas = memnew(RendererCanvasRenderRD());

@@ -28,9 +28,8 @@ class RendererCompositorRD : public RendererCompositor {
   // light
   RendererRD::LightStorage* light_storage = nullptr;
   RendererRD::Utilities* utilities = nullptr;
-  RendererRD::GI* gi = nullptr;
   RendererRD::Fog* fog= nullptr;
-
+// GI 在 renderer_scene_renderer里
   RendererRD::ParticlesStorage* particles_storage = nullptr;
 
 
@@ -79,7 +78,10 @@ class RendererCompositorRD : public RendererCompositor {
   virtual RendererTextureStorage* get_texture_storage() override { return texture_storage; }
   virtual RendererSceneRender* get_scene() override { return scene; }
   virtual RendererUtilities* get_utilities() override { return utilities; }
-  virtual RendererGI* get_gi() override { return gi; }
+  virtual RendererGI* get_gi() override { 
+		ERR_FAIL_NULL_V(scene, nullptr);
+		return scene->get_gi(); // sky 和gi在scene里
+  }
   virtual RendererFog* get_fog() override { return fog; }
   virtual RendererParticlesStorage* get_particles_storage() override { return particles_storage; }
   static RendererCompositorRD* get_singleton() { return singleton; }

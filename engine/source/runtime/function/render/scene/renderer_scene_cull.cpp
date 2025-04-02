@@ -372,21 +372,10 @@ void lain::RendererSceneCull::instance_set_base(RID p_instance, RID p_base) {
       } break;
       case RS::INSTANCE_VOXEL_GI: {
         InstanceVoxelGIData* voxel_gi = static_cast<InstanceVoxelGIData*>(instance->base_data);
-        // #ifdef DEBUG_ENABLED
-        // 				if (voxel_gi->geometries.size()) {
-        // 					ERR_PRINT("BUG, indexing did not unpair geometries from VoxelGI.");
-        // 				}
-        // #endif
-        // #ifdef DEBUG_ENABLED
-        // 				if (voxel_gi->lights.size()) {
-        // 					ERR_PRINT("BUG, indexing did not unpair lights from VoxelGI.");
-        // 				}
-        // #endif
         if (voxel_gi->update_element.in_list()) {
           voxel_gi_update_list.remove(&voxel_gi->update_element);
         }
-
-        // scene_render->free(voxel_gi->probe_instance);
+        scene_render->free(voxel_gi->probe_instance);
 
       } break;
       case RS::INSTANCE_OCCLUDER: {
@@ -486,6 +475,12 @@ void lain::RendererSceneCull::instance_set_base(RID p_instance, RID p_base) {
     case RS::INSTANCE_VOXEL_GI: {
       InstanceVoxelGIData* voxel_gi = memnew(InstanceVoxelGIData);
       instance->base_data = voxel_gi;
+      voxel_gi->owner = instance;
+      if (scenario && !voxel_gi->update_element.in_list()) {
+        voxel_gi_update_list.add(&voxel_gi->update_element);
+      }
+
+      voxel_gi->probe_instance = scene_render->voxel_gi_instance_create(p_base);
     } break;
     case RS::INSTANCE_LIGHTMAP: {
       InstanceLightmapData* lightmap = memnew(InstanceLightmapData);
@@ -515,40 +510,40 @@ void lain::RendererSceneCull::instance_set_scenario(RID p_instance, RID p_scenar
   ERR_FAIL_NULL(instance);
   // 如果已经在 scenario 中，修改
   if (instance->scenario && instance->scenario != scenario_owner.get_or_null(p_scenario)) {
-      instance->scenario->instances.remove(&instance->scenario_item);
-      if (instance->indexer_id.is_valid()) {
-        _unpair_instance(instance);
-      }
-      switch (instance->base_type) {
-        case RS::INSTANCE_LIGHT: {
-          InstanceLightData* light = static_cast<InstanceLightData*>(instance->base_data);
-          if (instance->visible && RSG::light_storage->light_get_type(instance->base) != RS::LIGHT_DIRECTIONAL && light->bake_mode == RS::LIGHT_BAKE_DYNAMIC) {
-            instance->scenario->dynamic_lights.erase(light->instance);
-          }
-          if (light->D) {
-            instance->scenario->directional_lights.erase(light->D);
-            light->D = nullptr;
-          }
-        }
-
-        break;
-        case RS::INSTANCE_REFLECTION_PROBE: {
-          InstanceReflectionProbeData* reflection_probe = static_cast<InstanceReflectionProbeData*>(instance->base_data);
-          RSG::light_storage->reflection_probe_release_atlas_index(reflection_probe->instance);
-
-        } break;
-        case RS::INSTANCE_VOXEL_GI: {
-          InstanceVoxelGIData* voxel_gi = static_cast<InstanceVoxelGIData*>(instance->base_data);
-          if (voxel_gi->update_element.in_list()) {
-            voxel_gi_update_list.remove(&voxel_gi->update_element);
-          }
-        } break;
-        default:
-          break;
-      }
-      instance->scenario = nullptr;
+    instance->scenario->instances.remove(&instance->scenario_item);
+    if (instance->indexer_id.is_valid()) {
+      _unpair_instance(instance);
     }
-    
+    switch (instance->base_type) {
+      case RS::INSTANCE_LIGHT: {
+        InstanceLightData* light = static_cast<InstanceLightData*>(instance->base_data);
+        if (instance->visible && RSG::light_storage->light_get_type(instance->base) != RS::LIGHT_DIRECTIONAL && light->bake_mode == RS::LIGHT_BAKE_DYNAMIC) {
+          instance->scenario->dynamic_lights.erase(light->instance);
+        }
+        if (light->D) {
+          instance->scenario->directional_lights.erase(light->D);
+          light->D = nullptr;
+        }
+      }
+
+      break;
+      case RS::INSTANCE_REFLECTION_PROBE: {
+        InstanceReflectionProbeData* reflection_probe = static_cast<InstanceReflectionProbeData*>(instance->base_data);
+        RSG::light_storage->reflection_probe_release_atlas_index(reflection_probe->instance);
+
+      } break;
+      case RS::INSTANCE_VOXEL_GI: {
+        InstanceVoxelGIData* voxel_gi = static_cast<InstanceVoxelGIData*>(instance->base_data);
+        if (voxel_gi->update_element.in_list()) {
+          voxel_gi_update_list.remove(&voxel_gi->update_element);
+        }
+      } break;
+      default:
+        break;
+    }
+    instance->scenario = nullptr;
+  }
+
   if (!p_scenario.is_valid()) {
     return;
   }
@@ -876,6 +871,196 @@ void RendererSceneCull::render_probes() {
     for (SelfList<InstanceReflectionProbeData>* rp : done_list) {
       reflection_probe_render_list.remove(rp);
     }
+  }
+  /* VOXEL GIS */
+
+  SelfList<InstanceVoxelGIData>* voxel_gi = voxel_gi_update_list.first();
+
+  if (voxel_gi) {
+    RENDER_TIMESTAMP("Render VoxelGI");
+  }
+  while (voxel_gi) {
+    SelfList<InstanceVoxelGIData>* next = voxel_gi->next();
+
+    InstanceVoxelGIData* probe = voxel_gi->self();
+    //Instance *instance_probe = probe->owner;
+
+    //check if probe must be setup, but don't do if on the lighting thread
+
+    bool cache_dirty = false;
+    int cache_count = 0;
+    {
+      int light_cache_size = probe->light_cache.size();
+      const InstanceVoxelGIData::LightCache* caches = probe->light_cache.ptr();
+      const RID* instance_caches = probe->light_instances.ptr();
+
+      int idx = 0;  //must count visible lights
+      for (Instance* E : probe->lights) {
+        Instance* instance = E;
+        InstanceLightData* instance_light = (InstanceLightData*)instance->base_data;
+        if (!instance->visible) {
+          continue;
+        }
+        if (cache_dirty) {
+          //do nothing, since idx must count all visible lights anyway
+        } else if (idx >= light_cache_size) {
+          cache_dirty = true;
+        } else {
+          const InstanceVoxelGIData::LightCache* cache = &caches[idx];
+
+          if (instance_caches[idx] != instance_light->instance || cache->has_shadow != RSG::light_storage->light_has_shadow(instance->base) ||
+              cache->type != RSG::light_storage->light_get_type(instance->base) || cache->transform != instance->transform ||
+              cache->color != RSG::light_storage->light_get_color(instance->base) ||
+              cache->energy != RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_ENERGY) ||
+              cache->intensity != RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_INTENSITY) ||
+              cache->bake_energy != RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_INDIRECT_ENERGY) ||
+              cache->radius != RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_RANGE) ||
+              cache->attenuation != RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_ATTENUATION) ||
+              cache->spot_angle != RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_SPOT_ANGLE) ||
+              cache->spot_attenuation != RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_SPOT_ATTENUATION)) {
+            cache_dirty = true;
+          }
+        }
+
+        idx++;
+      }
+
+      for (const Instance* instance : probe->owner->scenario->directional_lights) {
+        InstanceLightData* instance_light = (InstanceLightData*)instance->base_data;
+        if (!instance->visible) {
+          continue;
+        }
+        if (cache_dirty) {
+          //do nothing, since idx must count all visible lights anyway
+        } else if (idx >= light_cache_size) {
+          cache_dirty = true;
+        } else {
+          const InstanceVoxelGIData::LightCache* cache = &caches[idx];
+
+          if (instance_caches[idx] != instance_light->instance || cache->has_shadow != RSG::light_storage->light_has_shadow(instance->base) ||
+              cache->type != RSG::light_storage->light_get_type(instance->base) || cache->transform != instance->transform ||
+              cache->color != RSG::light_storage->light_get_color(instance->base) ||
+              cache->energy != RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_ENERGY) ||
+              cache->intensity != RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_INTENSITY) ||
+              cache->bake_energy != RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_INDIRECT_ENERGY) ||
+              cache->radius != RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_RANGE) ||
+              cache->attenuation != RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_ATTENUATION) ||
+              cache->spot_angle != RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_SPOT_ANGLE) ||
+              cache->spot_attenuation != RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_SPOT_ATTENUATION) ||
+              cache->sky_mode != RSG::light_storage->light_directional_get_sky_mode(instance->base)) {
+            cache_dirty = true;
+          }
+        }
+
+        idx++;
+      }
+
+      if (idx != light_cache_size) {
+        cache_dirty = true;
+      }
+
+      cache_count = idx;
+    }
+
+    bool update_lights = scene_render->voxel_gi_needs_update(probe->probe_instance);
+    if (cache_dirty) {
+      probe->light_cache.resize(cache_count);
+      probe->light_instances.resize(cache_count);
+
+      if (cache_count) {
+        InstanceVoxelGIData::LightCache* caches = probe->light_cache.ptrw();
+        RID* instance_caches = probe->light_instances.ptrw();
+
+        int idx = 0;  //must count visible lights
+        for (Instance* E : probe->lights) {
+          Instance* instance = E;
+          InstanceLightData* instance_light = (InstanceLightData*)instance->base_data;
+          if (!instance->visible) {
+            continue;
+          }
+
+          InstanceVoxelGIData::LightCache* cache = &caches[idx];
+
+          instance_caches[idx] = instance_light->instance;
+          cache->has_shadow = RSG::light_storage->light_has_shadow(instance->base);
+          cache->type = RSG::light_storage->light_get_type(instance->base);
+          cache->transform = instance->transform;
+          cache->color = RSG::light_storage->light_get_color(instance->base);
+          cache->energy = RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_ENERGY);
+          cache->intensity = RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_INTENSITY);
+          cache->bake_energy = RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_INDIRECT_ENERGY);
+          cache->radius = RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_RANGE);
+          cache->attenuation = RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_ATTENUATION);
+          cache->spot_angle = RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_SPOT_ANGLE);
+          cache->spot_attenuation = RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_SPOT_ATTENUATION);
+
+          idx++;
+        }
+        for (const Instance* instance : probe->owner->scenario->directional_lights) {
+          InstanceLightData* instance_light = (InstanceLightData*)instance->base_data;
+          if (!instance->visible) {
+            continue;
+          }
+
+          InstanceVoxelGIData::LightCache* cache = &caches[idx];
+
+          instance_caches[idx] = instance_light->instance;
+          cache->has_shadow = RSG::light_storage->light_has_shadow(instance->base);
+          cache->type = RSG::light_storage->light_get_type(instance->base);
+          cache->transform = instance->transform;
+          cache->color = RSG::light_storage->light_get_color(instance->base);
+          cache->energy = RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_ENERGY);
+          cache->intensity = RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_INTENSITY);
+          cache->bake_energy = RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_INDIRECT_ENERGY);
+          cache->radius = RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_RANGE);
+          cache->attenuation = RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_ATTENUATION);
+          cache->spot_angle = RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_SPOT_ANGLE);
+          cache->spot_attenuation = RSG::light_storage->light_get_param(instance->base, RS::LIGHT_PARAM_SPOT_ATTENUATION);
+          cache->sky_mode = RSG::light_storage->light_directional_get_sky_mode(instance->base);
+
+          idx++;
+        }
+      }
+
+      update_lights = true;
+    }
+
+    scene_cull_result.geometry_instances.clear();
+    RID instance_pair_buffer[MAX_INSTANCE_PAIRS];
+
+    for (Instance* E : probe->dynamic_geometries) {
+      Instance* ins = E;
+      if (!ins->visible) {
+        continue;
+      }
+      InstanceGeometryData* geom = (InstanceGeometryData*)ins->base_data;
+
+      if (ins->scenario && ins->array_index >= 0 && (ins->scenario->instance_data[ins->array_index].flags & InstanceData::FLAG_GEOM_VOXEL_GI_DIRTY)) {
+        uint32_t idx = 0;
+        for (const Instance* F : geom->voxel_gi_instances) {
+          InstanceVoxelGIData* voxel_gi2 = static_cast<InstanceVoxelGIData*>(F->base_data);
+
+          instance_pair_buffer[idx++] = voxel_gi2->probe_instance;
+          if (idx == MAX_INSTANCE_PAIRS) {
+            break;
+          }
+        }
+
+        ERR_FAIL_NULL(geom->geometry_instance);
+        geom->geometry_instance->pair_voxel_gi_instances(instance_pair_buffer, idx);
+
+        ins->scenario->instance_data[ins->array_index].flags &= ~uint32_t(InstanceData::FLAG_GEOM_VOXEL_GI_DIRTY);
+      }
+
+      ERR_FAIL_NULL(geom->geometry_instance);
+      scene_cull_result.geometry_instances.push_back(geom->geometry_instance);
+    }
+
+    scene_render->voxel_gi_update(probe->probe_instance, update_lights, probe->light_instances, scene_cull_result.geometry_instances);
+
+    voxel_gi_update_list.remove(voxel_gi);
+
+    voxel_gi = next;
   }
 }
 
@@ -1872,6 +2057,9 @@ void lain::RendererSceneCull::_update_instance(Instance* p_instance) {
     InstanceDecalData* decal = static_cast<InstanceDecalData*>(p_instance->base_data);
 
     // RSG::texture_storage->decal_insta/nce_set_transform(decal->instance, p_instance->transform);
+  } else if (p_instance->base_type == RS::INSTANCE_VOXEL_GI) {
+    InstanceVoxelGIData* voxel_gi = static_cast<InstanceVoxelGIData*>(p_instance->base_data);
+    scene_render->voxel_gi_instance_set_transform_to_data(voxel_gi->probe_instance, p_instance->transform);
   }
   // @todo ...
 
